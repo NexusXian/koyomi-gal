@@ -1,10 +1,17 @@
 package main
 
 import (
-    "fmt"
+	"backend/internal/app"
+	"backend/pkg/logger"
 )
 
-
 func main() {
-    fmt.Println("Hello World~")
+	if err := app.Init(); err != nil {
+		panic(err)
+	}
+	defer func() {
+		_ = logger.Sync()
+	}()
+
+	logger.Info("application started")
 }
