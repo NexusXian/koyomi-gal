@@ -57,7 +57,8 @@ useHead(() => ({
 .app-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--color-primary) 7%, transparent), transparent 24rem),
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 28rem),
+    radial-gradient(circle at 90% 12%, color-mix(in srgb, var(--color-secondary) 7%, transparent), transparent 24rem),
     var(--color-background);
 }
 
@@ -86,15 +87,15 @@ useHead(() => ({
 
 .app-content {
   min-height: 100vh;
-  padding-top: 56px;
+  padding-top: 60px;
   transition: margin-left var(--kun-dur-base) var(--ease-kun-standard);
 }
 
 .app-main {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 16px 14px 40px;
+  padding: 20px 14px 40px;
 }
 
 @media (min-width: 640px) {
@@ -106,13 +107,13 @@ useHead(() => ({
 
 @media (min-width: 768px) {
   .app-main {
-    padding: 24px 24px 48px;
+    padding: 28px 28px 56px;
   }
 }
 
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
   .app-content {
-    margin-left: 72px;
+    margin-left: 80px;
     padding-top: 64px;
   }
 }
