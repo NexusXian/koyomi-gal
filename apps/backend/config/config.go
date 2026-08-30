@@ -21,6 +21,11 @@ type Config struct {
 	Server       *Server
 	Auth         *Auth
 	Verification *Verification
+	RBAC         *RBAC
+}
+
+type RBAC struct {
+	SuperAdminAccount string
 }
 
 type Server struct {
@@ -194,6 +199,9 @@ func Load() (*Config, error) {
 			ResendInterval: verificationResendInterval,
 			IPWindow:       verificationIPWindow,
 			IPLimit:        verificationIPLimit,
+		},
+		RBAC: &RBAC{
+			SuperAdminAccount: strings.TrimSpace(os.Getenv("RBAC_SUPER_ADMIN_ACCOUNT")),
 		},
 	}, nil
 }

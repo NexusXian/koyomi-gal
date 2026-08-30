@@ -14,6 +14,11 @@ import (
 //	@description	Koyomi Gal 后端 API
 //	@host			localhost:8080
 //	@BasePath		/
+//
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				传入 "Bearer {access_token}"
 
 func main() {
 	if err := config.LoadEnv(); err != nil {

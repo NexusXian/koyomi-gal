@@ -56,6 +56,10 @@ func ErrNotFound(msg string) *AppError {
 	return New(CodeBiz, msg, 404)
 }
 
+func ErrConflict(msg string) *AppError {
+	return New(CodeBiz, msg, 409)
+}
+
 func ErrInternal(msg string) *AppError {
 	return New(CodeBiz, msg, 500)
 }

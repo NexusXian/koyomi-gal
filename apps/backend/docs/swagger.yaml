@@ -32,6 +32,139 @@ definitions:
         example: koyomi
         type: string
     type: object
+  dto.CreatePermissionRequest:
+    properties:
+      code:
+        example: user:delete
+        maxLength: 64
+        type: string
+      description:
+        example: 允许删除用户
+        maxLength: 255
+        type: string
+      name:
+        example: 删除用户
+        maxLength: 64
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  dto.CreateRoleRequest:
+    properties:
+      code:
+        example: admin
+        maxLength: 64
+        type: string
+      description:
+        example: 管理员角色
+        maxLength: 255
+        type: string
+      name:
+        example: 管理员
+        maxLength: 64
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  dto.MePermissionsData:
+    properties:
+      permissions:
+        example:
+        - user:list
+        - user:delete
+        items:
+          type: string
+        type: array
+      roles:
+        example:
+        - admin
+        items:
+          type: string
+        type: array
+    type: object
+  dto.MePermissionsResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.MePermissionsData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.PermissionListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.PermissionResponse'
+        type: array
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.PermissionResponse:
+    properties:
+      action:
+        example: delete
+        type: string
+      code:
+        example: user:delete
+        type: string
+      created_at:
+        type: string
+      description:
+        example: 允许删除用户
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 删除用户
+        type: string
+      resource:
+        example: user
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.RoleListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.RoleResponse'
+        type: array
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.RoleResponse:
+    properties:
+      code:
+        example: admin
+        type: string
+      created_at:
+        type: string
+      description:
+        example: 管理员角色
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 管理员
+        type: string
+      updated_at:
+        type: string
+    type: object
   dto.SendVerificationCodeRequest:
     properties:
       email:
@@ -47,6 +180,57 @@ definitions:
     required:
     - email
     - purpose
+    type: object
+  dto.UpdatePermissionRequest:
+    properties:
+      description:
+        example: 允许删除用户
+        maxLength: 255
+        type: string
+      name:
+        example: 删除用户
+        maxLength: 64
+        type: string
+    required:
+    - name
+    type: object
+  dto.UpdateRolePermissionsRequest:
+    properties:
+      permission_ids:
+        example:
+        - 1
+        - 2
+        - 3
+        items:
+          type: integer
+        type: array
+    required:
+    - permission_ids
+    type: object
+  dto.UpdateRoleRequest:
+    properties:
+      description:
+        example: 管理员角色
+        maxLength: 255
+        type: string
+      name:
+        example: 管理员
+        maxLength: 64
+        type: string
+    required:
+    - name
+    type: object
+  dto.UpdateUserRolesRequest:
+    properties:
+      role_ids:
+        example:
+        - 1
+        - 2
+        items:
+          type: integer
+        type: array
+    required:
+    - role_ids
     type: object
   dto.UserLoginRequest:
     properties:
@@ -291,6 +475,579 @@ paths:
       summary: 发送邮箱验证码
       tags:
       - verification
+  /api/v1/me/permissions:
+    get:
+      description: 返回当前登录用户的角色 code 与权限 code 集合，用于前端控制 UI 展示
+      operationId: getMePermissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 当前用户角色与权限
+          schema:
+            $ref: '#/definitions/dto.MePermissionsResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询用户权限失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看当前用户权限
+      tags:
+      - me
+  /api/v1/permissions:
+    get:
+      description: 返回全部权限
+      operationId: listPermissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 权限列表
+          schema:
+            $ref: '#/definitions/dto.PermissionListResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询权限失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看权限列表
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      description: 创建新权限，code 必须为 resource:action 格式且全局唯一，创建后不可修改
+      operationId: createPermission
+      parameters:
+      - description: 创建权限请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.PermissionResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 权限 code 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建权限失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建权限
+      tags:
+      - permissions
+  /api/v1/permissions/{id}:
+    delete:
+      description: 删除权限并清理角色权限关联
+      operationId: deletePermission
+      parameters:
+      - description: 权限 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 权限已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 权限 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 权限不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除权限失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除权限
+      tags:
+      - permissions
+    put:
+      consumes:
+      - application/json
+      description: 更新权限名称和描述，code/resource/action 不可修改
+      operationId: updatePermission
+      parameters:
+      - description: 权限 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新权限请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.PermissionResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 权限不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新权限失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新权限
+      tags:
+      - permissions
+  /api/v1/roles:
+    get:
+      description: 返回全部角色
+      operationId: listRoles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 角色列表
+          schema:
+            $ref: '#/definitions/dto.RoleListResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询角色失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看角色列表
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: 创建新角色，code 全局唯一且创建后不可修改
+      operationId: createRole
+      parameters:
+      - description: 创建角色请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.RoleResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 角色 code 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建角色失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建角色
+      tags:
+      - roles
+  /api/v1/roles/{id}:
+    delete:
+      description: 删除角色并清理用户角色、角色权限关联，超级管理员角色不可删除
+      operationId: deleteRole
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 角色已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 角色 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 角色受保护，不允许删除
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除角色失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除角色
+      tags:
+      - roles
+    get:
+      description: 按角色 ID 返回角色详情
+      operationId: getRole
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 角色详情
+          schema:
+            $ref: '#/definitions/dto.RoleResponse'
+        "400":
+          description: 角色 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询角色失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看角色详情
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: 更新角色名称和描述，code 不可修改
+      operationId: updateRole
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新角色请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.RoleResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新角色失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新角色
+      tags:
+      - roles
+  /api/v1/roles/{id}/permissions:
+    get:
+      description: 返回角色当前拥有的全部权限
+      operationId: getRolePermissions
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 权限列表
+          schema:
+            $ref: '#/definitions/dto.PermissionListResponse'
+        "400":
+          description: 角色 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询角色权限失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看角色权限
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: 全量替换角色拥有的权限集合
+      operationId: updateRolePermissions
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新角色权限请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRolePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 角色权限已更新
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新角色权限失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新角色权限
+      tags:
+      - roles
+  /api/v1/users/{id}/roles:
+    get:
+      description: 返回指定用户拥有的全部角色
+      operationId: listUserRoles
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户角色列表
+          schema:
+            $ref: '#/definitions/dto.RoleListResponse'
+        "400":
+          description: 用户 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询用户角色失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看用户角色
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: 全量替换指定用户的角色集合，传空数组即清空角色
+      operationId: updateUserRoles
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新用户角色请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRolesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户角色已更新
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新用户角色失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新用户角色
+      tags:
+      - users
   /health:
     get:
       description: 返回服务存活状态
@@ -305,4 +1062,10 @@ paths:
       summary: 健康检查
       tags:
       - health
+securityDefinitions:
+  BearerAuth:
+    description: 传入 "Bearer {access_token}"
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

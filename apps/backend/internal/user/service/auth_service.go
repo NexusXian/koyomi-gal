@@ -33,7 +33,13 @@ var (
 const (
 	accessTokenIssuer         = "koyomi-gal"
 	maxTokenGenerationRetries = 3
+	defaultRegisterRoleCode   = "user"
 )
+
+// RoleAssigner binds a role code to a user; implemented by the RBAC service.
+type RoleAssigner interface {
+	AssignRoleByCode(ctx context.Context, userID uint, roleCode string) error
+}
 
 type accessTokenClaims struct {
 	TokenType string `json:"token_type"`
@@ -44,6 +50,7 @@ type UserAuthService struct {
 	authRepo            *repository.UserAuthRepository
 	refreshSessionRepo  *repository.RefreshSessionRepository
 	verificationService *VerificationService
+	roleAssigner        RoleAssigner
 	accessTokenSecret   []byte
 	accessTokenTTL      time.Duration
 	refreshTokenTTL     time.Duration
@@ -53,6 +60,7 @@ func NewUserAuthService(
 	authRepo *repository.UserAuthRepository,
 	refreshSessionRepo *repository.RefreshSessionRepository,
 	verificationService *VerificationService,
+	roleAssigner RoleAssigner,
 	accessTokenSecret string,
 	accessTokenTTL time.Duration,
 	refreshTokenTTL time.Duration,
@@ -61,6 +69,7 @@ func NewUserAuthService(
 		authRepo:            authRepo,
 		refreshSessionRepo:  refreshSessionRepo,
 		verificationService: verificationService,
+		roleAssigner:        roleAssigner,
 		accessTokenSecret:   []byte(accessTokenSecret),
 		accessTokenTTL:      accessTokenTTL,
 		refreshTokenTTL:     refreshTokenTTL,
@@ -166,6 +175,17 @@ func (s *UserAuthService) UserRegister(
 		zap.String("username", newUser.Username),
 		zap.String("email", newUser.Email),
 	)
+
+	if s.roleAssigner != nil {
+		if err := s.roleAssigner.AssignRoleByCode(ctx, newUser.ID, defaultRegisterRoleCode); err != nil {
+			logger.Warn(
+				"assign default register role",
+				zap.Uint("user_id", newUser.ID),
+				zap.String("role_code", defaultRegisterRoleCode),
+				zap.Error(err),
+			)
+		}
+	}
 
 	return nil
 }
