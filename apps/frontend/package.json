@@ -17,6 +17,7 @@
     "@kungal/ui-vue": "^2.25.1",
     "@pinia/nuxt": "^1.0.2",
     "@tailwindcss/vite": "^4.3.3",
+    "ant-design-vue": "^4.2.6",
     "nuxt": "^4.5.2",
     "ofetch": "^1.5.1",
     "pinia": "^4.0.3",
