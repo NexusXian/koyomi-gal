@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/api/v1/auth/login": {
             "post": {
-                "description": "校验邮箱和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh Token",
+                "description": "校验邮箱或用户名和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -54,13 +54,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "邮箱或密码格式不正确",
+                        "description": "账号或密码格式不正确",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "邮箱或密码错误",
+                        "description": "账号或密码错误",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -359,11 +359,11 @@ const docTemplate = `{
         "dto.UserLoginRequest": {
             "type": "object",
             "required": [
-                "email",
+                "account",
                 "password"
             ],
             "properties": {
-                "email": {
+                "account": {
                     "type": "string",
                     "maxLength": 254,
                     "example": "user@example.com"

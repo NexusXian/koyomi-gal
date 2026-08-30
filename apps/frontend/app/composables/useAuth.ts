@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { createAuthService } from '~/services/auth'
-import type { LoginCredentials } from '~/types/auth'
+import type { LoginCredentials, RegistrationCredentials } from '~/types/auth'
 import type { User, UserSession } from '~/types/user'
 import { useUserStore } from '~/stores/user'
 
@@ -24,6 +24,12 @@ export function useAuth() {
       throw error
     }
   }
+
+  const register = (credentials: RegistrationCredentials): Promise<string> =>
+    authService.register(credentials)
+
+  const sendRegistrationCode = (email: string): Promise<string> =>
+    authService.sendVerificationCode(email, 'register')
 
   const refresh = (): Promise<UserSession> => $refreshSession()
 
@@ -56,6 +62,8 @@ export function useAuth() {
     status,
     initialized,
     isAuthenticated,
+    register,
+    sendRegistrationCode,
     login,
     refresh,
     initialize,

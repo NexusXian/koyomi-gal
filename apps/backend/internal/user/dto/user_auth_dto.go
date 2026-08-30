@@ -5,11 +5,11 @@ type UserRegisterRequest struct {
 	Email            string `json:"email" binding:"required,email,max=254" example:"user@example.com"`
 	Password         string `json:"password" binding:"required,min=8,max=255" example:"password123"`
 	ConfirmPassword  string `json:"confirm_password" binding:"required,min=8,max=255" example:"password123"`
-	VerificationCode string `json:"verification_code" binding:"required" example:"123456"`
+	VerificationCode string `json:"verification_code" binding:"required,len=6,numeric" example:"123456"`
 }
 
 type UserLoginRequest struct {
-	Email    string `json:"email" binding:"required,email,max=254" example:"user@example.com"`
+	Account  string `json:"account" binding:"required,max=254" example:"user@example.com"`
 	Password string `json:"password" binding:"required,min=8,max=255" example:"password123"`
 }
 
