@@ -30,18 +30,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	workerCfg, err := config.LoadWorker()
+	if err != nil {
+		panic(err)
+	}
 
-	application, err := app.New(cfg)
+	application, err := app.New(cfg, workerCfg)
 	if err != nil {
 		panic(err)
 	}
 	defer application.Close()
 
-
-    if err := application.Gin.Run(fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)); err != nil {
-        panic(err)
-    }
-
-
 	logger.Info("application started")
+	if err := application.Gin.Run(fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)); err != nil {
+		panic(err)
+	}
 }

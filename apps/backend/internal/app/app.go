@@ -1,11 +1,15 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
 	"backend/config"
 	"backend/internal/infrastructures/database"
+	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
+	"backend/internal/migrations"
+	notificationService "backend/internal/notification/service"
 	userHandler "backend/internal/user/handler"
 	userRepo "backend/internal/user/repository"
 	userService "backend/internal/user/service"
@@ -14,6 +18,7 @@ import (
 	healthService "backend/internal/health/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -24,14 +29,23 @@ type App struct {
 	Postgres            *gorm.DB
 	Redis               *redis.Client
 	Queue               *queue.VerificationClient
+	MailWorker          *asynq.Server
 	UserAuthHandler     *userHandler.UserAuthHandler
 	VerificationHandler *userHandler.VerificationHandler
 	HealthHandler       *healthHandler.HealthHandler
 }
 
-func New(cfg *config.Config) (*App, error) {
+func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	postgresDB, err := database.NewPostgre(cfg.Postgres)
 	if err != nil {
+		return nil, err
+	}
+	sqlDB, err := postgresDB.DB()
+	if err != nil {
+		return nil, fmt.Errorf("get PostgreSQL connection pool: %w", err)
+	}
+	if err := migrations.NewService(sqlDB).Up(context.Background()); err != nil {
+		_ = sqlDB.Close()
 		return nil, err
 	}
 
@@ -86,10 +100,27 @@ func New(cfg *config.Config) (*App, error) {
 	}
 	app.Gin = ginApp
 	app.setupRoutes()
+
+	mailer := mailInfrastructure.NewSMTPMailer(workerCfg.SMTP)
+	emailService := notificationService.NewEmailService(mailer)
+	mailWorker := queue.NewServer(workerCfg.Redis, workerCfg.Concurrency)
+	if err := mailWorker.Start(queue.NewServeMux(
+		emailService,
+		verificationRepository,
+		workerCfg.VerificationSecret,
+	)); err != nil {
+		app.Close()
+		return nil, fmt.Errorf("start mail worker: %w", err)
+	}
+	app.MailWorker = mailWorker
+
 	return app, nil
 }
 
 func (app *App) Close() {
+	if app.MailWorker != nil {
+		app.MailWorker.Shutdown()
+	}
 	if app.Queue != nil {
 		_ = app.Queue.Close()
 	}
