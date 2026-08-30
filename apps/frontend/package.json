@@ -25,6 +25,7 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@iconify-json/lucide": "^1.2.127",
     "orval": "^8.26.0"
   }
 }
