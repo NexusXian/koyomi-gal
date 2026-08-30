@@ -9,6 +9,12 @@ import (
 	"backend/pkg/logger"
 )
 
+//	@title			Koyomi Gal API
+//	@version		1.0.0
+//	@description	Koyomi Gal 后端 API
+//	@host			localhost:8080
+//	@BasePath		/
+
 func main() {
 	if err := config.LoadEnv(); err != nil {
 		panic(err)

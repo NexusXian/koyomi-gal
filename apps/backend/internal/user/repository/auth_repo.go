@@ -27,6 +27,7 @@ func (r *UserAuthRepository) FindUserByEmail(ctx context.Context, email string) 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
+		return nil, err
 	}
 	return &user, nil
 }
@@ -38,10 +39,23 @@ func (r *UserAuthRepository) FindUserByUsername(ctx context.Context, username st
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
+		return nil, err
 	}
 	return &user, nil
 }
 
 func (r *UserAuthRepository) UpdateUser(ctx context.Context, user *model.User) error {
 	return r.db.WithContext(ctx).Updates(user).Error
+}
+
+func (r *UserAuthRepository) FindUserByID(ctx context.Context, userID uint) (*model.User, error) {
+	var user model.User
+	err := r.db.WithContext(ctx).First(&user, userID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
 }

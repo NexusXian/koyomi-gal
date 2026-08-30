@@ -47,8 +47,8 @@ func New(cfg *config.Config) (*App, error) {
 
 	//Init User module
 	userAuthRepository := userRepo.NewUserAuthRepository(postgresDB)
+	refreshSessionRepository := userRepo.NewRefreshSessionRepository(redisClient)
 	verificationRepository := userRepo.NewVerificationRepository(redisClient)
-	userAuthService := userService.NewUserAuthService(userAuthRepository)
 	verificationQueue := queue.NewVerificationClient(cfg.Redis, cfg.Verification.Secret)
 	verificationService := userService.NewVerificationService(
 		verificationRepository,
@@ -59,12 +59,23 @@ func New(cfg *config.Config) (*App, error) {
 		cfg.Verification.IPWindow,
 		cfg.Verification.IPLimit,
 	)
+	userAuthService := userService.NewUserAuthService(
+		userAuthRepository,
+		refreshSessionRepository,
+		verificationService,
+		cfg.Auth.AccessTokenSecret,
+		cfg.Auth.AccessTokenTTL,
+		cfg.Auth.RefreshTokenTTL,
+	)
 	app := &App{
-		Config:              cfg,
-		Postgres:            postgresDB,
-		Redis:               redisClient,
-		Queue:               verificationQueue,
-		UserAuthHandler:     userHandler.NewUserAuthHandler(userAuthService),
+		Config:   cfg,
+		Postgres: postgresDB,
+		Redis:    redisClient,
+		Queue:    verificationQueue,
+		UserAuthHandler: userHandler.NewUserAuthHandler(
+			userAuthService,
+			cfg.Auth.RefreshTokenTTL,
+		),
 		VerificationHandler: userHandler.NewVerificationHandler(verificationService),
 		HealthHandler:       healthHandler.NewHealthHandler(healthService),
 	}

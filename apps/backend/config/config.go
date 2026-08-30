@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/mail"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ type Config struct {
 	Postgres     *Postgres
 	Redis        *Redis
 	Server       *Server
+	Auth         *Auth
 	Verification *Verification
 }
 
@@ -25,6 +27,13 @@ type Server struct {
 	Port           uint16
 	Host           string
 	TrustedProxies []string
+	AllowedOrigins []string
+}
+
+type Auth struct {
+	AccessTokenSecret string
+	AccessTokenTTL    time.Duration
+	RefreshTokenTTL   time.Duration
 }
 
 type Verification struct {
@@ -113,6 +122,26 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	allowedOrigins, err := parseOrigins("CORS_ALLOWED_ORIGINS")
+	if err != nil {
+		return nil, err
+	}
+
+	accessTokenSecret, err := loadBase64Secret("AUTH_ACCESS_TOKEN_SECRET")
+	if err != nil {
+		return nil, err
+	}
+	accessTokenTTL, err := parseDuration("AUTH_ACCESS_TOKEN_TTL")
+	if err != nil {
+		return nil, err
+	}
+	refreshTokenTTL, err := parseDuration("AUTH_REFRESH_TOKEN_TTL")
+	if err != nil {
+		return nil, err
+	}
+	if accessTokenTTL >= refreshTokenTTL {
+		return nil, errors.New("AUTH_ACCESS_TOKEN_TTL must be shorter than AUTH_REFRESH_TOKEN_TTL")
+	}
 
 	verificationSecret, err := loadVerificationSecret()
 	if err != nil {
@@ -152,6 +181,12 @@ func Load() (*Config, error) {
 			Port:           serverPort,
 			Host:           serverHost,
 			TrustedProxies: parseList(os.Getenv("TRUSTED_PROXIES")),
+			AllowedOrigins: allowedOrigins,
+		},
+		Auth: &Auth{
+			AccessTokenSecret: string(accessTokenSecret),
+			AccessTokenTTL:    accessTokenTTL,
+			RefreshTokenTTL:   refreshTokenTTL,
 		},
 		Verification: &Verification{
 			Secret:         verificationSecret,
@@ -268,15 +303,23 @@ func loadRedis() (*Redis, error) {
 }
 
 func loadVerificationSecret() (string, error) {
-	value, err := requiredEnv("VERIFICATION_SECRET")
+	decoded, err := loadBase64Secret("VERIFICATION_SECRET")
 	if err != nil {
 		return "", err
 	}
+	return string(decoded), nil
+}
+
+func loadBase64Secret(name string) ([]byte, error) {
+	value, err := requiredEnv(name)
+	if err != nil {
+		return nil, err
+	}
 	decoded, err := base64.StdEncoding.DecodeString(value)
 	if err != nil || len(decoded) < 32 {
-		return "", errors.New("VERIFICATION_SECRET must be base64-encoded and contain at least 32 random bytes")
+		return nil, fmt.Errorf("%s must be base64-encoded and contain at least 32 random bytes", name)
 	}
-	return string(decoded), nil
+	return decoded, nil
 }
 
 func requiredEnv(name string) (string, error) {
@@ -319,6 +362,25 @@ func parseList(value string) []string {
 		}
 	}
 	return values
+}
+
+func parseOrigins(name string) ([]string, error) {
+	values := parseList(os.Getenv(name))
+	if len(values) == 0 {
+		return nil, fmt.Errorf("%s is required", name)
+	}
+
+	origins := make([]string, 0, len(values))
+	for _, value := range values {
+		parsed, err := url.Parse(value)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
+			parsed.Host == "" || parsed.User != nil ||
+			(parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+			return nil, fmt.Errorf("%s contains invalid origin %q", name, value)
+		}
+		origins = append(origins, parsed.Scheme+"://"+parsed.Host)
+	}
+	return origins, nil
 }
 
 func isLoopbackHost(host string) bool {

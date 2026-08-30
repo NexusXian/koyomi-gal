@@ -1,0 +1,308 @@
+basePath: /
+definitions:
+  dto.AuthSession:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.AuthUser'
+    type: object
+  dto.AuthSessionResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AuthSession'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.AuthUser:
+    properties:
+      avatar:
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      username:
+        example: koyomi
+        type: string
+    type: object
+  dto.SendVerificationCodeRequest:
+    properties:
+      email:
+        example: user@example.com
+        maxLength: 254
+        type: string
+      purpose:
+        enum:
+        - register
+        - password_reset
+        example: register
+        type: string
+    required:
+    - email
+    - purpose
+    type: object
+  dto.UserLoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        maxLength: 254
+        type: string
+      password:
+        example: password123
+        maxLength: 255
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.UserRegisterRequest:
+    properties:
+      confirm_password:
+        example: password123
+        maxLength: 255
+        minLength: 8
+        type: string
+      email:
+        example: user@example.com
+        maxLength: 254
+        type: string
+      password:
+        example: password123
+        maxLength: 255
+        minLength: 8
+        type: string
+      username:
+        example: koyomi
+        maxLength: 50
+        type: string
+      verification_code:
+        example: "123456"
+        type: string
+    required:
+    - confirm_password
+    - email
+    - password
+    - username
+    - verification_code
+    type: object
+  handler.HealthResponse:
+    properties:
+      status:
+        example: ok
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      code:
+        example: 233
+        type: integer
+      msg:
+        example: 业务错误
+        type: string
+    type: object
+  response.MessageResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      msg:
+        example: success
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Koyomi Gal 后端 API
+  title: Koyomi Gal API
+  version: 1.0.0
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 校验邮箱和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh
+        Token
+      operationId: login
+      parameters:
+      - description: 登录请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          headers:
+            Set-Cookie:
+              description: HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth 的 refresh_token
+                Cookie
+              type: string
+          schema:
+            $ref: '#/definitions/dto.AuthSessionResponse'
+        "400":
+          description: 邮箱或密码格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 邮箱或密码错误
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 账号已封禁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 认证服务异常
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 用户登录
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      description: 撤销刷新会话并清除 refresh_token Cookie
+      operationId: logout
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 退出成功
+          headers:
+            Set-Cookie:
+              description: 已过期的 refresh_token Cookie
+              type: string
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Refresh Token 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 退出登录失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 退出登录
+      tags:
+      - auth
+  /api/v1/auth/refresh:
+    post:
+      description: 使用 refresh_token Cookie 轮换 Refresh Token，返回新的 Access Token 与用户信息
+      operationId: refreshSession
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 刷新成功
+          headers:
+            Set-Cookie:
+              description: 轮换后的 refresh_token Cookie
+              type: string
+          schema:
+            $ref: '#/definitions/dto.AuthSessionResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 账号已封禁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 认证服务异常
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 刷新登录会话
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 使用邮箱验证码创建新账号
+      operationId: register
+      parameters:
+      - description: 注册请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户注册成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 用户注册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 用户注册
+      tags:
+      - auth
+  /api/v1/auth/verification-codes:
+    post:
+      consumes:
+      - application/json
+      description: 创建验证码邮件任务，202 表示任务已入队，不代表邮件已送达
+      operationId: sendVerificationCode
+      parameters:
+      - description: 发送验证码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendVerificationCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: 验证码发送任务已创建
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 邮箱或验证码用途格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "429":
+          description: 请求过于频繁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 验证码发送任务创建失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 发送邮箱验证码
+      tags:
+      - verification
+  /health:
+    get:
+      description: 返回服务存活状态
+      operationId: healthCheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 服务正常
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: 健康检查
+      tags:
+      - health
+swagger: "2.0"

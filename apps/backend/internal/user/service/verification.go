@@ -133,6 +133,21 @@ func (s *VerificationService) SendCode(
 	return nil
 }
 
+func (s *VerificationService) VerifyCode(
+	ctx context.Context,
+	email string,
+	purpose string,
+	code string,
+) (bool, error) {
+	normalizedEmail, err := normalizeEmail(email)
+	if err != nil || !validVerificationPurpose(purpose) {
+		return false, nil
+	}
+
+	digest := s.codeDigest(normalizedEmail, purpose, code)
+	return s.repository.VerifyVerificationCode(ctx, normalizedEmail, purpose, digest)
+}
+
 func (s *VerificationService) codeDigest(email string, purpose string, code string) string {
 	hash := hmac.New(sha256.New, s.secret)
 	hash.Write([]byte(purpose))

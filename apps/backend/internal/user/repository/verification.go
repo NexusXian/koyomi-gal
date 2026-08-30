@@ -3,9 +3,11 @@ package repository
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -141,6 +143,28 @@ func (r *VerificationRepository) IsVerificationCodeCurrent(
 	}
 	prefix := requestID + ":"
 	return requestID != "" && len(value) >= len(prefix) && value[:len(prefix)] == prefix, nil
+}
+
+func (r *VerificationRepository) VerifyVerificationCode(
+	ctx context.Context,
+	email string,
+	purpose string,
+	digest string,
+) (bool, error) {
+	key := fmt.Sprintf("verification:code:%s:%s", purpose, hashKeyPart(email))
+	value, err := r.rdb.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("get verification code: %w", err)
+	}
+
+	_, storedDigest, found := strings.Cut(value, ":")
+	if !found || len(storedDigest) != len(digest) {
+		return false, nil
+	}
+	return subtle.ConstantTimeCompare([]byte(storedDigest), []byte(digest)) == 1, nil
 }
 
 func hashKeyPart(value string) string {

@@ -46,3 +46,15 @@ func Pagination(c *gin.Context, data any, total int64) {
 		"message": "success",
 	})
 }
+
+// MessageResponse is the OpenAPI schema for data-less success responses.
+type MessageResponse struct {
+	Code int    `json:"code" example:"0"`
+	Msg  string `json:"msg" example:"success"`
+}
+
+// ErrorResponse is the OpenAPI schema for error responses.
+type ErrorResponse struct {
+	Code int    `json:"code" example:"233"`
+	Msg  string `json:"msg" example:"业务错误"`
+}
