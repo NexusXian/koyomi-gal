@@ -56,7 +56,21 @@ func (h *UserAuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := h.userAuthService.UserRegister(ctx, &req); err != nil {
-		response.Error(c, appErrors.ErrInternal("用户注册失败"))
+		switch {
+		case errors.Is(err, service.ErrInvalidUsername):
+			response.Error(c, appErrors.ErrValidation("用户名不能为空"))
+		case errors.Is(err, service.ErrUsernameExists):
+			response.Error(c, appErrors.ErrValidation("用户名已存在"))
+		case errors.Is(err, service.ErrEmailExists):
+			response.Error(c, appErrors.ErrValidation("邮箱已存在"))
+		case errors.Is(err, service.ErrPasswordMismatch):
+			response.Error(c, appErrors.ErrValidation("两次输入的密码不一致"))
+		case errors.Is(err, service.ErrInvalidVerificationCode):
+			response.Error(c, appErrors.ErrValidation("验证码错误或已过期"))
+		default:
+			logger.Error("register user", zap.Error(err))
+			response.Error(c, appErrors.ErrInternal("用户注册失败"))
+		}
 		return
 	}
 	response.OkWithMsg(c, "用户注册成功")
@@ -64,15 +78,15 @@ func (h *UserAuthHandler) Register(c *gin.Context) {
 
 // Login godoc
 // @Summary      用户登录
-// @Description  校验邮箱和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh Token
+// @Description  校验邮箱或用户名和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh Token
 // @ID           login
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        request body dto.UserLoginRequest true "登录请求"
 // @Success      200 {object} dto.AuthSessionResponse "登录成功"
-// @Failure      400 {object} response.ErrorResponse "邮箱或密码格式不正确"
-// @Failure      401 {object} response.ErrorResponse "邮箱或密码错误"
+// @Failure      400 {object} response.ErrorResponse "账号或密码格式不正确"
+// @Failure      401 {object} response.ErrorResponse "账号或密码错误"
 // @Failure      403 {object} response.ErrorResponse "账号已封禁"
 // @Failure      500 {object} response.ErrorResponse "认证服务异常"
 // @Header       200 {string} Set-Cookie "HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth 的 refresh_token Cookie"
@@ -80,7 +94,7 @@ func (h *UserAuthHandler) Register(c *gin.Context) {
 func (h *UserAuthHandler) Login(c *gin.Context) {
 	var req dto.UserLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, appErrors.ErrValidation("邮箱或密码格式不正确"))
+		response.Error(c, appErrors.ErrValidation("账号或密码格式不正确"))
 		return
 	}
 

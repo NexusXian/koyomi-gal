@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,9 +20,14 @@ import (
 )
 
 var (
-	ErrInvalidCredentials  = errors.New("invalid credentials")
-	ErrAccountBanned       = errors.New("account banned")
-	ErrInvalidRefreshToken = errors.New("invalid refresh token")
+	ErrInvalidCredentials      = errors.New("invalid credentials")
+	ErrAccountBanned           = errors.New("account banned")
+	ErrInvalidRefreshToken     = errors.New("invalid refresh token")
+	ErrInvalidUsername         = errors.New("invalid username")
+	ErrUsernameExists          = errors.New("username already exists")
+	ErrEmailExists             = errors.New("email already exists")
+	ErrPasswordMismatch        = errors.New("password confirmation does not match")
+	ErrInvalidVerificationCode = errors.New("verification code is invalid or expired")
 )
 
 const (
@@ -65,41 +71,47 @@ func (s *UserAuthService) UserRegister(
 	ctx context.Context,
 	req *dto.UserRegisterRequest,
 ) error {
-	user, err := s.authRepo.FindUserByUsername(ctx, req.Username)
+	username := strings.TrimSpace(req.Username)
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	if username == "" {
+		return ErrInvalidUsername
+	}
+
+	user, err := s.authRepo.FindUserByUsername(ctx, username)
 	if err != nil {
 		logger.Error(
 			"failed to find user by username",
-			zap.String("username", req.Username),
+			zap.String("username", username),
 			zap.Error(err),
 		)
 		return err
 	}
 
 	if user != nil {
-		return errors.New("用户名已存在")
+		return ErrUsernameExists
 	}
 
-	user, err = s.authRepo.FindUserByEmail(ctx, req.Email)
+	user, err = s.authRepo.FindUserByEmail(ctx, email)
 	if err != nil {
 		logger.Error(
 			"failed to find user by email",
-			zap.String("email", req.Email),
+			zap.String("email", email),
 			zap.Error(err),
 		)
 		return err
 	}
 
 	if user != nil {
-		return errors.New("邮箱已存在")
+		return ErrEmailExists
 	}
 
 	if req.Password != req.ConfirmPassword {
-		return errors.New("两次输入的密码不一致")
+		return ErrPasswordMismatch
 	}
 
 	validCode, err := s.verificationService.VerifyCode(
 		ctx,
-		req.Email,
+		email,
 		VerificationPurposeRegister,
 		req.VerificationCode,
 	)
@@ -112,7 +124,7 @@ func (s *UserAuthService) UserRegister(
 		return err
 	}
 	if !validCode {
-		return errors.New("验证码错误或已过期")
+		return ErrInvalidVerificationCode
 	}
 
 	hashedPassword, err := bcrypt.HashPassword(req.Password)
@@ -127,9 +139,9 @@ func (s *UserAuthService) UserRegister(
 	now := time.Now()
 
 	newUser := &model.User{
-		Username:     req.Username,
+		Username:     username,
 		PasswordHash: hashedPassword,
-		Email:        req.Email,
+		Email:        email,
 		IsBanned:     false,
 		CreatedAt:    now,
 		UpdatedAt:    now,
@@ -138,8 +150,8 @@ func (s *UserAuthService) UserRegister(
 	if err := s.authRepo.CreateUser(ctx, newUser); err != nil {
 		logger.Error(
 			"failed to create user",
-			zap.String("username", req.Username),
-			zap.String("email", req.Email),
+			zap.String("username", username),
+			zap.String("email", email),
 			zap.Error(err),
 		)
 		return err
@@ -158,9 +170,16 @@ func (s *UserAuthService) UserLogin(
 	ctx context.Context,
 	req *dto.UserLoginRequest,
 ) (*dto.AuthSession, string, error) {
-	user, err := s.authRepo.FindUserByEmail(ctx, req.Email)
+	account := strings.TrimSpace(req.Account)
+	user, err := s.authRepo.FindUserByEmail(ctx, strings.ToLower(account))
 	if err != nil {
 		return nil, "", fmt.Errorf("find login user: %w", err)
+	}
+	if user == nil {
+		user, err = s.authRepo.FindUserByUsername(ctx, account)
+		if err != nil {
+			return nil, "", fmt.Errorf("find login user: %w", err)
+		}
 	}
 	if user == nil || bcrypt.ComparePassword(user.PasswordHash, req.Password) != nil {
 		return nil, "", ErrInvalidCredentials

@@ -17,6 +17,7 @@ func (app *App) setupRoutes() {
 	v1 := api.Group("/v1")
 	auth := v1.Group("/auth")
 	{
+		auth.POST("/register", app.UserAuthHandler.Register)
 		auth.POST("/login", app.UserAuthHandler.Login)
 		auth.POST("/refresh", app.UserAuthHandler.Refresh)
 		auth.POST("/logout", app.UserAuthHandler.Logout)
