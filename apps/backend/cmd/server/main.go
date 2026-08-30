@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"backend/config"
@@ -29,6 +30,12 @@ func main() {
 		panic(err)
 	}
 	defer application.Close()
+
+
+    if err := application.Gin.Run(fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)); err != nil {
+        panic(err)
+    }
+
 
 	logger.Info("application started")
 }

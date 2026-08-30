@@ -11,8 +11,14 @@ import (
 )
 
 type Config struct {
-	Postgres Postgres
-	Redis    Redis
+	Postgres *Postgres
+	Redis    *Redis
+    Server   *Server
+}
+
+type Server struct {
+    Port uint16
+    Host string
 }
 
 type Postgres struct {
@@ -79,8 +85,17 @@ func Load() (*Config, error) {
 		return nil, errors.New("REDIS_TLS must be a boolean")
 	}
 
+    serverPort, err := parsePort("SERVER_PORT")
+    if err != nil {
+        return nil, err
+    }
+    serverHost, err := requiredEnv("SERVER_HOST")
+    if err != nil {
+        return nil, err
+    }
+
 	return &Config{
-		Postgres: Postgres{
+		Postgres: &Postgres{
 			Host:     postgresHost,
 			Port:     postgresPort,
 			User:     postgresUser,
@@ -88,7 +103,7 @@ func Load() (*Config, error) {
 			Database: postgresDatabase,
 			SSLMode:  postgresSSLMode,
 		},
-		Redis: Redis{
+		Redis: &Redis{
 			Host:     redisHost,
 			Port:     redisPort,
 			Username: os.Getenv("REDIS_USER"),
@@ -96,6 +111,10 @@ func Load() (*Config, error) {
 			Database: redisDatabase,
 			TLS:      redisTLS,
 		},
+        Server: &Server{
+            Port: serverPort,
+            Host: serverHost,
+        },
 	}, nil
 }
 

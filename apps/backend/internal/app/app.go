@@ -7,15 +7,21 @@ import (
 	userRepo "backend/internal/user/repository"
 	userService "backend/internal/user/service"
 
+	healthHandler "backend/internal/health/handler"
+	healthService "backend/internal/health/service"
+
+	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type App struct {
 	Config          *config.Config
+	Gin             *gin.Engine
 	Postgres        *gorm.DB
 	Redis           *redis.Client
 	UserAuthHandler *userHandler.UserAuthHandler
+    HealthHandler   *healthHandler.HealthHandler
 }
 
 func New(cfg *config.Config) (*App, error) {
@@ -32,16 +38,28 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 
-	//Init the repository
+
+    // Init Health Service module
+    healthService := healthService.NewHealthService()
+
+
+	//Init User module
 	userAuthRepository := userRepo.NewUserAuthRepository(postgresDB)
 	userAuthService := userService.NewUserAuthService(userAuthRepository)
 
-	return &App{
+
+	app := &App{
 		Config:          cfg,
 		Postgres:        postgresDB,
 		Redis:           redisClient,
+
 		UserAuthHandler: userHandler.NewUserAuthHandler(userAuthService),
-	}, nil
+        HealthHandler:   healthHandler.NewHealthHandler(healthService),
+	}
+	ginApp := gin.Default()
+	app.Gin = ginApp
+	app.setupRoutes()
+	return app, nil
 }
 
 func (app *App) Close() {

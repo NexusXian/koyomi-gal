@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewPostgre(cfg config.Postgres) (*gorm.DB, error) {
+func NewPostgre(cfg *config.Postgres) (*gorm.DB, error) {
 	dsn := url.URL{
 		Scheme: "postgres",
 		User:   url.UserPassword(cfg.User, cfg.Password),

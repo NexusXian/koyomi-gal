@@ -13,7 +13,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedis(cfg config.Redis) (*redis.Client, error) {
+func NewRedis(cfg *config.Redis) (*redis.Client, error) {
 	options := &redis.Options{
 		Addr:     net.JoinHostPort(cfg.Host, strconv.Itoa(int(cfg.Port))),
 		Username: cfg.Username,
