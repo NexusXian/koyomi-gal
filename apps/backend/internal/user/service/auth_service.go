@@ -93,6 +93,12 @@ func (s *UserAuthService) UserRegister(
 		return errors.New("邮箱已存在")
 	}
 
+
+    if len(req.Password) < 8 {
+        return errors.New("密码长度不能小于8")
+    }
+
+
 	if req.Password != req.ConfirmPassword {
 		return errors.New("两次输入的密码不一致")
 	}

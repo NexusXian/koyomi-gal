@@ -8,7 +8,7 @@ const colorMode = useCookie<'light' | 'dark'>('koyomi-color-mode', {
 
 const navigationItems = [
   { label: '首页', icon: 'lucide:house', to: '/' },
-  { label: '沙盒', icon: 'lucide:flask-conical', to: '/test' }
+  { label: 'galgame', icon: 'lucide:flask-conical', to: '/test' }
 ]
 
 const isDark = computed(() => colorMode.value === 'dark')
