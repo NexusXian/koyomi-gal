@@ -42,3 +42,7 @@ func Warn(message string, fields ...zap.Field) {
 func Error(message string, fields ...zap.Field) {
 	zap.L().Error(message, fields...)
 }
+
+func Panic(message string, fields ...zap.Field) {
+	zap.L().Panic(message, fields...)
+}
