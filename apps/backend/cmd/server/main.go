@@ -20,11 +20,16 @@ func main() {
 		panic(err)
 	}
 
-	db, err := database.NewPostgre(cfg.DatabaseURL)
+	db, err := database.NewPostgre(cfg.Postgres)
 	if err != nil {
 		panic(err)
 	}
 
+	redis, err := database.NewRedis(cfg.Redis)
+	if err != nil {
+		panic(err)
+	}
+	_ = redis
 	_ = db
 
 	logger.Info("application started")

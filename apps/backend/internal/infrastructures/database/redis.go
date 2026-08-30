@@ -2,24 +2,29 @@ package database
 
 import (
 	"context"
-	"errors"
+	"crypto/tls"
 	"fmt"
-	"os"
-	"strings"
+	"net"
+	"strconv"
 	"time"
+
+	"backend/config"
 
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedis() (*redis.Client, error) {
-	redisURL := strings.TrimSpace(os.Getenv("REDIS_URL"))
-	if redisURL == "" {
-		return nil, errors.New("REDIS_URL is required")
+func NewRedis(cfg config.Redis) (*redis.Client, error) {
+	options := &redis.Options{
+		Addr:     net.JoinHostPort(cfg.Host, strconv.Itoa(int(cfg.Port))),
+		Username: cfg.Username,
+		Password: cfg.Password,
+		DB:       cfg.Database,
 	}
-
-	options, err := redis.ParseURL(redisURL)
-	if err != nil {
-		return nil, fmt.Errorf("parse REDIS_URL: %w", err)
+	if cfg.TLS {
+		options.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			ServerName: cfg.Host,
+		}
 	}
 
 	client := redis.NewClient(options)
