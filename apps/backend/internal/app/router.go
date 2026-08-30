@@ -4,15 +4,10 @@ import "backend/internal/middleware"
 
 func (app *App) setupRoutes() {
 	app.Gin.Use(middleware.CORS())
-    app.Gin.GET("/health",app.HealthHandler.HealthCheck)
+	app.Gin.GET("/health", app.HealthHandler.HealthCheck)
 
-	app.Gin.Group("/api")
-	{
-		app.Gin.Group("/v1")
-        {
-
-        }
-	}
-	// set up v1 routes
-
+	api := app.Gin.Group("/api")
+	v1 := api.Group("/v1")
+	auth := v1.Group("/auth")
+	auth.POST("/verification-codes", app.VerificationHandler.SendCode)
 }

@@ -1,8 +1,11 @@
 package app
 
 import (
+	"fmt"
+
 	"backend/config"
 	"backend/internal/infrastructures/database"
+	"backend/internal/infrastructures/queue"
 	userHandler "backend/internal/user/handler"
 	userRepo "backend/internal/user/repository"
 	userService "backend/internal/user/service"
@@ -16,12 +19,14 @@ import (
 )
 
 type App struct {
-	Config          *config.Config
-	Gin             *gin.Engine
-	Postgres        *gorm.DB
-	Redis           *redis.Client
-	UserAuthHandler *userHandler.UserAuthHandler
-    HealthHandler   *healthHandler.HealthHandler
+	Config              *config.Config
+	Gin                 *gin.Engine
+	Postgres            *gorm.DB
+	Redis               *redis.Client
+	Queue               *queue.VerificationClient
+	UserAuthHandler     *userHandler.UserAuthHandler
+	VerificationHandler *userHandler.VerificationHandler
+	HealthHandler       *healthHandler.HealthHandler
 }
 
 func New(cfg *config.Config) (*App, error) {
@@ -37,32 +42,46 @@ func New(cfg *config.Config) (*App, error) {
 		}
 		return nil, err
 	}
-
-
-    // Init Health Service module
-    healthService := healthService.NewHealthService()
-
+	// Init Health Service module
+	healthService := healthService.NewHealthService()
 
 	//Init User module
 	userAuthRepository := userRepo.NewUserAuthRepository(postgresDB)
+	verificationRepository := userRepo.NewVerificationRepository(redisClient)
 	userAuthService := userService.NewUserAuthService(userAuthRepository)
-
-
+	verificationQueue := queue.NewVerificationClient(cfg.Redis, cfg.Verification.Secret)
+	verificationService := userService.NewVerificationService(
+		verificationRepository,
+		verificationQueue,
+		cfg.Verification.Secret,
+		cfg.Verification.CodeTTL,
+		cfg.Verification.ResendInterval,
+		cfg.Verification.IPWindow,
+		cfg.Verification.IPLimit,
+	)
 	app := &App{
-		Config:          cfg,
-		Postgres:        postgresDB,
-		Redis:           redisClient,
-
-		UserAuthHandler: userHandler.NewUserAuthHandler(userAuthService),
-        HealthHandler:   healthHandler.NewHealthHandler(healthService),
+		Config:              cfg,
+		Postgres:            postgresDB,
+		Redis:               redisClient,
+		Queue:               verificationQueue,
+		UserAuthHandler:     userHandler.NewUserAuthHandler(userAuthService),
+		VerificationHandler: userHandler.NewVerificationHandler(verificationService),
+		HealthHandler:       healthHandler.NewHealthHandler(healthService),
 	}
 	ginApp := gin.Default()
+	if err := ginApp.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
+		app.Close()
+		return nil, fmt.Errorf("configure trusted proxies: %w", err)
+	}
 	app.Gin = ginApp
 	app.setupRoutes()
 	return app, nil
 }
 
 func (app *App) Close() {
+	if app.Queue != nil {
+		_ = app.Queue.Close()
+	}
 	if app.Redis != nil {
 		_ = app.Redis.Close()
 	}

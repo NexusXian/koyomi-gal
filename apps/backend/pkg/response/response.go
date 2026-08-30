@@ -22,8 +22,15 @@ func OkWithMsg(c *gin.Context, msg string) {
 	})
 }
 
+func AcceptedWithMsg(c *gin.Context, msg string) {
+	c.JSON(http.StatusAccepted, gin.H{
+		"code": errors.CodeOK,
+		"msg":  msg,
+	})
+}
+
 func Error(c *gin.Context, err *errors.AppError) {
-	c.JSON(http.StatusInternalServerError, gin.H{
+	c.JSON(err.StatusCode, gin.H{
 		"code": err.Code,
 		"msg":  err.Message,
 	})

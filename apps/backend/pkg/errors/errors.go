@@ -60,6 +60,10 @@ func ErrInternal(msg string) *AppError {
 	return New(CodeBiz, msg, 500)
 }
 
+func ErrTooManyRequests(msg string) *AppError {
+	return New(CodeBiz, msg, 429)
+}
+
 func ErrValidation(msg string) *AppError {
 	return New(CodeBiz, msg, 400)
 }
