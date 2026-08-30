@@ -2,22 +2,14 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func NewPostgre() (*gorm.DB, error) {
-	databaseURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
-	if databaseURL == "" {
-		return nil, errors.New("DATABASE_URL is required")
-	}
-
+func NewPostgre(databaseURL string) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("open PostgreSQL connection: %w", err)
