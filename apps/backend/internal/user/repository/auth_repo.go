@@ -3,6 +3,7 @@ package repository
 import (
 	"backend/internal/user/model"
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -15,15 +16,32 @@ func NewUserAuthRepository(db *gorm.DB) *UserAuthRepository {
 	return &UserAuthRepository{db: db}
 }
 
-func (r *UserAuthRepository) Create(ctx context.Context,user *model.User) error {
-    return r.db.WithContext(ctx).Create(user).Error
+func (r *UserAuthRepository) CreateUser(ctx context.Context, user *model.User) error {
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
-func (r *UserAuthRepository) FindByEmail(email string) (*model.User, error) {
-    var user model.User
-    err := r.db.Where("email = ?", email).First(&user).Error
-    if err != nil {
-        return nil, err
-    }
-    return &user, nil
+func (r *UserAuthRepository) FindUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	var user model.User
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+	}
+	return &user, nil
+}
+
+func (r *UserAuthRepository) FindUserByUsername(ctx context.Context, username string) (*model.User, error) {
+	var user model.User
+	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+	}
+	return &user, nil
+}
+
+func (r *UserAuthRepository) UpdateUser(ctx context.Context, user *model.User) error {
+	return r.db.WithContext(ctx).Updates(user).Error
 }
