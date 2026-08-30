@@ -1,14 +1,18 @@
 package main
 
 import (
+	"os"
+
 	"backend/config"
 	"backend/internal/app"
-	"backend/internal/infrastructures/database"
 	"backend/pkg/logger"
 )
 
 func main() {
-	if err := app.Init(); err != nil {
+	if err := config.LoadEnv(); err != nil {
+		panic(err)
+	}
+	if err := logger.Init(os.Getenv("APP_ENV")); err != nil {
 		panic(err)
 	}
 	defer func() {
@@ -20,17 +24,11 @@ func main() {
 		panic(err)
 	}
 
-	db, err := database.NewPostgre(cfg.Postgres)
+	application, err := app.New(cfg)
 	if err != nil {
 		panic(err)
 	}
-
-	redis, err := database.NewRedis(cfg.Redis)
-	if err != nil {
-		panic(err)
-	}
-	_ = redis
-	_ = db
+	defer application.Close()
 
 	logger.Info("application started")
 }
