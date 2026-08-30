@@ -20,10 +20,13 @@ const hasHeader = computed(() => Boolean(props.title || props.description || slo
 <template>
   <section class="page-container" :class="`page-container-${width}`">
     <header v-if="hasHeader" class="page-header">
-      <div class="page-heading">
-        <h1 v-if="title" class="page-title">{{ title }}</h1>
-        <p v-if="description" class="page-description">{{ description }}</p>
-      </div>
+      <KunHeader
+        v-if="title || description"
+        class="page-heading"
+        :name="title"
+        :description="description"
+        scale="h1"
+      />
       <div v-if="$slots.actions" class="page-actions">
         <slot name="actions" />
       </div>
@@ -64,23 +67,6 @@ const hasHeader = computed(() => Boolean(props.title || props.description || slo
 
 .page-heading {
   min-width: 0;
-}
-
-.page-title {
-  margin: 0;
-  color: var(--color-foreground);
-  font-size: clamp(24px, 3vw, 32px);
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.025em;
-}
-
-.page-description {
-  max-width: 680px;
-  margin: 7px 0 0;
-  color: var(--color-default-500);
-  font-size: 14px;
-  line-height: 1.65;
 }
 
 .page-actions {

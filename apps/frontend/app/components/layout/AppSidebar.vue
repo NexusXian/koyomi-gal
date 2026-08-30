@@ -21,17 +21,26 @@ function isActive(to: string) {
 <template>
   <aside class="app-sidebar">
     <nav class="sidebar-navigation" aria-label="主导航">
-      <NuxtLink
+      <KunTooltip
         v-for="item in items"
         :key="item.to"
-        class="navigation-item"
-        :class="{ 'navigation-item-active': isActive(item.to) }"
-        :to="item.to"
-        :aria-current="isActive(item.to) ? 'page' : undefined"
+        :text="item.label"
+        position="right"
+        :show-arrow="true"
       >
-        <KunIcon :name="item.icon" class="navigation-icon" />
-        <span>{{ item.label }}</span>
-      </NuxtLink>
+        <KunButton
+          :href="item.to"
+          :color="isActive(item.to) ? 'primary' : 'default'"
+          :variant="isActive(item.to) ? 'flat' : 'light'"
+          size="lg"
+          rounded="lg"
+          :is-icon-only="true"
+          :aria-label="item.label"
+          :aria-current="isActive(item.to) ? 'page' : undefined"
+        >
+          <KunIcon :name="item.icon" class="navigation-icon" />
+        </KunButton>
+      </KunTooltip>
     </nav>
   </aside>
 </template>
@@ -44,59 +53,22 @@ function isActive(to: string) {
   bottom: 0;
   left: 0;
   display: none;
-  width: 72px;
+  width: 80px;
   border-right: 1px solid var(--color-kun-border);
-  background: color-mix(in srgb, var(--color-content1) 92%, transparent);
-  backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--color-content1) 90%, transparent);
+  backdrop-filter: blur(18px);
 }
 
 .sidebar-navigation {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 8px;
-}
-
-.navigation-item {
-  position: relative;
-  display: flex;
-  min-height: 54px;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border-radius: var(--radius-kun-md);
-  color: var(--color-default-500);
-  font-size: 11px;
-  transition:
-    color var(--kun-dur-fast) var(--ease-kun-standard),
-    background-color var(--kun-dur-fast) var(--ease-kun-standard);
-}
-
-.navigation-item:hover {
-  background: var(--color-content2);
-  color: var(--color-foreground);
-}
-
-.navigation-item-active {
-  background: var(--color-primary-50);
-  color: var(--color-primary-600);
-  font-weight: 600;
-}
-
-.navigation-item-active::before {
-  position: absolute;
-  top: 12px;
-  bottom: 12px;
-  left: -8px;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: var(--color-primary);
-  content: '';
+  gap: 10px;
+  padding: 16px 12px;
 }
 
 .navigation-icon {
-  font-size: 20px;
+  font-size: 21px;
 }
 
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {

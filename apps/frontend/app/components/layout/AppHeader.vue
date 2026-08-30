@@ -16,6 +16,19 @@ const userStore = useUserStore()
 const { user, isAuthenticated } = storeToRefs(userStore)
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const mobileSearchOpen = ref(false)
+const brandIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#g)"/><text x="20" y="27" font-size="20" font-weight="700" fill="#fff" text-anchor="middle" font-family="sans-serif">K</text></svg>'
+)}`
+
+const avatarUser = computed(() =>
+  user.value
+    ? {
+        id: user.value.id,
+        name: user.value.username,
+        avatar: user.value.avatar
+      }
+    : null
+)
 
 function submitSearch() {
   const normalizedQuery = query.value.trim()
@@ -45,7 +58,7 @@ watch(
     <div class="header-inner">
       <div class="header-leading">
         <KunButton
-          class-name="desktop-navigation-toggle"
+          class-name="navigation-toggle"
           color="default"
           variant="light"
           size="sm"
@@ -58,10 +71,16 @@ watch(
           <KunIcon name="lucide:menu" />
         </KunButton>
 
-        <NuxtLink class="brand" to="/" aria-label="Koyomi Gal 首页">
-          <span class="brand-mark">K</span>
-          <span class="brand-name">Koyomi</span>
-        </NuxtLink>
+        <div class="brand">
+          <KunBrand
+            name="Koyomi"
+            :icon-src="brandIcon"
+            icon-alt="Koyomi"
+            icon-class="size-9 rounded-kun-lg"
+            name-class="text-xl font-bold tracking-tight"
+            to="/"
+          />
+        </div>
       </div>
 
       <form class="desktop-search" role="search" @submit.prevent="submitSearch">
@@ -70,8 +89,8 @@ watch(
           type="search"
           size="sm"
           rounded="full"
-          placeholder="搜索当前内容"
-          aria-label="搜索当前内容"
+          placeholder="搜索 Galgame、角色或话题"
+          aria-label="搜索"
           :is-clearable="true"
         >
           <template #prefix>
@@ -81,40 +100,44 @@ watch(
       </form>
 
       <div class="header-actions">
-        <KunButton
-          class-name="mobile-search-toggle"
-          color="default"
-          variant="light"
-          size="sm"
-          rounded="full"
-          :is-icon-only="true"
-          :aria-label="mobileSearchOpen ? '关闭搜索' : '打开搜索'"
-          :aria-expanded="mobileSearchOpen"
-          @click="mobileSearchOpen = !mobileSearchOpen"
-        >
-          <KunIcon :name="mobileSearchOpen ? 'lucide:x' : 'lucide:search'" />
-        </KunButton>
+        <KunTooltip :text="mobileSearchOpen ? '关闭搜索' : '打开搜索'" position="bottom">
+          <KunButton
+            class-name="mobile-search-toggle"
+            color="default"
+            variant="light"
+            size="sm"
+            rounded="full"
+            :is-icon-only="true"
+            :aria-label="mobileSearchOpen ? '关闭搜索' : '打开搜索'"
+            :aria-expanded="mobileSearchOpen"
+            @click="mobileSearchOpen = !mobileSearchOpen"
+          >
+            <KunIcon :name="mobileSearchOpen ? 'lucide:x' : 'lucide:search'" />
+          </KunButton>
+        </KunTooltip>
 
-        <KunButton
-          color="default"
-          variant="light"
-          size="sm"
-          rounded="full"
-          :is-icon-only="true"
-          :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
-          @click="$emit('toggleColorMode')"
-        >
-          <KunIcon :name="isDark ? 'lucide:sun' : 'lucide:moon'" />
-        </KunButton>
+        <KunTooltip :text="isDark ? '切换到浅色模式' : '切换到深色模式'" position="bottom">
+          <KunButton
+            color="default"
+            variant="light"
+            size="sm"
+            rounded="full"
+            :is-icon-only="true"
+            :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
+            @click="$emit('toggleColorMode')"
+          >
+            <KunIcon :name="isDark ? 'lucide:sun' : 'lucide:moon'" />
+          </KunButton>
+        </KunTooltip>
 
         <div class="account" :title="isAuthenticated ? user?.username : '未登录'">
-          <img
-            v-if="isAuthenticated && user?.avatar"
-            class="account-avatar"
-            :src="user.avatar"
-            :alt="user.username"
-          >
-          <span v-else class="account-avatar account-avatar-fallback">
+          <KunAvatar
+            v-if="isAuthenticated"
+            :user="avatarUser"
+            :is-navigation="false"
+            size="sm"
+          />
+          <span v-else class="account-fallback">
             <KunIcon name="lucide:user-round" />
           </span>
           <span class="account-name">
@@ -135,8 +158,8 @@ watch(
         type="search"
         size="sm"
         rounded="full"
-        placeholder="搜索当前内容"
-        aria-label="搜索当前内容"
+        placeholder="搜索 Galgame、角色或话题"
+        aria-label="搜索"
         :is-clearable="true"
         autofocus
       >
@@ -155,25 +178,22 @@ watch(
   top: 0;
   right: 0;
   left: 0;
-  min-width: 0;
   border-bottom: 1px solid var(--color-kun-border);
-  background: color-mix(in srgb, var(--color-content1) 88%, transparent);
-  box-shadow: var(--shadow-kun-sm);
-  backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--color-content1) 90%, transparent);
+  backdrop-filter: blur(18px);
 }
 
 .header-inner {
   display: flex;
-  height: 55px;
+  height: 60px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 14px;
+  padding: 0 16px;
 }
 
 .header-leading,
 .header-actions,
-.brand,
 .account {
   display: flex;
   align-items: center;
@@ -185,33 +205,12 @@ watch(
 }
 
 .brand {
-  gap: 9px;
   min-width: 0;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.brand-mark {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: var(--color-primary-foreground);
-  box-shadow: var(--shadow-kun-sm);
-  font-size: 17px;
-}
-
-.brand-name {
-  display: none;
 }
 
 .desktop-search {
   display: none;
-  width: min(44vw, 520px);
+  width: min(42vw, 520px);
 }
 
 .search-icon {
@@ -225,7 +224,7 @@ watch(
   padding-left: 2px;
 }
 
-.account-avatar {
+.account-fallback {
   display: grid;
   width: 32px;
   height: 32px;
@@ -233,10 +232,6 @@ watch(
   place-items: center;
   border: 1px solid var(--color-kun-border);
   border-radius: 50%;
-  object-fit: cover;
-}
-
-.account-avatar-fallback {
   background: var(--color-content2);
   color: var(--color-default-500);
 }
@@ -264,7 +259,6 @@ watch(
 }
 
 @media (min-width: 480px) {
-  .brand-name,
   .account-name {
     display: block;
   }
@@ -272,18 +266,15 @@ watch(
 
 @media (min-width: 640px) {
   .header-inner {
-    padding-right: 20px;
-    padding-left: 20px;
+    padding-right: 24px;
+    padding-left: 24px;
   }
 
   .desktop-search {
     display: block;
   }
 
-  :deep(.mobile-search-toggle) {
-    display: none;
-  }
-
+  :deep(.mobile-search-toggle),
   .mobile-search {
     display: none;
   }
@@ -291,17 +282,15 @@ watch(
 
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
   .header-inner {
-    height: 63px;
-    padding-right: 24px;
-    padding-left: 20px;
+    height: 64px;
   }
 
-  :deep(.desktop-navigation-toggle) {
+  :deep(.navigation-toggle) {
     display: none;
   }
 
   .brand {
-    min-width: 152px;
+    min-width: 164px;
   }
 }
 </style>
