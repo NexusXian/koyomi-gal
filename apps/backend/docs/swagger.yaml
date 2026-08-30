@@ -32,6 +32,207 @@ definitions:
         example: koyomi
         type: string
     type: object
+  dto.CommentData:
+    properties:
+      author_id:
+        example: 1
+        type: integer
+      content:
+        example: 同感！
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      like_count:
+        example: 5
+        type: integer
+      parent_id:
+        example: 1
+        type: integer
+      post_id:
+        example: 1
+        type: integer
+      replies:
+        items:
+          $ref: '#/definitions/dto.CommentData'
+        type: array
+      reply_to_user_id:
+        example: 2
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.CommentDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CommentData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.CommentLikeData:
+    properties:
+      like_count:
+        example: 6
+        type: integer
+      liked:
+        example: true
+        type: boolean
+    type: object
+  dto.CommentLikeDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CommentLikeData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.CommentListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CommentData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.CommentListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CommentListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.CreateCommentRequest:
+    properties:
+      content:
+        example: 同感！
+        maxLength: 10000
+        type: string
+      parent_id:
+        example: 1
+        type: integer
+      reply_to_comment_id:
+        example: 5
+        type: integer
+    required:
+    - content
+    type: object
+  dto.CreateDeveloperRequest:
+    properties:
+      description:
+        example: 游戏开发商
+        type: string
+      logo_url:
+        example: https://example.com/logo.png
+        type: string
+      name:
+        example: YUZUSOFT
+        maxLength: 255
+        type: string
+      original_name:
+        example: ゆずソフト
+        maxLength: 255
+        type: string
+      slug:
+        example: yuzusoft
+        maxLength: 255
+        type: string
+      website:
+        example: https://www.yuzu-soft.com
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  dto.CreateGalgameRequest:
+    properties:
+      age_rating:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 3
+        type: integer
+      aliases:
+        example:
+        - 千恋万花
+        - Senren Banka
+        items:
+          type: string
+        maxItems: 100
+        type: array
+      banner_url:
+        example: https://example.com/banner.jpg
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      description:
+        example: 作品简介
+        type: string
+      developer_id:
+        example: 1
+        type: integer
+      original_title:
+        example: 千恋＊万花
+        maxLength: 255
+        type: string
+      release_date:
+        example: "2016-07-29"
+        type: string
+      romaji_title:
+        example: Senren Banka
+        maxLength: 255
+        type: string
+      slug:
+        example: senren-banka
+        maxLength: 255
+        type: string
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 1
+        type: integer
+      tag_ids:
+        example:
+        - 1
+        - 2
+        items:
+          type: integer
+        maxItems: 100
+        type: array
+      title:
+        example: 千恋＊万花
+        maxLength: 255
+        type: string
+    required:
+    - slug
+    - title
+    type: object
   dto.CreatePermissionRequest:
     properties:
       code:
@@ -50,6 +251,85 @@ definitions:
     - code
     - name
     type: object
+  dto.CreatePostRequest:
+    properties:
+      content:
+        example: 剧情感想……
+        type: string
+      galgame_id:
+        example: 1
+        type: integer
+      title:
+        example: 千恋＊万花通关感想
+        maxLength: 255
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  dto.CreateResourceReportRequest:
+    properties:
+      description:
+        example: 链接已失效
+        maxLength: 1000
+        type: string
+      reason:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        example: 0
+        type: integer
+    type: object
+  dto.CreateResourceRequest:
+    properties:
+      description:
+        example: 官方汉化整合包
+        type: string
+      galgame_id:
+        example: 1
+        type: integer
+      links:
+        example:
+        - https://example.com/dl
+        - https://example.com/dl2
+        items:
+          type: string
+        maxItems: 50
+        minItems: 1
+        type: array
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 1
+        type: integer
+      title:
+        example: 千恋＊万花 官方整合包
+        maxLength: 255
+        type: string
+      type:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        example: 1
+        type: integer
+    required:
+    - galgame_id
+    - links
+    - title
+    type: object
   dto.CreateRoleRequest:
     properties:
       code:
@@ -67,6 +347,278 @@ definitions:
     required:
     - code
     - name
+    type: object
+  dto.CreateTagRequest:
+    properties:
+      description:
+        example: 纯爱题材
+        type: string
+      name:
+        example: 纯爱
+        maxLength: 100
+        type: string
+      slug:
+        example: pure-love
+        maxLength: 100
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  dto.DeveloperDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.DeveloperResponse'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.DeveloperListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.DeveloperResponse'
+        type: array
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.DeveloperResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        example: 游戏开发商
+        type: string
+      id:
+        example: 1
+        type: integer
+      logo_url:
+        example: https://example.com/logo.png
+        type: string
+      name:
+        example: YUZUSOFT
+        type: string
+      original_name:
+        example: ゆずソフト
+        type: string
+      slug:
+        example: yuzusoft
+        type: string
+      updated_at:
+        type: string
+      website:
+        example: https://www.yuzu-soft.com
+        type: string
+    type: object
+  dto.DeveloperSummary:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: YUZUSOFT
+        type: string
+    type: object
+  dto.FavoriteData:
+    properties:
+      created_at:
+        type: string
+      favorited:
+        example: true
+        type: boolean
+    type: object
+  dto.FavoriteDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.FavoriteData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.GalgameDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalgameResponse'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.GalgameListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.GalgameListItem'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  dto.GalgameListItem:
+    properties:
+      age_rating:
+        example: 3
+        type: integer
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      developer:
+        $ref: '#/definitions/dto.DeveloperSummary'
+      id:
+        example: 1
+        type: integer
+      original_title:
+        example: 千恋＊万花
+        type: string
+      rating:
+        $ref: '#/definitions/dto.RatingSummary'
+      release_date:
+        example: "2016-07-29"
+        type: string
+      romaji_title:
+        example: Senren Banka
+        type: string
+      slug:
+        example: senren-banka
+        type: string
+      statistics:
+        $ref: '#/definitions/dto.GalgameStatistics'
+      tags:
+        items:
+          $ref: '#/definitions/dto.TagSummary'
+        type: array
+      title:
+        example: 千恋＊万花
+        type: string
+    type: object
+  dto.GalgameListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalgameListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.GalgameResponse:
+    properties:
+      age_rating:
+        example: 3
+        type: integer
+      aliases:
+        items:
+          type: string
+        type: array
+      banner_url:
+        example: https://example.com/banner.jpg
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      created_at:
+        type: string
+      description:
+        example: 作品简介
+        type: string
+      developer:
+        $ref: '#/definitions/dto.DeveloperSummary'
+      id:
+        example: 1
+        type: integer
+      original_title:
+        example: 千恋＊万花
+        type: string
+      rating:
+        $ref: '#/definitions/dto.RatingSummary'
+      release_date:
+        example: "2016-07-29"
+        type: string
+      romaji_title:
+        example: Senren Banka
+        type: string
+      slug:
+        example: senren-banka
+        type: string
+      statistics:
+        $ref: '#/definitions/dto.GalgameStatistics'
+      status:
+        example: 1
+        type: integer
+      tags:
+        items:
+          $ref: '#/definitions/dto.TagSummary'
+        type: array
+      title:
+        example: 千恋＊万花
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.GalgameStatistics:
+    properties:
+      favorite_count:
+        example: 300
+        type: integer
+      post_count:
+        example: 20
+        type: integer
+      resource_count:
+        example: 5
+        type: integer
+    type: object
+  dto.GalgameUserRelationData:
+    properties:
+      favorite:
+        $ref: '#/definitions/dto.FavoriteData'
+      galgame_id:
+        example: 1
+        type: integer
+      rating:
+        $ref: '#/definitions/dto.RatingData'
+      state:
+        $ref: '#/definitions/dto.UserStateData'
+    type: object
+  dto.GalgameUserRelationResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalgameUserRelationData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.HandleResourceReportRequest:
+    properties:
+      status:
+        enum:
+        - 1
+        - 2
+        example: 1
+        type: integer
+    required:
+    - status
     type: object
   dto.MePermissionsData:
     properties:
@@ -133,6 +685,297 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.PostData:
+    properties:
+      author_id:
+        example: 1
+        type: integer
+      comment_count:
+        example: 3
+        type: integer
+      content:
+        example: 剧情感想……
+        type: string
+      created_at:
+        type: string
+      favorite_count:
+        example: 2
+        type: integer
+      galgame_id:
+        example: 1
+        type: integer
+      id:
+        example: 1
+        type: integer
+      like_count:
+        example: 10
+        type: integer
+      title:
+        example: 千恋＊万花通关感想
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.PostDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PostData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.PostFavoriteData:
+    properties:
+      favorite_count:
+        example: 3
+        type: integer
+      favorited:
+        example: true
+        type: boolean
+    type: object
+  dto.PostFavoriteDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PostFavoriteData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.PostLikeData:
+    properties:
+      like_count:
+        example: 11
+        type: integer
+      liked:
+        example: true
+        type: boolean
+    type: object
+  dto.PostLikeDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PostLikeData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.PostListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.PostData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  dto.PostListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PostListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.RatingData:
+    properties:
+      created_at:
+        type: string
+      score:
+        example: 8
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.RatingDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.RatingData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.RatingSummary:
+    properties:
+      average:
+        example: 8.72
+        type: number
+      count:
+        example: 120
+        type: integer
+    type: object
+  dto.ReportedResourceData:
+    properties:
+      id:
+        example: 1
+        type: integer
+      status:
+        example: 1
+        type: integer
+      title:
+        example: 千恋＊万花 官方整合包
+        type: string
+      type:
+        example: 1
+        type: integer
+    type: object
+  dto.ResourceData:
+    properties:
+      created_at:
+        type: string
+      description:
+        example: 官方汉化整合包
+        type: string
+      galgame_id:
+        example: 1
+        type: integer
+      id:
+        example: 1
+        type: integer
+      links:
+        items:
+          $ref: '#/definitions/dto.ResourceLinkData'
+        type: array
+      status:
+        example: 1
+        type: integer
+      title:
+        example: 千恋＊万花 官方整合包
+        type: string
+      type:
+        example: 1
+        type: integer
+      updated_at:
+        type: string
+      uploader_id:
+        example: 1
+        type: integer
+    type: object
+  dto.ResourceDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ResourceData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ResourceLinkData:
+    properties:
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      url:
+        example: https://example.com/dl
+        type: string
+    type: object
+  dto.ResourceListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.ResourceData'
+        type: array
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ResourceReportData:
+    properties:
+      created_at:
+        type: string
+      description:
+        example: 链接已失效
+        type: string
+      handled_at:
+        type: string
+      handled_by:
+        example: 3
+        type: integer
+      id:
+        example: 1
+        type: integer
+      reason:
+        example: 0
+        type: integer
+      resource:
+        $ref: '#/definitions/dto.ReportedResourceData'
+      resource_id:
+        example: 1
+        type: integer
+      status:
+        example: 0
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        example: 2
+        type: integer
+    type: object
+  dto.ResourceReportDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ResourceReportData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ResourceReportListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ResourceReportData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.ResourceReportListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ResourceReportListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.RoleListResponse:
     properties:
       code:
@@ -181,6 +1024,165 @@ definitions:
     - email
     - purpose
     type: object
+  dto.TagDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.TagResponse'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.TagListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.TagResponse'
+        type: array
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.TagResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        example: 纯爱题材
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 纯爱
+        type: string
+      slug:
+        example: pure-love
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.TagSummary:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 纯爱
+        type: string
+    type: object
+  dto.UpdateCommentRequest:
+    properties:
+      content:
+        example: 同感！（已编辑）
+        maxLength: 10000
+        type: string
+    required:
+    - content
+    type: object
+  dto.UpdateDeveloperRequest:
+    properties:
+      description:
+        example: 游戏开发商
+        type: string
+      logo_url:
+        example: https://example.com/logo.png
+        type: string
+      name:
+        example: YUZUSOFT
+        maxLength: 255
+        type: string
+      original_name:
+        example: ゆずソフト
+        maxLength: 255
+        type: string
+      slug:
+        example: yuzusoft
+        maxLength: 255
+        type: string
+      website:
+        example: https://www.yuzu-soft.com
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  dto.UpdateGalgameRequest:
+    properties:
+      age_rating:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 3
+        type: integer
+      aliases:
+        example:
+        - 千恋万花
+        - Senren Banka
+        items:
+          type: string
+        maxItems: 100
+        type: array
+      banner_url:
+        example: https://example.com/banner.jpg
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      description:
+        example: 作品简介
+        type: string
+      developer_id:
+        example: 1
+        type: integer
+      original_title:
+        example: 千恋＊万花
+        maxLength: 255
+        type: string
+      release_date:
+        example: "2016-07-29"
+        type: string
+      romaji_title:
+        example: Senren Banka
+        maxLength: 255
+        type: string
+      slug:
+        example: senren-banka
+        maxLength: 255
+        type: string
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 1
+        type: integer
+      tag_ids:
+        example:
+        - 1
+        - 2
+        items:
+          type: integer
+        maxItems: 100
+        type: array
+      title:
+        example: 千恋＊万花
+        maxLength: 255
+        type: string
+    required:
+    - age_rating
+    - slug
+    - status
+    - title
+    type: object
   dto.UpdatePermissionRequest:
     properties:
       description:
@@ -193,6 +1195,60 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  dto.UpdatePostRequest:
+    properties:
+      content:
+        example: 剧情感想（更新）……
+        type: string
+      title:
+        example: 千恋＊万花通关感想（更新）
+        maxLength: 255
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  dto.UpdateResourceRequest:
+    properties:
+      description:
+        example: 官方汉化整合包
+        type: string
+      links:
+        example:
+        - https://example.com/dl
+        items:
+          type: string
+        maxItems: 50
+        minItems: 1
+        type: array
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 1
+        type: integer
+      title:
+        example: 千恋＊万花 官方整合包
+        maxLength: 255
+        type: string
+      type:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        example: 1
+        type: integer
+    required:
+    - links
+    - status
+    - title
     type: object
   dto.UpdateRolePermissionsRequest:
     properties:
@@ -220,6 +1276,23 @@ definitions:
     required:
     - name
     type: object
+  dto.UpdateTagRequest:
+    properties:
+      description:
+        example: 纯爱题材
+        type: string
+      name:
+        example: 纯爱
+        maxLength: 100
+        type: string
+      slug:
+        example: pure-love
+        maxLength: 100
+        type: string
+    required:
+    - name
+    - slug
+    type: object
   dto.UpdateUserRolesRequest:
     properties:
       role_ids:
@@ -231,6 +1304,43 @@ definitions:
         type: array
     required:
     - role_ids
+    type: object
+  dto.UpsertRatingRequest:
+    properties:
+      score:
+        enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        example: 8
+        type: integer
+    required:
+    - score
+    type: object
+  dto.UpsertUserStateRequest:
+    properties:
+      play_time_minutes:
+        example: 120
+        minimum: 0
+        type: integer
+      state:
+        enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        example: 2
+        type: integer
+    required:
+    - state
     type: object
   dto.UserLoginRequest:
     properties:
@@ -277,6 +1387,30 @@ definitions:
     - username
     - verification_code
     type: object
+  dto.UserStateData:
+    properties:
+      created_at:
+        type: string
+      play_time_minutes:
+        example: 120
+        type: integer
+      state:
+        example: 2
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.UserStateDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.UserStateData'
+      msg:
+        example: success
+        type: string
+    type: object
   handler.HealthResponse:
     properties:
       status:
@@ -308,6 +1442,202 @@ info:
   title: Koyomi Gal API
   version: 1.0.0
 paths:
+  /api/v1/admin/galgames:
+    get:
+      description: 查询全部状态（pending/published/rejected/hidden）的 Galgame；需要 galgame:review
+        权限
+      operationId: listAdminGalgames
+      parameters:
+      - description: 状态过滤：0 待审，1 已发布，2 已拒绝，3 已隐藏
+        in: query
+        name: status
+        type: integer
+      - description: 标题或别名关键词
+        in: query
+        name: keyword
+        type: string
+      - default: latest
+        description: 排序：latest、oldest、rating、favorite、popular
+        in: query
+        name: sort
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Galgame 列表
+          schema:
+            $ref: '#/definitions/dto.GalgameListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询 Galgame
+      tags:
+      - admin
+  /api/v1/admin/galgames/{id}:
+    get:
+      description: 按 ID 返回任意状态 Galgame 详情；需要 galgame:review 权限
+      operationId: getAdminGalgame
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Galgame 详情
+          schema:
+            $ref: '#/definitions/dto.GalgameDataResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查看 Galgame 详情
+      tags:
+      - admin
+  /api/v1/admin/resource-reports:
+    get:
+      description: 分页查询资源举报；需要 resource_report:list 权限
+      operationId: listResourceReports
+      parameters:
+      - description: 状态过滤：0 待处理，1 已解决，2 已驳回
+        in: query
+        name: status
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 举报列表
+          schema:
+            $ref: '#/definitions/dto.ResourceReportListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询举报失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询资源举报
+      tags:
+      - admin
+  /api/v1/admin/resource-reports/{id}/handle:
+    put:
+      consumes:
+      - application/json
+      description: 将举报标记为已解决或已驳回并记录处理人；需要 resource_report:handle 权限
+      operationId: handleResourceReport
+      parameters:
+      - description: 举报 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 处理举报请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.HandleResourceReportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 处理结果
+          schema:
+            $ref: '#/definitions/dto.ResourceReportDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 举报不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 处理举报失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端处理资源举报
+      tags:
+      - admin
   /api/v1/auth/login:
     post:
       consumes:
@@ -475,6 +1805,871 @@ paths:
       summary: 发送邮箱验证码
       tags:
       - verification
+  /api/v1/comments/{id}:
+    delete:
+      description: 删除评论（回复级联）并按子树大小原子减少帖子评论计数；作者本人或拥有 comment:moderate 权限
+      operationId: deleteComment
+      parameters:
+      - description: 评论 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评论已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 评论 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有管理该评论的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评论不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除评论失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除评论
+      tags:
+      - comments
+    put:
+      consumes:
+      - application/json
+      description: 更新评论内容；作者本人或拥有 comment:moderate 权限
+      operationId: updateComment
+      parameters:
+      - description: 评论 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新评论请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.CommentDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有管理该评论的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评论不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新评论失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新评论
+      tags:
+      - comments
+  /api/v1/comments/{id}/like:
+    delete:
+      description: 当前用户取消点赞评论，原子更新点赞计数
+      operationId: unlikeComment
+      parameters:
+      - description: 评论 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消结果
+          schema:
+            $ref: '#/definitions/dto.CommentLikeDataResponse'
+        "400":
+          description: 评论 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评论不存在或未点赞
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 取消点赞失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 取消点赞评论
+      tags:
+      - comments
+    post:
+      description: 当前用户点赞评论，原子更新点赞计数
+      operationId: likeComment
+      parameters:
+      - description: 评论 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 点赞结果
+          schema:
+            $ref: '#/definitions/dto.CommentLikeDataResponse'
+        "400":
+          description: 评论 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评论不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 已点赞该评论
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 点赞失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 点赞评论
+      tags:
+      - comments
+  /api/v1/developers:
+    get:
+      description: 返回全部开发商
+      operationId: listDevelopers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 开发商列表
+          schema:
+            $ref: '#/definitions/dto.DeveloperListResponse'
+        "500":
+          description: 查询开发商失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看开发商列表
+      tags:
+      - developers
+    post:
+      consumes:
+      - application/json
+      description: 创建 Galgame 开发商
+      operationId: createDeveloper
+      parameters:
+      - description: 创建开发商请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateDeveloperRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.DeveloperDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建开发商失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建开发商
+      tags:
+      - developers
+  /api/v1/developers/{id}:
+    get:
+      description: 按 ID 返回开发商详情
+      operationId: getDeveloper
+      parameters:
+      - description: 开发商 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 开发商详情
+          schema:
+            $ref: '#/definitions/dto.DeveloperDataResponse'
+        "400":
+          description: 开发商 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 开发商不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询开发商失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看开发商详情
+      tags:
+      - developers
+    put:
+      consumes:
+      - application/json
+      description: 更新 Galgame 开发商
+      operationId: updateDeveloper
+      parameters:
+      - description: 开发商 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新开发商请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateDeveloperRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.DeveloperDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 开发商不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新开发商失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新开发商
+      tags:
+      - developers
+  /api/v1/galgames:
+    get:
+      description: 查询已发布 Galgame；多个 tag_ids 使用 AND 语义
+      operationId: listGalgames
+      parameters:
+      - description: 标题或别名关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 开发商 ID
+        in: query
+        name: developer_id
+        type: integer
+      - description: Tag ID，逗号分隔
+        example: 1,2
+        in: query
+        name: tag_ids
+        type: string
+      - description: 最早发行年份
+        in: query
+        name: release_from
+        type: integer
+      - description: 最晚发行年份
+        in: query
+        name: release_to
+        type: integer
+      - description: 年龄等级：0 未知，1 全年龄，2 R15，3 R18
+        in: query
+        name: age_rating
+        type: integer
+      - default: latest
+        description: 排序：latest、oldest、rating、favorite、popular
+        in: query
+        name: sort
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Galgame 列表
+          schema:
+            $ref: '#/definitions/dto.GalgameListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查询 Galgame
+      tags:
+      - galgames
+    post:
+      consumes:
+      - application/json
+      description: 创建 Galgame、别名和 Tag 关联
+      operationId: createGalgame
+      parameters:
+      - description: 创建 Galgame 请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateGalgameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.GalgameDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建 Galgame
+      tags:
+      - galgames
+  /api/v1/galgames/{id}:
+    delete:
+      description: 删除 Galgame 及其别名和 Tag 关联
+      operationId: deleteGalgame
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Galgame 已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除 Galgame
+      tags:
+      - galgames
+    get:
+      description: 按 ID 返回已发布 Galgame 详情
+      operationId: getGalgame
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Galgame 详情
+          schema:
+            $ref: '#/definitions/dto.GalgameDataResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看 Galgame 详情
+      tags:
+      - galgames
+    put:
+      consumes:
+      - application/json
+      description: 全量更新 Galgame、别名和 Tag 关联
+      operationId: updateGalgame
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新 Galgame 请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateGalgameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.GalgameDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新 Galgame
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/favorite:
+    delete:
+      description: 删除当前用户与 Galgame 的收藏关系，并原子更新收藏计数
+      operationId: removeGalgameFavorite
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 收藏已取消
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在或未收藏
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 取消收藏失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 取消收藏 Galgame
+      tags:
+      - galgames
+    post:
+      description: 收藏当前用户与 Galgame 的关系，并原子更新收藏计数
+      operationId: addGalgameFavorite
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 收藏结果
+          schema:
+            $ref: '#/definitions/dto.FavoriteDataResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 已收藏该 Galgame
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 收藏失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 收藏 Galgame
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/me:
+    get:
+      description: 返回当前用户对 Galgame 的评分、收藏和游玩状态
+      operationId: getMyGalgameRelation
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户关系详情
+          schema:
+            $ref: '#/definitions/dto.GalgameUserRelationResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询用户关系失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看当前用户与 Galgame 的关系
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/rating:
+    delete:
+      description: 删除当前用户对 Galgame 的评分，并重新计算评分统计
+      operationId: deleteGalgameRating
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评分已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在或未评分
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除评分失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除 Galgame 评分
+      tags:
+      - galgames
+    put:
+      consumes:
+      - application/json
+      description: 创建或更新当前用户对 Galgame 的评分，并重新计算评分统计
+      operationId: upsertGalgameRating
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 评分请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpsertRatingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评分结果
+          schema:
+            $ref: '#/definitions/dto.RatingDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 评分失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 评分 Galgame
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/resources:
+    get:
+      description: 返回 Galgame 下全部已发布资源及其链接
+      operationId: listGalgameResources
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源列表
+          schema:
+            $ref: '#/definitions/dto.ResourceListResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询资源失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看 Galgame 资源列表
+      tags:
+      - resources
+  /api/v1/galgames/{id}/state:
+    delete:
+      description: 删除当前用户对 Galgame 的游玩状态
+      operationId: deleteGalgameUserState
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 游玩状态已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在或未设置游玩状态
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除游玩状态失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除 Galgame 游玩状态
+      tags:
+      - galgames
+    put:
+      consumes:
+      - application/json
+      description: 创建或更新当前用户对 Galgame 的游玩状态和游玩时长
+      operationId: upsertGalgameUserState
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 游玩状态请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpsertUserStateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 游玩状态结果
+          schema:
+            $ref: '#/definitions/dto.UserStateDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 设置游玩状态失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 设置 Galgame 游玩状态
+      tags:
+      - galgames
   /api/v1/me/permissions:
     get:
       description: 返回当前登录用户的角色 code 与权限 code 集合，用于前端控制 UI 展示
@@ -662,6 +2857,659 @@ paths:
       summary: 更新权限
       tags:
       - permissions
+  /api/v1/posts:
+    get:
+      description: 分页查询社区帖子；galgame_id 过滤 Galgame 讨论帖
+      operationId: listPosts
+      parameters:
+      - description: Galgame ID
+        in: query
+        name: galgame_id
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 帖子列表
+          schema:
+            $ref: '#/definitions/dto.PostListResponse'
+        "500":
+          description: 查询帖子失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查询帖子列表
+      tags:
+      - posts
+    post:
+      consumes:
+      - application/json
+      description: 登录用户发布社区帖子或 Galgame 讨论帖
+      operationId: createPost
+      parameters:
+      - description: 创建帖子请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.PostDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建帖子失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建帖子
+      tags:
+      - posts
+  /api/v1/posts/{id}:
+    delete:
+      description: 删除帖子及其评论并原子减少计数；作者本人或拥有 post:moderate 权限
+      operationId: deletePost
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 帖子已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 帖子 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有管理该帖子的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除帖子失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除帖子
+      tags:
+      - posts
+    get:
+      description: 按 ID 返回帖子详情
+      operationId: getPost
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 帖子详情
+          schema:
+            $ref: '#/definitions/dto.PostDataResponse'
+        "400":
+          description: 帖子 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询帖子失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看帖子详情
+      tags:
+      - posts
+    put:
+      consumes:
+      - application/json
+      description: 更新帖子标题和内容；作者本人或拥有 post:moderate 权限
+      operationId: updatePost
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新帖子请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.PostDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有管理该帖子的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新帖子失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新帖子
+      tags:
+      - posts
+  /api/v1/posts/{id}/comments:
+    get:
+      description: 分页返回帖子的一级评论及其回复（两级结构）
+      operationId: listPostComments
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码（按一级评论分页）
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评论列表
+          schema:
+            $ref: '#/definitions/dto.CommentListResponse'
+        "400":
+          description: 参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询评论失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看帖子评论
+      tags:
+      - comments
+    post:
+      consumes:
+      - application/json
+      description: 登录用户评论帖子；parent_id 指向一级评论，回复另一条回复时传 reply_to_comment_id
+      operationId: createComment
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 创建评论请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.CommentDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建评论失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 发表评论
+      tags:
+      - comments
+  /api/v1/posts/{id}/favorite:
+    delete:
+      description: 当前用户取消收藏帖子，原子更新收藏计数
+      operationId: unfavoritePost
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消结果
+          schema:
+            $ref: '#/definitions/dto.PostFavoriteDataResponse'
+        "400":
+          description: 帖子 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在或未收藏
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 取消收藏失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 取消收藏帖子
+      tags:
+      - posts
+    post:
+      description: 当前用户收藏帖子，原子更新收藏计数
+      operationId: favoritePost
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 收藏结果
+          schema:
+            $ref: '#/definitions/dto.PostFavoriteDataResponse'
+        "400":
+          description: 帖子 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 已收藏该帖子
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 收藏失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 收藏帖子
+      tags:
+      - posts
+  /api/v1/posts/{id}/like:
+    delete:
+      description: 当前用户取消点赞帖子，原子更新点赞计数
+      operationId: unlikePost
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消结果
+          schema:
+            $ref: '#/definitions/dto.PostLikeDataResponse'
+        "400":
+          description: 帖子 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在或未点赞
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 取消点赞失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 取消点赞帖子
+      tags:
+      - posts
+    post:
+      description: 当前用户点赞帖子，原子更新点赞计数
+      operationId: likePost
+      parameters:
+      - description: 帖子 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 点赞结果
+          schema:
+            $ref: '#/definitions/dto.PostLikeDataResponse'
+        "400":
+          description: 帖子 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 帖子不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 已点赞该帖子
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 点赞失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 点赞帖子
+      tags:
+      - posts
+  /api/v1/resources:
+    post:
+      consumes:
+      - application/json
+      description: 登录用户为已发布 Galgame 上传资源及下载链接
+      operationId: createResource
+      parameters:
+      - description: 创建资源请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.ResourceDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建资源失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建资源
+      tags:
+      - resources
+  /api/v1/resources/{id}:
+    delete:
+      description: 删除资源及其链接并原子减少计数；上传者本人或拥有 resource:delete 权限
+      operationId: deleteResource
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 资源 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有管理该资源的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除资源失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除资源
+      tags:
+      - resources
+    get:
+      description: 按 ID 返回已发布资源及其链接
+      operationId: getResource
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源详情
+          schema:
+            $ref: '#/definitions/dto.ResourceDataResponse'
+        "400":
+          description: 资源 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询资源失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看资源详情
+      tags:
+      - resources
+    put:
+      consumes:
+      - application/json
+      description: 全量更新资源字段和链接；上传者本人或拥有 resource:update 权限
+      operationId: updateResource
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新资源请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.ResourceDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有管理该资源的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新资源失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新资源
+      tags:
+      - resources
+  /api/v1/resources/{id}/reports:
+    post:
+      consumes:
+      - application/json
+      description: 登录用户举报已发布资源；同一用户对同一资源只能举报一次
+      operationId: createResourceReport
+      parameters:
+      - description: 资源 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 举报请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateResourceReportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 举报成功
+          schema:
+            $ref: '#/definitions/dto.ResourceReportDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 资源不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 已举报过该资源
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 举报失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 举报资源
+      tags:
+      - resources
   /api/v1/roles:
     get:
       description: 返回全部角色
@@ -961,6 +3809,153 @@ paths:
       summary: 更新角色权限
       tags:
       - roles
+  /api/v1/tags:
+    get:
+      description: 返回全部 Galgame Tag
+      operationId: listTags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tag 列表
+          schema:
+            $ref: '#/definitions/dto.TagListResponse'
+        "500":
+          description: 查询 Tag 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看 Tag 列表
+      tags:
+      - tags
+    post:
+      consumes:
+      - application/json
+      description: 创建 Galgame Tag
+      operationId: createTag
+      parameters:
+      - description: 创建 Tag 请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.TagDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 名称或 slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建 Tag 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建 Tag
+      tags:
+      - tags
+  /api/v1/tags/{id}:
+    get:
+      description: 按 ID 返回 Tag 详情
+      operationId: getTag
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tag 详情
+          schema:
+            $ref: '#/definitions/dto.TagDataResponse'
+        "400":
+          description: Tag ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Tag 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询 Tag 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看 Tag 详情
+      tags:
+      - tags
+    put:
+      consumes:
+      - application/json
+      description: 更新 Galgame Tag
+      operationId: updateTag
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新 Tag 请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.TagDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Tag 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 名称或 slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新 Tag 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新 Tag
+      tags:
+      - tags
   /api/v1/users/{id}/roles:
     get:
       description: 返回指定用户拥有的全部角色

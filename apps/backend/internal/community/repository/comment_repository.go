@@ -1,0 +1,213 @@
+package repository
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"backend/internal/community/model"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+type CommentRepository struct {
+	db *gorm.DB
+}
+
+// CommentThread pairs a top-level comment with its replies.
+type CommentThread struct {
+	Comment model.Comment
+	Replies []model.Comment
+}
+
+func NewCommentRepository(db *gorm.DB) *CommentRepository {
+	return &CommentRepository{db: db}
+}
+
+func (r *CommentRepository) Transaction(ctx context.Context, fn func(tx *CommentRepository) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(&CommentRepository{db: tx})
+	})
+}
+
+func (r *CommentRepository) Create(ctx context.Context, comment *model.Comment) error {
+	if err := r.db.WithContext(ctx).Create(comment).Error; err != nil {
+		return fmt.Errorf("create comment: %w", err)
+	}
+	return nil
+}
+
+func (r *CommentRepository) Update(ctx context.Context, comment *model.Comment) error {
+	comment.UpdatedAt = time.Now()
+	err := r.db.WithContext(ctx).
+		Model(&model.Comment{}).
+		Where("id = ?", comment.ID).
+		Updates(map[string]any{
+			"content":    comment.Content,
+			"updated_at": comment.UpdatedAt,
+		}).Error
+	if err != nil {
+		return fmt.Errorf("update comment: %w", err)
+	}
+	return nil
+}
+
+// Delete removes the comment row and reports whether one was deleted; replies
+// and likes are removed by foreign key ON DELETE CASCADE.
+func (r *CommentRepository) Delete(ctx context.Context, id uint) (bool, error) {
+	result := r.db.WithContext(ctx).Delete(&model.Comment{}, id)
+	if result.Error != nil {
+		return false, fmt.Errorf("delete comment: %w", result.Error)
+	}
+	return result.RowsAffected > 0, nil
+}
+
+func (r *CommentRepository) FindByID(ctx context.Context, id uint) (*model.Comment, error) {
+	var comment model.Comment
+	err := r.db.WithContext(ctx).First(&comment, id).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find comment by id: %w", err)
+	}
+	return &comment, nil
+}
+
+// ListTopLevelByPost returns one page of top-level comments plus the total
+// count of top-level comments for the post.
+func (r *CommentRepository) ListTopLevelByPost(
+	ctx context.Context,
+	postID uint,
+	page, limit int,
+) ([]model.Comment, int64, error) {
+	base := func() *gorm.DB {
+		return r.db.WithContext(ctx).
+			Model(&model.Comment{}).
+			Where("post_id = ? AND parent_id IS NULL", postID)
+	}
+	var total int64
+	if err := base().Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count top-level comments: %w", err)
+	}
+
+	var comments []model.Comment
+	err := base().
+		Order("comments.id ASC").
+		Offset((page - 1) * limit).
+		Limit(limit).
+		Find(&comments).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("list top-level comments: %w", err)
+	}
+	return comments, total, nil
+}
+
+// ListRepliesByParentIDs returns all replies of the given top-level comments
+// in one query, so building threads never triggers N+1.
+func (r *CommentRepository) ListRepliesByParentIDs(
+	ctx context.Context,
+	parentIDs []uint,
+) (map[uint][]model.Comment, error) {
+	replies := make(map[uint][]model.Comment, len(parentIDs))
+	if len(parentIDs) == 0 {
+		return replies, nil
+	}
+	var rows []model.Comment
+	err := r.db.WithContext(ctx).
+		Where("parent_id IN ?", parentIDs).
+		Order("comments.id ASC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("list comment replies: %w", err)
+	}
+	for i := range rows {
+		parentID := *rows[i].ParentID
+		replies[parentID] = append(replies[parentID], rows[i])
+	}
+	return replies, nil
+}
+
+// CountReplies returns the number of direct replies of a top-level comment;
+// with only two levels this equals the subtree size minus one.
+func (r *CommentRepository) CountReplies(ctx context.Context, parentID uint) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&model.Comment{}).
+		Where("parent_id = ?", parentID).
+		Count(&count).Error
+	if err != nil {
+		return 0, fmt.Errorf("count comment replies: %w", err)
+	}
+	return count, nil
+}
+
+func (r *CommentRepository) IncrementPostCommentCount(ctx context.Context, postID uint) error {
+	err := r.db.WithContext(ctx).Exec(
+		"UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?",
+		postID,
+	).Error
+	if err != nil {
+		return fmt.Errorf("increment post comment count: %w", err)
+	}
+	return nil
+}
+
+func (r *CommentRepository) DecrementPostCommentCountBy(ctx context.Context, postID uint, count int64) error {
+	err := r.db.WithContext(ctx).Exec(
+		"UPDATE posts SET comment_count = GREATEST(comment_count - ?, 0) WHERE id = ?",
+		count, postID,
+	).Error
+	if err != nil {
+		return fmt.Errorf("decrement post comment count: %w", err)
+	}
+	return nil
+}
+
+// AddCommentLike inserts the like and reports whether a new row was created;
+// false means the user already liked the comment.
+func (r *CommentRepository) AddCommentLike(ctx context.Context, commentID, userID uint) (bool, error) {
+	like := model.CommentLike{CommentID: commentID, UserID: userID}
+	err := r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&like).Error
+	if err != nil {
+		return false, fmt.Errorf("add comment like: %w", err)
+	}
+	return like.ID != 0, nil
+}
+
+// RemoveCommentLike deletes the like row and reports whether one was deleted.
+func (r *CommentRepository) RemoveCommentLike(ctx context.Context, commentID, userID uint) (bool, error) {
+	result := r.db.WithContext(ctx).
+		Where("comment_id = ? AND user_id = ?", commentID, userID).
+		Delete(&model.CommentLike{})
+	if result.Error != nil {
+		return false, fmt.Errorf("remove comment like: %w", result.Error)
+	}
+	return result.RowsAffected > 0, nil
+}
+
+func (r *CommentRepository) IncrementCommentLikeCount(ctx context.Context, commentID uint) error {
+	err := r.db.WithContext(ctx).Exec(
+		"UPDATE comments SET like_count = like_count + 1 WHERE id = ?",
+		commentID,
+	).Error
+	if err != nil {
+		return fmt.Errorf("increment comment like count: %w", err)
+	}
+	return nil
+}
+
+func (r *CommentRepository) DecrementCommentLikeCount(ctx context.Context, commentID uint) error {
+	err := r.db.WithContext(ctx).Exec(
+		"UPDATE comments SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?",
+		commentID,
+	).Error
+	if err != nil {
+		return fmt.Errorf("decrement comment like count: %w", err)
+	}
+	return nil
+}

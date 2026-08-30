@@ -6,6 +6,12 @@ import (
 	"strings"
 
 	"backend/config"
+	communityHandler "backend/internal/community/handler"
+	communityRepo "backend/internal/community/repository"
+	communityService "backend/internal/community/service"
+	galgameHandler "backend/internal/galgame/handler"
+	galgameRepo "backend/internal/galgame/repository"
+	galgameService "backend/internal/galgame/service"
 	"backend/internal/infrastructures/database"
 	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
@@ -14,6 +20,9 @@ import (
 	rbacHandler "backend/internal/rbac/handler"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
+	resourceHandler "backend/internal/resource/handler"
+	resourceRepo "backend/internal/resource/repository"
+	resourceService "backend/internal/resource/service"
 	userHandler "backend/internal/user/handler"
 	userRepo "backend/internal/user/repository"
 	userService "backend/internal/user/service"
@@ -42,6 +51,13 @@ type App struct {
 	RoleHandler         *rbacHandler.RoleHandler
 	PermissionHandler   *rbacHandler.PermissionHandler
 	AssignmentHandler   *rbacHandler.AssignmentHandler
+	CatalogHandler      *galgameHandler.CatalogHandler
+	UserRelationHandler *galgameHandler.UserRelationHandler
+	ResourceHandler     *resourceHandler.ResourceHandler
+	ReportHandler       *resourceHandler.ReportHandler
+	PostHandler         *communityHandler.PostHandler
+	CommentHandler      *communityHandler.CommentHandler
+	InteractionHandler  *communityHandler.InteractionHandler
 	HealthHandler       *healthHandler.HealthHandler
 }
 
@@ -89,6 +105,32 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		return nil, err
 	}
 
+	galgameRepository := galgameRepo.NewGalgameRepository(postgresDB)
+	developerRepository := galgameRepo.NewDeveloperRepository(postgresDB)
+	tagRepository := galgameRepo.NewTagRepository(postgresDB)
+	catalogService := galgameService.NewCatalogService(
+		galgameRepository,
+		developerRepository,
+		tagRepository,
+	)
+
+	userRelationRepository := galgameRepo.NewUserRelationRepository(postgresDB)
+	ratingService := galgameService.NewRatingService(galgameRepository, userRelationRepository)
+	favoriteService := galgameService.NewFavoriteService(galgameRepository, userRelationRepository)
+	userStateService := galgameService.NewUserStateService(galgameRepository, userRelationRepository)
+	userRelationService := galgameService.NewUserRelationService(galgameRepository, userRelationRepository)
+
+	resourceRepository := resourceRepo.NewResourceRepository(postgresDB)
+	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, rbacSvc)
+	reportRepository := resourceRepo.NewReportRepository(postgresDB)
+	reportSvc := resourceService.NewReportService(reportRepository, resourceRepository)
+
+	postRepository := communityRepo.NewPostRepository(postgresDB)
+	commentRepository := communityRepo.NewCommentRepository(postgresDB)
+	postService := communityService.NewPostService(postRepository, galgameRepository, rbacSvc)
+	commentService := communityService.NewCommentService(commentRepository, postRepository, rbacSvc)
+	interactionService := communityService.NewInteractionService(postRepository, commentRepository)
+
 	verificationQueue := queue.NewVerificationClient(cfg.Redis, cfg.Verification.Secret)
 	verificationService := userService.NewVerificationService(
 		verificationRepository,
@@ -122,7 +164,19 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		RoleHandler:         rbacHandler.NewRoleHandler(rbacSvc),
 		PermissionHandler:   rbacHandler.NewPermissionHandler(rbacSvc),
 		AssignmentHandler:   rbacHandler.NewAssignmentHandler(rbacSvc),
-		HealthHandler:       healthHandler.NewHealthHandler(healthService),
+		CatalogHandler:      galgameHandler.NewCatalogHandler(catalogService),
+		UserRelationHandler: galgameHandler.NewUserRelationHandler(
+			ratingService,
+			favoriteService,
+			userStateService,
+			userRelationService,
+		),
+		ResourceHandler:    resourceHandler.NewResourceHandler(resourceSvc),
+		ReportHandler:      resourceHandler.NewReportHandler(reportSvc),
+		PostHandler:        communityHandler.NewPostHandler(postService),
+		CommentHandler:     communityHandler.NewCommentHandler(commentService),
+		InteractionHandler: communityHandler.NewInteractionHandler(interactionService),
+		HealthHandler:      healthHandler.NewHealthHandler(healthService),
 	}
 	ginApp := gin.Default()
 	if err := ginApp.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {

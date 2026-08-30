@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS galgame_tags;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS galgame_aliases;
+DROP TABLE IF EXISTS galgames;
+DROP TABLE IF EXISTS developers;

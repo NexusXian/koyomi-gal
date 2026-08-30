@@ -50,6 +50,17 @@ var seedPermissions = []seedPermission{
 	{Code: "permission:update", Name: "更新权限", Description: "允许更新权限"},
 	{Code: "permission:delete", Name: "删除权限", Description: "允许删除权限"},
 	{Code: "permission:assign", Name: "分配权限", Description: "允许调整角色权限"},
+	{Code: "galgame:create", Name: "创建 Galgame", Description: "允许创建 Galgame、开发商和 Tag"},
+	{Code: "galgame:update", Name: "更新 Galgame", Description: "允许更新 Galgame、开发商和 Tag"},
+	{Code: "galgame:delete", Name: "删除 Galgame", Description: "允许删除 Galgame"},
+	{Code: "galgame:review", Name: "审核 Galgame", Description: "允许查看全部状态的 Galgame"},
+	{Code: "resource:update", Name: "更新资源", Description: "允许更新任何用户上传的资源"},
+	{Code: "resource:delete", Name: "删除资源", Description: "允许删除任何用户上传的资源"},
+	{Code: "resource:review", Name: "审核资源", Description: "允许审核资源发布状态"},
+	{Code: "resource_report:list", Name: "查看资源举报", Description: "允许查看资源举报列表"},
+	{Code: "resource_report:handle", Name: "处理资源举报", Description: "允许处理资源举报"},
+	{Code: "post:moderate", Name: "管理帖子", Description: "允许管理任何用户的帖子"},
+	{Code: "comment:moderate", Name: "管理评论", Description: "允许管理任何用户的评论"},
 }
 
 // seedRolePermissions maps seed role codes to granted seed permission codes.
@@ -62,6 +73,17 @@ var seedRolePermissions = map[string][]string{
 		"user:update",
 		"role:list",
 		"permission:list",
+		"galgame:create",
+		"galgame:update",
+		"galgame:delete",
+		"galgame:review",
+		"resource:update",
+		"resource:delete",
+		"resource:review",
+		"resource_report:list",
+		"resource_report:handle",
+		"post:moderate",
+		"comment:moderate",
 	},
 }
 
