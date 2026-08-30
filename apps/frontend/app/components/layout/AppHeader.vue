@@ -130,20 +130,46 @@ watch(
           </KunButton>
         </KunTooltip>
 
-        <div class="account" :title="isAuthenticated ? user?.username : '未登录'">
-          <KunAvatar
-            v-if="isAuthenticated"
-            :user="avatarUser"
-            :is-navigation="false"
+        <template v-if="isAuthenticated">
+          <div class="account" :title="user?.username">
+            <KunAvatar :user="avatarUser" :is-navigation="false" size="sm" />
+            <span class="account-name">{{ user?.username }}</span>
+          </div>
+
+          <KunTooltip text="设置" position="bottom">
+            <KunButton
+              color="default"
+              variant="light"
+              size="sm"
+              rounded="full"
+              :is-icon-only="true"
+              aria-label="设置"
+            >
+              <KunIcon name="lucide:settings" />
+            </KunButton>
+          </KunTooltip>
+        </template>
+
+        <template v-else>
+          <KunButton
+            color="primary"
+            variant="bordered"
             size="sm"
-          />
-          <span v-else class="account-fallback">
-            <KunIcon name="lucide:user-round" />
-          </span>
-          <span class="account-name">
-            {{ isAuthenticated ? user?.username : '未登录' }}
-          </span>
-        </div>
+            rounded="full"
+            href="/login"
+          >
+            登录
+          </KunButton>
+          <KunButton
+            color="primary"
+            variant="solid"
+            size="sm"
+            rounded="full"
+            href="/register"
+          >
+            注册
+          </KunButton>
+        </template>
       </div>
     </div>
 
@@ -222,18 +248,6 @@ watch(
   min-width: 0;
   gap: 8px;
   padding-left: 2px;
-}
-
-.account-fallback {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--color-kun-border);
-  border-radius: 50%;
-  background: var(--color-content2);
-  color: var(--color-default-500);
 }
 
 .account-name {
