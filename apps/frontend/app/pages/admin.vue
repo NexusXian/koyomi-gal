@@ -20,6 +20,7 @@ onMounted(async () => {
     !hasAny([
       'galgame:review',
       'resource_report:list',
+      'resource:review',
       'galgame:update',
       'role:list',
       'permission:list',

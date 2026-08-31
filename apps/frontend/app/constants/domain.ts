@@ -37,6 +37,13 @@ export const RESOURCE_TYPES: DomainOption[] = [
   { value: 6, label: '攻略' }
 ]
 
+export const RESOURCE_STATUS: DomainOption[] = [
+  { value: 0, label: '待审核', color: 'processing' },
+  { value: 1, label: '已发布', color: 'success' },
+  { value: 2, label: '已拒绝', color: 'error' },
+  { value: 3, label: '已隐藏', color: 'warning' }
+]
+
 export const REPORT_REASONS: DomainOption[] = [
   { value: 0, label: '链接失效' },
   { value: 1, label: '密码错误' },

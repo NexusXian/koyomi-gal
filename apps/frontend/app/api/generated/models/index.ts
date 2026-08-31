@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './dtoAdminResourceListData';
+export * from './dtoAdminResourceListResponse';
 export * from './dtoAuthSession';
 export * from './dtoAuthSessionResponse';
 export * from './dtoAuthUser';
@@ -69,6 +71,8 @@ export * from './dtoResourceReportData';
 export * from './dtoResourceReportDataResponse';
 export * from './dtoResourceReportListData';
 export * from './dtoResourceReportListResponse';
+export * from './dtoReviewResourceRequest';
+export * from './dtoReviewResourceRequestStatus';
 export * from './dtoRoleListResponse';
 export * from './dtoRoleResponse';
 export * from './dtoSendVerificationCodeRequest';
@@ -101,6 +105,7 @@ export * from './dtoUserStateData';
 export * from './dtoUserStateDataResponse';
 export * from './handlerHealthResponse';
 export * from './listAdminGalgamesParams';
+export * from './listAdminResourcesParams';
 export * from './listGalgamesParams';
 export * from './listPostCommentsParams';
 export * from './listPostsParams';

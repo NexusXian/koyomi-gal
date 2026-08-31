@@ -6,12 +6,16 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  DtoAdminResourceListResponse,
   DtoGalgameDataResponse,
   DtoGalgameListResponse,
   DtoHandleResourceReportRequest,
+  DtoResourceDataResponse,
   DtoResourceReportDataResponse,
   DtoResourceReportListResponse,
+  DtoReviewResourceRequest,
   ListAdminGalgamesParams,
+  ListAdminResourcesParams,
   ListResourceReportsParams
 } from '../models';
 
@@ -130,6 +134,68 @@ return apiMutator<DtoResourceReportDataResponse>(getHandleResourceReportUrl(id),
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoHandleResourceReportRequest)
+  }
+);}
+
+
+export const getListAdminResourcesUrl = (params?: ListAdminResourcesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/resources?${stringifiedParams}` : `/api/v1/admin/resources`
+}
+
+/**
+ * 分页查询全部状态的资源，可按状态筛选；需要 resource:review 权限
+ * @summary 管理端查询资源
+ */
+export const listAdminResources = async (params?: ListAdminResourcesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminResourceListResponse> => {
+
+  return apiMutator<DtoAdminResourceListResponse>(getListAdminResourcesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getReviewResourceUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/resources/${id}/review`
+}
+
+/**
+ * 将资源标记为已发布、已拒绝或已隐藏；需要 resource:review 权限
+ * @summary 管理端审核资源
+ */
+export const reviewResource = async (id: number,
+    dtoReviewResourceRequest: DtoReviewResourceRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoResourceDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoResourceDataResponse>(getReviewResourceUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoReviewResourceRequest)
   }
 );}
 

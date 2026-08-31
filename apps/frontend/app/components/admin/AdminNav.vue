@@ -23,6 +23,12 @@ const items: AdminNavItem[] = [
     permission: 'resource_report:list'
   },
   {
+    key: '/admin/resources',
+    label: '资源审核',
+    icon: 'lucide:folder-down',
+    permission: 'resource:review'
+  },
+  {
     key: '/admin/tags',
     label: 'Tag',
     icon: 'lucide:tags',
@@ -62,6 +68,7 @@ const canSeeAdmin = computed(() =>
   hasAny([
     'galgame:review',
     'resource_report:list',
+    'resource:review',
     'galgame:update',
     'role:list',
     'permission:list',
