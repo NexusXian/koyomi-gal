@@ -52,10 +52,13 @@ async function handleAccountAction({ key }: { key: string | number }): Promise<v
 function submitSearch() {
   const normalizedQuery = query.value.trim()
 
+  // Search results live on /galgames; keep its filters only when already there.
+  const carriedQuery = route.path === '/galgames' ? route.query : {}
+
   navigateTo({
-    path: route.path,
+    path: '/galgames',
     query: {
-      ...route.query,
+      ...carriedQuery,
       q: normalizedQuery || undefined
     }
   })
