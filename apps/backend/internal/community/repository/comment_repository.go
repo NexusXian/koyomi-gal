@@ -60,7 +60,7 @@ func (r *CommentRepository) Delete(ctx context.Context, id uint) (bool, error) {
 
 func (r *CommentRepository) FindByID(ctx context.Context, id uint) (*model.Comment, error) {
 	var comment model.Comment
-	err := r.db.WithContext(ctx).First(&comment, id).Error
+	err := r.withAuthorName(r.db.WithContext(ctx)).First(&comment, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -68,6 +68,14 @@ func (r *CommentRepository) FindByID(ctx context.Context, id uint) (*model.Comme
 		return nil, fmt.Errorf("find comment by id: %w", err)
 	}
 	return &comment, nil
+}
+
+// withAuthorName joins the comment author's username for display.
+func (r *CommentRepository) withAuthorName(query *gorm.DB) *gorm.DB {
+	return query.
+		Model(&model.Comment{}).
+		Select("comments.*, authors.username AS author_name").
+		Joins("LEFT JOIN users AS authors ON authors.id = comments.author_id")
 }
 
 // ListTopLevelByPost returns one page of top-level comments plus the total
@@ -88,7 +96,7 @@ func (r *CommentRepository) ListTopLevelByPost(
 	}
 
 	var comments []model.Comment
-	err := base().
+	err := r.withAuthorName(base()).
 		Order("comments.id ASC").
 		Offset((page - 1) * limit).
 		Limit(limit).
@@ -141,7 +149,7 @@ func (r *CommentRepository) ListRepliesByParentID(
 		return nil, 0, fmt.Errorf("count comment replies: %w", err)
 	}
 	var replies []model.Comment
-	err := base().
+	err := r.withAuthorName(base()).
 		Order("comments.id ASC").
 		Offset((page - 1) * limit).
 		Limit(limit).

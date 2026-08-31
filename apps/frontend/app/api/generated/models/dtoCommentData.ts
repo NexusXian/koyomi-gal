@@ -8,6 +8,7 @@
 
 export interface DtoCommentData {
   author_id?: number;
+  author_name?: string;
   content?: string;
   created_at?: string;
   id?: number;

@@ -162,7 +162,7 @@ async function removeComment(): Promise<void> {
       <div class="comment-body">
         <div class="comment-head">
           <span class="comment-author">
-            用户 #{{ comment.author_id ?? '未知' }}
+            {{ comment.author_name || (comment.author_id ? `用户 #${comment.author_id}` : '未知') }}
           </span>
           <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
         </div>

@@ -26,7 +26,9 @@ type PostQuery struct {
 type PostData struct {
 	ID            uint      `json:"id" example:"1"`
 	GalgameID     *uint     `json:"galgame_id" example:"1"`
+	GalgameTitle  string    `json:"galgame_title" example:"千恋＊万花"`
 	AuthorID      *uint     `json:"author_id" example:"1"`
+	AuthorName    string    `json:"author_name" example:"koyomi"`
 	Title         string    `json:"title" example:"千恋＊万花通关感想"`
 	Content       string    `json:"content" example:"剧情感想……"`
 	LikeCount     int64     `json:"like_count" example:"10"`
@@ -59,7 +61,9 @@ func NewPostData(post *model.Post) PostData {
 	return PostData{
 		ID:            post.ID,
 		GalgameID:     post.GalgameID,
+		GalgameTitle:  post.GalgameTitle,
 		AuthorID:      post.AuthorID,
+		AuthorName:    post.AuthorName,
 		Title:         post.Title,
 		Content:       post.Content,
 		LikeCount:     post.LikeCount,

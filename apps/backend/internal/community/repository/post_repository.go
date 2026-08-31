@@ -67,7 +67,7 @@ func (r *PostRepository) Delete(ctx context.Context, id uint) (bool, error) {
 
 func (r *PostRepository) FindByID(ctx context.Context, id uint) (*model.Post, error) {
 	var post model.Post
-	err := r.db.WithContext(ctx).First(&post, id).Error
+	err := r.withNames(r.db.WithContext(ctx)).First(&post, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -75,6 +75,15 @@ func (r *PostRepository) FindByID(ctx context.Context, id uint) (*model.Post, er
 		return nil, fmt.Errorf("find post by id: %w", err)
 	}
 	return &post, nil
+}
+
+// withNames joins author usernames and galgame titles for display.
+func (r *PostRepository) withNames(query *gorm.DB) *gorm.DB {
+	return query.
+		Model(&model.Post{}).
+		Select("posts.*, users.username AS author_name, galgames.title AS galgame_title").
+		Joins("LEFT JOIN users ON users.id = posts.author_id").
+		Joins("LEFT JOIN galgames ON galgames.id = posts.galgame_id")
 }
 
 func (r *PostRepository) List(ctx context.Context, options PostListOptions) ([]model.Post, int64, error) {
@@ -88,7 +97,7 @@ func (r *PostRepository) List(ctx context.Context, options PostListOptions) ([]m
 	}
 
 	var posts []model.Post
-	err := query.
+	err := r.withNames(query).
 		Order("posts.id DESC").
 		Offset((options.Page - 1) * options.Limit).
 		Limit(options.Limit).

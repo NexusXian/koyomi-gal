@@ -29,6 +29,7 @@ type CommentData struct {
 	ID            uint      `json:"id" example:"1"`
 	PostID        uint      `json:"post_id" example:"1"`
 	AuthorID      *uint     `json:"author_id" example:"1"`
+	AuthorName    string    `json:"author_name" example:"koyomi"`
 	ParentID      *uint     `json:"parent_id" example:"1"`
 	ReplyToUserID *uint     `json:"reply_to_user_id" example:"2"`
 	Content       string    `json:"content" example:"同感！"`
@@ -95,6 +96,7 @@ func NewCommentData(comment *model.Comment, replyCount int64) CommentData {
 		ID:            comment.ID,
 		PostID:        comment.PostID,
 		AuthorID:      comment.AuthorID,
+		AuthorName:    comment.AuthorName,
 		ParentID:      comment.ParentID,
 		ReplyToUserID: comment.ReplyToUserID,
 		Content:       comment.Content,

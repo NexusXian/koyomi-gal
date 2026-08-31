@@ -64,6 +64,9 @@ definitions:
       author_id:
         example: 1
         type: integer
+      author_name:
+        example: koyomi
+        type: string
       content:
         example: 同感！
         type: string
@@ -716,6 +719,9 @@ definitions:
       author_id:
         example: 1
         type: integer
+      author_name:
+        example: koyomi
+        type: string
       comment_count:
         example: 3
         type: integer
@@ -730,6 +736,9 @@ definitions:
       galgame_id:
         example: 1
         type: integer
+      galgame_title:
+        example: 千恋＊万花
+        type: string
       id:
         example: 1
         type: integer

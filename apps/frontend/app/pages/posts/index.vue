@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { listPosts } from '~/api/generated/posts/posts'
+import { getGalgame } from '~/api/generated/galgames/galgames'
 import type { DtoPostListData } from '~/api/generated/models'
 import { formatDate } from '~/constants/domain'
 
@@ -38,6 +39,23 @@ const { data: listData, pending } = await useAsyncData<
 const items = computed(() => listData.value?.items ?? [])
 const total = computed(() => listData.value?.total ?? 0)
 const totalPage = computed(() => Math.max(1, Math.ceil(total.value / limit)))
+
+const galgameTitle = ref('')
+
+async function loadGalgameTitle(): Promise<void> {
+  if (!galgameId.value) {
+    galgameTitle.value = ''
+    return
+  }
+  try {
+    const data = unwrapApiData(await getGalgame(galgameId.value))
+    galgameTitle.value = data.title ?? ''
+  } catch {
+    galgameTitle.value = ''
+  }
+}
+
+watch(galgameId, () => void loadGalgameTitle(), { immediate: true })
 
 const { isAuthenticated } = storeToRefs(useUserStore())
 
@@ -80,7 +98,7 @@ function updatePage(next: number): void {
 
     <div v-if="galgameId" class="filter-row">
       <a-tag closable @close.prevent="galgameId = undefined">
-        仅显示 Galgame #{{ galgameId }} 的帖子
+        仅显示 {{ galgameTitle || `Galgame #${galgameId}` }} 的帖子
       </a-tag>
     </div>
 
@@ -108,7 +126,7 @@ function updatePage(next: number): void {
           <div class="post-meta">
             <span class="post-author">
               <KunIcon name="lucide:user-round" />
-              用户 #{{ post.author_id ?? '未知' }}
+              {{ post.author_name || (post.author_id ? `用户 #${post.author_id}` : '未知') }}
             </span>
             <span class="post-item">
               <KunIcon name="lucide:calendar" />

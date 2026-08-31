@@ -4338,6 +4338,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "author_name": {
+                    "type": "string",
+                    "example": "koyomi"
+                },
                 "content": {
                     "type": "string",
                     "example": "同感！"
@@ -5246,6 +5250,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "author_name": {
+                    "type": "string",
+                    "example": "koyomi"
+                },
                 "comment_count": {
                     "type": "integer",
                     "example": 3
@@ -5264,6 +5272,10 @@ const docTemplate = `{
                 "galgame_id": {
                     "type": "integer",
                     "example": 1
+                },
+                "galgame_title": {
+                    "type": "string",
+                    "example": "千恋＊万花"
                 },
                 "id": {
                     "type": "integer",

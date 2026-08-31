@@ -8,11 +8,13 @@
 
 export interface DtoPostData {
   author_id?: number;
+  author_name?: string;
   comment_count?: number;
   content?: string;
   created_at?: string;
   favorite_count?: number;
   galgame_id?: number;
+  galgame_title?: string;
   id?: number;
   like_count?: number;
   title?: string;

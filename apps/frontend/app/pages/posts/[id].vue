@@ -212,7 +212,7 @@ onMounted(() => {
         <div class="post-meta">
           <span>
             <KunIcon name="lucide:user-round" />
-            用户 #{{ post?.author_id ?? '未知' }}
+            {{ post?.author_name || (post?.author_id ? `用户 #${post.author_id}` : '未知') }}
           </span>
           <span>
             <KunIcon name="lucide:calendar" />
@@ -221,7 +221,7 @@ onMounted(() => {
           <span v-if="post?.galgame_id">
             <KunIcon name="lucide:gamepad-2" />
             <NuxtLink :to="`/galgames/${post.galgame_id}`">
-              Galgame #{{ post.galgame_id }}
+              {{ post.galgame_title || `Galgame #${post.galgame_id}` }}
             </NuxtLink>
           </span>
         </div>

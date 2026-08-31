@@ -13,6 +13,9 @@ type Post struct {
 	FavoriteCount int64     `gorm:"not null" json:"favorite_count"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+	// Filled by repository joins, never written to the database.
+	AuthorName   string `gorm:"->" json:"author_name"`
+	GalgameTitle string `gorm:"->" json:"galgame_title"`
 }
 
 // Comment uses a two-level display structure: parent_id always references a
@@ -28,6 +31,8 @@ type Comment struct {
 	LikeCount     int64     `gorm:"not null" json:"like_count"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+	// Filled by repository joins, never written to the database.
+	AuthorName string `gorm:"->" json:"author_name"`
 }
 
 type PostLike struct {
