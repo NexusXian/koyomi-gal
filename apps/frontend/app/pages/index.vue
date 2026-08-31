@@ -21,7 +21,7 @@ const highlights = [
 ]
 
 function openSandbox() {
-  navigateTo('/test')
+  navigateTo('/galgames')
 }
 </script>
 
@@ -44,7 +44,7 @@ function openSandbox() {
 
           <div class="hero-actions">
             <KunButton color="primary" @click="openSandbox">
-              打开沙盒
+              浏览 Galgame
               <KunIcon name="lucide:arrow-right" />
             </KunButton>
             <KunButton color="default" variant="bordered" href="#features">

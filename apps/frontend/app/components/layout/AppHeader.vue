@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import { message } from 'ant-design-vue'
 
 defineProps<{
   isDark: boolean
@@ -12,10 +13,13 @@ defineEmits<{
 }>()
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const { user, isAuthenticated } = storeToRefs(userStore)
+const { logout } = useAuth()
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const mobileSearchOpen = ref(false)
+const loggingOut = ref(false)
 const brandIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#g)"/><text x="20" y="27" font-size="20" font-weight="700" fill="#fff" text-anchor="middle" font-family="sans-serif">K</text></svg>'
 )}`
@@ -29,6 +33,21 @@ const avatarUser = computed(() =>
       }
     : null
 )
+
+async function handleAccountAction({ key }: { key: string | number }): Promise<void> {
+  if (key === 'logout') {
+    loggingOut.value = true
+    try {
+      await logout()
+      message.success('已退出登录')
+      void router.push('/')
+    } catch {
+      message.error('退出失败，请重试')
+    } finally {
+      loggingOut.value = false
+    }
+  }
+}
 
 function submitSearch() {
   const normalizedQuery = query.value.trim()
@@ -131,23 +150,29 @@ watch(
         </KunTooltip>
 
         <template v-if="isAuthenticated">
-          <div class="account" :title="user?.username">
-            <KunAvatar :user="avatarUser" :is-navigation="false" size="sm" />
-            <span class="account-name">{{ user?.username }}</span>
-          </div>
-
-          <KunTooltip text="设置" position="bottom">
-            <KunButton
-              color="default"
-              variant="light"
-              size="sm"
-              rounded="full"
-              :is-icon-only="true"
-              aria-label="设置"
-            >
-              <KunIcon name="lucide:settings" />
-            </KunButton>
-          </KunTooltip>
+          <a-dropdown>
+            <div class="account" :title="user?.username">
+              <KunAvatar :user="avatarUser" :is-navigation="false" size="sm" />
+              <span class="account-name">{{ user?.username }}</span>
+            </div>
+            <template #overlay>
+              <a-menu @click="handleAccountAction">
+                <a-menu-item key="galgames" disabled>
+                  <span class="menu-item-label">
+                    <KunIcon name="lucide:gamepad-2" />
+                    我的 Galgame
+                  </span>
+                </a-menu-item>
+                <a-menu-divider />
+                <a-menu-item key="logout" :disabled="loggingOut">
+                  <span class="menu-item-label menu-item-danger">
+                    <KunIcon name="lucide:log-out" />
+                    {{ loggingOut ? '退出中...' : '退出登录' }}
+                  </span>
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
         </template>
 
         <template v-else>
@@ -248,6 +273,18 @@ watch(
   min-width: 0;
   gap: 8px;
   padding-left: 2px;
+  border-radius: var(--radius-kun-md);
+  cursor: pointer;
+}
+
+.menu-item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-item-danger {
+  color: var(--color-danger);
 }
 
 .account-name {

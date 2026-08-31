@@ -5,13 +5,16 @@ export default defineNuxtConfig({
   extends: ['@kungal/ui-nuxt'],
   modules: ['@pinia/nuxt'],
   components: [{ path: '~/components', pathPrefix: false }],
-  css: ['~/assets/css/main.css'],
+  css: ['ant-design-vue/dist/reset.css', '~/assets/css/main.css'],
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   runtimeConfig: {
     public: {
       apiBase: ''
     }
+  },
+  routeRules: {
+    '/admin/**': { ssr: false }
   },
   vite: { plugins: [tailwindcss()] }
 })

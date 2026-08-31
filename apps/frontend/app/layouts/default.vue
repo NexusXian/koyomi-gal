@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 const route = useRoute()
 const navigationOpen = ref(false)
 const colorMode = useCookie<'light' | 'dark'>('koyomi-color-mode', {
@@ -6,10 +7,38 @@ const colorMode = useCookie<'light' | 'dark'>('koyomi-color-mode', {
   maxAge: 60 * 60 * 24 * 365
 })
 
-const navigationItems = [
-  { label: '首页', icon: 'lucide:house', to: '/' },
-  { label: 'galgame', icon: 'lucide:flask-conical', to: '/test' }
-]
+const { isAuthenticated } = storeToRefs(useUserStore())
+const { load: loadPermissions, hasAny } = usePermissions()
+
+watchEffect(() => {
+  if (isAuthenticated.value) {
+    void loadPermissions()
+  }
+})
+
+const navigationItems = computed(() => {
+  const items = [
+    { label: '首页', icon: 'lucide:house', to: '/' },
+    { label: 'galgame', icon: 'lucide:gamepad-2', to: '/galgames' },
+    { label: '帖子', icon: 'lucide:message-square-text', to: '/posts' }
+  ]
+
+  if (
+    isAuthenticated.value &&
+    hasAny([
+      'galgame:review',
+      'resource_report:list',
+      'galgame:update',
+      'role:list',
+      'permission:list',
+      'role:assign'
+    ])
+  ) {
+    items.push({ label: '管理', icon: 'lucide:shield', to: '/admin/galgames' })
+  }
+
+  return items
+})
 
 const isDark = computed(() => colorMode.value === 'dark')
 
