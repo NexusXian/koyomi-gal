@@ -183,11 +183,11 @@ func TestResourcePublicQueriesOnlyPublished(t *testing.T) {
 	env.createResource(t, uploader, galgameID, "hidden", model.ResourceStatusHidden,
 		"https://example.com/r")
 
-	items, err := env.resources.ListPublishedByGalgame(ctx, galgameID)
+	items, total, page, limit, err := env.resources.ListPublishedByGalgame(ctx, galgameID, 0, 0)
 	if err != nil {
 		t.Fatalf("list published resources: %v", err)
 	}
-	if len(items) != 1 || items[0].ID != published.ID || len(items[0].Links) != 1 {
+	if total != 1 || page != 1 || limit != 20 || len(items) != 1 || items[0].ID != published.ID || len(items[0].Links) != 1 {
 		t.Fatalf("expected only the published resource with links, got %+v", items)
 	}
 
@@ -207,7 +207,7 @@ func TestResourcePublicQueriesOnlyPublished(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create pending galgame: %v", err)
 	}
-	if _, err := env.resources.ListPublishedByGalgame(ctx, pendingGalgame.ID); !errors.Is(err, ErrGalgameNotFound) {
+	if _, _, _, _, err := env.resources.ListPublishedByGalgame(ctx, pendingGalgame.ID, 1, 20); !errors.Is(err, ErrGalgameNotFound) {
 		t.Fatalf("expected ErrGalgameNotFound for pending galgame, got %v", err)
 	}
 }

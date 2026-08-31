@@ -25,27 +25,41 @@ func NewResourceHandler(resourceService *service.ResourceService) *ResourceHandl
 
 // ListGalgameResources godoc
 // @Summary      查看 Galgame 资源列表
-// @Description  返回 Galgame 下全部已发布资源及其链接
+// @Description  分页返回 Galgame 下已发布资源及其链接
 // @ID           listGalgameResources
 // @Tags         resources
 // @Produce      json
 // @Param        id path int true "Galgame ID"
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
 // @Success      200 {object} dto.ResourceListResponse "资源列表"
-// @Failure      400 {object} response.ErrorResponse "Galgame ID 格式不正确"
+// @Failure      400 {object} response.ErrorResponse "参数格式不正确"
 // @Failure      404 {object} response.ErrorResponse "Galgame 不存在"
 // @Failure      500 {object} response.ErrorResponse "查询资源失败"
-// @Router       /api/v1/galgames/{id}/resources [get]
+// @Router       /api/v2/galgames/{id}/resources [get]
 func (h *ResourceHandler) ListGalgameResources(c *gin.Context) {
 	galgameID, ok := parseResourceID(c, "Galgame")
 	if !ok {
 		return
 	}
-	resources, err := h.resourceService.ListPublishedByGalgame(c.Request.Context(), galgameID)
+	var query dto.ResourceQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	resources, total, page, limit, err := h.resourceService.ListPublishedByGalgame(
+		c.Request.Context(), galgameID, query.Page, query.Limit,
+	)
 	if err != nil {
 		h.respondResourceError(c, err, "list galgame resources")
 		return
 	}
-	response.Ok(c, dto.NewResourceListData(resources))
+	response.Ok(c, dto.ResourceListData{
+		Items: dto.NewResourceListData(resources),
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	})
 }
 
 // GetResource godoc

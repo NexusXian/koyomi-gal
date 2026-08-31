@@ -12,7 +12,12 @@ import {
   createComment,
   listPostComments
 } from '~/api/generated/comments/comments'
-import type { DtoCommentData, DtoCommentListData, DtoPostData } from '~/api/generated/models'
+import type {
+  DtoCommentData,
+  DtoCommentListData,
+  DtoCreateCommentRequest,
+  DtoPostData
+} from '~/api/generated/models'
 import { formatDate } from '~/constants/domain'
 
 const route = useRoute()
@@ -89,6 +94,14 @@ function updateCommentPage(next: number): void {
   void loadComments()
 }
 
+async function refreshComments(): Promise<void> {
+  await loadComments()
+  if (comments.value.length === 0 && commentPage.value > 1) {
+    commentPage.value = Math.max(1, commentTotalPage.value)
+    await loadComments()
+  }
+}
+
 async function toggleLike(): Promise<void> {
   if (!isAuthenticated.value) {
     message.warning('登录后才能点赞')
@@ -139,11 +152,22 @@ async function submitComment(): Promise<void> {
 
   commentSubmitting.value = true
   try {
-    await createComment(postId.value, {
-      content,
-      parent_id: replyTarget.value?.id
-    })
+    const request: DtoCreateCommentRequest = { content }
+    if (replyTarget.value?.id) {
+      if (replyTarget.value.parent_id) {
+        request.reply_to_comment_id = replyTarget.value.id
+      } else {
+        request.parent_id = replyTarget.value.id
+      }
+    }
+    await createComment(postId.value, request)
     message.success('评论已发布')
+    if (!replyTarget.value) {
+      commentPage.value = Math.max(
+        1,
+        Math.ceil((commentTotal.value + 1) / commentLimit)
+      )
+    }
     commentContent.value = ''
     replyTarget.value = null
     await loadComments()
@@ -302,7 +326,7 @@ onMounted(() => {
             v-for="comment in comments"
             :key="comment.id"
             :comment="comment"
-            @refresh="loadComments"
+            @refresh="refreshComments"
             @reply="setReply"
           />
         </div>

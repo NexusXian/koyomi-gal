@@ -11,6 +11,7 @@ import type {
   DtoCommentListResponse,
   DtoCreateCommentRequest,
   DtoUpdateCommentRequest,
+  ListCommentRepliesParams,
   ListPostCommentsParams,
   ResponseMessageResponse
 } from '../models';
@@ -120,39 +121,6 @@ export const unlikeComment = async (id: number, options?: Parameters<typeof apiM
 );}
 
 
-export const getListPostCommentsUrl = (id: number,
-    params?: ListPostCommentsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/posts/${id}/comments?${stringifiedParams}` : `/api/v1/posts/${id}/comments`
-}
-
-/**
- * 分页返回帖子的一级评论及其回复（两级结构）
- * @summary 查看帖子评论
- */
-export const listPostComments = async (id: number,
-    params?: ListPostCommentsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCommentListResponse> => {
-
-  return apiMutator<DtoCommentListResponse>(getListPostCommentsUrl(id,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
 export const getCreateCommentUrl = (id: number,) => {
 
 
@@ -180,6 +148,72 @@ return apiMutator<DtoCommentDataResponse>(getCreateCommentUrl(id),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoCreateCommentRequest)
+  }
+);}
+
+
+export const getListCommentRepliesUrl = (id: number,
+    params?: ListCommentRepliesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/comments/${id}/replies?${stringifiedParams}` : `/api/v2/comments/${id}/replies`
+}
+
+/**
+ * 分页返回一级评论下的回复
+ * @summary 查看评论回复
+ */
+export const listCommentReplies = async (id: number,
+    params?: ListCommentRepliesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCommentListResponse> => {
+
+  return apiMutator<DtoCommentListResponse>(getListCommentRepliesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListPostCommentsUrl = (id: number,
+    params?: ListPostCommentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/posts/${id}/comments?${stringifiedParams}` : `/api/v2/posts/${id}/comments`
+}
+
+/**
+ * 分页返回帖子的一级评论及回复数量
+ * @summary 查看帖子评论
+ */
+export const listPostComments = async (id: number,
+    params?: ListPostCommentsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCommentListResponse> => {
+
+  return apiMutator<DtoCommentListResponse>(getListPostCommentsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 

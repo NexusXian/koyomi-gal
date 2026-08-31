@@ -87,16 +87,28 @@ func (r *ResourceRepository) findByID(ctx context.Context, id uint, publishedOnl
 func (r *ResourceRepository) ListPublishedByGalgame(
 	ctx context.Context,
 	galgameID uint,
-) ([]model.Resource, error) {
+	page, limit int,
+) ([]model.Resource, int64, error) {
+	base := func() *gorm.DB {
+		return r.db.WithContext(ctx).
+			Model(&model.Resource{}).
+			Where("galgame_id = ? AND status = ?", galgameID, model.ResourceStatusPublished)
+	}
+	var total int64
+	if err := base().Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count published resources: %w", err)
+	}
+
 	var resources []model.Resource
-	err := r.withLinks(r.db.WithContext(ctx)).
-		Where("galgame_id = ? AND status = ?", galgameID, model.ResourceStatusPublished).
+	err := r.withLinks(base()).
 		Order("resources.id DESC").
+		Offset((page - 1) * limit).
+		Limit(limit).
 		Find(&resources).Error
 	if err != nil {
-		return nil, fmt.Errorf("list published resources: %w", err)
+		return nil, 0, fmt.Errorf("list published resources: %w", err)
 	}
-	return resources, nil
+	return resources, total, nil
 }
 
 type ResourceListOptions struct {

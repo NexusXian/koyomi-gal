@@ -5,10 +5,10 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
-import type { DtoResourceData } from './dtoResourceData';
+import type { DtoResourceListData } from './dtoResourceListData';
 
 export interface DtoResourceListResponse {
   code?: number;
-  data?: DtoResourceData[];
+  data?: DtoResourceListData;
   msg?: string;
 }

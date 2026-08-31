@@ -45,17 +45,27 @@ func NewResourceService(
 	return &ResourceService{resources: resources, galgames: galgames, rbac: rbac}
 }
 
-// ListPublishedByGalgame returns the galgame's published resources with links.
-func (s *ResourceService) ListPublishedByGalgame(ctx context.Context, galgameID uint) ([]model.Resource, error) {
+// ListPublishedByGalgame returns one page of the galgame's published resources with links.
+func (s *ResourceService) ListPublishedByGalgame(
+	ctx context.Context,
+	galgameID uint,
+	page, limit int,
+) ([]model.Resource, int64, int, int, error) {
 	if err := s.ensurePublishedGalgame(ctx, galgameID); err != nil {
-		return nil, err
+		return nil, 0, page, limit, err
 	}
-	resources, err := s.resources.ListPublishedByGalgame(ctx, galgameID)
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 20
+	}
+	resources, total, err := s.resources.ListPublishedByGalgame(ctx, galgameID, page, limit)
 	if err != nil {
 		logger.Error("list published resources", zap.Uint("galgame_id", galgameID), zap.Error(err))
-		return nil, err
+		return nil, 0, page, limit, err
 	}
-	return resources, nil
+	return resources, total, page, limit, nil
 }
 
 // GetPublishedResource returns a published resource with links.

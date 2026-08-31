@@ -16,7 +16,8 @@ import type {
   DtoGalgameListData,
   DtoGalgameResponse,
   DtoPostListData,
-  DtoResourceData
+  DtoResourceData,
+  DtoResourceListData
 } from '~/api/generated/models'
 import {
   AGE_RATINGS,
@@ -57,6 +58,10 @@ useSeoMeta({
 })
 
 const resources = ref<DtoResourceData[]>([])
+const resourceTotal = ref(0)
+const resourcePage = ref(1)
+const resourceLimit = 20
+const resourcesLoading = ref(false)
 const relatedPosts = ref<DtoPostListData['items']>([])
 const relationLoaded = ref(false)
 const favorited = ref(false)
@@ -76,12 +81,37 @@ const postsLink = computed(
   () => `/posts?galgame_id=${galgameId.value}`
 )
 
+const resourceTotalPage = computed(() =>
+  Math.max(1, Math.ceil(resourceTotal.value / resourceLimit))
+)
+
 async function loadResources(): Promise<void> {
+  resourcesLoading.value = true
   try {
-    resources.value = unwrapApiData(await listGalgameResources(galgameId.value)) ?? []
+    const data = unwrapApiData<DtoResourceListData>(
+      await listGalgameResources(galgameId.value, {
+        page: resourcePage.value,
+        limit: resourceLimit
+      })
+    )
+    resources.value = data.items ?? []
+    resourceTotal.value = data.total ?? 0
   } catch {
     resources.value = []
+    resourceTotal.value = 0
+  } finally {
+    resourcesLoading.value = false
   }
+}
+
+function updateResourcePage(next: number): void {
+  resourcePage.value = next
+  void loadResources()
+}
+
+function handleResourceCreated(): void {
+  resourcePage.value = 1
+  void loadResources()
 }
 
 async function loadRelation(): Promise<void> {
@@ -460,7 +490,7 @@ onMounted(() => {
       <div class="section-head-row">
         <KunHeader
           name="资源"
-          :description="`共 ${resources.length} 个资源`"
+          :description="`共 ${resourceTotal} 个资源`"
           scale="h3"
           class="section-heading"
         />
@@ -475,59 +505,70 @@ onMounted(() => {
         </KunButton>
       </div>
 
-      <KunNull v-if="resources.length === 0" message="暂无资源" />
+      <a-spin :spinning="resourcesLoading">
+        <KunNull v-if="resources.length === 0" message="暂无资源" />
 
-      <div v-else class="resource-list">
-        <div v-for="resource in resources" :key="resource.id" class="resource-item">
-          <div class="resource-head">
-            <KunChip variant="flat" size="sm">
-              {{ domainLabel(RESOURCE_TYPES, resource.type) }}
-            </KunChip>
-            <h4 class="resource-title">{{ resource.title }}</h4>
-            <a-tag
-              v-if="resource.status !== undefined && resource.status !== 1"
-              :color="GALGAME_STATUS[resource.status]?.color"
-            >
-              {{ domainLabel(GALGAME_STATUS, resource.status) }}
-            </a-tag>
-          </div>
-
-          <p v-if="resource.description" class="resource-description">
-            {{ resource.description }}
-          </p>
-
-          <ul class="resource-links">
-            <li v-for="link in resource.links" :key="link.id">
-              <KunCopy :text="link.url ?? ''">
-                <span class="resource-link-url">{{ link.url }}</span>
-              </KunCopy>
-              <a
-                v-if="link.url"
-                :href="link.url"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                class="resource-link-open"
+        <div v-else class="resource-list">
+          <div v-for="resource in resources" :key="resource.id" class="resource-item">
+            <div class="resource-head">
+              <KunChip variant="flat" size="sm">
+                {{ domainLabel(RESOURCE_TYPES, resource.type) }}
+              </KunChip>
+              <h4 class="resource-title">{{ resource.title }}</h4>
+              <a-tag
+                v-if="resource.status !== undefined && resource.status !== 1"
+                :color="GALGAME_STATUS[resource.status]?.color"
               >
-                <KunIcon name="lucide:external-link" />
-                打开
-              </a>
-            </li>
-          </ul>
+                {{ domainLabel(GALGAME_STATUS, resource.status) }}
+              </a-tag>
+            </div>
 
-          <div class="resource-actions">
-            <a-button size="small" danger @click="openReport(resource.id ?? 0)">
-              <template #icon><KunIcon name="lucide:flag" /></template>
-              举报
-            </a-button>
+            <p v-if="resource.description" class="resource-description">
+              {{ resource.description }}
+            </p>
+
+            <ul class="resource-links">
+              <li v-for="link in resource.links" :key="link.id">
+                <KunCopy :text="link.url ?? ''">
+                  <span class="resource-link-url">{{ link.url }}</span>
+                </KunCopy>
+                <a
+                  v-if="link.url"
+                  :href="link.url"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  class="resource-link-open"
+                >
+                  <KunIcon name="lucide:external-link" />
+                  打开
+                </a>
+              </li>
+            </ul>
+
+            <div class="resource-actions">
+              <a-button size="small" danger @click="openReport(resource.id ?? 0)">
+                <template #icon><KunIcon name="lucide:flag" /></template>
+                举报
+              </a-button>
+            </div>
           </div>
         </div>
-      </div>
+
+        <div v-if="resourceTotalPage > 1" class="resource-pagination">
+          <KunPagination
+            :current-page="resourcePage"
+            :total-page="resourceTotalPage"
+            :is-loading="resourcesLoading"
+            @update:current-page="updateResourcePage"
+          />
+        </div>
+      </a-spin>
     </KunCard>
 
     <ResourceUploadModal
       v-model:open="uploadOpen"
       :galgame-id="galgameId"
-      @created="loadResources"
+      @created="handleResourceCreated"
     />
 
     <ResourceReportModal
@@ -861,6 +902,12 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 8px;
+}
+
+.resource-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 @media (min-width: 768px) {

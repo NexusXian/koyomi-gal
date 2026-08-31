@@ -78,7 +78,8 @@ func newCommunityHandlerEnv(t *testing.T) *communityHandlerEnv {
 	router := gin.New()
 	router.GET("/api/v1/posts", postHandler.ListPosts)
 	router.GET("/api/v1/posts/:id", postHandler.GetPost)
-	router.GET("/api/v1/posts/:id/comments", commentHandler.ListPostComments)
+	router.GET("/api/v2/posts/:id/comments", commentHandler.ListPostComments)
+	router.GET("/api/v2/comments/:id/replies", commentHandler.ListCommentReplies)
 
 	protected := router.Group("/api/v1", middleware.Auth(testAuthSecret))
 	{
@@ -143,7 +144,7 @@ func TestCommunityEndpointsRequireAuth(t *testing.T) {
 	if res.Code != http.StatusOK {
 		t.Fatalf("public post list: expected 200, got %d", res.Code)
 	}
-	res = doCommunityRequest(env.router, http.MethodGet, "/api/v1/posts/999999/comments", "", nil)
+	res = doCommunityRequest(env.router, http.MethodGet, "/api/v2/posts/999999/comments", "", nil)
 	if res.Code != http.StatusNotFound {
 		t.Fatalf("comments of unknown post: expected 404, got %d", res.Code)
 	}
@@ -229,7 +230,8 @@ func TestCommunityEndpointsFlow(t *testing.T) {
 		t.Fatalf("like comment: expected 200, got %d", res.Code)
 	}
 
-	res = doCommunityRequest(env.router, http.MethodGet, postPath+"/comments", "", nil)
+	res = doCommunityRequest(env.router, http.MethodGet,
+		"/api/v2/posts/"+strconv.FormatUint(uint64(created.Data.ID), 10)+"/comments", "", nil)
 	if res.Code != http.StatusOK {
 		t.Fatalf("list comments: expected 200, got %d", res.Code)
 	}
@@ -240,11 +242,23 @@ func TestCommunityEndpointsFlow(t *testing.T) {
 	if err := json.Unmarshal(res.Body.Bytes(), &listed); err != nil {
 		t.Fatalf("decode comment list response: %v", err)
 	}
-	if len(listed.Data.Items) != 1 || len(listed.Data.Items[0].Replies) != 1 {
-		t.Fatalf("expected one thread with one reply, got %+v", listed.Data)
+	if len(listed.Data.Items) != 1 || listed.Data.Items[0].ReplyCount != 1 {
+		t.Fatalf("expected one thread with one reply count, got %+v", listed.Data)
 	}
-	if listed.Data.Items[0].Replies[0].LikeCount != 1 {
-		t.Fatalf("expected reply like_count 1, got %d", listed.Data.Items[0].Replies[0].LikeCount)
+	res = doCommunityRequest(env.router, http.MethodGet,
+		"/api/v2/comments/"+strconv.FormatUint(uint64(topComment.Data.ID), 10)+"/replies", "", nil)
+	if res.Code != http.StatusOK {
+		t.Fatalf("list replies: expected 200, got %d", res.Code)
+	}
+	var replyList struct {
+		Code int                 `json:"code"`
+		Data dto.CommentListData `json:"data"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &replyList); err != nil {
+		t.Fatalf("decode reply list response: %v", err)
+	}
+	if replyList.Data.Total != 1 || len(replyList.Data.Items) != 1 || replyList.Data.Items[0].LikeCount != 1 {
+		t.Fatalf("expected one liked reply, got %+v", replyList.Data)
 	}
 
 	res = doCommunityRequest(env.router, http.MethodPut, postPath, strangerToken, map[string]any{

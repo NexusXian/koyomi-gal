@@ -12,34 +12,11 @@ import type {
   DtoResourceListResponse,
   DtoResourceReportDataResponse,
   DtoUpdateResourceRequest,
+  ListGalgameResourcesParams,
   ResponseMessageResponse
 } from '../models';
 
 import { apiMutator } from '../../mutator';
-
-export const getListGalgameResourcesUrl = (id: number,) => {
-
-
-
-
-  return `/api/v1/galgames/${id}/resources`
-}
-
-/**
- * 返回 Galgame 下全部已发布资源及其链接
- * @summary 查看 Galgame 资源列表
- */
-export const listGalgameResources = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoResourceListResponse> => {
-
-  return apiMutator<DtoResourceListResponse>(getListGalgameResourcesUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
 
 export const getCreateResourceUrl = () => {
 
@@ -177,6 +154,39 @@ return apiMutator<DtoResourceReportDataResponse>(getCreateResourceReportUrl(id),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoCreateResourceReportRequest)
+  }
+);}
+
+
+export const getListGalgameResourcesUrl = (id: number,
+    params?: ListGalgameResourcesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/galgames/${id}/resources?${stringifiedParams}` : `/api/v2/galgames/${id}/resources`
+}
+
+/**
+ * 分页返回 Galgame 下已发布资源及其链接
+ * @summary 查看 Galgame 资源列表
+ */
+export const listGalgameResources = async (id: number,
+    params?: ListGalgameResourcesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoResourceListResponse> => {
+
+  return apiMutator<DtoResourceListResponse>(getListGalgameResourcesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 

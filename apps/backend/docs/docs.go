@@ -1860,54 +1860,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/galgames/{id}/resources": {
-            "get": {
-                "description": "返回 Galgame 下全部已发布资源及其链接",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "resources"
-                ],
-                "summary": "查看 Galgame 资源列表",
-                "operationId": "listGalgameResources",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Galgame ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "资源列表",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ResourceListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Galgame ID 格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Galgame 不存在",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "查询资源失败",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/galgames/{id}/state": {
             "put": {
                 "security": [
@@ -2624,66 +2576,6 @@ const docTemplate = `{
             }
         },
         "/api/v1/posts/{id}/comments": {
-            "get": {
-                "description": "分页返回帖子的一级评论及其回复（两级结构）",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "comments"
-                ],
-                "summary": "查看帖子评论",
-                "operationId": "listPostComments",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "帖子 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "页码（按一级评论分页）",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "每页数量，最大 100",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "评论列表",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CommentListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "参数格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "帖子不存在",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "查询评论失败",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -4144,6 +4036,192 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v2/comments/{id}/replies": {
+            "get": {
+                "description": "分页返回一级评论下的回复",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "查看评论回复",
+                "operationId": "listCommentReplies",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "一级评论 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "回复列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommentListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "评论不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询回复失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/galgames/{id}/resources": {
+            "get": {
+                "description": "分页返回 Galgame 下已发布资源及其链接",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "查看 Galgame 资源列表",
+                "operationId": "listGalgameResources",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ResourceListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/posts/{id}/comments": {
+            "get": {
+                "description": "分页返回帖子的一级评论及回复数量",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "查看帖子评论",
+                "operationId": "listPostComments",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "帖子 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码（按一级评论分页）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "评论列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommentListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "帖子不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询评论失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "返回服务存活状态",
@@ -4283,11 +4361,9 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "replies": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CommentData"
-                    }
+                "reply_count": {
+                    "type": "integer",
+                    "example": 3
                 },
                 "reply_to_user_id": {
                     "type": "integer",
@@ -5461,6 +5537,29 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ResourceListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ResourceData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
         "dto.ResourceListResponse": {
             "type": "object",
             "properties": {
@@ -5469,10 +5568,7 @@ const docTemplate = `{
                     "example": 0
                 },
                 "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ResourceData"
-                    }
+                    "$ref": "#/definitions/dto.ResourceListData"
                 },
                 "msg": {
                     "type": "string",

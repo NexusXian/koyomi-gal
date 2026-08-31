@@ -16,12 +16,6 @@ type CommentRepository struct {
 	db *gorm.DB
 }
 
-// CommentThread pairs a top-level comment with its replies.
-type CommentThread struct {
-	Comment model.Comment
-	Replies []model.Comment
-}
-
 func NewCommentRepository(db *gorm.DB) *CommentRepository {
 	return &CommentRepository{db: db}
 }
@@ -105,29 +99,57 @@ func (r *CommentRepository) ListTopLevelByPost(
 	return comments, total, nil
 }
 
-// ListRepliesByParentIDs returns all replies of the given top-level comments
-// in one query, so building threads never triggers N+1.
-func (r *CommentRepository) ListRepliesByParentIDs(
+func (r *CommentRepository) CountRepliesByParentIDs(
 	ctx context.Context,
 	parentIDs []uint,
-) (map[uint][]model.Comment, error) {
-	replies := make(map[uint][]model.Comment, len(parentIDs))
+) (map[uint]int64, error) {
+	counts := make(map[uint]int64, len(parentIDs))
 	if len(parentIDs) == 0 {
-		return replies, nil
+		return counts, nil
 	}
-	var rows []model.Comment
+	var rows []struct {
+		ParentID uint
+		Count    int64
+	}
 	err := r.db.WithContext(ctx).
+		Model(&model.Comment{}).
+		Select("parent_id, COUNT(*) AS count").
 		Where("parent_id IN ?", parentIDs).
-		Order("comments.id ASC").
-		Find(&rows).Error
+		Group("parent_id").
+		Scan(&rows).Error
 	if err != nil {
-		return nil, fmt.Errorf("list comment replies: %w", err)
+		return nil, fmt.Errorf("count comment replies: %w", err)
 	}
-	for i := range rows {
-		parentID := *rows[i].ParentID
-		replies[parentID] = append(replies[parentID], rows[i])
+	for _, row := range rows {
+		counts[row.ParentID] = row.Count
 	}
-	return replies, nil
+	return counts, nil
+}
+
+func (r *CommentRepository) ListRepliesByParentID(
+	ctx context.Context,
+	parentID uint,
+	page, limit int,
+) ([]model.Comment, int64, error) {
+	base := func() *gorm.DB {
+		return r.db.WithContext(ctx).
+			Model(&model.Comment{}).
+			Where("parent_id = ?", parentID)
+	}
+	var total int64
+	if err := base().Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count comment replies: %w", err)
+	}
+	var replies []model.Comment
+	err := base().
+		Order("comments.id ASC").
+		Offset((page - 1) * limit).
+		Limit(limit).
+		Find(&replies).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("list comment replies: %w", err)
+	}
+	return replies, total, nil
 }
 
 // CountReplies returns the number of direct replies of a top-level comment;

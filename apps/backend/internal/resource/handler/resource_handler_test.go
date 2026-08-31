@@ -72,7 +72,7 @@ func newResourceHandlerEnv(t *testing.T) *resourceHandlerEnv {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.GET("/api/v1/galgames/:id/resources", handler.ListGalgameResources)
+	router.GET("/api/v2/galgames/:id/resources", handler.ListGalgameResources)
 	router.GET("/api/v1/resources/:id", handler.GetResource)
 
 	protected := router.Group("/api/v1/resources", middleware.Auth(testAuthSecret))
@@ -140,7 +140,7 @@ func TestResourceEndpointsAuthBoundaries(t *testing.T) {
 	}
 
 	res = doResourceRequest(env.router, http.MethodGet,
-		"/api/v1/galgames/"+strconv.FormatUint(uint64(galgame.ID), 10)+"/resources", "", nil)
+		"/api/v2/galgames/"+strconv.FormatUint(uint64(galgame.ID), 10)+"/resources", "", nil)
 	if res.Code != http.StatusOK {
 		t.Fatalf("public list without token: expected 200, got %d body=%s", res.Code, res.Body.String())
 	}
@@ -170,7 +170,7 @@ func TestResourceEndpointsOwnerFlow(t *testing.T) {
 	ownerToken := accessTokenFor(t, owner)
 	strangerToken := accessTokenFor(t, stranger)
 	adminToken := accessTokenFor(t, admin)
-	galgamePath := "/api/v1/galgames/" + strconv.FormatUint(uint64(galgame.ID), 10)
+	galgamePath := "/api/v2/galgames/" + strconv.FormatUint(uint64(galgame.ID), 10)
 
 	res := doResourceRequest(env.router, http.MethodPost, "/api/v1/resources", ownerToken, map[string]any{
 		"galgame_id": galgame.ID,
@@ -199,13 +199,13 @@ func TestResourceEndpointsOwnerFlow(t *testing.T) {
 		t.Fatalf("public list: expected 200, got %d", res.Code)
 	}
 	var listed struct {
-		Code int                `json:"code"`
-		Data []dto.ResourceData `json:"data"`
+		Code int                  `json:"code"`
+		Data dto.ResourceListData `json:"data"`
 	}
 	if err := json.Unmarshal(res.Body.Bytes(), &listed); err != nil {
 		t.Fatalf("decode list response: %v", err)
 	}
-	if len(listed.Data) != 1 || listed.Data[0].ID != created.Data.ID {
+	if listed.Data.Total != 1 || len(listed.Data.Items) != 1 || listed.Data.Items[0].ID != created.Data.ID {
 		t.Fatalf("expected 1 published resource, got %+v", listed.Data)
 	}
 

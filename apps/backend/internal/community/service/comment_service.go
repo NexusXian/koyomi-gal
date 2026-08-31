@@ -20,6 +20,7 @@ var (
 	ErrInvalidCommentInput   = errors.New("invalid comment input")
 	ErrInvalidCommentParent  = errors.New("comment parent must be a top-level comment of the same post")
 	ErrInvalidCommentReplyTo = errors.New("reply target must belong to the same comment thread")
+	ErrCommentNotTopLevel    = errors.New("comment is not top-level")
 )
 
 // PermissionCommentModerate manages comments authored by other users.
@@ -115,48 +116,72 @@ func (s *CommentService) Create(
 	return s.comments.FindByID(ctx, comment.ID)
 }
 
-// ListByPost returns one page of top-level comments, each with its replies
-// loaded in a single query.
+// ListByPost returns one page of top-level comments and their reply counts.
 func (s *CommentService) ListByPost(
 	ctx context.Context,
 	postID uint,
 	page, limit int,
-) ([]repository.CommentThread, int64, int, int, error) {
+) ([]model.Comment, map[uint]int64, int64, int, int, error) {
 	post, err := s.posts.FindByID(ctx, postID)
 	if err != nil {
 		logger.Error("find post by id", zap.Uint("post_id", postID), zap.Error(err))
-		return nil, 0, page, limit, err
+		return nil, nil, 0, page, limit, err
 	}
 	if post == nil {
-		return nil, 0, page, limit, ErrPostNotFound
+		return nil, nil, 0, page, limit, ErrPostNotFound
+	}
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 20
 	}
 
 	topLevel, total, err := s.comments.ListTopLevelByPost(ctx, postID, page, limit)
 	if err != nil {
 		logger.Error("list top-level comments", zap.Uint("post_id", postID), zap.Error(err))
-		return nil, 0, page, limit, err
+		return nil, nil, 0, page, limit, err
 	}
 	parentIDs := make([]uint, 0, len(topLevel))
 	for i := range topLevel {
 		parentIDs = append(parentIDs, topLevel[i].ID)
 	}
-	replies, err := s.comments.ListRepliesByParentIDs(ctx, parentIDs)
+	replyCounts, err := s.comments.CountRepliesByParentIDs(ctx, parentIDs)
 	if err != nil {
-		logger.Error("list comment replies", zap.Uint("post_id", postID), zap.Error(err))
+		logger.Error("count comment replies", zap.Uint("post_id", postID), zap.Error(err))
+		return nil, nil, 0, page, limit, err
+	}
+	return topLevel, replyCounts, total, page, limit, nil
+}
+
+func (s *CommentService) ListReplies(
+	ctx context.Context,
+	parentID uint,
+	page, limit int,
+) ([]model.Comment, int64, int, int, error) {
+	parent, err := s.comments.FindByID(ctx, parentID)
+	if err != nil {
+		logger.Error("find parent comment", zap.Uint("comment_id", parentID), zap.Error(err))
 		return nil, 0, page, limit, err
 	}
-
-	threads := make([]repository.CommentThread, 0, len(topLevel))
-	for i := range topLevel {
-		thread := repository.CommentThread{Comment: topLevel[i]}
-		if threadReplies, ok := replies[topLevel[i].ID]; ok {
-			thread.Replies = threadReplies
-		} else {
-			thread.Replies = []model.Comment{}
-		}
-		threads = append(threads, thread)
+	if parent == nil {
+		return nil, 0, page, limit, ErrCommentNotFound
 	}
-	return threads, total, page, limit, nil
+	if parent.ParentID != nil {
+		return nil, 0, page, limit, ErrCommentNotTopLevel
+	}
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 20
+	}
+	replies, total, err := s.comments.ListRepliesByParentID(ctx, parentID, page, limit)
+	if err != nil {
+		logger.Error("list comment replies", zap.Uint("comment_id", parentID), zap.Error(err))
+		return nil, 0, page, limit, err
+	}
+	return replies, total, page, limit, nil
 }
 
 // Update replaces the comment content. The actor must be the author or hold

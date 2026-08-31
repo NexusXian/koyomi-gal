@@ -15,6 +15,7 @@ func (app *App) setupRoutes() {
 
 	api := app.Gin.Group("/api")
 	v1 := api.Group("/v1")
+	v2 := api.Group("/v2")
 	auth := v1.Group("/auth")
 	{
 		auth.POST("/register", app.UserAuthHandler.Register)
@@ -26,15 +27,16 @@ func (app *App) setupRoutes() {
 
 	v1.GET("/galgames", app.CatalogHandler.ListGalgames)
 	v1.GET("/galgames/:id", app.CatalogHandler.GetGalgame)
-	v1.GET("/galgames/:id/resources", app.ResourceHandler.ListGalgameResources)
 	v1.GET("/resources/:id", app.ResourceHandler.GetResource)
 	v1.GET("/posts", app.PostHandler.ListPosts)
 	v1.GET("/posts/:id", app.PostHandler.GetPost)
-	v1.GET("/posts/:id/comments", app.CommentHandler.ListPostComments)
 	v1.GET("/developers", app.CatalogHandler.ListDevelopers)
 	v1.GET("/developers/:id", app.CatalogHandler.GetDeveloper)
 	v1.GET("/tags", app.CatalogHandler.ListTags)
 	v1.GET("/tags/:id", app.CatalogHandler.GetTag)
+	v2.GET("/galgames/:id/resources", app.ResourceHandler.ListGalgameResources)
+	v2.GET("/posts/:id/comments", app.CommentHandler.ListPostComments)
+	v2.GET("/comments/:id/replies", app.CommentHandler.ListCommentReplies)
 
 	protected := v1.Group("", middleware.Auth(app.Config.Auth.AccessTokenSecret))
 	requirePermission := middleware.RequirePermission(app.RBACService)

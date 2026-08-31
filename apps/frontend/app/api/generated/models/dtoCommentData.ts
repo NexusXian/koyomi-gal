@@ -14,7 +14,7 @@ export interface DtoCommentData {
   like_count?: number;
   parent_id?: number;
   post_id?: number;
-  replies?: DtoCommentData[];
+  reply_count?: number;
   reply_to_user_id?: number;
   updated_at?: string;
 }

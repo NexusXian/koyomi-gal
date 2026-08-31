@@ -27,6 +27,11 @@ type ReviewResourceRequest struct {
 	Status int16 `json:"status" binding:"required,oneof=1 2 3" example:"1"`
 }
 
+type ResourceQuery struct {
+	Page  int `form:"page" binding:"omitempty,min=1,max=1000000"`
+	Limit int `form:"limit" binding:"omitempty,min=1,max=100"`
+}
+
 type ResourceLinkData struct {
 	ID        uint      `json:"id" example:"1"`
 	URL       string    `json:"url" example:"https://example.com/dl"`
@@ -46,10 +51,17 @@ type ResourceData struct {
 	UpdatedAt   time.Time          `json:"updated_at"`
 }
 
+type ResourceListData struct {
+	Items []ResourceData `json:"items"`
+	Total int64          `json:"total" example:"10"`
+	Page  int            `json:"page" example:"1"`
+	Limit int            `json:"limit" example:"20"`
+}
+
 type ResourceListResponse struct {
-	Code int            `json:"code" example:"0"`
-	Data []ResourceData `json:"data"`
-	Msg  string         `json:"msg" example:"success"`
+	Code int              `json:"code" example:"0"`
+	Data ResourceListData `json:"data"`
+	Msg  string           `json:"msg" example:"success"`
 }
 
 type ResourceDataResponse struct {

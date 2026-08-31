@@ -222,15 +222,20 @@ func TestCommentTwoLevelStructure(t *testing.T) {
 		t.Fatalf("expected derived parent, got %+v", derived.ParentID)
 	}
 
-	threads, total, _, _, err := env.comments.ListByPost(ctx, post.ID, 1, 20)
+	comments, replyCounts, total, _, _, err := env.comments.ListByPost(ctx, post.ID, 1, 20)
 	if err != nil {
 		t.Fatalf("list comments: %v", err)
 	}
-	if total != 1 || len(threads) != 1 {
-		t.Fatalf("expected 1 top-level thread, got total=%d threads=%d", total, len(threads))
+	if total != 1 || len(comments) != 1 {
+		t.Fatalf("expected 1 top-level thread, got total=%d comments=%d", total, len(comments))
 	}
-	if len(threads[0].Replies) != 3 {
-		t.Fatalf("expected 3 replies, got %d", len(threads[0].Replies))
+	if replyCounts[top.ID] != 3 {
+		t.Fatalf("expected reply count 3, got %d", replyCounts[top.ID])
+	}
+	replies, replyTotal, replyPage, replyLimit, err := env.comments.ListReplies(ctx, top.ID, 1, 2)
+	if err != nil || replyTotal != 3 || replyPage != 1 || replyLimit != 2 || len(replies) != 2 {
+		t.Fatalf("unexpected reply pagination: total=%d page=%d limit=%d replies=%d err=%v",
+			replyTotal, replyPage, replyLimit, len(replies), err)
 	}
 
 	post2, err := env.posts.Get(ctx, post.ID)

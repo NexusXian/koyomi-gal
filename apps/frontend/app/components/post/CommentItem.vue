@@ -3,14 +3,16 @@ import { message } from 'ant-design-vue'
 import {
   deleteComment,
   likeComment,
+  listCommentReplies,
   unlikeComment,
   updateComment
 } from '~/api/generated/comments/comments'
-import type { DtoCommentData } from '~/api/generated/models'
+import type { DtoCommentData, DtoCommentListData } from '~/api/generated/models'
 import { formatDate } from '~/constants/domain'
 
 const props = defineProps<{
   comment: DtoCommentData
+  isReply?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +25,70 @@ const likePending = ref(false)
 const likeState = ref(false)
 const editing = ref(false)
 const editContent = ref('')
+const replies = ref<DtoCommentData[]>([])
+const replyTotal = ref(props.comment.reply_count ?? 0)
+const replyPage = ref(1)
+const replyLimit = 20
+const repliesLoading = ref(false)
+const repliesExpanded = ref(false)
+
+const replyTotalPage = computed(() =>
+  Math.max(1, Math.ceil(replyTotal.value / replyLimit))
+)
+
+async function loadReplies(): Promise<void> {
+  if (!props.comment.id) {
+    return
+  }
+  repliesLoading.value = true
+  try {
+    const data = unwrapApiData<DtoCommentListData>(
+      await listCommentReplies(props.comment.id, {
+        page: replyPage.value,
+        limit: replyLimit
+      })
+    )
+    replies.value = data.items ?? []
+    replyTotal.value = data.total ?? 0
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '加载回复失败'))
+  } finally {
+    repliesLoading.value = false
+  }
+}
+
+function toggleReplies(): void {
+  repliesExpanded.value = !repliesExpanded.value
+  if (repliesExpanded.value) {
+    void loadReplies()
+  }
+}
+
+function updateReplyPage(next: number): void {
+  replyPage.value = next
+  void loadReplies()
+}
+
+async function refreshReplies(): Promise<void> {
+  await loadReplies()
+  if (replies.value.length === 0 && replyPage.value > 1) {
+    replyPage.value -= 1
+    await loadReplies()
+  }
+}
+
+watch(
+  () => props.comment.reply_count,
+  (count, previousCount) => {
+    replyTotal.value = count ?? 0
+    if ((count ?? 0) > (previousCount ?? 0)) {
+      replyPage.value = Math.max(1, Math.ceil((count ?? 0) / replyLimit))
+    }
+    if (repliesExpanded.value) {
+      void refreshReplies()
+    }
+  }
+)
 
 async function toggleLike(): Promise<void> {
   if (!isAuthenticated.value) {
@@ -130,6 +196,16 @@ async function removeComment(): Promise<void> {
             回复
           </button>
 
+          <button
+            v-if="!isReply && replyTotal > 0"
+            type="button"
+            class="action-button"
+            @click="toggleReplies"
+          >
+            <KunIcon :name="repliesExpanded ? 'lucide:chevron-up' : 'lucide:chevron-down'" />
+            {{ repliesExpanded ? '收起回复' : `${replyTotal} 条回复` }}
+          </button>
+
           <button type="button" class="action-button" @click="startEdit">
             <KunIcon name="lucide:pencil" />
             编辑
@@ -150,14 +226,28 @@ async function removeComment(): Promise<void> {
       </div>
     </div>
 
-    <div v-if="comment.replies?.length" class="comment-replies">
-      <CommentItem
-        v-for="reply in comment.replies"
-        :key="reply.id"
-        :comment="reply"
-        @refresh="emit('refresh')"
-        @reply="emit('reply', $event)"
-      />
+    <div v-if="!isReply && repliesExpanded" class="comment-replies">
+      <a-spin :spinning="repliesLoading">
+        <KunNull v-if="replies.length === 0" message="暂无回复" />
+        <div v-else class="reply-list">
+          <CommentItem
+            v-for="reply in replies"
+            :key="reply.id"
+            :comment="reply"
+            is-reply
+            @refresh="refreshReplies"
+            @reply="emit('reply', $event)"
+          />
+        </div>
+        <div v-if="replyTotalPage > 1" class="reply-pagination">
+          <KunPagination
+            :current-page="replyPage"
+            :total-page="replyTotalPage"
+            :is-loading="repliesLoading"
+            @update:current-page="updateReplyPage"
+          />
+        </div>
+      </a-spin>
     </div>
   </div>
 </template>
@@ -267,11 +357,20 @@ async function removeComment(): Promise<void> {
 }
 
 .comment-replies {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   margin-left: 24px;
   padding-left: 16px;
   border-left: 2px solid var(--color-default-200);
+}
+
+.reply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reply-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
 }
 </style>
