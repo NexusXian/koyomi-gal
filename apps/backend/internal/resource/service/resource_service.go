@@ -212,6 +212,62 @@ func (s *ResourceService) DeleteResource(ctx context.Context, actorID, id uint) 
 	return nil
 }
 
+// ListAdminResources returns resources across all statuses with an optional
+// status filter, newest first, for admins holding resource:review.
+func (s *ResourceService) ListAdminResources(
+	ctx context.Context,
+	status *int16,
+	page, limit int,
+) ([]model.Resource, int64, int, int, error) {
+	if status != nil && !validResourceStatus(*status) {
+		return nil, 0, page, limit, ErrInvalidResourceStatus
+	}
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 20
+	}
+	resources, total, err := s.resources.ListAdmin(ctx, repository.ResourceListOptions{
+		Status: status,
+		Page:   page,
+		Limit:  limit,
+	})
+	if err != nil {
+		logger.Error("list admin resources", zap.Error(err))
+		return nil, 0, page, limit, err
+	}
+	return resources, total, page, limit, nil
+}
+
+// ReviewResource transitions a resource to published, rejected, or hidden.
+func (s *ResourceService) ReviewResource(
+	ctx context.Context,
+	id uint,
+	req *dto.ReviewResourceRequest,
+) (*model.Resource, error) {
+	if req.Status != model.ResourceStatusPublished &&
+		req.Status != model.ResourceStatusRejected &&
+		req.Status != model.ResourceStatusHidden {
+		return nil, ErrInvalidResourceStatus
+	}
+	resource, err := s.resources.FindByID(ctx, id)
+	if err != nil {
+		logger.Error("find resource by id", zap.Uint("resource_id", id), zap.Error(err))
+		return nil, err
+	}
+	if resource == nil {
+		return nil, ErrResourceNotFound
+	}
+
+	resource.Status = req.Status
+	if err := s.resources.Update(ctx, resource); err != nil {
+		logger.Error("review resource", zap.Uint("resource_id", id), zap.Error(err))
+		return nil, err
+	}
+	return s.resources.FindByID(ctx, id)
+}
+
 // ensureCanManage allows the uploader to manage their own resource and falls
 // back to the given RBAC permission for everyone else.
 func (s *ResourceService) ensureCanManage(

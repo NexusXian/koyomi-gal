@@ -314,6 +314,155 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/resources": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询全部状态的资源，可按状态筛选；需要 resource:review 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询资源",
+                "operationId": "listAdminResources",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态过滤：0 待审核，1 已发布，2 已拒绝，3 已隐藏",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminResourceListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/resources/{id}/review": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将资源标记为已发布、已拒绝或已隐藏；需要 resource:review 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端审核资源",
+                "operationId": "reviewResource",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "资源 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核资源请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ResourceDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "审核资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "description": "校验邮箱或用户名和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh Token",
@@ -4018,6 +4167,45 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.AdminResourceListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ResourceData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.AdminResourceListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminResourceListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.AuthSession": {
             "type": "object",
             "properties": {
@@ -5389,6 +5577,23 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.ReviewResourceRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2,
+                        3
+                    ],
+                    "example": 1
                 }
             }
         },

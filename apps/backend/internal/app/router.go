@@ -72,12 +72,8 @@ func (app *App) setupRoutes() {
 		admin.GET("/galgames/:id", requirePermission("galgame:review"), app.CatalogHandler.GetAdminGalgame)
 		admin.GET("/resource-reports", requirePermission("resource_report:list"), app.ReportHandler.ListReports)
 		admin.PUT("/resource-reports/:id/handle", requirePermission("resource_report:handle"), app.ReportHandler.HandleReport)
-
-		// TODO(资源审核): 资源上传后为 pending 状态，但缺少审核端点（resource:review
-		// 权限已在 rbac/service/seed.go 预置却无路由使用）。需新增：
-		//   GET /admin/resources        —— 按状态筛选资源列表
-		//   PUT /admin/resources/:id/review —— 通过/拒绝/隐藏
-		// 并补齐前端 /admin/resources 审核页。
+		admin.GET("/resources", requirePermission("resource:review"), app.ResourceHandler.ListAdminResources)
+		admin.PUT("/resources/:id/review", requirePermission("resource:review"), app.ResourceHandler.ReviewResource)
 	}
 
 	posts := protected.Group("/posts")

@@ -179,6 +179,82 @@ func (h *ResourceHandler) DeleteResource(c *gin.Context) {
 	response.OkWithMsg(c, "资源已删除")
 }
 
+// ListAdminResources godoc
+// @Summary      管理端查询资源
+// @Description  分页查询全部状态的资源，可按状态筛选；需要 resource:review 权限
+// @ID           listAdminResources
+// @Tags         admin
+// @Produce      json
+// @Param        status query int false "状态过滤：0 待审核，1 已发布，2 已拒绝，3 已隐藏"
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
+// @Success      200 {object} dto.AdminResourceListResponse "资源列表"
+// @Failure      400 {object} response.ErrorResponse "查询参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      500 {object} response.ErrorResponse "查询资源失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/resources [get]
+func (h *ResourceHandler) ListAdminResources(c *gin.Context) {
+	var query struct {
+		Status *int16 `form:"status" binding:"omitempty,oneof=0 1 2 3"`
+		Page   int    `form:"page" binding:"omitempty,min=1,max=1000000"`
+		Limit  int    `form:"limit" binding:"omitempty,min=1,max=100"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	resources, total, page, limit, err := h.resourceService.ListAdminResources(
+		c.Request.Context(), query.Status, query.Page, query.Limit,
+	)
+	if err != nil {
+		h.respondResourceError(c, err, "list admin resources")
+		return
+	}
+	response.Ok(c, dto.AdminResourceListData{
+		Items: dto.NewResourceListData(resources),
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	})
+}
+
+// ReviewResource godoc
+// @Summary      管理端审核资源
+// @Description  将资源标记为已发布、已拒绝或已隐藏；需要 resource:review 权限
+// @ID           reviewResource
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "资源 ID"
+// @Param        request body dto.ReviewResourceRequest true "审核资源请求"
+// @Success      200 {object} dto.ResourceDataResponse "审核结果"
+// @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      404 {object} response.ErrorResponse "资源不存在"
+// @Failure      500 {object} response.ErrorResponse "审核资源失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/resources/{id}/review [put]
+func (h *ResourceHandler) ReviewResource(c *gin.Context) {
+	id, ok := parseResourceID(c, "资源")
+	if !ok {
+		return
+	}
+	var req dto.ReviewResourceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
+		return
+	}
+	resource, err := h.resourceService.ReviewResource(c.Request.Context(), id, &req)
+	if err != nil {
+		h.respondResourceError(c, err, "review resource")
+		return
+	}
+	response.Ok(c, dto.NewResourceData(resource))
+}
+
 func (h *ResourceHandler) respondResourceError(c *gin.Context, err error, operation string) {
 	switch {
 	case errors.Is(err, service.ErrGalgameNotFound):

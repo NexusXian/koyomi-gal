@@ -23,6 +23,10 @@ type UpdateResourceRequest struct {
 	Links       []string `json:"links" binding:"required,min=1,max=50,dive,required,min=1,max=2048" example:"https://example.com/dl"`
 }
 
+type ReviewResourceRequest struct {
+	Status int16 `json:"status" binding:"required,oneof=1 2 3" example:"1"`
+}
+
 type ResourceLinkData struct {
 	ID        uint      `json:"id" example:"1"`
 	URL       string    `json:"url" example:"https://example.com/dl"`
@@ -52,6 +56,19 @@ type ResourceDataResponse struct {
 	Code int          `json:"code" example:"0"`
 	Data ResourceData `json:"data"`
 	Msg  string       `json:"msg" example:"success"`
+}
+
+type AdminResourceListData struct {
+	Items []ResourceData `json:"items"`
+	Total int64          `json:"total" example:"10"`
+	Page  int            `json:"page" example:"1"`
+	Limit int            `json:"limit" example:"20"`
+}
+
+type AdminResourceListResponse struct {
+	Code int                   `json:"code" example:"0"`
+	Data AdminResourceListData `json:"data"`
+	Msg  string                `json:"msg" example:"success"`
 }
 
 func NewResourceData(resource *model.Resource) ResourceData {

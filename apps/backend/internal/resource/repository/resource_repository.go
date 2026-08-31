@@ -99,6 +99,42 @@ func (r *ResourceRepository) ListPublishedByGalgame(
 	return resources, nil
 }
 
+type ResourceListOptions struct {
+	Status *int16
+	Page   int
+	Limit  int
+}
+
+// ListAdmin returns resources across all statuses with an optional status
+// filter, paginated and newest first.
+func (r *ResourceRepository) ListAdmin(
+	ctx context.Context,
+	options ResourceListOptions,
+) ([]model.Resource, int64, error) {
+	base := func() *gorm.DB {
+		query := r.db.WithContext(ctx).Model(&model.Resource{})
+		if options.Status != nil {
+			query = query.Where("status = ?", *options.Status)
+		}
+		return query
+	}
+	var total int64
+	if err := base().Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count resources: %w", err)
+	}
+
+	var resources []model.Resource
+	err := r.withLinks(base()).
+		Order("resources.id DESC").
+		Offset((options.Page - 1) * options.Limit).
+		Limit(options.Limit).
+		Find(&resources).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("list admin resources: %w", err)
+	}
+	return resources, total, nil
+}
+
 func (r *ResourceRepository) CreateLinks(ctx context.Context, resourceID uint, urls []string) error {
 	if len(urls) == 0 {
 		return nil
