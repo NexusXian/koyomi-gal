@@ -41,6 +41,18 @@ const items: AdminNavItem[] = [
     permission: 'galgame:update'
   },
   {
+    key: '/admin/banners',
+    label: '轮播图',
+    icon: 'lucide:gallery-horizontal-end',
+    permission: 'banner:read'
+  },
+  {
+    key: '/admin/articles',
+    label: '文章',
+    icon: 'lucide:newspaper',
+    permission: 'article:read'
+  },
+  {
     key: '/admin/roles',
     label: '角色',
     icon: 'lucide:shield',
@@ -72,7 +84,9 @@ const canSeeAdmin = computed(() =>
     'galgame:update',
     'role:list',
     'permission:list',
-    'role:assign'
+    'role:assign',
+    'banner:read',
+    'article:read'
   ])
 )
 

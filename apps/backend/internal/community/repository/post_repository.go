@@ -81,9 +81,24 @@ func (r *PostRepository) FindByID(ctx context.Context, id uint) (*model.Post, er
 func (r *PostRepository) withNames(query *gorm.DB) *gorm.DB {
 	return query.
 		Model(&model.Post{}).
-		Select("posts.*, users.username AS author_name, galgames.title AS galgame_title").
+		Select(`posts.*, users.username AS author_name, users.avatar AS author_avatar,
+galgames.title AS galgame_title, galgames.cover_url AS galgame_cover_url`).
 		Joins("LEFT JOIN users ON users.id = posts.author_id").
 		Joins("LEFT JOIN galgames ON galgames.id = posts.galgame_id")
+}
+
+func (r *PostRepository) ListHome(ctx context.Context, sort string, limit int) ([]model.Post, error) {
+	order := "posts.created_at DESC"
+	if sort == "popular" {
+		order = "(posts.like_count * 3 + posts.comment_count * 5 + posts.favorite_count) DESC"
+	}
+	posts := make([]model.Post, 0)
+	err := r.withNames(r.db.WithContext(ctx)).Order(order).Order("posts.id DESC").
+		Limit(limit).Find(&posts).Error
+	if err != nil {
+		return nil, fmt.Errorf("list home posts: %w", err)
+	}
+	return posts, nil
 }
 
 func (r *PostRepository) List(ctx context.Context, options PostListOptions) ([]model.Post, int64, error) {

@@ -7,10 +7,18 @@
 
 :root {
   color-scheme: light;
+  --kun-surface-opacity: 0.74;
+  --kun-backdrop-filter: saturate(140%) blur(20px);
+  --app-glass-background: color-mix(in srgb, var(--color-content1) 74%, transparent);
+  --app-glass-border: color-mix(in srgb, var(--color-default-200) 68%, transparent);
+  --app-glass-filter: saturate(140%) blur(20px);
 }
 
 :root.kun-dark-mode {
   color-scheme: dark;
+  --kun-surface-opacity: 0.68;
+  --app-glass-background: color-mix(in srgb, var(--color-content1) 68%, transparent);
+  --app-glass-border: color-mix(in srgb, var(--color-default-300) 52%, transparent);
 }
 
 html,
@@ -25,12 +33,35 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-background);
+  background: transparent;
   color: var(--color-foreground);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+#__nuxt {
+  position: relative;
+  isolation: isolate;
+}
+
+#__nuxt::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent 31rem),
+    radial-gradient(circle at 94% 12%, color-mix(in srgb, var(--color-secondary) 20%, transparent), transparent 28rem),
+    radial-gradient(circle at 76% 92%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 30rem),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--color-background) 88%, var(--color-primary) 12%),
+      var(--color-background) 48%,
+      color-mix(in srgb, var(--color-background) 90%, var(--color-secondary) 10%)
+    );
+  content: '';
+  pointer-events: none;
 }
 
 *,

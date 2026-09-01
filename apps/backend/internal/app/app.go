@@ -6,12 +6,20 @@ import (
 	"strings"
 
 	"backend/config"
+	articleHandler "backend/internal/article/handler"
+	articleRepo "backend/internal/article/repository"
+	articleService "backend/internal/article/service"
+	bannerHandler "backend/internal/banner/handler"
+	bannerRepo "backend/internal/banner/repository"
+	bannerService "backend/internal/banner/service"
 	communityHandler "backend/internal/community/handler"
 	communityRepo "backend/internal/community/repository"
 	communityService "backend/internal/community/service"
 	galgameHandler "backend/internal/galgame/handler"
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
+	homeHandler "backend/internal/home/handler"
+	homeService "backend/internal/home/service"
 	"backend/internal/infrastructures/database"
 	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
@@ -58,6 +66,9 @@ type App struct {
 	PostHandler         *communityHandler.PostHandler
 	CommentHandler      *communityHandler.CommentHandler
 	InteractionHandler  *communityHandler.InteractionHandler
+	BannerHandler       *bannerHandler.BannerHandler
+	ArticleHandler      *articleHandler.ArticleHandler
+	HomeHandler         *homeHandler.HomeHandler
 	HealthHandler       *healthHandler.HealthHandler
 }
 
@@ -131,6 +142,18 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	commentService := communityService.NewCommentService(commentRepository, postRepository, rbacSvc)
 	interactionService := communityService.NewInteractionService(postRepository, commentRepository)
 
+	bannerRepository := bannerRepo.NewBannerRepository(postgresDB)
+	articleRepository := articleRepo.NewArticleRepository(postgresDB)
+	bannerSvc := bannerService.NewBannerService(bannerRepository, redisClient)
+	articleSvc := articleService.NewArticleService(articleRepository, rbacSvc, redisClient)
+	homeSvc := homeService.NewHomeService(
+		bannerRepository,
+		articleRepository,
+		galgameRepository,
+		postRepository,
+		redisClient,
+	)
+
 	verificationQueue := queue.NewVerificationClient(cfg.Redis, cfg.Verification.Secret)
 	verificationService := userService.NewVerificationService(
 		verificationRepository,
@@ -176,6 +199,9 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		PostHandler:        communityHandler.NewPostHandler(postService),
 		CommentHandler:     communityHandler.NewCommentHandler(commentService),
 		InteractionHandler: communityHandler.NewInteractionHandler(interactionService),
+		BannerHandler:      bannerHandler.NewBannerHandler(bannerSvc),
+		ArticleHandler:     articleHandler.NewArticleHandler(articleSvc),
+		HomeHandler:        homeHandler.NewHomeHandler(homeSvc),
 		HealthHandler:      healthHandler.NewHealthHandler(healthService),
 	}
 	ginApp := gin.Default()

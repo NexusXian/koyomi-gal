@@ -282,6 +282,8 @@ func galgameSort(sort string) string {
 		return "g.favorite_count DESC"
 	case "popular":
 		return "(g.favorite_count + g.resource_count + g.post_count) DESC"
+	case "updated":
+		return "g.updated_at DESC"
 	default:
 		return "g.release_date DESC NULLS LAST"
 	}

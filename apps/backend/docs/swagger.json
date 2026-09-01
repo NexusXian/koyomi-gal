@@ -9,6 +9,518 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
+        "/api/v1/admin/articles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回全部文章；需要 article:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询文章",
+                "operationId": "listAdminArticles",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文章列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminArticleListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建草稿或文章；设置发布时间还需要 article:publish 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "创建文章",
+                "operationId": "createAdminArticle",
+                "parameters": [
+                    {
+                        "description": "创建文章请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateArticleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/articles/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 返回任意发布状态的文章；需要 article:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查看文章",
+                "operationId": "getAdminArticle",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "文章 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文章详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleDataResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "全量更新；内容变更需要 article:update，发布时间变更需要 article:publish",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "更新文章",
+                "operationId": "updateAdminArticle",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "文章 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新文章请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateArticleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除文章；需要 article:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "删除文章",
+                "operationId": "deleteAdminArticle",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "文章 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文章已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/banners": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回全部 Banner；需要 banner:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询 Banner",
+                "operationId": "listAdminBanners",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner 列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminBannerListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询 Banner 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建首页 Banner；需要 banner:create 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "创建 Banner",
+                "operationId": "createAdminBanner",
+                "parameters": [
+                    {
+                        "description": "创建 Banner 请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateBannerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BannerDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/banners/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 返回 Banner；需要 banner:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查看 Banner",
+                "operationId": "getAdminBanner",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Banner ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner 详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BannerDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Banner ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Banner 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "全量更新 Banner；需要 banner:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "更新 Banner",
+                "operationId": "updateAdminBanner",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Banner ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新 Banner 请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateBannerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BannerDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Banner 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除 Banner；需要 banner:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "删除 Banner",
+                "operationId": "deleteAdminBanner",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Banner ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner 已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Banner ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Banner 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/galgames": {
             "get": {
                 "security": [
@@ -457,6 +969,103 @@
                 }
             }
         },
+        "/api/v1/articles": {
+            "get": {
+                "description": "分页返回已发布时间不晚于当前时间的文章，不包含正文",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "articles"
+                ],
+                "summary": "查看文章列表",
+                "operationId": "listArticles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "类型：announcement、news、event、update",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文章列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询文章失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/articles/{id}": {
+            "get": {
+                "description": "返回已发布文章详情并安全增加浏览次数",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "articles"
+                ],
+                "summary": "查看文章详情",
+                "operationId": "getArticle",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "文章 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "文章详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "文章 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "description": "校验邮箱或用户名和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh Token",
@@ -699,6 +1308,33 @@
                     },
                     "500": {
                         "description": "验证码发送任务创建失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/banners": {
+            "get": {
+                "description": "返回当前启用且在展示时间范围内的 Banner",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "banners"
+                ],
+                "summary": "查看有效 Banner",
+                "operationId": "listBanners",
+                "responses": {
+                    "200": {
+                        "description": "Banner 列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BannerListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询 Banner 失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -1975,6 +2611,33 @@
                     },
                     "500": {
                         "description": "删除游玩状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/home": {
+            "get": {
+                "description": "返回首页轮播、公告、Galgame 和帖子板块",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "home"
+                ],
+                "summary": "获取首页数据",
+                "operationId": "getHome",
+                "responses": {
+                    "200": {
+                        "description": "首页数据",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HomeResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询首页数据失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -4239,6 +4902,61 @@
         }
     },
     "definitions": {
+        "dto.AdminArticleListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ArticleData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.AdminArticleListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminArticleListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.AdminBannerListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BannerListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.AdminResourceListData": {
             "type": "object",
             "properties": {
@@ -4271,6 +4989,189 @@
                 },
                 "data": {
                     "$ref": "#/definitions/dto.AdminResourceListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.Announcement": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_pinned": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "本次更新内容概览"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "站点更新公告"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "announcement"
+                }
+            }
+        },
+        "dto.ArticleData": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "完整公告内容"
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_pinned": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_published": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "本次更新内容概览"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "站点更新公告"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "announcement"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "view_count": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "dto.ArticleDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ArticleData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ArticleListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ArticleListItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.ArticleListItem": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_pinned": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_published": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "本次更新内容概览"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "站点更新公告"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "announcement"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "view_count": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "dto.ArticleListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ArticleListData"
                 },
                 "msg": {
                     "type": "string",
@@ -4322,6 +5223,159 @@
                 "username": {
                     "type": "string",
                     "example": "koyomi"
+                }
+            }
+        },
+        "dto.Author": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
+        "dto.Banner": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "https://example.com/banner.jpg"
+                },
+                "link_type": {
+                    "type": "string",
+                    "example": "galgame"
+                },
+                "link_value": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "subtitle": {
+                    "type": "string",
+                    "example": "发现本月值得关注的新作"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "夏日新作专题"
+                }
+            }
+        },
+        "dto.BannerData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "https://example.com/banner.jpg"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "link_type": {
+                    "type": "string",
+                    "example": "galgame"
+                },
+                "link_value": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "subtitle": {
+                    "type": "string",
+                    "example": "发现本月值得关注的新作"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "夏日新作专题"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BannerDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BannerData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.BannerListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BannerData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.BannerListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BannerData"
+                    }
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -4453,6 +5507,115 @@
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.CreateArticleRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "is_published",
+                "title",
+                "type"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "完整公告内容"
+                },
+                "cover_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/cover.jpg"
+                },
+                "is_pinned": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_published": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "published_at": {
+                    "type": "string",
+                    "example": "2026-08-31T00:00:00Z"
+                },
+                "summary": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "本次更新内容概览"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "站点更新公告"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "announcement",
+                        "news",
+                        "event",
+                        "update"
+                    ],
+                    "example": "announcement"
+                }
+            }
+        },
+        "dto.CreateBannerRequest": {
+            "type": "object",
+            "required": [
+                "image_url",
+                "link_type",
+                "title"
+            ],
+            "properties": {
+                "end_at": {
+                    "type": "string",
+                    "example": "2026-09-01T00:00:00Z"
+                },
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/banner.jpg"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "link_type": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "url",
+                        "galgame",
+                        "post",
+                        "news"
+                    ],
+                    "example": "galgame"
+                },
+                "link_value": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "1"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "start_at": {
+                    "type": "string",
+                    "example": "2026-08-01T00:00:00Z"
+                },
+                "subtitle": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "发现本月值得关注的新作"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "夏日新作专题"
                 }
             }
         },
@@ -4778,6 +5941,19 @@
                 }
             }
         },
+        "dto.Developer": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "YUZUSOFT"
+                }
+            }
+        },
         "dto.DeveloperDataResponse": {
             "type": "object",
             "properties": {
@@ -4890,6 +6066,40 @@
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.Galgame": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "developer": {
+                    "$ref": "#/definitions/dto.Developer"
+                },
+                "favorite_count": {
+                    "type": "integer",
+                    "example": 300
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "rating_average": {
+                    "type": "number",
+                    "example": 8.72
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "千恋＊万花"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -5143,6 +6353,63 @@
                 }
             }
         },
+        "dto.HomeData": {
+            "type": "object",
+            "properties": {
+                "announcements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Announcement"
+                    }
+                },
+                "banners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Banner"
+                    }
+                },
+                "latest_galgames": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Galgame"
+                    }
+                },
+                "latest_posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Post"
+                    }
+                },
+                "popular_galgames": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Galgame"
+                    }
+                },
+                "popular_posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Post"
+                    }
+                }
+            }
+        },
+        "dto.HomeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.HomeData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.MePermissionsData": {
             "type": "object",
             "properties": {
@@ -5234,6 +6501,40 @@
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.Post": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/dto.Author"
+                },
+                "comment_count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "favorite_count": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "galgame": {
+                    "$ref": "#/definitions/dto.PostGalgame"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "title": {
+                    "type": "string",
+                    "example": "千恋＊万花通关感想"
                 }
             }
         },
@@ -5330,6 +6631,23 @@
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.PostGalgame": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "title": {
+                    "type": "string",
+                    "example": "千恋＊万花"
                 }
             }
         },
@@ -5839,6 +7157,116 @@
                 "name": {
                     "type": "string",
                     "example": "纯爱"
+                }
+            }
+        },
+        "dto.UpdateArticleRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "is_published",
+                "title",
+                "type"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "完整公告内容"
+                },
+                "cover_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/cover.jpg"
+                },
+                "is_pinned": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_published": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "published_at": {
+                    "type": "string",
+                    "example": "2026-08-31T00:00:00Z"
+                },
+                "summary": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "本次更新内容概览"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "站点更新公告"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "announcement",
+                        "news",
+                        "event",
+                        "update"
+                    ],
+                    "example": "announcement"
+                }
+            }
+        },
+        "dto.UpdateBannerRequest": {
+            "type": "object",
+            "required": [
+                "image_url",
+                "is_active",
+                "link_type",
+                "title"
+            ],
+            "properties": {
+                "end_at": {
+                    "type": "string",
+                    "example": "2026-09-01T00:00:00Z"
+                },
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/banner.jpg"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "link_type": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "url",
+                        "galgame",
+                        "post",
+                        "news"
+                    ],
+                    "example": "galgame"
+                },
+                "link_value": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "1"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "start_at": {
+                    "type": "string",
+                    "example": "2026-08-01T00:00:00Z"
+                },
+                "subtitle": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "发现本月值得关注的新作"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "夏日新作专题"
                 }
             }
         },

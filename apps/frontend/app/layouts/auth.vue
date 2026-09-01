@@ -46,7 +46,7 @@ useHead(() => ({
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: var(--color-default-50);
+  background: transparent;
 }
 
 .theme-toggle {

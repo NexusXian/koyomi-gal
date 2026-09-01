@@ -24,7 +24,9 @@ onMounted(async () => {
       'galgame:update',
       'role:list',
       'permission:list',
-      'role:assign'
+      'role:assign',
+      'banner:read',
+      'article:read'
     ])
   ) {
     throw createError({

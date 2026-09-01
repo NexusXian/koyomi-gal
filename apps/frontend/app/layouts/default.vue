@@ -8,7 +8,7 @@ const colorMode = useCookie<'light' | 'dark'>('koyomi-color-mode', {
 })
 
 const { isAuthenticated } = storeToRefs(useUserStore())
-const { load: loadPermissions, hasAny } = usePermissions()
+const { load: loadPermissions, has, hasAny } = usePermissions()
 
 watchEffect(() => {
   if (isAuthenticated.value) {
@@ -20,7 +20,8 @@ const navigationItems = computed(() => {
   const items = [
     { label: '首页', icon: 'lucide:house', to: '/' },
     { label: 'galgame', icon: 'lucide:gamepad-2', to: '/galgames' },
-    { label: '帖子', icon: 'lucide:message-square-text', to: '/posts' }
+    { label: '帖子', icon: 'lucide:message-square-text', to: '/posts' },
+    { label: '资讯', icon: 'lucide:newspaper', to: '/articles' }
   ]
 
   if (
@@ -32,10 +33,29 @@ const navigationItems = computed(() => {
       'galgame:update',
       'role:list',
       'permission:list',
-      'role:assign'
+      'role:assign',
+      'banner:read',
+      'article:read'
     ])
   ) {
-    items.push({ label: '管理', icon: 'lucide:shield', to: '/admin/galgames' })
+    const target = has('galgame:review')
+      ? '/admin/galgames'
+      : has('resource_report:list')
+        ? '/admin/reports'
+        : has('resource:review')
+          ? '/admin/resources'
+          : has('galgame:update')
+            ? '/admin/tags'
+            : has('banner:read')
+              ? '/admin/banners'
+              : has('article:read')
+                ? '/admin/articles'
+                : has('role:list')
+                  ? '/admin/roles'
+                  : has('permission:list')
+                    ? '/admin/permissions'
+                    : '/admin/users'
+    items.push({ label: '管理', icon: 'lucide:shield', to: target })
   }
 
   return items
@@ -86,10 +106,7 @@ useHead(() => ({
 <style scoped>
 .app-shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 28rem),
-    radial-gradient(circle at 90% 12%, color-mix(in srgb, var(--color-secondary) 7%, transparent), transparent 24rem),
-    var(--color-background);
+  background: transparent;
 }
 
 .skip-link {

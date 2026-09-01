@@ -61,6 +61,15 @@ var seedPermissions = []seedPermission{
 	{Code: "resource_report:handle", Name: "处理资源举报", Description: "允许处理资源举报"},
 	{Code: "post:moderate", Name: "管理帖子", Description: "允许管理任何用户的帖子"},
 	{Code: "comment:moderate", Name: "管理评论", Description: "允许管理任何用户的评论"},
+	{Code: "banner:read", Name: "查看 Banner", Description: "允许查看管理端 Banner"},
+	{Code: "banner:create", Name: "创建 Banner", Description: "允许创建 Banner"},
+	{Code: "banner:update", Name: "更新 Banner", Description: "允许更新 Banner"},
+	{Code: "banner:delete", Name: "删除 Banner", Description: "允许删除 Banner"},
+	{Code: "article:read", Name: "查看文章", Description: "允许查看管理端文章"},
+	{Code: "article:create", Name: "创建文章", Description: "允许创建文章"},
+	{Code: "article:update", Name: "更新文章", Description: "允许更新文章内容和置顶状态"},
+	{Code: "article:delete", Name: "删除文章", Description: "允许删除文章"},
+	{Code: "article:publish", Name: "发布文章", Description: "允许发布、定时发布和取消发布文章"},
 }
 
 // seedRolePermissions maps seed role codes to granted seed permission codes.
@@ -84,6 +93,15 @@ var seedRolePermissions = map[string][]string{
 		"resource_report:handle",
 		"post:moderate",
 		"comment:moderate",
+		"banner:read",
+		"banner:create",
+		"banner:update",
+		"banner:delete",
+		"article:read",
+		"article:create",
+		"article:update",
+		"article:delete",
+		"article:publish",
 	},
 }
 

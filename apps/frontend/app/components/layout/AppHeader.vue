@@ -237,9 +237,10 @@ onMounted(() => {
   top: 0;
   right: 0;
   left: 0;
-  border-bottom: 1px solid var(--color-kun-border);
-  background: color-mix(in srgb, var(--color-content1) 90%, transparent);
-  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--app-glass-border);
+  background: var(--app-glass-background);
+  -webkit-backdrop-filter: var(--app-glass-filter);
+  backdrop-filter: var(--app-glass-filter);
 }
 
 .header-inner {
@@ -311,10 +312,12 @@ onMounted(() => {
   right: 12px;
   left: 12px;
   padding: 10px;
-  border: 1px solid var(--color-kun-border);
+  border: 1px solid var(--app-glass-border);
   border-radius: var(--radius-kun-lg);
-  background: var(--color-content1);
+  background: var(--app-glass-background);
   box-shadow: var(--shadow-kun-lg);
+  -webkit-backdrop-filter: var(--app-glass-filter);
+  backdrop-filter: var(--app-glass-filter);
 }
 
 @media (min-width: 480px) {

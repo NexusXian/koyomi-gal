@@ -54,9 +54,10 @@ function isActive(to: string) {
   left: 0;
   display: none;
   width: 80px;
-  border-right: 1px solid var(--color-kun-border);
-  background: color-mix(in srgb, var(--color-content1) 90%, transparent);
-  backdrop-filter: blur(18px);
+  border-right: 1px solid var(--app-glass-border);
+  background: var(--app-glass-background);
+  -webkit-backdrop-filter: var(--app-glass-filter);
+  backdrop-filter: var(--app-glass-filter);
 }
 
 .sidebar-navigation {

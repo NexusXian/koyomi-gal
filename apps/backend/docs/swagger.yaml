@@ -1,5 +1,43 @@
 basePath: /
 definitions:
+  dto.AdminArticleListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ArticleData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.AdminArticleListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AdminArticleListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.AdminBannerListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.BannerListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.AdminResourceListData:
     properties:
       items:
@@ -23,6 +61,136 @@ definitions:
         type: integer
       data:
         $ref: '#/definitions/dto.AdminResourceListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.Announcement:
+    properties:
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_pinned:
+        example: true
+        type: boolean
+      published_at:
+        type: string
+      summary:
+        example: 本次更新内容概览
+        type: string
+      title:
+        example: 站点更新公告
+        type: string
+      type:
+        example: announcement
+        type: string
+    type: object
+  dto.ArticleData:
+    properties:
+      content:
+        example: 完整公告内容
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_pinned:
+        example: true
+        type: boolean
+      is_published:
+        example: true
+        type: boolean
+      published_at:
+        type: string
+      summary:
+        example: 本次更新内容概览
+        type: string
+      title:
+        example: 站点更新公告
+        type: string
+      type:
+        example: announcement
+        type: string
+      updated_at:
+        type: string
+      view_count:
+        example: 100
+        type: integer
+    type: object
+  dto.ArticleDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ArticleData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ArticleListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ArticleListItem'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.ArticleListItem:
+    properties:
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_pinned:
+        example: true
+        type: boolean
+      is_published:
+        example: true
+        type: boolean
+      published_at:
+        type: string
+      summary:
+        example: 本次更新内容概览
+        type: string
+      title:
+        example: 站点更新公告
+        type: string
+      type:
+        example: announcement
+        type: string
+      updated_at:
+        type: string
+      view_count:
+        example: 100
+        type: integer
+    type: object
+  dto.ArticleListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ArticleListData'
       msg:
         example: success
         type: string
@@ -57,6 +225,114 @@ definitions:
         type: integer
       username:
         example: koyomi
+        type: string
+    type: object
+  dto.Author:
+    properties:
+      avatar:
+        example: https://example.com/avatar.jpg
+        type: string
+      id:
+        example: 1
+        type: integer
+      username:
+        example: koyomi
+        type: string
+    type: object
+  dto.Banner:
+    properties:
+      id:
+        example: 1
+        type: integer
+      image_url:
+        example: https://example.com/banner.jpg
+        type: string
+      link_type:
+        example: galgame
+        type: string
+      link_value:
+        example: "1"
+        type: string
+      subtitle:
+        example: 发现本月值得关注的新作
+        type: string
+      title:
+        example: 夏日新作专题
+        type: string
+    type: object
+  dto.BannerData:
+    properties:
+      created_at:
+        type: string
+      end_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      image_url:
+        example: https://example.com/banner.jpg
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      link_type:
+        example: galgame
+        type: string
+      link_value:
+        example: "1"
+        type: string
+      sort_order:
+        example: 100
+        type: integer
+      start_at:
+        type: string
+      subtitle:
+        example: 发现本月值得关注的新作
+        type: string
+      title:
+        example: 夏日新作专题
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.BannerDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.BannerData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.BannerListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.BannerData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.BannerListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.BannerData'
+        type: array
+      msg:
+        example: success
         type: string
     type: object
   dto.CommentData:
@@ -150,6 +426,90 @@ definitions:
       msg:
         example: success
         type: string
+    type: object
+  dto.CreateArticleRequest:
+    properties:
+      content:
+        example: 完整公告内容
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        maxLength: 2048
+        type: string
+      is_pinned:
+        example: true
+        type: boolean
+      is_published:
+        example: true
+        type: boolean
+      published_at:
+        example: "2026-08-31T00:00:00Z"
+        type: string
+      summary:
+        example: 本次更新内容概览
+        maxLength: 500
+        type: string
+      title:
+        example: 站点更新公告
+        maxLength: 255
+        type: string
+      type:
+        enum:
+        - announcement
+        - news
+        - event
+        - update
+        example: announcement
+        type: string
+    required:
+    - content
+    - is_published
+    - title
+    - type
+    type: object
+  dto.CreateBannerRequest:
+    properties:
+      end_at:
+        example: "2026-09-01T00:00:00Z"
+        type: string
+      image_url:
+        example: https://example.com/banner.jpg
+        maxLength: 2048
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      link_type:
+        enum:
+        - none
+        - url
+        - galgame
+        - post
+        - news
+        example: galgame
+        type: string
+      link_value:
+        example: "1"
+        maxLength: 2048
+        type: string
+      sort_order:
+        example: 100
+        type: integer
+      start_at:
+        example: "2026-08-01T00:00:00Z"
+        type: string
+      subtitle:
+        example: 发现本月值得关注的新作
+        maxLength: 500
+        type: string
+      title:
+        example: 夏日新作专题
+        maxLength: 255
+        type: string
+    required:
+    - image_url
+    - link_type
+    - title
     type: object
   dto.CreateCommentRequest:
     properties:
@@ -394,6 +754,15 @@ definitions:
     - name
     - slug
     type: object
+  dto.Developer:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: YUZUSOFT
+        type: string
+    type: object
   dto.DeveloperDataResponse:
     properties:
       code:
@@ -472,6 +841,30 @@ definitions:
         $ref: '#/definitions/dto.FavoriteData'
       msg:
         example: success
+        type: string
+    type: object
+  dto.Galgame:
+    properties:
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      developer:
+        $ref: '#/definitions/dto.Developer'
+      favorite_count:
+        example: 300
+        type: integer
+      id:
+        example: 1
+        type: integer
+      rating_average:
+        example: 8.72
+        type: number
+      release_date:
+        type: string
+      title:
+        example: 千恋＊万花
+        type: string
+      updated_at:
         type: string
     type: object
   dto.GalgameDataResponse:
@@ -649,6 +1042,44 @@ definitions:
     required:
     - status
     type: object
+  dto.HomeData:
+    properties:
+      announcements:
+        items:
+          $ref: '#/definitions/dto.Announcement'
+        type: array
+      banners:
+        items:
+          $ref: '#/definitions/dto.Banner'
+        type: array
+      latest_galgames:
+        items:
+          $ref: '#/definitions/dto.Galgame'
+        type: array
+      latest_posts:
+        items:
+          $ref: '#/definitions/dto.Post'
+        type: array
+      popular_galgames:
+        items:
+          $ref: '#/definitions/dto.Galgame'
+        type: array
+      popular_posts:
+        items:
+          $ref: '#/definitions/dto.Post'
+        type: array
+    type: object
+  dto.HomeResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.HomeData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.MePermissionsData:
     properties:
       permissions:
@@ -712,6 +1143,30 @@ definitions:
         example: user
         type: string
       updated_at:
+        type: string
+    type: object
+  dto.Post:
+    properties:
+      author:
+        $ref: '#/definitions/dto.Author'
+      comment_count:
+        example: 3
+        type: integer
+      created_at:
+        type: string
+      favorite_count:
+        example: 2
+        type: integer
+      galgame:
+        $ref: '#/definitions/dto.PostGalgame'
+      id:
+        example: 1
+        type: integer
+      like_count:
+        example: 10
+        type: integer
+      title:
+        example: 千恋＊万花通关感想
         type: string
     type: object
   dto.PostData:
@@ -780,6 +1235,18 @@ definitions:
         $ref: '#/definitions/dto.PostFavoriteData'
       msg:
         example: success
+        type: string
+    type: object
+  dto.PostGalgame:
+    properties:
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      id:
+        example: 1
+        type: integer
+      title:
+        example: 千恋＊万花
         type: string
     type: object
   dto.PostLikeData:
@@ -1136,6 +1603,91 @@ definitions:
       name:
         example: 纯爱
         type: string
+    type: object
+  dto.UpdateArticleRequest:
+    properties:
+      content:
+        example: 完整公告内容
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        maxLength: 2048
+        type: string
+      is_pinned:
+        example: true
+        type: boolean
+      is_published:
+        example: true
+        type: boolean
+      published_at:
+        example: "2026-08-31T00:00:00Z"
+        type: string
+      summary:
+        example: 本次更新内容概览
+        maxLength: 500
+        type: string
+      title:
+        example: 站点更新公告
+        maxLength: 255
+        type: string
+      type:
+        enum:
+        - announcement
+        - news
+        - event
+        - update
+        example: announcement
+        type: string
+    required:
+    - content
+    - is_published
+    - title
+    - type
+    type: object
+  dto.UpdateBannerRequest:
+    properties:
+      end_at:
+        example: "2026-09-01T00:00:00Z"
+        type: string
+      image_url:
+        example: https://example.com/banner.jpg
+        maxLength: 2048
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      link_type:
+        enum:
+        - none
+        - url
+        - galgame
+        - post
+        - news
+        example: galgame
+        type: string
+      link_value:
+        example: "1"
+        maxLength: 2048
+        type: string
+      sort_order:
+        example: 100
+        type: integer
+      start_at:
+        example: "2026-08-01T00:00:00Z"
+        type: string
+      subtitle:
+        example: 发现本月值得关注的新作
+        maxLength: 500
+        type: string
+      title:
+        example: 夏日新作专题
+        maxLength: 255
+        type: string
+    required:
+    - image_url
+    - is_active
+    - link_type
+    - title
     type: object
   dto.UpdateCommentRequest:
     properties:
@@ -1503,6 +2055,336 @@ info:
   title: Koyomi Gal API
   version: 1.0.0
 paths:
+  /api/v1/admin/articles:
+    get:
+      description: 分页返回全部文章；需要 article:read 权限
+      operationId: listAdminArticles
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文章列表
+          schema:
+            $ref: '#/definitions/dto.AdminArticleListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询文章
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: 创建草稿或文章；设置发布时间还需要 article:publish 权限
+      operationId: createAdminArticle
+      parameters:
+      - description: 创建文章请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateArticleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.ArticleDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建文章
+      tags:
+      - admin
+  /api/v1/admin/articles/{id}:
+    delete:
+      description: 删除文章；需要 article:delete 权限
+      operationId: deleteAdminArticle
+      parameters:
+      - description: 文章 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文章已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "404":
+          description: 文章不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除文章
+      tags:
+      - admin
+    get:
+      description: 按 ID 返回任意发布状态的文章；需要 article:read 权限
+      operationId: getAdminArticle
+      parameters:
+      - description: 文章 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文章详情
+          schema:
+            $ref: '#/definitions/dto.ArticleDataResponse'
+        "404":
+          description: 文章不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查看文章
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 全量更新；内容变更需要 article:update，发布时间变更需要 article:publish
+      operationId: updateAdminArticle
+      parameters:
+      - description: 文章 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新文章请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateArticleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.ArticleDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 文章不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新文章
+      tags:
+      - admin
+  /api/v1/admin/banners:
+    get:
+      description: 分页返回全部 Banner；需要 banner:read 权限
+      operationId: listAdminBanners
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Banner 列表
+          schema:
+            $ref: '#/definitions/dto.AdminBannerListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询 Banner 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询 Banner
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: 创建首页 Banner；需要 banner:create 权限
+      operationId: createAdminBanner
+      parameters:
+      - description: 创建 Banner 请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateBannerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.BannerDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建 Banner
+      tags:
+      - admin
+  /api/v1/admin/banners/{id}:
+    delete:
+      description: 删除 Banner；需要 banner:delete 权限
+      operationId: deleteAdminBanner
+      parameters:
+      - description: Banner ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Banner 已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Banner ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Banner 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除 Banner
+      tags:
+      - admin
+    get:
+      description: 按 ID 返回 Banner；需要 banner:read 权限
+      operationId: getAdminBanner
+      parameters:
+      - description: Banner ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Banner 详情
+          schema:
+            $ref: '#/definitions/dto.BannerDataResponse'
+        "400":
+          description: Banner ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Banner 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查看 Banner
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 全量更新 Banner；需要 banner:update 权限
+      operationId: updateAdminBanner
+      parameters:
+      - description: Banner ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新 Banner 请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateBannerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.BannerDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Banner 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新 Banner
+      tags:
+      - admin
   /api/v1/admin/galgames:
     get:
       description: 查询全部状态（pending/published/rejected/hidden）的 Galgame；需要 galgame:review
@@ -1796,6 +2678,71 @@ paths:
       summary: 管理端审核资源
       tags:
       - admin
+  /api/v1/articles:
+    get:
+      description: 分页返回已发布时间不晚于当前时间的文章，不包含正文
+      operationId: listArticles
+      parameters:
+      - description: 类型：announcement、news、event、update
+        in: query
+        name: type
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文章列表
+          schema:
+            $ref: '#/definitions/dto.ArticleListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询文章失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看文章列表
+      tags:
+      - articles
+  /api/v1/articles/{id}:
+    get:
+      description: 返回已发布文章详情并安全增加浏览次数
+      operationId: getArticle
+      parameters:
+      - description: 文章 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文章详情
+          schema:
+            $ref: '#/definitions/dto.ArticleDataResponse'
+        "400":
+          description: 文章 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 文章不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看文章详情
+      tags:
+      - articles
   /api/v1/auth/login:
     post:
       consumes:
@@ -1963,6 +2910,24 @@ paths:
       summary: 发送邮箱验证码
       tags:
       - verification
+  /api/v1/banners:
+    get:
+      description: 返回当前启用且在展示时间范围内的 Banner
+      operationId: listBanners
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Banner 列表
+          schema:
+            $ref: '#/definitions/dto.BannerListResponse'
+        "500":
+          description: 查询 Banner 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看有效 Banner
+      tags:
+      - banners
   /api/v1/comments/{id}:
     delete:
       description: 删除评论（回复级联）并按子树大小原子减少帖子评论计数；作者本人或拥有 comment:moderate 权限
@@ -2796,6 +3761,24 @@ paths:
       summary: 设置 Galgame 游玩状态
       tags:
       - galgames
+  /api/v1/home:
+    get:
+      description: 返回首页轮播、公告、Galgame 和帖子板块
+      operationId: getHome
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 首页数据
+          schema:
+            $ref: '#/definitions/dto.HomeResponse'
+        "500":
+          description: 查询首页数据失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 获取首页数据
+      tags:
+      - home
   /api/v1/me/permissions:
     get:
       description: 返回当前登录用户的角色 code 与权限 code 集合，用于前端控制 UI 展示
