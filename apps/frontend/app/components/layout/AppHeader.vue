@@ -20,6 +20,7 @@ const { logout } = useAuth()
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const mobileSearchOpen = ref(false)
 const loggingOut = ref(false)
+const isHydrated = ref(false)
 const brandIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#g)"/><text x="20" y="27" font-size="20" font-weight="700" fill="#fff" text-anchor="middle" font-family="sans-serif">K</text></svg>'
 )}`
@@ -73,6 +74,10 @@ watch(
     mobileSearchOpen.value = false
   }
 )
+
+onMounted(() => {
+  isHydrated.value = true
+})
 </script>
 
 <template>
@@ -152,7 +157,7 @@ watch(
           </KunButton>
         </KunTooltip>
 
-        <template v-if="isAuthenticated">
+        <template v-if="isHydrated && isAuthenticated">
           <a-dropdown>
             <div class="account" :title="user?.username">
               <KunAvatar :user="avatarUser" :is-navigation="false" size="sm" />

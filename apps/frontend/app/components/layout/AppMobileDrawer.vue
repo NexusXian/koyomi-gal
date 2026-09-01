@@ -22,35 +22,41 @@ function isActive(to: string) {
 </script>
 
 <template>
-  <KunDrawer
-    v-model="open"
-    title="Koyomi"
-    placement="left"
-    size="sm"
-    :responsive="false"
-  >
-    <nav class="mobile-navigation" aria-label="移动端主导航">
-      <KunButton
-        v-for="item in items"
-        :key="item.to"
-        :href="item.to"
-        :color="isActive(item.to) ? 'primary' : 'default'"
-        :variant="isActive(item.to) ? 'flat' : 'light'"
-        size="lg"
-        rounded="lg"
-        :full-width="true"
-        class-name="mobile-navigation-item"
-        :aria-current="isActive(item.to) ? 'page' : undefined"
-        @click="open = false"
-      >
-        <KunIcon :name="item.icon" />
-        <span>{{ item.label }}</span>
-      </KunButton>
-    </nav>
-  </KunDrawer>
+  <div class="mobile-drawer-host">
+    <KunDrawer
+      v-model="open"
+      title="Koyomi"
+      placement="left"
+      size="sm"
+      :responsive="false"
+    >
+      <nav class="mobile-navigation" aria-label="移动端主导航">
+        <KunButton
+          v-for="item in items"
+          :key="item.to"
+          :href="item.to"
+          :color="isActive(item.to) ? 'primary' : 'default'"
+          :variant="isActive(item.to) ? 'flat' : 'light'"
+          size="lg"
+          rounded="lg"
+          :full-width="true"
+          class-name="mobile-navigation-item"
+          :aria-current="isActive(item.to) ? 'page' : undefined"
+          @click="open = false"
+        >
+          <KunIcon :name="item.icon" />
+          <span>{{ item.label }}</span>
+        </KunButton>
+      </nav>
+    </KunDrawer>
+  </div>
 </template>
 
 <style scoped>
+.mobile-drawer-host {
+  display: contents;
+}
+
 .mobile-navigation {
   display: flex;
   flex-direction: column;
