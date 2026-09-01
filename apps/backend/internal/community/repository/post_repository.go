@@ -45,9 +45,10 @@ func (r *PostRepository) Update(ctx context.Context, post *model.Post) error {
 		Model(&model.Post{}).
 		Where("id = ?", post.ID).
 		Updates(map[string]any{
-			"title":      post.Title,
-			"content":    post.Content,
-			"updated_at": post.UpdatedAt,
+			"title":       post.Title,
+			"content":     post.Content,
+			"editor_mode": post.EditorMode,
+			"updated_at":  post.UpdatedAt,
 		}).Error
 	if err != nil {
 		return fmt.Errorf("update post: %w", err)

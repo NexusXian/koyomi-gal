@@ -2,17 +2,36 @@ package model
 
 import "time"
 
+// EditorMode marks how a post's content should be interpreted and rendered.
+type EditorMode string
+
+const (
+	EditorModePlain    EditorMode = "plain"
+	EditorModeMarkdown EditorMode = "markdown"
+)
+
+// IsValidEditorMode reports whether the value is a known editor mode.
+func IsValidEditorMode(mode EditorMode) bool {
+	switch mode {
+	case EditorModePlain, EditorModeMarkdown:
+		return true
+	default:
+		return false
+	}
+}
+
 type Post struct {
-	ID            uint      `gorm:"primaryKey" json:"id"`
-	GalgameID     *uint     `json:"galgame_id"`
-	AuthorID      *uint     `json:"author_id"`
-	Title         string    `gorm:"size:255;not null" json:"title"`
-	Content       string    `gorm:"not null" json:"content"`
-	LikeCount     int64     `gorm:"not null" json:"like_count"`
-	CommentCount  int64     `gorm:"not null" json:"comment_count"`
-	FavoriteCount int64     `gorm:"not null" json:"favorite_count"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            uint       `gorm:"primaryKey" json:"id"`
+	GalgameID     *uint      `json:"galgame_id"`
+	AuthorID      *uint      `json:"author_id"`
+	Title         string     `gorm:"size:255;not null" json:"title"`
+	Content       string     `gorm:"not null" json:"content"`
+	EditorMode    EditorMode `gorm:"type:varchar(20);not null;default:'plain'" json:"editor_mode"`
+	LikeCount     int64      `gorm:"not null" json:"like_count"`
+	CommentCount  int64      `gorm:"not null" json:"comment_count"`
+	FavoriteCount int64      `gorm:"not null" json:"favorite_count"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
 	// Filled by repository joins, never written to the database.
 	AuthorName      string `gorm:"->" json:"author_name"`
 	AuthorAvatar    string `gorm:"->" json:"author_avatar"`

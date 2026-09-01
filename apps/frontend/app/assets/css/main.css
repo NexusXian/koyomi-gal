@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import '@kungal/ui-tokens';
 @import '@kungal/ui-vue/style.css';
+/* Opt-in token-driven prose typography for rendered markdown content. */
+@import '@kungal/ui-vue/prose.css';
 
 @source '../../../node_modules/@kungal/ui-vue';
 @source '../../../node_modules/@kungal/ui-core';

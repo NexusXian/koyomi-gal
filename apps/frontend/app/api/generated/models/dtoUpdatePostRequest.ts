@@ -5,9 +5,11 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoUpdatePostRequestEditorMode } from './dtoUpdatePostRequestEditorMode';
 
 export interface DtoUpdatePostRequest {
   content: string;
+  editor_mode?: DtoUpdatePostRequestEditorMode;
   /** @maxLength 255 */
   title: string;
 }

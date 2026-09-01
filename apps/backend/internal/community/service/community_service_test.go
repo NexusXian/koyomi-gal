@@ -164,6 +164,63 @@ func TestPostCrudAndGalgamePostCount(t *testing.T) {
 	}
 }
 
+func TestPostEditorMode(t *testing.T) {
+	env := newCommunityTestEnv(t)
+	ctx := context.Background()
+	author := testutil.CreateUser(t, env.db, "post-editor-mode-author")
+
+	// Historical clients omit editor_mode: it must default to plain.
+	legacy, err := env.posts.Create(ctx, author, &dto.CreatePostRequest{
+		Title:   "legacy post",
+		Content: "# not a heading",
+	})
+	if err != nil || legacy.EditorMode != model.EditorModePlain {
+		t.Fatalf("expected default plain editor mode, got %+v err=%v", legacy, err)
+	}
+
+	created, err := env.posts.Create(ctx, author, &dto.CreatePostRequest{
+		Title:      "markdown post",
+		Content:    "# heading",
+		EditorMode: model.EditorModeMarkdown,
+	})
+	if err != nil || created.EditorMode != model.EditorModeMarkdown {
+		t.Fatalf("expected markdown editor mode, got %+v err=%v", created, err)
+	}
+
+	if _, err := env.posts.Create(ctx, author, &dto.CreatePostRequest{
+		Title:      "invalid mode",
+		Content:    "x",
+		EditorMode: model.EditorMode("abc"),
+	}); !errors.Is(err, ErrInvalidPostInput) {
+		t.Fatalf("expected ErrInvalidPostInput, got %v", err)
+	}
+
+	updated, err := env.posts.Update(ctx, author, legacy.ID, &dto.UpdatePostRequest{
+		Title:      "legacy post v2",
+		Content:    "still plain",
+		EditorMode: model.EditorModeMarkdown,
+	})
+	if err != nil || updated.EditorMode != model.EditorModeMarkdown {
+		t.Fatalf("expected updated markdown editor mode, got %+v err=%v", updated, err)
+	}
+
+	updated, err = env.posts.Update(ctx, author, created.ID, &dto.UpdatePostRequest{
+		Title:   "markdown post v2",
+		Content: "## smaller heading",
+	})
+	if err != nil || updated.EditorMode != model.EditorModeMarkdown {
+		t.Fatalf("expected update without editor_mode to keep markdown, got %+v err=%v", updated, err)
+	}
+
+	if _, err := env.posts.Update(ctx, author, created.ID, &dto.UpdatePostRequest{
+		Title:      "invalid update mode",
+		Content:    "x",
+		EditorMode: model.EditorMode("abc"),
+	}); !errors.Is(err, ErrInvalidPostInput) {
+		t.Fatalf("expected ErrInvalidPostInput on update, got %v", err)
+	}
+}
+
 func TestPostListFiltersAndPagination(t *testing.T) {
 	env := newCommunityTestEnv(t)
 	ctx := context.Background()

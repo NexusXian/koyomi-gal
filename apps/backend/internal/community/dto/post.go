@@ -7,14 +7,16 @@ import (
 )
 
 type CreatePostRequest struct {
-	Title     string `json:"title" binding:"required,max=255" example:"千恋＊万花通关感想"`
-	Content   string `json:"content" binding:"required" example:"剧情感想……"`
-	GalgameID *uint  `json:"galgame_id" binding:"omitempty,gt=0" example:"1"`
+	Title      string           `json:"title" binding:"required,max=255" example:"千恋＊万花通关感想"`
+	Content    string           `json:"content" binding:"required" example:"剧情感想……"`
+	EditorMode model.EditorMode `json:"editor_mode" binding:"omitempty,oneof=plain markdown" example:"markdown"`
+	GalgameID  *uint            `json:"galgame_id" binding:"omitempty,gt=0" example:"1"`
 }
 
 type UpdatePostRequest struct {
-	Title   string `json:"title" binding:"required,max=255" example:"千恋＊万花通关感想（更新）"`
-	Content string `json:"content" binding:"required" example:"剧情感想（更新）……"`
+	Title      string           `json:"title" binding:"required,max=255" example:"千恋＊万花通关感想（更新）"`
+	Content    string           `json:"content" binding:"required" example:"剧情感想（更新）……"`
+	EditorMode model.EditorMode `json:"editor_mode" binding:"omitempty,oneof=plain markdown" example:"markdown"`
 }
 
 type PostQuery struct {
@@ -24,18 +26,19 @@ type PostQuery struct {
 }
 
 type PostData struct {
-	ID            uint      `json:"id" example:"1"`
-	GalgameID     *uint     `json:"galgame_id" example:"1"`
-	GalgameTitle  string    `json:"galgame_title" example:"千恋＊万花"`
-	AuthorID      *uint     `json:"author_id" example:"1"`
-	AuthorName    string    `json:"author_name" example:"koyomi"`
-	Title         string    `json:"title" example:"千恋＊万花通关感想"`
-	Content       string    `json:"content" example:"剧情感想……"`
-	LikeCount     int64     `json:"like_count" example:"10"`
-	CommentCount  int64     `json:"comment_count" example:"3"`
-	FavoriteCount int64     `json:"favorite_count" example:"2"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            uint             `json:"id" example:"1"`
+	GalgameID     *uint            `json:"galgame_id" example:"1"`
+	GalgameTitle  string           `json:"galgame_title" example:"千恋＊万花"`
+	AuthorID      *uint            `json:"author_id" example:"1"`
+	AuthorName    string           `json:"author_name" example:"koyomi"`
+	Title         string           `json:"title" example:"千恋＊万花通关感想"`
+	Content       string           `json:"content" example:"剧情感想……"`
+	EditorMode    model.EditorMode `json:"editor_mode" example:"plain"`
+	LikeCount     int64            `json:"like_count" example:"10"`
+	CommentCount  int64            `json:"comment_count" example:"3"`
+	FavoriteCount int64            `json:"favorite_count" example:"2"`
+	CreatedAt     time.Time        `json:"created_at"`
+	UpdatedAt     time.Time        `json:"updated_at"`
 }
 
 type PostListData struct {
@@ -66,6 +69,7 @@ func NewPostData(post *model.Post) PostData {
 		AuthorName:    post.AuthorName,
 		Title:         post.Title,
 		Content:       post.Content,
+		EditorMode:    post.EditorMode,
 		LikeCount:     post.LikeCount,
 		CommentCount:  post.CommentCount,
 		FavoriteCount: post.FavoriteCount,

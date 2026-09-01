@@ -5,9 +5,11 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoCreatePostRequestEditorMode } from './dtoCreatePostRequestEditorMode';
 
 export interface DtoCreatePostRequest {
   content: string;
+  editor_mode?: DtoCreatePostRequestEditorMode;
   galgame_id?: number;
   /** @maxLength 255 */
   title: string;

@@ -5808,6 +5808,18 @@ const docTemplate = `{
                     "type": "string",
                     "example": "剧情感想……"
                 },
+                "editor_mode": {
+                    "enum": [
+                        "plain",
+                        "markdown"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.EditorMode"
+                        }
+                    ],
+                    "example": "markdown"
+                },
                 "galgame_id": {
                     "type": "integer",
                     "example": 1
@@ -6565,6 +6577,14 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "editor_mode": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.EditorMode"
+                        }
+                    ],
+                    "example": "plain"
                 },
                 "favorite_count": {
                     "type": "integer",
@@ -7447,6 +7467,18 @@ const docTemplate = `{
                     "type": "string",
                     "example": "剧情感想（更新）……"
                 },
+                "editor_mode": {
+                    "enum": [
+                        "plain",
+                        "markdown"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.EditorMode"
+                        }
+                    ],
+                    "example": "markdown"
+                },
                 "title": {
                     "type": "string",
                     "maxLength": 255,
@@ -7734,6 +7766,17 @@ const docTemplate = `{
                     "example": "ok"
                 }
             }
+        },
+        "model.EditorMode": {
+            "type": "string",
+            "enum": [
+                "plain",
+                "markdown"
+            ],
+            "x-enum-varnames": [
+                "EditorModePlain",
+                "EditorModeMarkdown"
+            ]
         },
         "response.ErrorResponse": {
             "type": "object",

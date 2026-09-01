@@ -51,6 +51,13 @@ func (s *PostService) Create(
 	if title == "" || content == "" {
 		return nil, ErrInvalidPostInput
 	}
+	editorMode := model.EditorModePlain
+	if req.EditorMode != "" {
+		editorMode = req.EditorMode
+	}
+	if !model.IsValidEditorMode(editorMode) {
+		return nil, ErrInvalidPostInput
+	}
 	if req.GalgameID != nil {
 		if err := s.ensurePublishedGalgame(ctx, *req.GalgameID); err != nil {
 			return nil, err
@@ -58,10 +65,11 @@ func (s *PostService) Create(
 	}
 
 	post := &model.Post{
-		GalgameID: req.GalgameID,
-		AuthorID:  &authorID,
-		Title:     title,
-		Content:   content,
+		GalgameID:  req.GalgameID,
+		AuthorID:   &authorID,
+		Title:      title,
+		Content:    content,
+		EditorMode: editorMode,
 	}
 	err := s.posts.Transaction(ctx, func(tx *repository.PostRepository) error {
 		if err := tx.Create(ctx, post); err != nil {
@@ -139,8 +147,18 @@ func (s *PostService) Update(
 	if title == "" || content == "" {
 		return nil, ErrInvalidPostInput
 	}
+	// An omitted editor mode keeps the stored value so legacy clients cannot
+	// accidentally downgrade a markdown post to plain.
+	editorMode := post.EditorMode
+	if req.EditorMode != "" {
+		editorMode = req.EditorMode
+	}
+	if !model.IsValidEditorMode(editorMode) {
+		return nil, ErrInvalidPostInput
+	}
 	post.Title = title
 	post.Content = content
+	post.EditorMode = editorMode
 	if err := s.posts.Update(ctx, post); err != nil {
 		logger.Error("update post", zap.Uint("post_id", id), zap.Uint("actor_id", actorID), zap.Error(err))
 		return nil, err

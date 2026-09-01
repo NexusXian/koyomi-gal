@@ -8,6 +8,7 @@ import {
 } from '~/api/generated/posts/posts'
 import { listGalgames } from '~/api/generated/galgames/galgames'
 import type { DtoGalgameListItem, DtoPostData } from '~/api/generated/models'
+import { EDITOR_MODE_OPTIONS, normalizeEditorMode, type EditorMode } from '~/types/post'
 
 const props = defineProps<{
   postId?: number
@@ -24,6 +25,7 @@ const { isAuthenticated } = storeToRefs(useUserStore())
 const formState = reactive({
   title: '',
   content: '',
+  editor_mode: 'plain' as EditorMode,
   galgame_id: undefined as number | undefined
 })
 
@@ -31,6 +33,8 @@ const galgameOptions = ref<{ value: number; label: string }[]>([])
 const searching = ref(false)
 const submitting = ref(false)
 const loading = ref(false)
+
+const editorModeOptions = EDITOR_MODE_OPTIONS
 
 const rules: Record<string, Rule[]> = {
   title: [{ required: true, message: '请输入标题', max: 255 }],
@@ -64,6 +68,7 @@ async function loadPost(): Promise<void> {
     const data = unwrapApiData(await getPost(props.postId))
     formState.title = data.title ?? ''
     formState.content = data.content ?? ''
+    formState.editor_mode = normalizeEditorMode(data.editor_mode)
     formState.galgame_id = data.galgame_id
     if (data.galgame_id) {
       await searchGalgames('')
@@ -98,6 +103,7 @@ async function submit(): Promise<void> {
     const payload = {
       title: formState.title.trim(),
       content: formState.content,
+      editor_mode: formState.editor_mode,
       galgame_id: formState.galgame_id
     }
     const response = props.postId
@@ -146,11 +152,19 @@ async function submit(): Promise<void> {
           />
         </a-form-item>
 
+        <a-form-item label="编辑模式">
+          <a-segmented
+            v-model:value="formState.editor_mode"
+            :options="editorModeOptions"
+            :disabled="submitting"
+          />
+        </a-form-item>
+
         <a-form-item label="内容" name="content">
-          <a-textarea
-            v-model:value="formState.content"
-            :rows="12"
-            placeholder="写下你想分享的内容"
+          <PostEditor
+            v-model="formState.content"
+            :mode="formState.editor_mode"
+            :disabled="submitting"
           />
         </a-form-item>
 

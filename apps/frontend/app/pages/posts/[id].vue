@@ -18,6 +18,8 @@ import type {
   DtoCreateCommentRequest,
   DtoPostData
 } from '~/api/generated/models'
+import { normalizeEditorMode } from '~/types/post'
+import { stripMarkdownForExcerpt } from '~/utils/markdown'
 import { formatDate } from '~/constants/domain'
 
 const route = useRoute()
@@ -38,9 +40,18 @@ if (error.value || !post.value) {
   })
 }
 
+const postEditorMode = computed(() => normalizeEditorMode(post.value?.editor_mode))
+
+const postExcerpt = computed(() => {
+  const content = post.value?.content ?? ''
+  return postEditorMode.value === 'markdown'
+    ? stripMarkdownForExcerpt(content, 120)
+    : content.slice(0, 120)
+})
+
 useSeoMeta({
   title: () => `${post.value?.title ?? '帖子'} - Koyomi`,
-  description: () => post.value?.content?.slice(0, 120) ?? '帖子详情'
+  description: () => postExcerpt.value || '帖子详情'
 })
 
 const userStore = useUserStore()
@@ -227,7 +238,11 @@ onMounted(() => {
         </div>
       </div>
 
-      <p class="post-content">{{ post?.content }}</p>
+      <PostContent
+        class="post-content"
+        :content="post?.content ?? ''"
+        :mode="postEditorMode"
+      />
 
       <div class="post-actions">
         <button
@@ -394,13 +409,13 @@ onMounted(() => {
   color: var(--color-primary);
 }
 
+/* Whitespace handling lives in PostContent (plain keeps pre-wrap, markdown
+   relies on parsed block markup). */
 .post-content {
   margin: 20px 0 0;
   color: var(--color-default-600);
   font-size: 15px;
   line-height: 1.9;
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .post-actions {

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { listPosts } from '~/api/generated/posts/posts'
 import { getGalgame } from '~/api/generated/galgames/galgames'
-import type { DtoPostListData } from '~/api/generated/models'
+import type { DtoPostData, DtoPostListData } from '~/api/generated/models'
+import { normalizeEditorMode } from '~/types/post'
+import { stripMarkdownForExcerpt } from '~/utils/markdown'
 import { formatDate } from '~/constants/domain'
 
 useSeoMeta({
@@ -39,6 +41,15 @@ const { data: listData, pending } = await useAsyncData<
 const items = computed(() => listData.value?.items ?? [])
 const total = computed(() => listData.value?.total ?? 0)
 const totalPage = computed(() => Math.max(1, Math.ceil(total.value / limit)))
+
+// List cards show a plain-text excerpt only; full markdown rendering happens
+// on the detail page.
+function postExcerpt(post: DtoPostData): string {
+  const content = post.content ?? ''
+  return normalizeEditorMode(post.editor_mode) === 'markdown'
+    ? stripMarkdownForExcerpt(content)
+    : content
+}
 
 const galgameTitle = ref('')
 
@@ -122,7 +133,7 @@ function updatePage(next: number): void {
       >
         <NuxtLink :to="`/posts/${post.id}`" class="post-link">
           <h3 class="post-title">{{ post.title }}</h3>
-          <p class="post-excerpt">{{ post.content }}</p>
+          <p class="post-excerpt">{{ postExcerpt(post) }}</p>
           <div class="post-meta">
             <span class="post-author">
               <KunIcon name="lucide:user-round" />
