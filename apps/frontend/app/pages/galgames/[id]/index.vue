@@ -377,7 +377,7 @@ onMounted(() => {
         <template v-if="isAuthenticated">
           <div class="rating-row">
             <KunRating
-              v-model="myScore"
+              :model-value="myScore"
               :max="10"
               :readonly="false"
               @set="submitScore"
