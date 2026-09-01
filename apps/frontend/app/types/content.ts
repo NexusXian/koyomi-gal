@@ -1,4 +1,5 @@
 import type { HomeArticle, HomeBanner } from '~/types/home'
+import type { EditorMode } from '~/types/post'
 
 export interface PaginatedData<T> {
   items: T[]
@@ -9,6 +10,7 @@ export interface PaginatedData<T> {
 
 export interface Article extends HomeArticle {
   content?: string | null
+  editor_mode?: string | null
   view_count?: number
   created_at?: string | null
   updated_at?: string | null
@@ -40,6 +42,7 @@ export interface ArticlePayload {
   title: string
   summary?: string | null
   content: string
+  editor_mode: EditorMode
   cover_url?: string | null
   type: string
   is_pinned: boolean

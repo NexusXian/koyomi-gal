@@ -30,7 +30,8 @@ func (r *ArticleRepository) Update(ctx context.Context, article *model.Article) 
 	article.UpdatedAt = time.Now()
 	err := r.db.WithContext(ctx).Model(&model.Article{}).Where("id = ?", article.ID).Updates(map[string]any{
 		"title": article.Title, "summary": article.Summary, "content": article.Content,
-		"cover_url": article.CoverURL, "type": article.Type, "is_pinned": article.IsPinned,
+		"editor_mode": article.EditorMode,
+		"cover_url":   article.CoverURL, "type": article.Type, "is_pinned": article.IsPinned,
 		"is_published": article.IsPublished, "published_at": article.PublishedAt, "updated_at": article.UpdatedAt,
 	}).Error
 	if err != nil {

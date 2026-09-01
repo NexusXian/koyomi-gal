@@ -21,9 +21,7 @@ const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const mobileSearchOpen = ref(false)
 const loggingOut = ref(false)
 const isHydrated = ref(false)
-const brandIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#g)"/><text x="20" y="27" font-size="20" font-weight="700" fill="#fff" text-anchor="middle" font-family="sans-serif">K</text></svg>'
-)}`
+const backgroundSettingsOpen = ref(false)
 
 const avatarUser = computed(() =>
   user.value
@@ -101,7 +99,7 @@ onMounted(() => {
         <div class="brand">
           <KunBrand
             name="Koyomi"
-            :icon-src="brandIcon"
+            icon-src="/images/icons/Koyomi.png"
             icon-alt="Koyomi"
             icon-class="size-9 rounded-kun-lg"
             name-class="text-xl font-bold tracking-tight"
@@ -157,6 +155,20 @@ onMounted(() => {
           </KunButton>
         </KunTooltip>
 
+        <KunTooltip text="个性化背景" position="bottom">
+          <KunButton
+            color="default"
+            variant="light"
+            size="sm"
+            rounded="full"
+            :is-icon-only="true"
+            aria-label="打开背景设置"
+            @click="backgroundSettingsOpen = true"
+          >
+            <KunIcon name="lucide:image" />
+          </KunButton>
+        </KunTooltip>
+
         <template v-if="isHydrated && isAuthenticated">
           <a-dropdown>
             <div class="account" :title="user?.username">
@@ -205,6 +217,8 @@ onMounted(() => {
         </template>
       </div>
     </div>
+
+    <BackgroundSettingsPanel v-model="backgroundSettingsOpen" />
 
     <form
       v-if="mobileSearchOpen"

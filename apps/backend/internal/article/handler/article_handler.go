@@ -227,6 +227,8 @@ func (h *ArticleHandler) respondError(c *gin.Context, err error, operation strin
 		response.Error(c, appErrors.ErrValidation("文章标题和正文不能为空"))
 	case errors.Is(err, service.ErrInvalidArticleType):
 		response.Error(c, appErrors.ErrValidation("文章类型不正确"))
+	case errors.Is(err, service.ErrInvalidArticleEditor):
+		response.Error(c, appErrors.ErrValidation("文章编辑模式不正确"))
 	case errors.Is(err, service.ErrArticleForbidden):
 		response.Error(c, appErrors.ErrForbidden("没有执行该操作的权限"))
 	default:

@@ -98,6 +98,9 @@ definitions:
         type: string
       created_at:
         type: string
+      editor_mode:
+        example: plain
+        type: string
       id:
         example: 1
         type: integer
@@ -435,6 +438,12 @@ definitions:
       cover_url:
         example: https://example.com/cover.jpg
         maxLength: 2048
+        type: string
+      editor_mode:
+        enum:
+        - plain
+        - markdown
+        example: markdown
         type: string
       is_pinned:
         example: true
@@ -1623,6 +1632,12 @@ definitions:
       cover_url:
         example: https://example.com/cover.jpg
         maxLength: 2048
+        type: string
+      editor_mode:
+        enum:
+        - plain
+        - markdown
+        example: markdown
         type: string
       is_pinned:
         example: true

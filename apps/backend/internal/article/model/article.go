@@ -9,11 +9,18 @@ const (
 	TypeUpdate       = "update"
 )
 
+// Editor modes mark how an article's content should be interpreted and rendered.
+const (
+	EditorModePlain    = "plain"
+	EditorModeMarkdown = "markdown"
+)
+
 type Article struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
 	Title       string     `gorm:"size:255;not null" json:"title"`
 	Summary     string     `gorm:"not null" json:"summary"`
 	Content     string     `gorm:"not null" json:"content"`
+	EditorMode  string     `gorm:"size:20;not null;default:'plain'" json:"editor_mode"`
 	CoverURL    string     `gorm:"not null" json:"cover_url"`
 	Type        string     `gorm:"size:32;not null" json:"type"`
 	IsPinned    bool       `gorm:"not null" json:"is_pinned"`

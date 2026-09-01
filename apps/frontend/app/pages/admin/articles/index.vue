@@ -3,6 +3,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import { createContentService } from '~/services/content'
 import type { Article, ArticlePayload } from '~/types/content'
+import { EDITOR_MODE_OPTIONS, normalizeEditorMode, type EditorMode } from '~/types/post'
 
 useSeoMeta({ title: '文章管理 - Koyomi' })
 
@@ -22,6 +23,7 @@ const emptyForm = () => ({
   title: '',
   summary: '',
   content: '',
+  editor_mode: 'markdown' as EditorMode,
   cover_url: '',
   type: 'news',
   is_pinned: false,
@@ -29,6 +31,7 @@ const emptyForm = () => ({
   published_at: ''
 })
 const formState = reactive(emptyForm())
+const editorModeOptions = EDITOR_MODE_OPTIONS
 
 function isScheduled(article: Article): boolean {
   return Boolean(article.is_published && article.published_at && new Date(article.published_at).getTime() > Date.now())
@@ -59,6 +62,7 @@ function articlePayload(source: Article | typeof formState): ArticlePayload {
     title: source.title.trim(),
     summary: source.summary?.trim() || null,
     content: source.content?.trim() || '',
+    editor_mode: normalizeEditorMode(source.editor_mode),
     cover_url: source.cover_url?.trim() || null,
     type: source.type,
     is_pinned: source.is_pinned,
@@ -95,6 +99,7 @@ function openEdit(article: Article): void {
     title: article.title ?? '',
     summary: article.summary ?? '',
     content: article.content ?? '',
+    editor_mode: normalizeEditorMode(article.editor_mode),
     cover_url: article.cover_url ?? '',
     type: article.type || 'news',
     is_pinned: article.is_pinned,
@@ -236,13 +241,18 @@ const columns: TableColumnsType = [
       width="820px"
       ok-text="保存"
       cancel-text="取消"
+      destroy-on-close
+      :body-style="{ maxHeight: '68vh', overflowY: 'auto' }"
       @ok="submit"
     >
       <a-form layout="vertical">
         <a-form-item label="标题" required><a-input v-model:value="formState.title" :maxlength="255" /></a-form-item>
         <a-form-item label="摘要"><a-textarea v-model:value="formState.summary" :rows="2" :maxlength="500" /></a-form-item>
+        <a-form-item label="编辑模式">
+          <a-segmented v-model:value="formState.editor_mode" :options="editorModeOptions" :disabled="saving" />
+        </a-form-item>
         <a-form-item label="正文" required>
-          <a-textarea v-model:value="formState.content" :rows="12" placeholder="支持按原始文本换行显示" />
+          <PostEditor v-model="formState.content" :mode="formState.editor_mode" :disabled="saving" />
         </a-form-item>
         <a-form-item label="封面地址"><a-input v-model:value="formState.cover_url" placeholder="https://" /></a-form-item>
         <div class="form-grid">

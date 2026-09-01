@@ -10,6 +10,7 @@ type CreateArticleRequest struct {
 	Title       string     `json:"title" binding:"required,max=255" example:"站点更新公告"`
 	Summary     string     `json:"summary" binding:"max=500" example:"本次更新内容概览"`
 	Content     string     `json:"content" binding:"required" example:"完整公告内容"`
+	EditorMode  string     `json:"editor_mode" binding:"omitempty,oneof=plain markdown" example:"markdown"`
 	CoverURL    string     `json:"cover_url" binding:"max=2048" example:"https://example.com/cover.jpg"`
 	Type        string     `json:"type" binding:"required,oneof=announcement news event update" example:"announcement"`
 	IsPinned    bool       `json:"is_pinned" example:"true"`
@@ -21,6 +22,7 @@ type UpdateArticleRequest struct {
 	Title       string     `json:"title" binding:"required,max=255" example:"站点更新公告"`
 	Summary     string     `json:"summary" binding:"max=500" example:"本次更新内容概览"`
 	Content     string     `json:"content" binding:"required" example:"完整公告内容"`
+	EditorMode  string     `json:"editor_mode" binding:"omitempty,oneof=plain markdown" example:"markdown"`
 	CoverURL    string     `json:"cover_url" binding:"max=2048" example:"https://example.com/cover.jpg"`
 	Type        string     `json:"type" binding:"required,oneof=announcement news event update" example:"announcement"`
 	IsPinned    bool       `json:"is_pinned" example:"true"`
@@ -55,7 +57,8 @@ type ArticleListItem struct {
 
 type ArticleData struct {
 	ArticleListItem
-	Content string `json:"content" example:"完整公告内容"`
+	Content    string `json:"content" example:"完整公告内容"`
+	EditorMode string `json:"editor_mode" example:"plain"`
 }
 
 type ArticleListData struct {
@@ -101,7 +104,11 @@ func NewArticleListItem(article *model.Article) ArticleListItem {
 }
 
 func NewArticleData(article *model.Article) ArticleData {
-	return ArticleData{ArticleListItem: NewArticleListItem(article), Content: article.Content}
+	return ArticleData{
+		ArticleListItem: NewArticleListItem(article),
+		Content:         article.Content,
+		EditorMode:      article.EditorMode,
+	}
 }
 
 func NewArticleList(articles []model.Article) []ArticleListItem {

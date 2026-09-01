@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	ErrArticleNotFound     = errors.New("article not found")
-	ErrInvalidArticleInput = errors.New("invalid article input")
-	ErrInvalidArticleType  = errors.New("invalid article type")
-	ErrArticleForbidden    = errors.New("article permission denied")
+	ErrArticleNotFound      = errors.New("article not found")
+	ErrInvalidArticleInput  = errors.New("invalid article input")
+	ErrInvalidArticleType   = errors.New("invalid article type")
+	ErrInvalidArticleEditor = errors.New("invalid article editor mode")
+	ErrArticleForbidden     = errors.New("article permission denied")
 )
 
 const (
@@ -81,10 +82,15 @@ func (s *ArticleService) Get(ctx context.Context, id uint) (*model.Article, erro
 func (s *ArticleService) Create(ctx context.Context, actorID uint, req *dto.CreateArticleRequest) (*model.Article, error) {
 	isPublished := req.IsPublished != nil && *req.IsPublished
 	publishedAt := publicationTime(isPublished, req.PublishedAt, nil)
+	editorMode := model.EditorModePlain
+	if req.EditorMode != "" {
+		editorMode = req.EditorMode
+	}
 	article := &model.Article{
 		Title: strings.TrimSpace(req.Title), Summary: strings.TrimSpace(req.Summary),
-		Content: strings.TrimSpace(req.Content), CoverURL: strings.TrimSpace(req.CoverURL),
-		Type: strings.TrimSpace(req.Type), IsPinned: req.IsPinned,
+		Content: strings.TrimSpace(req.Content), EditorMode: editorMode,
+		CoverURL: strings.TrimSpace(req.CoverURL),
+		Type:     strings.TrimSpace(req.Type), IsPinned: req.IsPinned,
 		IsPublished: isPublished, PublishedAt: publishedAt,
 	}
 	if err := validateArticle(article); err != nil {
@@ -109,10 +115,17 @@ func (s *ArticleService) Update(ctx context.Context, actorID, id uint, req *dto.
 	}
 	isPublished := req.IsPublished != nil && *req.IsPublished
 	publishedAt := publicationTime(isPublished, req.PublishedAt, article.PublishedAt)
+	// An omitted editor mode keeps the stored value so legacy clients cannot
+	// accidentally downgrade a markdown article to plain.
+	editorMode := article.EditorMode
+	if req.EditorMode != "" {
+		editorMode = req.EditorMode
+	}
 	desired := &model.Article{
 		ID: article.ID, Title: strings.TrimSpace(req.Title), Summary: strings.TrimSpace(req.Summary),
-		Content: strings.TrimSpace(req.Content), CoverURL: strings.TrimSpace(req.CoverURL),
-		Type: strings.TrimSpace(req.Type), IsPinned: req.IsPinned,
+		Content: strings.TrimSpace(req.Content), EditorMode: editorMode,
+		CoverURL: strings.TrimSpace(req.CoverURL),
+		Type:     strings.TrimSpace(req.Type), IsPinned: req.IsPinned,
 		IsPublished: isPublished, PublishedAt: publishedAt,
 		ViewCount: article.ViewCount, CreatedAt: article.CreatedAt,
 	}
@@ -173,6 +186,9 @@ func validateArticle(article *model.Article) error {
 	if !validArticleType(article.Type) {
 		return ErrInvalidArticleType
 	}
+	if !validEditorMode(article.EditorMode) {
+		return ErrInvalidArticleEditor
+	}
 	return nil
 }
 
@@ -185,9 +201,19 @@ func validArticleType(value string) bool {
 	}
 }
 
+func validEditorMode(value string) bool {
+	switch value {
+	case model.EditorModePlain, model.EditorModeMarkdown:
+		return true
+	default:
+		return false
+	}
+}
+
 func articleFieldsChanged(current, desired *model.Article) bool {
 	return current.Title != desired.Title || current.Summary != desired.Summary ||
-		current.Content != desired.Content || current.CoverURL != desired.CoverURL ||
+		current.Content != desired.Content || current.EditorMode != desired.EditorMode ||
+		current.CoverURL != desired.CoverURL ||
 		current.Type != desired.Type || current.IsPinned != desired.IsPinned
 }
 

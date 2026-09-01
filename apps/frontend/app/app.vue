@@ -17,13 +17,46 @@ const antdTheme = computed(() => ({
       ? theme.darkAlgorithm
       : theme.defaultAlgorithm
 }))
+
+const backgroundStore = useBackgroundStore()
+
+onMounted(() => {
+  void backgroundStore.initialize()
+})
+
+onBeforeUnmount(() => {
+  backgroundStore.dispose()
+})
 </script>
 
 <template>
   <a-config-provider :locale="zhCN" :theme="antdTheme">
-    <NuxtRouteAnnouncer />
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
+    <div class="koyomi-app">
+      <AppBackground />
+
+      <div class="koyomi-app-content">
+        <NuxtRouteAnnouncer />
+        <NuxtLayout>
+          <NuxtPage />
+        </NuxtLayout>
+      </div>
+    </div>
   </a-config-provider>
 </template>
+
+<style scoped>
+.koyomi-app,
+.koyomi-app-content {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.koyomi-app {
+  position: relative;
+}
+
+.koyomi-app-content {
+  position: relative;
+  z-index: 1;
+}
+</style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { formatDate } from '~/constants/domain'
 import { createContentService } from '~/services/content'
+import { normalizeEditorMode } from '~/types/post'
 
 const route = useRoute()
 const id = Number(route.params.id)
@@ -74,7 +75,11 @@ useSeoMeta({
       <img v-if="article.cover_url" class="detail-cover" :src="article.cover_url" :alt="article.title" />
 
       <KunCard padding="lg" class-name="content-card">
-        <div class="article-content">{{ article.content || '暂无正文内容。' }}</div>
+        <PostContent
+          class="article-content"
+          :content="article.content || '暂无正文内容。'"
+          :mode="normalizeEditorMode(article.editor_mode)"
+        />
       </KunCard>
 
       <NuxtLink to="/articles" class="back-link">
@@ -97,6 +102,6 @@ useSeoMeta({
 .article-meta { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 17px; color: var(--color-default-400); font-size: 12px; }
 .article-meta span, .article-meta time { display: inline-flex; align-items: center; gap: 5px; }
 .detail-cover { display: block; width: 100%; max-height: 460px; margin-bottom: 20px; border-radius: 18px; object-fit: cover; }
-.article-content { min-height: 220px; color: var(--color-foreground); font-size: 16px; line-height: 1.9; overflow-wrap: anywhere; white-space: pre-wrap; }
+.article-content { min-height: 220px; color: var(--color-foreground); font-size: 16px; line-height: 1.9; }
 .back-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; color: var(--color-primary-600); font-size: 14px; }
 </style>

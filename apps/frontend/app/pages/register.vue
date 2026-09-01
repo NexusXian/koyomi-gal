@@ -183,9 +183,7 @@ onScopeDispose(() => {
   >
     <section class="brand-panel" aria-labelledby="brand-title">
       <div class="brand-heading">
-        <span class="brand-logo" aria-hidden="true">
-          <KunIcon name="lucide:gamepad-2" />
-        </span>
+        <img class="brand-logo" src="/favicon.ico" alt="Koyomi Gal" />
         <div class="brand-copy">
           <p id="brand-title" class="brand-title">Koyomi Gal 账号</p>
           <p class="brand-subtitle">一个账号，连接你的 Galgame 世界</p>
@@ -356,16 +354,11 @@ onScopeDispose(() => {
 }
 
 .brand-logo {
-  display: grid;
   width: 40px;
   height: 40px;
   flex: 0 0 auto;
-  place-items: center;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   box-shadow: var(--shadow-kun-sm);
-  color: var(--color-primary-foreground);
-  font-size: 22px;
 }
 
 .brand-copy {

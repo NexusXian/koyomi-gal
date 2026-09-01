@@ -5048,6 +5048,10 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "editor_mode": {
+                    "type": "string",
+                    "example": "plain"
+                },
                 "id": {
                     "type": "integer",
                     "example": 1
@@ -5533,6 +5537,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 2048,
                     "example": "https://example.com/cover.jpg"
+                },
+                "editor_mode": {
+                    "type": "string",
+                    "enum": [
+                        "plain",
+                        "markdown"
+                    ],
+                    "example": "markdown"
                 },
                 "is_pinned": {
                     "type": "boolean",
@@ -7203,6 +7215,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 2048,
                     "example": "https://example.com/cover.jpg"
+                },
+                "editor_mode": {
+                    "type": "string",
+                    "enum": [
+                        "plain",
+                        "markdown"
+                    ],
+                    "example": "markdown"
                 },
                 "is_pinned": {
                     "type": "boolean",
