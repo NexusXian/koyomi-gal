@@ -3,9 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	galgameRepository "backend/internal/galgame/repository"
+	notificationModel "backend/internal/notification/model"
+	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/resource/dto"
 	"backend/internal/resource/model"
@@ -32,9 +35,18 @@ const (
 )
 
 type ResourceService struct {
-	resources *repository.ResourceRepository
-	galgames  *galgameRepository.GalgameRepository
-	rbac      *rbacService.RBACService
+	resources     *repository.ResourceRepository
+	galgames      *galgameRepository.GalgameRepository
+	rbac          *rbacService.RBACService
+	notifications *notificationService.NotificationService
+}
+
+func (s *ResourceService) SetNotificationDependencies(
+	rbac *rbacService.RBACService,
+	notifications *notificationService.NotificationService,
+) {
+	s.rbac = rbac
+	s.notifications = notifications
 }
 
 func NewResourceService(
@@ -133,7 +145,14 @@ func (s *ResourceService) CreateResource(
 			zap.Uint("galgame_id", req.GalgameID), zap.Uint("uploader_id", uploaderID), zap.Error(err))
 		return nil, err
 	}
-	return s.resources.FindByID(ctx, resource.ID)
+	created, err := s.resources.FindByID(ctx, resource.ID)
+	if err != nil {
+		return nil, err
+	}
+	if created.Status == model.ResourceStatusPending {
+		s.notifyResourceSubmitted(ctx, uploaderID, created)
+	}
+	return created, nil
 }
 
 // UpdateResource fully replaces resource fields and links. The actor must be
@@ -255,6 +274,7 @@ func (s *ResourceService) ReviewResource(
 	ctx context.Context,
 	id uint,
 	req *dto.ReviewResourceRequest,
+	actorIDs ...uint,
 ) (*model.Resource, error) {
 	if req.Status != model.ResourceStatusPublished &&
 		req.Status != model.ResourceStatusRejected &&
@@ -269,13 +289,98 @@ func (s *ResourceService) ReviewResource(
 	if resource == nil {
 		return nil, ErrResourceNotFound
 	}
+	if resource.Status == req.Status {
+		return resource, nil
+	}
 
 	resource.Status = req.Status
 	if err := s.resources.Update(ctx, resource); err != nil {
 		logger.Error("review resource", zap.Uint("resource_id", id), zap.Error(err))
 		return nil, err
 	}
-	return s.resources.FindByID(ctx, id)
+	reviewed, err := s.resources.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	var actorID *uint
+	if len(actorIDs) > 0 {
+		actorID = &actorIDs[0]
+	}
+	s.notifyResourceReviewResult(ctx, actorID, reviewed)
+	return reviewed, nil
+}
+
+func (s *ResourceService) notifyResourceSubmitted(ctx context.Context, actorID uint, resource *model.Resource) {
+	if s.rbac == nil || s.notifications == nil {
+		return
+	}
+	recipientIDs, err := s.rbac.FindUserIDsByPermission(ctx, "resource:review")
+	if err != nil {
+		logger.Error("find resource reviewers for notification", zap.Uint("resource_id", resource.ID), zap.Error(err))
+		return
+	}
+	inputs := make([]notificationService.CreateInput, 0, len(recipientIDs))
+	for _, recipientID := range recipientIDs {
+		inputs = append(inputs, notificationService.CreateInput{
+			RecipientID: recipientID,
+			ActorID:     &actorID,
+			Category:    notificationModel.CategoryReview,
+			Type:        notificationModel.TypeResourceSubmitted,
+			EntityType:  "resource",
+			EntityID:    resource.ID,
+			Title:       "新的资源待审核",
+			Content:     fmt.Sprintf("提交了资源「%s」，等待审核", resource.Title),
+			TargetURL:   "/admin/resources",
+			Metadata: map[string]any{
+				"galgame_id": resource.GalgameID,
+				"title":      resource.Title,
+			},
+		})
+	}
+	if _, err := s.notifications.CreateMany(ctx, inputs); err != nil {
+		logger.Error("create resource submission notifications", zap.Uint("resource_id", resource.ID), zap.Error(err))
+	}
+}
+
+func (s *ResourceService) notifyResourceReviewResult(
+	ctx context.Context,
+	actorID *uint,
+	resource *model.Resource,
+) {
+	if s.notifications == nil || resource.UploaderID == nil {
+		return
+	}
+	notificationType := notificationModel.TypeResourceApproved
+	title := "资源审核通过"
+	content := fmt.Sprintf("你提交的「%s」资源已通过审核", resource.Title)
+	switch resource.Status {
+	case model.ResourceStatusRejected:
+		notificationType = notificationModel.TypeResourceRejected
+		title = "资源审核未通过"
+		content = fmt.Sprintf("你提交的「%s」资源未通过审核", resource.Title)
+	case model.ResourceStatusHidden:
+		notificationType = notificationModel.TypeResourceHidden
+		title = "资源已被隐藏"
+		content = fmt.Sprintf("你提交的「%s」资源已被管理员隐藏", resource.Title)
+	}
+	if _, err := s.notifications.Create(ctx, notificationService.CreateInput{
+		RecipientID: *resource.UploaderID,
+		ActorID:     actorID,
+		Category:    notificationModel.CategoryReview,
+		Type:        notificationType,
+		EntityType:  "resource",
+		EntityID:    resource.ID,
+		Title:       title,
+		Content:     content,
+		TargetURL:   fmt.Sprintf("/galgames/%d", resource.GalgameID),
+		Metadata: map[string]any{
+			"galgame_id": resource.GalgameID,
+			"status":     resource.Status,
+			"title":      resource.Title,
+		},
+	}); err != nil {
+		logger.Error("create resource review notification", zap.Uint("resource_id", resource.ID), zap.Error(err))
+	}
 }
 
 // ensureCanManage allows the uploader to manage their own resource and falls

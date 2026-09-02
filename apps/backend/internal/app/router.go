@@ -80,6 +80,7 @@ func (app *App) setupRoutes() {
 	{
 		admin.GET("/galgames", requirePermission("galgame:review"), app.CatalogHandler.ListAdminGalgames)
 		admin.GET("/galgames/:id", requirePermission("galgame:review"), app.CatalogHandler.GetAdminGalgame)
+		admin.PUT("/galgames/:id/review", requirePermission("galgame:review"), app.CatalogHandler.ReviewGalgame)
 		admin.GET("/resource-reports", requirePermission("resource_report:list"), app.ReportHandler.ListReports)
 		admin.PUT("/resource-reports/:id/handle", requirePermission("resource_report:handle"), app.ReportHandler.HandleReport)
 		admin.GET("/resources", requirePermission("resource:review"), app.ResourceHandler.ListAdminResources)
@@ -126,6 +127,14 @@ func (app *App) setupRoutes() {
 		comments.DELETE("/:id", app.CommentHandler.DeleteComment)
 		comments.POST("/:id/like", app.InteractionHandler.LikeComment)
 		comments.DELETE("/:id/like", app.InteractionHandler.UnlikeComment)
+	}
+
+	notifications := protected.Group("/notifications")
+	{
+		notifications.GET("", app.NotificationHandler.ListNotifications)
+		notifications.GET("/unread-count", app.NotificationHandler.UnreadCount)
+		notifications.PATCH("/:id/read", app.NotificationHandler.MarkRead)
+		notifications.PATCH("/read-all", app.NotificationHandler.MarkAllRead)
 	}
 
 	roles := protected.Group("/roles")

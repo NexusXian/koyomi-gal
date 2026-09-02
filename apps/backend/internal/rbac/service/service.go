@@ -66,6 +66,15 @@ func (s *RBACService) GetUserPermissions(ctx context.Context, userID uint) ([]st
 	return s.repo.GetUserPermissions(ctx, userID)
 }
 
+func (s *RBACService) FindUserIDsByPermission(ctx context.Context, permission string) ([]uint, error) {
+	userIDs, err := s.repo.FindUserIDsByPermission(ctx, permission)
+	if err != nil {
+		logger.Error("find user ids by permission", zap.String("permission", permission), zap.Error(err))
+		return nil, err
+	}
+	return userIDs, nil
+}
+
 func (s *RBACService) GetUserRoleCodes(ctx context.Context, userID uint) ([]string, error) {
 	return s.repo.GetUserRoleCodes(ctx, userID)
 }

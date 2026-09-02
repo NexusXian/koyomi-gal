@@ -180,6 +180,7 @@ onMounted(() => {
         </KunTooltip>
 
         <template v-if="isHydrated && isAuthenticated">
+          <NotificationBell />
           <a-dropdown>
             <div class="account" :title="user?.username">
               <KunAvatar :user="avatarUser" :is-navigation="false" size="sm" />

@@ -304,6 +304,46 @@ func (h *CatalogHandler) UpdateGalgame(c *gin.Context) {
 	response.Ok(c, dto.NewGalgameResponse(galgame))
 }
 
+// ReviewGalgame godoc
+// @Summary      管理端审核 Galgame
+// @Description  将 Galgame 标记为已发布或已拒绝；需要 galgame:review 权限
+// @ID           reviewGalgame
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Galgame ID"
+// @Param        request body dto.ReviewGalgameRequest true "审核 Galgame 请求"
+// @Success      200 {object} dto.GalgameDataResponse "审核结果"
+// @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      404 {object} response.ErrorResponse "Galgame 不存在"
+// @Failure      500 {object} response.ErrorResponse "审核 Galgame 失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/galgames/{id}/review [put]
+func (h *CatalogHandler) ReviewGalgame(c *gin.Context) {
+	id, ok := parseID(c, "Galgame")
+	if !ok {
+		return
+	}
+	var req dto.ReviewGalgameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
+		return
+	}
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	galgame, err := h.catalogService.ReviewGalgame(c.Request.Context(), actorID, id, &req)
+	if err != nil {
+		h.respondCatalogError(c, err, "review galgame")
+		return
+	}
+	response.Ok(c, dto.NewGalgameResponse(galgame))
+}
+
 // DeleteGalgame godoc
 // @Summary      删除 Galgame
 // @Description  删除 Galgame 及其别名和 Tag 关联

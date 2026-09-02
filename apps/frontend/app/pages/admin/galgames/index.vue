@@ -3,7 +3,8 @@ import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import {
   getAdminGalgame,
-  listAdminGalgames
+  listAdminGalgames,
+  reviewGalgame
 } from '~/api/generated/admin/admin'
 import { updateGalgame } from '~/api/generated/galgames/galgames'
 import type { DtoGalgameListItem } from '~/api/generated/models'
@@ -99,12 +100,22 @@ async function changeStatus(
   item: DtoGalgameListItem,
   status: number
 ): Promise<void> {
-  if (!item.id || !has('galgame:update')) {
+  const isReview = item.status === 0 && (status === 1 || status === 2)
+  if (
+    !item.id ||
+    (isReview ? !has('galgame:review') : !has('galgame:update'))
+  ) {
     return
   }
 
   statusUpdating.value = item.id
   try {
+    if (isReview) {
+      await reviewGalgame(item.id, { status: status as 1 | 2 })
+      message.success(status === 1 ? 'Galgame 已发布' : 'Galgame 已拒绝')
+      await load()
+      return
+    }
     const detail = unwrapApiData(await getAdminGalgame(item.id))
     await updateGalgame(item.id, {
       title: detail.title ?? '',

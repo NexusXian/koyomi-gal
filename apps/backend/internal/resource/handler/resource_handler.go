@@ -261,7 +261,12 @@ func (h *ResourceHandler) ReviewResource(c *gin.Context) {
 		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
 		return
 	}
-	resource, err := h.resourceService.ReviewResource(c.Request.Context(), id, &req)
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	resource, err := h.resourceService.ReviewResource(c.Request.Context(), id, &req, actorID)
 	if err != nil {
 		h.respondResourceError(c, err, "review resource")
 		return

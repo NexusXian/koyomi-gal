@@ -8,6 +8,9 @@ import (
 	galgameDTO "backend/internal/galgame/dto"
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
+	notificationModel "backend/internal/notification/model"
+	notificationRepo "backend/internal/notification/repository"
+	notificationService "backend/internal/notification/service"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/resource/dto"
@@ -53,6 +56,11 @@ func newResourceTestEnv(t *testing.T) *resourceTestEnv {
 		resourceRepo.NewReportRepository(db),
 		resourceRepo.NewResourceRepository(db),
 	)
+	notificationSvc := notificationService.NewNotificationService(
+		notificationRepo.NewNotificationRepository(db, "https://img.example.com"),
+	)
+	env.resources.SetNotificationDependencies(rbacSvc, notificationSvc)
+	env.reports.SetNotificationDependencies(rbacSvc, notificationSvc)
 	return env
 }
 
@@ -103,6 +111,68 @@ func (e *resourceTestEnv) resourceCount(t *testing.T, galgameID uint) int64 {
 }
 
 func statusPtr(status int16) *int16 { return &status }
+
+func TestResourceAndReportNotifications(t *testing.T) {
+	env := newResourceTestEnv(t)
+	ctx := context.Background()
+	uploader := testutil.CreateUser(t, env.db, "notification-uploader")
+	reporter := testutil.CreateUser(t, env.db, "notification-reporter")
+	reviewer := testutil.CreateUser(t, env.db, "notification-resource-reviewer")
+	if err := env.rbac.AssignRoleByCode(ctx, reviewer, rbacService.RoleCodeAdmin); err != nil {
+		t.Fatalf("assign reviewer role: %v", err)
+	}
+	galgameID := env.createPublishedGalgame(t, uploader, "notification-resource-game")
+
+	published := env.createResource(t, uploader, galgameID, "publish resource", model.ResourceStatusPending, "https://example.com/publish")
+	assertResourceNotificationCount(t, env.db, reviewer, notificationModel.TypeResourceSubmitted, 1)
+	if _, err := env.resources.ReviewResource(ctx, published.ID, &dto.ReviewResourceRequest{Status: model.ResourceStatusPublished}, reviewer); err != nil {
+		t.Fatalf("approve resource: %v", err)
+	}
+	assertResourceNotificationCount(t, env.db, uploader, notificationModel.TypeResourceApproved, 1)
+
+	rejected := env.createResource(t, uploader, galgameID, "reject resource", model.ResourceStatusPending, "https://example.com/reject")
+	if _, err := env.resources.ReviewResource(ctx, rejected.ID, &dto.ReviewResourceRequest{Status: model.ResourceStatusRejected}, reviewer); err != nil {
+		t.Fatalf("reject resource: %v", err)
+	}
+	assertResourceNotificationCount(t, env.db, uploader, notificationModel.TypeResourceRejected, 1)
+
+	hidden := env.createResource(t, uploader, galgameID, "hide resource", model.ResourceStatusPending, "https://example.com/hide")
+	if _, err := env.resources.ReviewResource(ctx, hidden.ID, &dto.ReviewResourceRequest{Status: model.ResourceStatusHidden}, reviewer); err != nil {
+		t.Fatalf("hide resource: %v", err)
+	}
+	assertResourceNotificationCount(t, env.db, uploader, notificationModel.TypeResourceHidden, 1)
+
+	report, err := env.reports.Create(ctx, reporter, published.ID, &dto.CreateResourceReportRequest{Reason: model.ReportReasonInvalidLink})
+	if err != nil {
+		t.Fatalf("create report: %v", err)
+	}
+	assertResourceNotificationCount(t, env.db, reviewer, notificationModel.TypeResourceReported, 1)
+	if _, err := env.reports.Handle(ctx, reviewer, report.ID, &dto.HandleResourceReportRequest{Status: model.ReportStatusResolved}); err != nil {
+		t.Fatalf("resolve report: %v", err)
+	}
+	assertResourceNotificationCount(t, env.db, reporter, notificationModel.TypeReportResolved, 1)
+
+	reportResource := env.createResource(t, uploader, galgameID, "reported rejected", model.ResourceStatusPublished, "https://example.com/report-reject")
+	rejectedReport, err := env.reports.Create(ctx, reporter, reportResource.ID, &dto.CreateResourceReportRequest{Reason: model.ReportReasonOther})
+	if err != nil {
+		t.Fatalf("create rejected report: %v", err)
+	}
+	if _, err := env.reports.Handle(ctx, reviewer, rejectedReport.ID, &dto.HandleResourceReportRequest{Status: model.ReportStatusRejected}); err != nil {
+		t.Fatalf("reject report: %v", err)
+	}
+	assertResourceNotificationCount(t, env.db, reporter, notificationModel.TypeReportRejected, 1)
+}
+
+func assertResourceNotificationCount(t *testing.T, db *gorm.DB, recipientID uint, notificationType notificationModel.NotificationType, want int64) {
+	t.Helper()
+	var count int64
+	if err := db.Table("notifications").Where("recipient_id = ? AND type = ?", recipientID, notificationType).Count(&count).Error; err != nil {
+		t.Fatalf("count notifications: %v", err)
+	}
+	if count != want {
+		t.Fatalf("notification %s count: got %d want %d", notificationType, count, want)
+	}
+}
 
 func TestResourceCreateIncrementsCount(t *testing.T) {
 	env := newResourceTestEnv(t)

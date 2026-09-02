@@ -3,9 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"backend/internal/community/model"
 	"backend/internal/community/repository"
+	notificationModel "backend/internal/notification/model"
+	notificationService "backend/internal/notification/service"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -22,15 +25,21 @@ var (
 // Unique indexes prevent duplicate relations and counters are updated with
 // atomic SQL expressions inside one transaction per action.
 type InteractionService struct {
-	posts    *repository.PostRepository
-	comments *repository.CommentRepository
+	posts         *repository.PostRepository
+	comments      *repository.CommentRepository
+	notifications *notificationService.NotificationService
 }
 
 func NewInteractionService(
 	posts *repository.PostRepository,
 	comments *repository.CommentRepository,
+	notifications ...*notificationService.NotificationService,
 ) *InteractionService {
-	return &InteractionService{posts: posts, comments: comments}
+	service := &InteractionService{posts: posts, comments: comments}
+	if len(notifications) > 0 {
+		service.notifications = notifications[0]
+	}
+	return service
 }
 
 func (s *InteractionService) LikePost(ctx context.Context, userID, postID uint) (*model.Post, error) {
@@ -54,6 +63,14 @@ func (s *InteractionService) LikePost(ctx context.Context, userID, postID uint) 
 		}
 		logger.Error("like post", zap.Uint("post_id", postID), zap.Uint("user_id", userID), zap.Error(err))
 		return nil, err
+	}
+	if post.AuthorID != nil {
+		s.notify(ctx, notificationService.CreateInput{
+			RecipientID: *post.AuthorID, ActorID: &userID,
+			Category: notificationModel.CategoryInteraction, Type: notificationModel.TypePostLiked,
+			EntityType: "post", EntityID: postID, Title: "帖子收到点赞",
+			Content: fmt.Sprintf("点赞了你的帖子「%s」", post.Title), TargetURL: fmt.Sprintf("/posts/%d", postID),
+		})
 	}
 	return s.posts.FindByID(ctx, post.ID)
 }
@@ -153,7 +170,25 @@ func (s *InteractionService) LikeComment(ctx context.Context, userID, commentID 
 		logger.Error("like comment", zap.Uint("comment_id", commentID), zap.Uint("user_id", userID), zap.Error(err))
 		return nil, err
 	}
+	if comment.AuthorID != nil {
+		s.notify(ctx, notificationService.CreateInput{
+			RecipientID: *comment.AuthorID, ActorID: &userID,
+			Category: notificationModel.CategoryInteraction, Type: notificationModel.TypeCommentLiked,
+			EntityType: "comment", EntityID: commentID, Title: "评论收到点赞",
+			Content: "点赞了你的评论", TargetURL: fmt.Sprintf("/posts/%d?comment=%d", comment.PostID, commentID),
+			Metadata: map[string]any{"preview": previewText(comment.Content), "post_id": comment.PostID},
+		})
+	}
 	return s.comments.FindByID(ctx, comment.ID)
+}
+
+func (s *InteractionService) notify(ctx context.Context, input notificationService.CreateInput) {
+	if s.notifications == nil {
+		return
+	}
+	if _, err := s.notifications.Create(ctx, input); err != nil {
+		logger.Error("create interaction notification", zap.String("type", string(input.Type)), zap.Error(err))
+	}
 }
 
 func (s *InteractionService) UnlikeComment(ctx context.Context, userID, commentID uint) (*model.Comment, error) {

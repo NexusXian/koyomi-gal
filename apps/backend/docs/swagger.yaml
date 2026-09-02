@@ -1,5 +1,17 @@
 basePath: /
 definitions:
+  dto.ActorData:
+    properties:
+      avatar:
+        example: https://cdn.example.com/avatars/2/avatar.webp
+        type: string
+      id:
+        example: 2
+        type: integer
+      username:
+        example: koyomi
+        type: string
+    type: object
   dto.AdminArticleListData:
     properties:
       items:
@@ -1456,6 +1468,73 @@ definitions:
         example: success
         type: string
     type: object
+  dto.NotificationData:
+    properties:
+      actor:
+        $ref: '#/definitions/dto.ActorData'
+      category:
+        allOf:
+        - $ref: '#/definitions/model.NotificationCategory'
+        example: interaction
+      content:
+        example: koyomi 赞了你的帖子
+        type: string
+      created_at:
+        type: string
+      entity_id:
+        example: 42
+        type: integer
+      entity_type:
+        example: post
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_read:
+        example: false
+        type: boolean
+      metadata:
+        type: object
+      read_at:
+        type: string
+      target_url:
+        example: /posts/42
+        type: string
+      title:
+        example: 你的帖子收到了赞
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.NotificationType'
+        example: post_liked
+    type: object
+  dto.NotificationListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.NotificationData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.NotificationListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.NotificationListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.PermissionListResponse:
     properties:
       code:
@@ -1903,6 +1982,17 @@ definitions:
         example: success
         type: string
     type: object
+  dto.ReviewGalgameRequest:
+    properties:
+      status:
+        enum:
+        - 1
+        - 2
+        example: 1
+        type: integer
+    required:
+    - status
+    type: object
   dto.ReviewResourceRequest:
     properties:
       status:
@@ -2013,6 +2103,23 @@ definitions:
         type: integer
       name:
         example: 纯爱
+        type: string
+    type: object
+  dto.UnreadCountData:
+    properties:
+      count:
+        example: 3
+        type: integer
+    type: object
+  dto.UnreadCountResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.UnreadCountData'
+      msg:
+        example: success
         type: string
     type: object
   dto.UpdateAdminUserRequest:
@@ -2568,6 +2675,56 @@ definitions:
     x-enum-varnames:
     - EditorModePlain
     - EditorModeMarkdown
+  model.NotificationCategory:
+    enum:
+    - interaction
+    - review
+    - moderation
+    - system
+    type: string
+    x-enum-varnames:
+    - CategoryInteraction
+    - CategoryReview
+    - CategoryModeration
+    - CategorySystem
+  model.NotificationType:
+    enum:
+    - post_commented
+    - comment_replied
+    - post_liked
+    - comment_liked
+    - galgame_submitted
+    - galgame_approved
+    - galgame_rejected
+    - resource_submitted
+    - resource_approved
+    - resource_rejected
+    - resource_hidden
+    - resource_reported
+    - report_resolved
+    - report_rejected
+    - post_moderated
+    - comment_moderated
+    - system
+    type: string
+    x-enum-varnames:
+    - TypePostCommented
+    - TypeCommentReplied
+    - TypePostLiked
+    - TypeCommentLiked
+    - TypeGalgameSubmitted
+    - TypeGalgameApproved
+    - TypeGalgameRejected
+    - TypeResourceSubmitted
+    - TypeResourceApproved
+    - TypeResourceRejected
+    - TypeResourceHidden
+    - TypeResourceReported
+    - TypeReportResolved
+    - TypeReportRejected
+    - TypePostModerated
+    - TypeCommentModerated
+    - TypeSystem
   response.ErrorResponse:
     properties:
       code:
@@ -3067,6 +3224,56 @@ paths:
       security:
       - BearerAuth: []
       summary: 管理端查看 Galgame 详情
+      tags:
+      - admin
+  /api/v1/admin/galgames/{id}/review:
+    put:
+      consumes:
+      - application/json
+      description: 将 Galgame 标记为已发布或已拒绝；需要 galgame:review 权限
+      operationId: reviewGalgame
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 审核 Galgame 请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReviewGalgameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 审核结果
+          schema:
+            $ref: '#/definitions/dto.GalgameDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 审核 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端审核 Galgame
       tags:
       - admin
   /api/v1/admin/images:
@@ -4871,6 +5078,144 @@ paths:
       summary: 更新个性化背景设置
       tags:
       - me
+  /api/v1/notifications:
+    get:
+      description: 分页返回当前用户的站内通知
+      operationId: listNotifications
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      - description: 通知分类
+        enum:
+        - interaction
+        - review
+        - moderation
+        - system
+        in: query
+        name: category
+        type: string
+      - description: 是否未读；false 仅返回已读通知
+        in: query
+        name: unread
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 通知列表
+          schema:
+            $ref: '#/definitions/dto.NotificationListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询通知失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询通知
+      tags:
+      - notifications
+  /api/v1/notifications/{id}/read:
+    patch:
+      description: 将当前用户的一条通知标记为已读
+      operationId: markNotificationRead
+      parameters:
+      - description: 通知 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 通知已标记为已读
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 通知 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 通知不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 标记通知失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 标记通知已读
+      tags:
+      - notifications
+  /api/v1/notifications/read-all:
+    patch:
+      description: 将当前用户的全部未读通知标记为已读
+      operationId: markAllNotificationsRead
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 通知已全部标记为已读
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 标记通知失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 全部标记已读
+      tags:
+      - notifications
+  /api/v1/notifications/unread-count:
+    get:
+      description: 返回当前用户的未读通知数量
+      operationId: getNotificationUnreadCount
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 未读通知数量
+          schema:
+            $ref: '#/definitions/dto.UnreadCountResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询未读通知数失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询未读通知数
+      tags:
+      - notifications
   /api/v1/permissions:
     get:
       description: 返回全部权限

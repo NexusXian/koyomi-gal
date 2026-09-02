@@ -3,12 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"backend/internal/community/dto"
 	"backend/internal/community/model"
 	"backend/internal/community/repository"
 	galgameRepository "backend/internal/galgame/repository"
+	notificationModel "backend/internal/notification/model"
+	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
 	"backend/pkg/logger"
 
@@ -26,17 +29,23 @@ var (
 const PermissionPostModerate = "post:moderate"
 
 type PostService struct {
-	posts    *repository.PostRepository
-	galgames *galgameRepository.GalgameRepository
-	rbac     *rbacService.RBACService
+	posts         *repository.PostRepository
+	galgames      *galgameRepository.GalgameRepository
+	rbac          *rbacService.RBACService
+	notifications *notificationService.NotificationService
 }
 
 func NewPostService(
 	posts *repository.PostRepository,
 	galgames *galgameRepository.GalgameRepository,
 	rbac *rbacService.RBACService,
+	notifications ...*notificationService.NotificationService,
 ) *PostService {
-	return &PostService{posts: posts, galgames: galgames, rbac: rbac}
+	service := &PostService{posts: posts, galgames: galgames, rbac: rbac}
+	if len(notifications) > 0 {
+		service.notifications = notifications[0]
+	}
+	return service
 }
 
 // Create inserts a post; when it discusses a galgame, galgames.post_count is
@@ -225,6 +234,17 @@ func (s *PostService) Delete(ctx context.Context, actorID, id uint) error {
 	if err != nil {
 		logger.Error("delete post", zap.Uint("post_id", id), zap.Uint("actor_id", actorID), zap.Error(err))
 		return err
+	}
+	if post.AuthorID != nil && *post.AuthorID != actorID && s.notifications != nil {
+		input := notificationService.CreateInput{
+			RecipientID: *post.AuthorID, ActorID: &actorID,
+			Category: notificationModel.CategoryModeration, Type: notificationModel.TypePostModerated,
+			EntityType: "post", EntityID: id, Title: "帖子已被处理",
+			Content: fmt.Sprintf("你的帖子「%s」已被管理员删除", post.Title), TargetURL: "/posts",
+		}
+		if _, notifyErr := s.notifications.Create(ctx, input); notifyErr != nil {
+			logger.Error("create post moderation notification", zap.Error(notifyErr))
+		}
 	}
 	return nil
 }

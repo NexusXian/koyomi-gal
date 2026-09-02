@@ -38,6 +38,10 @@ type UpdateGalgameRequest struct {
 	TagIDs        []uint   `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
 }
 
+type ReviewGalgameRequest struct {
+	Status int16 `json:"status" binding:"required,oneof=1 2" example:"1"`
+}
+
 type GalgameQuery struct {
 	Keyword     string `form:"keyword" binding:"max=255"`
 	DeveloperID *uint  `form:"developer_id" binding:"omitempty,gt=0"`

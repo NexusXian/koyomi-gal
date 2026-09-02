@@ -28,6 +28,8 @@ import (
 	"backend/internal/infrastructures/queue"
 	"backend/internal/infrastructures/storage"
 	"backend/internal/migrations"
+	notificationHandler "backend/internal/notification/handler"
+	notificationRepo "backend/internal/notification/repository"
 	notificationService "backend/internal/notification/service"
 	rbacHandler "backend/internal/rbac/handler"
 	rbacRepo "backend/internal/rbac/repository"
@@ -78,6 +80,7 @@ type App struct {
 	HomeHandler         *homeHandler.HomeHandler
 	HealthHandler       *healthHandler.HealthHandler
 	ImageHandler        *imageHandler.ImageHandler
+	NotificationHandler *notificationHandler.NotificationHandler
 	stopImageCleanup    func()
 }
 
@@ -124,6 +127,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		app.Close()
 		return nil, err
 	}
+	notificationRepository := notificationRepo.NewNotificationRepository(postgresDB, cfg.R2.PublicURL)
+	notificationSvc := notificationService.NewNotificationService(notificationRepository)
 
 	galgameRepository := galgameRepo.NewGalgameRepository(postgresDB)
 	developerRepository := galgameRepo.NewDeveloperRepository(postgresDB)
@@ -133,6 +138,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		developerRepository,
 		tagRepository,
 	)
+	catalogService.SetNotificationDependencies(rbacSvc, notificationSvc)
 
 	userRelationRepository := galgameRepo.NewUserRelationRepository(postgresDB)
 	ratingService := galgameService.NewRatingService(galgameRepository, userRelationRepository)
@@ -142,14 +148,16 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 
 	resourceRepository := resourceRepo.NewResourceRepository(postgresDB)
 	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, rbacSvc)
+	resourceSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
 	reportRepository := resourceRepo.NewReportRepository(postgresDB)
 	reportSvc := resourceService.NewReportService(reportRepository, resourceRepository)
+	reportSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
 
 	postRepository := communityRepo.NewPostRepository(postgresDB, cfg.R2.PublicURL)
 	commentRepository := communityRepo.NewCommentRepository(postgresDB, cfg.R2.PublicURL)
-	postService := communityService.NewPostService(postRepository, galgameRepository, rbacSvc)
-	commentService := communityService.NewCommentService(commentRepository, postRepository, rbacSvc)
-	interactionService := communityService.NewInteractionService(postRepository, commentRepository)
+	postService := communityService.NewPostService(postRepository, galgameRepository, rbacSvc, notificationSvc)
+	commentService := communityService.NewCommentService(commentRepository, postRepository, rbacSvc, notificationSvc)
+	interactionService := communityService.NewInteractionService(postRepository, commentRepository, notificationSvc)
 
 	bannerRepository := bannerRepo.NewBannerRepository(postgresDB)
 	articleRepository := articleRepo.NewArticleRepository(postgresDB)
@@ -233,17 +241,18 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 			userStateService,
 			userRelationService,
 		),
-		ResourceHandler:    resourceHandler.NewResourceHandler(resourceSvc),
-		ReportHandler:      resourceHandler.NewReportHandler(reportSvc),
-		PostHandler:        communityHandler.NewPostHandler(postService),
-		CommentHandler:     communityHandler.NewCommentHandler(commentService),
-		InteractionHandler: communityHandler.NewInteractionHandler(interactionService),
-		BannerHandler:      bannerHandler.NewBannerHandler(bannerSvc),
-		ArticleHandler:     articleHandler.NewArticleHandler(articleSvc),
-		HomeHandler:        homeHandler.NewHomeHandler(homeSvc),
-		HealthHandler:      healthHandler.NewHealthHandler(healthService),
-		ImageHandler:       imageHandler.NewImageHandler(imageSvc),
-		stopImageCleanup:   stopImageCleanup,
+		ResourceHandler:     resourceHandler.NewResourceHandler(resourceSvc),
+		ReportHandler:       resourceHandler.NewReportHandler(reportSvc),
+		PostHandler:         communityHandler.NewPostHandler(postService),
+		CommentHandler:      communityHandler.NewCommentHandler(commentService),
+		InteractionHandler:  communityHandler.NewInteractionHandler(interactionService),
+		BannerHandler:       bannerHandler.NewBannerHandler(bannerSvc),
+		ArticleHandler:      articleHandler.NewArticleHandler(articleSvc),
+		HomeHandler:         homeHandler.NewHomeHandler(homeSvc),
+		HealthHandler:       healthHandler.NewHealthHandler(healthService),
+		ImageHandler:        imageHandler.NewImageHandler(imageSvc),
+		NotificationHandler: notificationHandler.NewNotificationHandler(notificationSvc),
+		stopImageCleanup:    stopImageCleanup,
 	}
 	ginApp := gin.Default()
 	if err := ginApp.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {

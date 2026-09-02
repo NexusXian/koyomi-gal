@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Deploy backend to server
+    runs-on: ubuntu-latest
+    concurrency: deploy-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/backend/go.mod
+          cache-dependency-path: apps/backend/go.sum
+
+      - name: Build linux/amd64 binaries
+        working-directory: apps/backend
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          go build -trimpath -ldflags='-s -w' -o dist/server.new ./cmd/server
+          go build -trimpath -ldflags='-s -w' -o dist/worker.new ./cmd/worker
+
+      - name: Upload binaries
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: 'apps/backend/dist/*'
+          target: ${{ vars.REMOTE_DIR || '/opt/koyomi' }}
+          strip_components: 3
+
+      - name: Switch binaries and restart services
+        uses: appleboy/ssh-action@v1
+        env:
+          REMOTE_DIR: ${{ vars.REMOTE_DIR || '/opt/koyomi' }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: REMOTE_DIR
+          script: |
+            set -eu
+            mv "$REMOTE_DIR/server.new" "$REMOTE_DIR/server"
+            mv "$REMOTE_DIR/worker.new" "$REMOTE_DIR/worker"
+            chmod +x "$REMOTE_DIR/server" "$REMOTE_DIR/worker"
+            sudo systemctl restart koyomi-server koyomi-worker
+            sudo systemctl is-active koyomi-server koyomi-worker
+
+  deploy-frontend:
+    name: Deploy frontend to Cloudflare Pages
+    runs-on: ubuntu-latest
+    concurrency: deploy-frontend
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+        env:
+          NITRO_PRESET: cloudflare-pages
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/frontend
+          command: pages deploy .output/public --project-name=${{ vars.CF_PAGES_PROJECT || 'koyomi-gal' }} --branch=main

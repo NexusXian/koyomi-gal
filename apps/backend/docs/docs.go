@@ -749,6 +749,83 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/galgames/{id}/review": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将 Galgame 标记为已发布或已拒绝；需要 galgame:review 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端审核 Galgame",
+                "operationId": "reviewGalgame",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核 Galgame 请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewGalgameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "审核 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/images": {
             "get": {
                 "security": [
@@ -3500,6 +3577,219 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回当前用户的站内通知",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "查询通知",
+                "operationId": "listNotifications",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "interaction",
+                            "review",
+                            "moderation",
+                            "system"
+                        ],
+                        "type": "string",
+                        "description": "通知分类",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否未读；false 仅返回已读通知",
+                        "name": "unread",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "通知列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NotificationListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询通知失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/read-all": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将当前用户的全部未读通知标记为已读",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "全部标记已读",
+                "operationId": "markAllNotificationsRead",
+                "responses": {
+                    "200": {
+                        "description": "通知已全部标记为已读",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "标记通知失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回当前用户的未读通知数量",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "查询未读通知数",
+                "operationId": "getNotificationUnreadCount",
+                "responses": {
+                    "200": {
+                        "description": "未读通知数量",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UnreadCountResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询未读通知数失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/{id}/read": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将当前用户的一条通知标记为已读",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "标记通知已读",
+                "operationId": "markNotificationRead",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "通知 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "通知已标记为已读",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "通知 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "通知不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "标记通知失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/permissions": {
             "get": {
                 "security": [
@@ -6074,6 +6364,23 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.ActorData": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string",
+                    "example": "https://cdn.example.com/avatars/2/avatar.webp"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
         "dto.AdminArticleListData": {
             "type": "object",
             "properties": {
@@ -8116,6 +8423,106 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.NotificationData": {
+            "type": "object",
+            "properties": {
+                "actor": {
+                    "$ref": "#/definitions/dto.ActorData"
+                },
+                "category": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.NotificationCategory"
+                        }
+                    ],
+                    "example": "interaction"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "koyomi 赞了你的帖子"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "entity_id": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "entity_type": {
+                    "type": "string",
+                    "example": "post"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_read": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "metadata": {
+                    "type": "object"
+                },
+                "read_at": {
+                    "type": "string"
+                },
+                "target_url": {
+                    "type": "string",
+                    "example": "/posts/42"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "你的帖子收到了赞"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.NotificationType"
+                        }
+                    ],
+                    "example": "post_liked"
+                }
+            }
+        },
+        "dto.NotificationListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NotificationData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.NotificationListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.NotificationListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.PermissionListResponse": {
             "type": "object",
             "properties": {
@@ -8752,6 +9159,22 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ReviewGalgameRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ],
+                    "example": 1
+                }
+            }
+        },
         "dto.ReviewResourceRequest": {
             "type": "object",
             "required": [
@@ -8909,6 +9332,31 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "纯爱"
+                }
+            }
+        },
+        "dto.UnreadCountData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "dto.UnreadCountResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.UnreadCountData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -9651,6 +10099,62 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "EditorModePlain",
                 "EditorModeMarkdown"
+            ]
+        },
+        "model.NotificationCategory": {
+            "type": "string",
+            "enum": [
+                "interaction",
+                "review",
+                "moderation",
+                "system"
+            ],
+            "x-enum-varnames": [
+                "CategoryInteraction",
+                "CategoryReview",
+                "CategoryModeration",
+                "CategorySystem"
+            ]
+        },
+        "model.NotificationType": {
+            "type": "string",
+            "enum": [
+                "post_commented",
+                "comment_replied",
+                "post_liked",
+                "comment_liked",
+                "galgame_submitted",
+                "galgame_approved",
+                "galgame_rejected",
+                "resource_submitted",
+                "resource_approved",
+                "resource_rejected",
+                "resource_hidden",
+                "resource_reported",
+                "report_resolved",
+                "report_rejected",
+                "post_moderated",
+                "comment_moderated",
+                "system"
+            ],
+            "x-enum-varnames": [
+                "TypePostCommented",
+                "TypeCommentReplied",
+                "TypePostLiked",
+                "TypeCommentLiked",
+                "TypeGalgameSubmitted",
+                "TypeGalgameApproved",
+                "TypeGalgameRejected",
+                "TypeResourceSubmitted",
+                "TypeResourceApproved",
+                "TypeResourceRejected",
+                "TypeResourceHidden",
+                "TypeResourceReported",
+                "TypeReportResolved",
+                "TypeReportRejected",
+                "TypePostModerated",
+                "TypeCommentModerated",
+                "TypeSystem"
             ]
         },
         "response.ErrorResponse": {

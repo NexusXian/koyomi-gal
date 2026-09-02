@@ -331,6 +331,23 @@ ORDER BY p.code
 	return codes, nil
 }
 
+func (r *RBACRepository) FindUserIDsByPermission(ctx context.Context, permission string) ([]uint, error) {
+	var userIDs []uint
+	err := r.db.WithContext(ctx).Raw(`
+SELECT DISTINCT u.id
+FROM users u
+JOIN user_roles ur ON ur.user_id = u.id
+JOIN role_permissions rp ON rp.role_id = ur.role_id
+JOIN permissions p ON p.id = rp.permission_id
+WHERE p.code = ? AND u.is_banned = FALSE
+ORDER BY u.id
+`, permission).Scan(&userIDs).Error
+	if err != nil {
+		return nil, err
+	}
+	return userIDs, nil
+}
+
 // HasPermission reports whether any role of the user grants the permission code.
 func (r *RBACRepository) HasPermission(ctx context.Context, userID uint, permission string) (bool, error) {
 	var allowed bool

@@ -3,9 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
+	notificationModel "backend/internal/notification/model"
+	notificationService "backend/internal/notification/service"
+	rbacService "backend/internal/rbac/service"
 	"backend/internal/resource/dto"
 	"backend/internal/resource/model"
 	"backend/internal/resource/repository"
@@ -28,8 +32,18 @@ var (
 // review and close reports. Handling a report only marks it; it never mutates
 // the resource itself.
 type ReportService struct {
-	reports   *repository.ReportRepository
-	resources *repository.ResourceRepository
+	reports       *repository.ReportRepository
+	resources     *repository.ResourceRepository
+	rbac          *rbacService.RBACService
+	notifications *notificationService.NotificationService
+}
+
+func (s *ReportService) SetNotificationDependencies(
+	rbac *rbacService.RBACService,
+	notifications *notificationService.NotificationService,
+) {
+	s.rbac = rbac
+	s.notifications = notifications
 }
 
 func NewReportService(
@@ -72,7 +86,12 @@ func (s *ReportService) Create(
 			zap.Uint("resource_id", resourceID), zap.Uint("user_id", userID), zap.Error(err))
 		return nil, err
 	}
-	return s.reports.FindByID(ctx, report.ID)
+	created, err := s.reports.FindByID(ctx, report.ID)
+	if err != nil {
+		return nil, err
+	}
+	s.notifyResourceReported(ctx, userID, created)
+	return created, nil
 }
 
 // List returns reports with the reported resource preloaded; an optional
@@ -120,6 +139,9 @@ func (s *ReportService) Handle(
 	if report == nil {
 		return nil, ErrReportNotFound
 	}
+	if report.Status == req.Status {
+		return report, nil
+	}
 
 	report.Status = req.Status
 	report.HandledBy = &adminID
@@ -129,7 +151,84 @@ func (s *ReportService) Handle(
 		logger.Error("update resource report", zap.Uint("report_id", id), zap.Error(err))
 		return nil, err
 	}
-	return s.reports.FindByID(ctx, id)
+	handled, err := s.reports.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	s.notifyReportHandled(ctx, adminID, handled)
+	return handled, nil
+}
+
+func (s *ReportService) notifyResourceReported(
+	ctx context.Context,
+	actorID uint,
+	report *model.ResourceReport,
+) {
+	if s.rbac == nil || s.notifications == nil || report.Resource == nil {
+		return
+	}
+	recipientIDs, err := s.rbac.FindUserIDsByPermission(ctx, "resource_report:handle")
+	if err != nil {
+		logger.Error("find resource report handlers for notification", zap.Uint("report_id", report.ID), zap.Error(err))
+		return
+	}
+	inputs := make([]notificationService.CreateInput, 0, len(recipientIDs))
+	for _, recipientID := range recipientIDs {
+		inputs = append(inputs, notificationService.CreateInput{
+			RecipientID: recipientID,
+			ActorID:     &actorID,
+			Category:    notificationModel.CategoryModeration,
+			Type:        notificationModel.TypeResourceReported,
+			EntityType:  "resource_report",
+			EntityID:    report.ID,
+			Title:       "新的资源举报",
+			Content:     fmt.Sprintf("举报了资源「%s」", report.Resource.Title),
+			TargetURL:   "/admin/reports",
+			Metadata: map[string]any{
+				"description": report.Description,
+				"galgame_id":  report.Resource.GalgameID,
+				"reason":      report.Reason,
+				"resource_id": report.ResourceID,
+			},
+		})
+	}
+	if _, err := s.notifications.CreateMany(ctx, inputs); err != nil {
+		logger.Error("create resource report notifications", zap.Uint("report_id", report.ID), zap.Error(err))
+	}
+}
+
+func (s *ReportService) notifyReportHandled(ctx context.Context, actorID uint, report *model.ResourceReport) {
+	if s.notifications == nil || report.Resource == nil {
+		return
+	}
+	notificationType := notificationModel.TypeReportResolved
+	title := "资源举报已处理"
+	content := "你提交的资源举报已处理"
+	if report.Status == model.ReportStatusRejected {
+		notificationType = notificationModel.TypeReportRejected
+		title = "资源举报未被采纳"
+		content = "你提交的资源举报未被采纳"
+	}
+	if _, err := s.notifications.Create(ctx, notificationService.CreateInput{
+		RecipientID: report.UserID,
+		ActorID:     &actorID,
+		Category:    notificationModel.CategoryModeration,
+		Type:        notificationType,
+		EntityType:  "resource_report",
+		EntityID:    report.ID,
+		Title:       title,
+		Content:     content,
+		TargetURL:   fmt.Sprintf("/galgames/%d", report.Resource.GalgameID),
+		Metadata: map[string]any{
+			"description": report.Description,
+			"galgame_id":  report.Resource.GalgameID,
+			"reason":      report.Reason,
+			"resource_id": report.ResourceID,
+			"status":      report.Status,
+		},
+	}); err != nil {
+		logger.Error("create resource report result notification", zap.Uint("report_id", report.ID), zap.Error(err))
+	}
 }
 
 func validReportReason(value int16) bool {

@@ -13,6 +13,9 @@ import (
 	galgameDTO "backend/internal/galgame/dto"
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
+	notificationModel "backend/internal/notification/model"
+	notificationRepo "backend/internal/notification/repository"
+	notificationService "backend/internal/notification/service"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/testutil"
@@ -21,12 +24,13 @@ import (
 )
 
 type communityTestEnv struct {
-	posts        *PostService
-	comments     *CommentService
-	interactions *InteractionService
-	catalog      *galgameService.CatalogService
-	rbac         *rbacService.RBACService
-	db           *gorm.DB
+	posts         *PostService
+	comments      *CommentService
+	interactions  *InteractionService
+	catalog       *galgameService.CatalogService
+	rbac          *rbacService.RBACService
+	db            *gorm.DB
+	notifications *notificationService.NotificationService
 }
 
 func newCommunityTestEnv(t *testing.T) *communityTestEnv {
@@ -40,17 +44,21 @@ func newCommunityTestEnv(t *testing.T) *communityTestEnv {
 	}
 	postRepo := communityRepo.NewPostRepository(db, "https://img.example.com")
 	commentRepo := communityRepo.NewCommentRepository(db, "https://img.example.com")
+	notificationSvc := notificationService.NewNotificationService(
+		notificationRepo.NewNotificationRepository(db, "https://img.example.com"),
+	)
 	return &communityTestEnv{
-		posts:        NewPostService(postRepo, galgameRepository, rbacSvc),
-		comments:     NewCommentService(commentRepo, postRepo, rbacSvc),
-		interactions: NewInteractionService(postRepo, commentRepo),
+		posts:        NewPostService(postRepo, galgameRepository, rbacSvc, notificationSvc),
+		comments:     NewCommentService(commentRepo, postRepo, rbacSvc, notificationSvc),
+		interactions: NewInteractionService(postRepo, commentRepo, notificationSvc),
 		catalog: galgameService.NewCatalogService(
 			galgameRepository,
 			galgameRepo.NewDeveloperRepository(db),
 			galgameRepo.NewTagRepository(db),
 		),
-		rbac: rbacSvc,
-		db:   db,
+		rbac:          rbacSvc,
+		db:            db,
+		notifications: notificationSvc,
 	}
 }
 
@@ -115,6 +123,97 @@ func (e *communityTestEnv) galgamePostCount(t *testing.T, galgameID uint) int64 
 }
 
 func uintPtr(value uint) *uint { return &value }
+
+func (e *communityTestEnv) notificationCount(t *testing.T, recipientID uint, notificationType notificationModel.NotificationType) int64 {
+	t.Helper()
+	var count int64
+	if err := e.db.Table("notifications").Where("recipient_id = ? AND type = ?", recipientID, notificationType).Count(&count).Error; err != nil {
+		t.Fatalf("count notifications: %v", err)
+	}
+	return count
+}
+
+func TestCommunityNotifications(t *testing.T) {
+	env := newCommunityTestEnv(t)
+	ctx := context.Background()
+	author := testutil.CreateUser(t, env.db, "notification-author")
+	commenter := testutil.CreateUser(t, env.db, "notification-commenter")
+	replier := testutil.CreateUser(t, env.db, "notification-replier")
+	moderator := testutil.CreateUser(t, env.db, "notification-moderator")
+	if err := env.rbac.AssignRoleByCode(ctx, moderator, rbacService.RoleCodeAdmin); err != nil {
+		t.Fatalf("assign moderator role: %v", err)
+	}
+
+	post := env.createPost(t, author, "notification post", nil)
+	top := env.createComment(t, commenter, post.ID, "top comment", nil, nil)
+	if got := env.notificationCount(t, author, notificationModel.TypePostCommented); got != 1 {
+		t.Fatalf("expected post comment notification, got %d", got)
+	}
+	env.createComment(t, author, post.ID, "self comment", nil, nil)
+	if got := env.notificationCount(t, author, notificationModel.TypePostCommented); got != 1 {
+		t.Fatalf("self comment should not notify, got %d", got)
+	}
+
+	env.createComment(t, replier, post.ID, "reply", nil, &top.ID)
+	if got := env.notificationCount(t, commenter, notificationModel.TypeCommentReplied); got != 1 {
+		t.Fatalf("expected reply notification, got %d", got)
+	}
+	if got := env.notificationCount(t, author, notificationModel.TypeCommentReplied); got != 0 {
+		t.Fatalf("reply should not duplicate to post author, got %d", got)
+	}
+	env.createComment(t, commenter, post.ID, "self reply", nil, &top.ID)
+	if got := env.notificationCount(t, commenter, notificationModel.TypeCommentReplied); got != 1 {
+		t.Fatalf("self reply should not notify, got %d", got)
+	}
+
+	if _, err := env.interactions.LikePost(ctx, commenter, post.ID); err != nil {
+		t.Fatalf("like post: %v", err)
+	}
+	if got := env.notificationCount(t, author, notificationModel.TypePostLiked); got != 1 {
+		t.Fatalf("expected post like notification, got %d", got)
+	}
+	if _, err := env.interactions.UnlikePost(ctx, commenter, post.ID); err != nil {
+		t.Fatalf("unlike post: %v", err)
+	}
+	if got := env.notificationCount(t, author, notificationModel.TypePostLiked); got != 1 {
+		t.Fatalf("unlike should not notify, got %d", got)
+	}
+	if _, err := env.interactions.LikePost(ctx, author, post.ID); err != nil {
+		t.Fatalf("self like post: %v", err)
+	}
+	if got := env.notificationCount(t, author, notificationModel.TypePostLiked); got != 1 {
+		t.Fatalf("self post like should not notify, got %d", got)
+	}
+
+	if _, err := env.interactions.LikeComment(ctx, replier, top.ID); err != nil {
+		t.Fatalf("like comment: %v", err)
+	}
+	if got := env.notificationCount(t, commenter, notificationModel.TypeCommentLiked); got != 1 {
+		t.Fatalf("expected comment like notification, got %d", got)
+	}
+	if _, err := env.interactions.LikeComment(ctx, commenter, top.ID); err != nil {
+		t.Fatalf("self like comment: %v", err)
+	}
+	if got := env.notificationCount(t, commenter, notificationModel.TypeCommentLiked); got != 1 {
+		t.Fatalf("self comment like should not notify, got %d", got)
+	}
+
+	moderatedPost := env.createPost(t, author, "moderated post", nil)
+	if err := env.posts.Delete(ctx, moderator, moderatedPost.ID); err != nil {
+		t.Fatalf("moderate post: %v", err)
+	}
+	if got := env.notificationCount(t, author, notificationModel.TypePostModerated); got != 1 {
+		t.Fatalf("expected post moderation notification, got %d", got)
+	}
+	commentPost := env.createPost(t, author, "comment moderation", nil)
+	moderatedComment := env.createComment(t, commenter, commentPost.ID, "remove me", nil, nil)
+	if err := env.comments.Delete(ctx, moderator, moderatedComment.ID); err != nil {
+		t.Fatalf("moderate comment: %v", err)
+	}
+	if got := env.notificationCount(t, commenter, notificationModel.TypeCommentModerated); got != 1 {
+		t.Fatalf("expected comment moderation notification, got %d", got)
+	}
+}
 
 func TestPostCrudAndGalgamePostCount(t *testing.T) {
 	env := newCommunityTestEnv(t)

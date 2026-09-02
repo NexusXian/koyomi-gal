@@ -70,6 +70,29 @@ func TestHasPermissionThroughRole(t *testing.T) {
 	}
 }
 
+func TestFindUserIDsByPermission(t *testing.T) {
+	svc, db := newTestService(t)
+	ctx := context.Background()
+
+	userID := testutil.CreateUser(t, db, "svc-reviewer")
+	role := createRole(t, svc, "svc_reviewer")
+	permission := createPermission(t, svc, "content:review")
+	if err := svc.SetRolePermissions(ctx, 0, role.ID, []int64{permission.ID}); err != nil {
+		t.Fatalf("set role permissions: %v", err)
+	}
+	if err := svc.AssignRoleToUser(ctx, userID, role.ID); err != nil {
+		t.Fatalf("assign role: %v", err)
+	}
+
+	userIDs, err := svc.FindUserIDsByPermission(ctx, permission.Code)
+	if err != nil {
+		t.Fatalf("find user ids by permission: %v", err)
+	}
+	if len(userIDs) != 1 || userIDs[0] != userID {
+		t.Fatalf("expected user ids [%d], got %v", userID, userIDs)
+	}
+}
+
 func TestCreateRoleValidation(t *testing.T) {
 	svc, _ := newTestService(t)
 	ctx := context.Background()

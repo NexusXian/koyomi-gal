@@ -3,12 +3,16 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"backend/internal/galgame/dto"
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
+	notificationModel "backend/internal/notification/model"
+	notificationService "backend/internal/notification/service"
+	rbacService "backend/internal/rbac/service"
 	"backend/pkg/logger"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -34,9 +38,19 @@ var (
 )
 
 type CatalogService struct {
-	galgames   *repository.GalgameRepository
-	developers *repository.DeveloperRepository
-	tags       *repository.TagRepository
+	galgames      *repository.GalgameRepository
+	developers    *repository.DeveloperRepository
+	tags          *repository.TagRepository
+	rbac          *rbacService.RBACService
+	notifications *notificationService.NotificationService
+}
+
+func (s *CatalogService) SetNotificationDependencies(
+	rbac *rbacService.RBACService,
+	notifications *notificationService.NotificationService,
+) {
+	s.rbac = rbac
+	s.notifications = notifications
 }
 
 func NewCatalogService(
@@ -287,7 +301,14 @@ func (s *CatalogService) CreateGalgame(
 		logger.Error("create galgame", zap.String("slug", slug), zap.Error(err))
 		return nil, err
 	}
-	return s.getGalgame(ctx, galgame.ID, false)
+	created, err := s.getGalgame(ctx, galgame.ID, false)
+	if err != nil {
+		return nil, err
+	}
+	if created.Status == model.GalgameStatusPending {
+		s.notifyGalgameSubmitted(ctx, userID, created)
+	}
+	return created, nil
 }
 
 func (s *CatalogService) UpdateGalgame(
@@ -355,6 +376,39 @@ func (s *CatalogService) UpdateGalgame(
 		return nil, err
 	}
 	return s.getGalgame(ctx, id, false)
+}
+
+func (s *CatalogService) ReviewGalgame(
+	ctx context.Context,
+	actorID, id uint,
+	req *dto.ReviewGalgameRequest,
+) (*model.Galgame, error) {
+	if req.Status != model.GalgameStatusPublished && req.Status != model.GalgameStatusRejected {
+		return nil, ErrInvalidStatus
+	}
+	galgame, err := s.galgames.FindByID(ctx, id)
+	if err != nil {
+		logger.Error("find galgame by id", zap.Uint("galgame_id", id), zap.Error(err))
+		return nil, err
+	}
+	if galgame == nil {
+		return nil, ErrGalgameNotFound
+	}
+	if galgame.Status == req.Status {
+		return galgame, nil
+	}
+
+	if err := s.galgames.UpdateStatus(ctx, id, req.Status); err != nil {
+		logger.Error("review galgame", zap.Uint("galgame_id", id), zap.Uint("actor_id", actorID), zap.Error(err))
+		return nil, err
+	}
+	galgame, err = s.galgames.FindByID(ctx, id)
+	if err != nil {
+		logger.Error("find reviewed galgame", zap.Uint("galgame_id", id), zap.Error(err))
+		return nil, err
+	}
+	s.notifyGalgameReviewResult(ctx, actorID, galgame)
+	return galgame, nil
 }
 
 func (s *CatalogService) DeleteGalgame(ctx context.Context, id uint) error {
@@ -583,6 +637,63 @@ func (s *CatalogService) ensureTagUnique(ctx context.Context, id uint, name, slu
 		return ErrTagSlugExists
 	}
 	return nil
+}
+
+func (s *CatalogService) notifyGalgameSubmitted(ctx context.Context, actorID uint, galgame *model.Galgame) {
+	if s.rbac == nil || s.notifications == nil {
+		return
+	}
+	recipientIDs, err := s.rbac.FindUserIDsByPermission(ctx, "galgame:review")
+	if err != nil {
+		logger.Error("find galgame reviewers for notification", zap.Uint("galgame_id", galgame.ID), zap.Error(err))
+		return
+	}
+	inputs := make([]notificationService.CreateInput, 0, len(recipientIDs))
+	for _, recipientID := range recipientIDs {
+		inputs = append(inputs, notificationService.CreateInput{
+			RecipientID: recipientID,
+			ActorID:     &actorID,
+			Category:    notificationModel.CategoryReview,
+			Type:        notificationModel.TypeGalgameSubmitted,
+			EntityType:  "galgame",
+			EntityID:    galgame.ID,
+			Title:       "新的 Galgame 待审核",
+			Content:     fmt.Sprintf("提交了 Galgame「%s」，等待审核", galgame.Title),
+			TargetURL:   "/admin/galgames",
+			Metadata:    map[string]any{"title": galgame.Title},
+		})
+	}
+	if _, err := s.notifications.CreateMany(ctx, inputs); err != nil {
+		logger.Error("create galgame submission notifications", zap.Uint("galgame_id", galgame.ID), zap.Error(err))
+	}
+}
+
+func (s *CatalogService) notifyGalgameReviewResult(ctx context.Context, actorID uint, galgame *model.Galgame) {
+	if s.notifications == nil || galgame.CreatedBy == nil {
+		return
+	}
+	notificationType := notificationModel.TypeGalgameApproved
+	title := "Galgame 审核通过"
+	content := fmt.Sprintf("你提交的 Galgame「%s」已通过审核", galgame.Title)
+	if galgame.Status == model.GalgameStatusRejected {
+		notificationType = notificationModel.TypeGalgameRejected
+		title = "Galgame 审核未通过"
+		content = fmt.Sprintf("你提交的 Galgame「%s」未通过审核", galgame.Title)
+	}
+	if _, err := s.notifications.Create(ctx, notificationService.CreateInput{
+		RecipientID: *galgame.CreatedBy,
+		ActorID:     &actorID,
+		Category:    notificationModel.CategoryReview,
+		Type:        notificationType,
+		EntityType:  "galgame",
+		EntityID:    galgame.ID,
+		Title:       title,
+		Content:     content,
+		TargetURL:   fmt.Sprintf("/galgames/%d", galgame.ID),
+		Metadata:    map[string]any{"status": galgame.Status, "title": galgame.Title},
+	}); err != nil {
+		logger.Error("create galgame review notification", zap.Uint("galgame_id", galgame.ID), zap.Error(err))
+	}
 }
 
 func parseReleaseDate(value string) (*time.Time, error) {

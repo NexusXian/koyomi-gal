@@ -123,6 +123,55 @@ func TestGetUserPermissionsMultiRole(t *testing.T) {
 	}
 }
 
+func TestFindUserIDsByPermission(t *testing.T) {
+	repo := newTestRepository(t)
+	ctx := context.Background()
+
+	firstMatch := testutil.CreateUser(t, repo.db, "reviewer-first")
+	duplicateMatch := testutil.CreateUser(t, repo.db, "reviewer-duplicate")
+	withoutPermission := testutil.CreateUser(t, repo.db, "reviewer-without-permission")
+	bannedMatch := testutil.CreateUser(t, repo.db, "reviewer-banned")
+	roleA := mustCreateRole(t, repo, "reviewer_a")
+	roleB := mustCreateRole(t, repo, "reviewer_b")
+	otherRole := mustCreateRole(t, repo, "reviewer_other")
+	reviewPermission := mustCreatePermission(t, repo, "content:review")
+	otherPermission := mustCreatePermission(t, repo, "content:publish")
+
+	if err := repo.InsertRolePermissions(ctx, roleA.ID, []int64{reviewPermission.ID}); err != nil {
+		t.Fatalf("grant review permission to role_a: %v", err)
+	}
+	if err := repo.InsertRolePermissions(ctx, roleB.ID, []int64{reviewPermission.ID}); err != nil {
+		t.Fatalf("grant review permission to role_b: %v", err)
+	}
+	if err := repo.InsertRolePermissions(ctx, otherRole.ID, []int64{otherPermission.ID}); err != nil {
+		t.Fatalf("grant other permission: %v", err)
+	}
+	if err := repo.InsertUserRoles(ctx, firstMatch, []int64{roleA.ID}); err != nil {
+		t.Fatalf("assign first matching user: %v", err)
+	}
+	if err := repo.InsertUserRoles(ctx, duplicateMatch, []int64{roleA.ID, roleB.ID}); err != nil {
+		t.Fatalf("assign duplicate matching roles: %v", err)
+	}
+	if err := repo.InsertUserRoles(ctx, withoutPermission, []int64{otherRole.ID}); err != nil {
+		t.Fatalf("assign unrelated role: %v", err)
+	}
+	if err := repo.InsertUserRoles(ctx, bannedMatch, []int64{roleA.ID}); err != nil {
+		t.Fatalf("assign banned matching user: %v", err)
+	}
+	if err := repo.db.WithContext(ctx).Table("users").Where("id = ?", bannedMatch).Update("is_banned", true).Error; err != nil {
+		t.Fatalf("ban matching user: %v", err)
+	}
+
+	userIDs, err := repo.FindUserIDsByPermission(ctx, reviewPermission.Code)
+	if err != nil {
+		t.Fatalf("find user ids by permission: %v", err)
+	}
+	want := []uint{firstMatch, duplicateMatch}
+	if len(userIDs) != len(want) || userIDs[0] != want[0] || userIDs[1] != want[1] {
+		t.Fatalf("expected user ids %v, got %v", want, userIDs)
+	}
+}
+
 func TestHasPermissionAndHasRole(t *testing.T) {
 	repo := newTestRepository(t)
 	ctx := context.Background()

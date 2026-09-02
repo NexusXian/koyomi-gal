@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"backend/internal/community/dto"
 	"backend/internal/community/model"
 	"backend/internal/community/repository"
+	notificationModel "backend/internal/notification/model"
+	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
 	"backend/pkg/logger"
 
@@ -27,17 +30,23 @@ var (
 const PermissionCommentModerate = "comment:moderate"
 
 type CommentService struct {
-	comments *repository.CommentRepository
-	posts    *repository.PostRepository
-	rbac     *rbacService.RBACService
+	comments      *repository.CommentRepository
+	posts         *repository.PostRepository
+	rbac          *rbacService.RBACService
+	notifications *notificationService.NotificationService
 }
 
 func NewCommentService(
 	comments *repository.CommentRepository,
 	posts *repository.PostRepository,
 	rbac *rbacService.RBACService,
+	notifications ...*notificationService.NotificationService,
 ) *CommentService {
-	return &CommentService{comments: comments, posts: posts, rbac: rbac}
+	service := &CommentService{comments: comments, posts: posts, rbac: rbac}
+	if len(notifications) > 0 {
+		service.notifications = notifications[0]
+	}
+	return service
 }
 
 // Create inserts a comment and atomically increments posts.comment_count.
@@ -113,7 +122,12 @@ func (s *CommentService) Create(
 		logger.Error("create comment", zap.Uint("post_id", postID), zap.Uint("author_id", authorID), zap.Error(err))
 		return nil, err
 	}
-	return s.comments.FindByID(ctx, comment.ID)
+	created, err := s.comments.FindByID(ctx, comment.ID)
+	if err != nil {
+		return nil, err
+	}
+	s.notifyCreated(ctx, authorID, post, created)
+	return created, nil
 }
 
 // ListByPost returns one page of top-level comments and their reply counts.
@@ -268,7 +282,70 @@ func (s *CommentService) Delete(ctx context.Context, actorID, id uint) error {
 		logger.Error("delete comment", zap.Uint("comment_id", id), zap.Uint("actor_id", actorID), zap.Error(err))
 		return err
 	}
+	if comment.AuthorID != nil && *comment.AuthorID != actorID {
+		s.notify(ctx, notificationService.CreateInput{
+			RecipientID: *comment.AuthorID,
+			ActorID:     &actorID,
+			Category:    notificationModel.CategoryModeration,
+			Type:        notificationModel.TypeCommentModerated,
+			EntityType:  "comment",
+			EntityID:    id,
+			Title:       "评论已被处理",
+			Content:     "你的评论已被管理员删除",
+			TargetURL:   fmt.Sprintf("/posts/%d", comment.PostID),
+			Metadata:    map[string]any{"preview": previewText(comment.Content)},
+		})
+	}
 	return nil
+}
+
+func (s *CommentService) notifyCreated(ctx context.Context, actorID uint, post *model.Post, comment *model.Comment) {
+	if s.notifications == nil || comment == nil {
+		return
+	}
+	recipientID := post.AuthorID
+	notificationType := notificationModel.TypePostCommented
+	title := "新的评论"
+	content := fmt.Sprintf("评论了你的帖子「%s」", post.Title)
+	if comment.ReplyToUserID != nil {
+		recipientID = comment.ReplyToUserID
+		notificationType = notificationModel.TypeCommentReplied
+		title = "新的回复"
+		content = "回复了你的评论"
+	}
+	if recipientID == nil {
+		return
+	}
+	s.notify(ctx, notificationService.CreateInput{
+		RecipientID: *recipientID,
+		ActorID:     &actorID,
+		Category:    notificationModel.CategoryInteraction,
+		Type:        notificationType,
+		EntityType:  "comment",
+		EntityID:    comment.ID,
+		Title:       title,
+		Content:     content,
+		TargetURL:   fmt.Sprintf("/posts/%d?comment=%d", post.ID, comment.ID),
+		Metadata:    map[string]any{"preview": previewText(comment.Content), "post_id": post.ID},
+	})
+}
+
+func (s *CommentService) notify(ctx context.Context, input notificationService.CreateInput) {
+	if s.notifications == nil {
+		return
+	}
+	if _, err := s.notifications.Create(ctx, input); err != nil {
+		logger.Error("create comment notification", zap.String("type", string(input.Type)), zap.Error(err))
+	}
+}
+
+func previewText(value string) string {
+	value = strings.TrimSpace(value)
+	runes := []rune(value)
+	if len(runes) <= 100 {
+		return value
+	}
+	return string(runes[:100]) + "…"
 }
 
 // ensureCanManage allows authors to manage their own comments and falls back

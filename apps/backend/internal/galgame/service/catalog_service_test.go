@@ -9,6 +9,11 @@ import (
 	"backend/internal/galgame/dto"
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
+	notificationModel "backend/internal/notification/model"
+	notificationRepo "backend/internal/notification/repository"
+	notificationService "backend/internal/notification/service"
+	rbacRepo "backend/internal/rbac/repository"
+	rbacService "backend/internal/rbac/service"
 	"backend/internal/testutil"
 
 	"gorm.io/gorm"
@@ -23,7 +28,52 @@ func newCatalogTestService(t *testing.T) (*CatalogService, *gorm.DB, uint) {
 		repository.NewDeveloperRepository(db),
 		repository.NewTagRepository(db),
 	)
+	rbacSvc := rbacService.NewRBACService(rbacRepo.NewRBACRepository(db))
+	if err := rbacSvc.SeedDefaults(context.Background()); err != nil {
+		t.Fatalf("seed rbac defaults: %v", err)
+	}
+	svc.SetNotificationDependencies(rbacSvc, notificationService.NewNotificationService(
+		notificationRepo.NewNotificationRepository(db, "https://img.example.com"),
+	))
 	return svc, db, testutil.CreateUser(t, db, "catalog-user")
+}
+
+func TestGalgameNotifications(t *testing.T) {
+	svc, db, creator := newCatalogTestService(t)
+	ctx := context.Background()
+	reviewer := testutil.CreateUser(t, db, "catalog-reviewer")
+	rbacSvc := rbacService.NewRBACService(rbacRepo.NewRBACRepository(db))
+	if err := rbacSvc.AssignRoleByCode(ctx, reviewer, rbacService.RoleCodeAdmin); err != nil {
+		t.Fatalf("assign reviewer role: %v", err)
+	}
+
+	pending := createTestGalgame(t, svc, creator, "notify-pending", nil, nil, "", 0, model.GalgameStatusPending)
+	assertNotificationCount(t, db, reviewer, notificationModel.TypeGalgameSubmitted, 1)
+	if _, err := svc.ReviewGalgame(ctx, reviewer, pending.ID, &dto.ReviewGalgameRequest{Status: model.GalgameStatusPublished}); err != nil {
+		t.Fatalf("approve galgame: %v", err)
+	}
+	assertNotificationCount(t, db, creator, notificationModel.TypeGalgameApproved, 1)
+	if _, err := svc.ReviewGalgame(ctx, reviewer, pending.ID, &dto.ReviewGalgameRequest{Status: model.GalgameStatusPublished}); err != nil {
+		t.Fatalf("repeat approval: %v", err)
+	}
+	assertNotificationCount(t, db, creator, notificationModel.TypeGalgameApproved, 1)
+
+	rejected := createTestGalgame(t, svc, creator, "notify-rejected", nil, nil, "", 0, model.GalgameStatusPending)
+	if _, err := svc.ReviewGalgame(ctx, reviewer, rejected.ID, &dto.ReviewGalgameRequest{Status: model.GalgameStatusRejected}); err != nil {
+		t.Fatalf("reject galgame: %v", err)
+	}
+	assertNotificationCount(t, db, creator, notificationModel.TypeGalgameRejected, 1)
+}
+
+func assertNotificationCount(t *testing.T, db *gorm.DB, recipientID uint, notificationType notificationModel.NotificationType, want int64) {
+	t.Helper()
+	var count int64
+	if err := db.Table("notifications").Where("recipient_id = ? AND type = ?", recipientID, notificationType).Count(&count).Error; err != nil {
+		t.Fatalf("count notifications: %v", err)
+	}
+	if count != want {
+		t.Fatalf("notification %s count: got %d want %d", notificationType, count, want)
+	}
 }
 
 func createTestDeveloper(t *testing.T, svc *CatalogService, name string) *model.Developer {

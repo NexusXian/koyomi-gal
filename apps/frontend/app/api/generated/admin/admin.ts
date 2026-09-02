@@ -23,6 +23,7 @@ import type {
   DtoResourceDataResponse,
   DtoResourceReportDataResponse,
   DtoResourceReportListResponse,
+  DtoReviewGalgameRequest,
   DtoReviewResourceRequest,
   DtoUpdateArticleRequest,
   DtoUpdateBannerRequest,
@@ -401,6 +402,37 @@ export const getAdminGalgame = async (id: number, options?: Parameters<typeof ap
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getReviewGalgameUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/review`
+}
+
+/**
+ * 将 Galgame 标记为已发布或已拒绝；需要 galgame:review 权限
+ * @summary 管理端审核 Galgame
+ */
+export const reviewGalgame = async (id: number,
+    dtoReviewGalgameRequest: DtoReviewGalgameRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalgameDataResponse>(getReviewGalgameUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoReviewGalgameRequest)
   }
 );}
 

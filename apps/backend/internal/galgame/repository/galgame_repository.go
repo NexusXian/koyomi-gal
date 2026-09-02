@@ -71,6 +71,16 @@ func (r *GalgameRepository) Update(ctx context.Context, galgame *model.Galgame) 
 	return nil
 }
 
+func (r *GalgameRepository) UpdateStatus(ctx context.Context, id uint, status int16) error {
+	if err := r.db.WithContext(ctx).
+		Model(&model.Galgame{}).
+		Where("id = ?", id).
+		Updates(map[string]any{"status": status, "updated_at": time.Now()}).Error; err != nil {
+		return fmt.Errorf("update galgame status: %w", err)
+	}
+	return nil
+}
+
 func (r *GalgameRepository) Delete(ctx context.Context, id uint) error {
 	if err := r.db.WithContext(ctx).Delete(&model.Galgame{}, id).Error; err != nil {
 		return fmt.Errorf("delete galgame: %w", err)
