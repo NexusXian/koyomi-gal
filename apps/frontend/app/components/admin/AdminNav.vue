@@ -1,12 +1,12 @@
 <script setup lang="ts">
 const route = useRoute()
-const { has, hasAny } = usePermissions()
+const { hasAny } = usePermissions()
 
 interface AdminNavItem {
   key: string
   label: string
   icon: string
-  permission: string | null
+  permissions: string[] | null
 }
 
 const items: AdminNavItem[] = [
@@ -14,81 +14,99 @@ const items: AdminNavItem[] = [
     key: '/admin/galgames',
     label: 'Galgame 审核',
     icon: 'lucide:gamepad-2',
-    permission: 'galgame:review'
+    permissions: ['galgame:review']
   },
   {
     key: '/admin/reports',
     label: '资源举报',
     icon: 'lucide:flag',
-    permission: 'resource_report:list'
+    permissions: ['resource_report:list']
+  },
+  {
+    key: '/admin/images',
+    label: '图片管理',
+    icon: 'lucide:image',
+    permissions: ['image:read', 'image:manage']
   },
   {
     key: '/admin/resources',
     label: '资源审核',
     icon: 'lucide:folder-down',
-    permission: 'resource:review'
+    permissions: ['resource:review']
+  },
+  {
+    key: '/admin/community',
+    label: '社区管理',
+    icon: 'lucide:messages-square',
+    permissions: ['post:moderate', 'comment:moderate']
   },
   {
     key: '/admin/tags',
     label: 'Tag',
     icon: 'lucide:tags',
-    permission: 'galgame:update'
+    permissions: ['galgame:update']
   },
   {
     key: '/admin/developers',
     label: '开发商',
     icon: 'lucide:building-2',
-    permission: 'galgame:update'
+    permissions: ['galgame:update']
   },
   {
     key: '/admin/banners',
     label: '轮播图',
     icon: 'lucide:gallery-horizontal-end',
-    permission: 'banner:read'
+    permissions: ['banner:read']
   },
   {
     key: '/admin/articles',
     label: '文章',
     icon: 'lucide:newspaper',
-    permission: 'article:read'
+    permissions: ['article:read']
   },
   {
     key: '/admin/roles',
     label: '角色',
     icon: 'lucide:shield',
-    permission: 'role:list'
+    permissions: [
+      'role:list',
+      'role:create',
+      'role:update',
+      'role:delete',
+      'permission:assign'
+    ]
   },
   {
     key: '/admin/permissions',
     label: '权限',
     icon: 'lucide:key-round',
-    permission: 'permission:list'
+    permissions: [
+      'permission:list',
+      'permission:create',
+      'permission:update',
+      'permission:delete'
+    ]
   },
   {
     key: '/admin/users',
-    label: '用户角色',
+    label: '用户管理',
     icon: 'lucide:users',
-    permission: 'role:assign'
+    permissions: [
+      'user:list',
+      'user:read',
+      'user:create',
+      'user:update',
+      'user:delete',
+      'role:assign'
+    ]
   }
 ]
 
 const visibleItems = computed(() =>
-  items.filter((item) => item.permission === null || has(item.permission))
+  items.filter((item) => item.permissions === null || hasAny(item.permissions))
 )
 
-const canSeeAdmin = computed(() =>
-  hasAny([
-    'galgame:review',
-    'resource_report:list',
-    'resource:review',
-    'galgame:update',
-    'role:list',
-    'permission:list',
-    'role:assign',
-    'banner:read',
-    'article:read'
-  ])
-)
+const canSeeAdmin = computed(() => visibleItems.value.length > 0)
 
 const selectedKeys = computed(() => {
   const match = visibleItems.value

@@ -29,11 +29,27 @@ const navigationItems = computed(() => {
     hasAny([
       'galgame:review',
       'resource_report:list',
+      'image:read',
+      'image:manage',
       'resource:review',
+      'post:moderate',
+      'comment:moderate',
       'galgame:update',
       'role:list',
+      'role:create',
+      'role:update',
+      'role:delete',
       'permission:list',
+      'permission:create',
+      'permission:update',
+      'permission:delete',
+      'permission:assign',
       'role:assign',
+      'user:list',
+      'user:read',
+      'user:create',
+      'user:update',
+      'user:delete',
       'banner:read',
       'article:read'
     ])
@@ -42,19 +58,36 @@ const navigationItems = computed(() => {
       ? '/admin/galgames'
       : has('resource_report:list')
         ? '/admin/reports'
-        : has('resource:review')
-          ? '/admin/resources'
-          : has('galgame:update')
-            ? '/admin/tags'
-            : has('banner:read')
-              ? '/admin/banners'
-              : has('article:read')
-                ? '/admin/articles'
-                : has('role:list')
-                  ? '/admin/roles'
-                  : has('permission:list')
-                    ? '/admin/permissions'
-                    : '/admin/users'
+        : hasAny(['image:read', 'image:manage'])
+          ? '/admin/images'
+          : has('resource:review')
+            ? '/admin/resources'
+            : hasAny(['post:moderate', 'comment:moderate'])
+              ? '/admin/community'
+              : has('galgame:update')
+                ? '/admin/tags'
+                : has('banner:read')
+                  ? '/admin/banners'
+                  : has('article:read')
+                    ? '/admin/articles'
+                    : hasAny([
+                        'user:list',
+                        'user:read',
+                        'user:create',
+                        'user:update',
+                        'user:delete',
+                        'role:assign'
+                      ])
+                      ? '/admin/users'
+                      : hasAny([
+                          'role:list',
+                          'role:create',
+                          'role:update',
+                          'role:delete',
+                          'permission:assign'
+                        ])
+                        ? '/admin/roles'
+                        : '/admin/permissions'
     items.push({ label: '管理', icon: 'lucide:shield', to: target })
   }
 

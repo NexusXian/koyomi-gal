@@ -14,9 +14,20 @@ import type { DtoRoleResponse } from '~/api/generated/models'
 
 useSeoMeta({ title: '角色管理 - Koyomi' })
 
+const { load: loadPermissions, has } = usePermissions()
+const canListRoles = computed(() => has('role:list'))
+const canCreateRole = computed(() => has('role:create'))
+const canUpdateRole = computed(() => has('role:update'))
+const canDeleteRole = computed(() => has('role:delete'))
+const canAssignPermissions = computed(() =>
+  has('role:list') && has('permission:list') && has('permission:assign')
+)
 const roles = ref<DtoRoleResponse[]>([])
 const permissions = ref<{ id?: number; name?: string; code?: string }[]>([])
-const loading = ref(false)
+const roleLoading = ref(false)
+const permissionsLoading = ref(false)
+const permissionsLoaded = ref(false)
+let permissionOptionsRequest = 0
 
 const roleModalOpen = ref(false)
 const editingRole = ref<DtoRoleResponse | null>(null)
@@ -27,35 +38,61 @@ const permDrawerOpen = ref(false)
 const permDrawerRole = ref<DtoRoleResponse | null>(null)
 const selectedPermissionIds = ref<number[]>([])
 const permDrawerLoading = ref(false)
+const rolePermissionsLoaded = ref(false)
 const permSaving = ref(false)
+let rolePermissionRequest = 0
 
-async function load(): Promise<void> {
-  loading.value = true
+async function loadRoles(): Promise<void> {
+  if (!canListRoles.value) return
+
+  roleLoading.value = true
   try {
-    const [roleData, permData] = await Promise.all([
-      listRoles(),
-      listPermissions()
-    ])
-    roles.value = unwrapApiData(roleData) ?? []
-    permissions.value = unwrapApiData(permData) ?? []
+    roles.value = unwrapApiData(await listRoles()) ?? []
   } catch (error) {
-    message.error(getApiErrorMessage(error, '加载数据失败'))
+    message.error(getApiErrorMessage(error, '角色列表加载失败'))
   } finally {
-    loading.value = false
+    roleLoading.value = false
   }
 }
 
-onMounted(() => {
-  void load()
+async function loadPermissionOptions(): Promise<void> {
+  if (!canAssignPermissions.value) return
+
+  const request = ++permissionOptionsRequest
+  permissionsLoading.value = true
+  permissionsLoaded.value = false
+  try {
+    const data = unwrapApiData(await listPermissions()) ?? []
+    if (request !== permissionOptionsRequest) return
+    permissions.value = data
+    permissionsLoaded.value = true
+  } catch (error) {
+    if (request !== permissionOptionsRequest) return
+    permissions.value = []
+    message.error(getApiErrorMessage(error, '权限列表加载失败'))
+  } finally {
+    if (request === permissionOptionsRequest) {
+      permissionsLoading.value = false
+    }
+  }
+}
+
+onMounted(async () => {
+  await loadPermissions()
+  await Promise.all([loadRoles(), loadPermissionOptions()])
 })
 
 function openRoleCreate(): void {
+  if (!canCreateRole.value) return
+
   editingRole.value = null
   Object.assign(roleForm, { code: '', name: '', description: '' })
   roleModalOpen.value = true
 }
 
 function openRoleEdit(role: DtoRoleResponse): void {
+  if (!canUpdateRole.value) return
+
   editingRole.value = role
   Object.assign(roleForm, {
     code: role.code ?? '',
@@ -66,6 +103,12 @@ function openRoleEdit(role: DtoRoleResponse): void {
 }
 
 async function submitRole(): Promise<void> {
+  if (
+    (editingRole.value && !canUpdateRole.value) ||
+    (!editingRole.value && !canCreateRole.value)
+  ) {
+    return
+  }
   if (!roleForm.code.trim() || !roleForm.name.trim()) {
     message.warning('请填写角色代码和名称')
     return
@@ -73,19 +116,21 @@ async function submitRole(): Promise<void> {
 
   roleSaving.value = true
   try {
-    const payload = {
-      code: roleForm.code.trim(),
-      name: roleForm.name.trim(),
-      description: roleForm.description.trim() || undefined
-    }
     if (editingRole.value?.id) {
-      await updateRole(editingRole.value.id, payload)
+      await updateRole(editingRole.value.id, {
+        name: roleForm.name.trim(),
+        description: roleForm.description.trim() || undefined
+      })
     } else {
-      await createRole(payload)
+      await createRole({
+        code: roleForm.code.trim(),
+        name: roleForm.name.trim(),
+        description: roleForm.description.trim() || undefined
+      })
     }
     message.success(editingRole.value ? '角色已更新' : '角色已创建')
     roleModalOpen.value = false
-    await load()
+    await loadRoles()
   } catch (error) {
     message.error(getApiErrorMessage(error, '保存失败'))
   } finally {
@@ -94,37 +139,56 @@ async function submitRole(): Promise<void> {
 }
 
 async function removeRole(role: DtoRoleResponse): Promise<void> {
-  if (!role.id) {
+  if (!role.id || !canDeleteRole.value) {
     return
   }
 
   try {
     await deleteRole(role.id)
     message.success(`角色「${role.name}」已删除`)
-    await load()
+    await loadRoles()
   } catch (error) {
     message.error(getApiErrorMessage(error, '删除失败'))
   }
 }
 
 async function openPermissions(role: DtoRoleResponse): Promise<void> {
+  if (!role.id || !canAssignPermissions.value) return
+
+  const request = ++rolePermissionRequest
   permDrawerRole.value = role
   permDrawerOpen.value = true
+  selectedPermissionIds.value = []
+  rolePermissionsLoaded.value = false
   permDrawerLoading.value = true
   try {
-    const data = unwrapApiData(await getRolePermissions(role.id ?? 0))
+    const [response] = await Promise.all([
+      getRolePermissions(role.id),
+      permissionsLoaded.value ? Promise.resolve() : loadPermissionOptions()
+    ])
+    if (request !== rolePermissionRequest) return
+    const data = unwrapApiData(response)
     selectedPermissionIds.value = (data ?? [])
       .map((item) => item.id)
-      .filter((id): id is number => Boolean(id))
+      .filter((id): id is number => id !== undefined)
+    rolePermissionsLoaded.value = true
   } catch (error) {
+    if (request !== rolePermissionRequest) return
     message.error(getApiErrorMessage(error, '加载角色权限失败'))
   } finally {
-    permDrawerLoading.value = false
+    if (request === rolePermissionRequest) {
+      permDrawerLoading.value = false
+    }
   }
 }
 
 async function submitPermissions(): Promise<void> {
-  if (!permDrawerRole.value?.id) {
+  if (
+    !permDrawerRole.value?.id ||
+    !canAssignPermissions.value ||
+    !permissionsLoaded.value ||
+    !rolePermissionsLoaded.value
+  ) {
     return
   }
 
@@ -142,17 +206,21 @@ async function submitPermissions(): Promise<void> {
   }
 }
 
-const roleColumns: TableColumnsType = [
-  { title: 'ID', dataIndex: 'id', width: 70 },
-  { title: '代码', dataIndex: 'code', width: 140 },
-  { title: '名称', dataIndex: 'name', width: 140 },
-  { title: '描述', dataIndex: 'description', ellipsis: true },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 250
+const hasRoleActions = computed(() =>
+  canUpdateRole.value || canDeleteRole.value || canAssignPermissions.value
+)
+const roleColumns = computed<TableColumnsType>(() => {
+  const columns: TableColumnsType = [
+    { title: 'ID', dataIndex: 'id', width: 70 },
+    { title: '代码', dataIndex: 'code', width: 140 },
+    { title: '名称', dataIndex: 'name', width: 140 },
+    { title: '描述', dataIndex: 'description', ellipsis: true }
+  ]
+  if (hasRoleActions.value) {
+    columns.push({ title: '操作', key: 'actions', width: 250 })
   }
-]
+  return columns
+})
 </script>
 
 <template>
@@ -164,12 +232,13 @@ const roleColumns: TableColumnsType = [
       class="section-heading"
     />
     <div class="table-toolbar">
-      <a-button type="primary" @click="openRoleCreate">新建角色</a-button>
+      <a-button v-if="canCreateRole" type="primary" @click="openRoleCreate">新建角色</a-button>
     </div>
     <a-table
+      v-if="canListRoles"
       :columns="roleColumns"
       :data-source="roles"
-      :loading="loading"
+      :loading="roleLoading"
       :pagination="false"
       row-key="id"
     >
@@ -180,13 +249,14 @@ const roleColumns: TableColumnsType = [
 
         <template v-else-if="column.key === 'actions'">
           <div class="table-actions">
-            <a-button size="small" @click="openRoleEdit(record)">
+            <a-button v-if="canUpdateRole" size="small" @click="openRoleEdit(record)">
               编辑
             </a-button>
-            <a-button size="small" @click="openPermissions(record)">
+            <a-button v-if="canAssignPermissions" size="small" @click="openPermissions(record)">
               权限
             </a-button>
             <a-popconfirm
+              v-if="canDeleteRole"
               :title="`确定删除角色「${record.name}」吗？`"
               ok-text="删除"
               cancel-text="取消"
@@ -209,7 +279,7 @@ const roleColumns: TableColumnsType = [
     >
       <a-form layout="vertical">
         <a-form-item label="角色代码" required>
-          <a-input v-model:value="roleForm.code" :maxlength="64" />
+          <a-input v-model:value="roleForm.code" :maxlength="64" :disabled="Boolean(editingRole)" />
         </a-form-item>
         <a-form-item label="名称" required>
           <a-input v-model:value="roleForm.name" :maxlength="64" />
@@ -225,10 +295,18 @@ const roleColumns: TableColumnsType = [
       :title="`角色权限 - ${permDrawerRole?.name ?? ''}`"
       width="420"
     >
-      <a-spin :spinning="permDrawerLoading">
+      <a-spin :spinning="permDrawerLoading || permissionsLoading">
+        <a-alert
+          v-if="!permissionsLoading && (!permissionsLoaded || !rolePermissionsLoaded)"
+          type="error"
+          show-icon
+          message="权限数据未完整加载，已禁用保存以避免覆盖现有权限。"
+          class="permission-alert"
+        />
         <a-checkbox-group
           v-model:value="selectedPermissionIds"
           class="permission-group"
+          :disabled="!permissionsLoaded || !rolePermissionsLoaded"
         >
           <div class="permission-list">
             <a-checkbox
@@ -249,6 +327,7 @@ const roleColumns: TableColumnsType = [
           <a-button
             type="primary"
             :loading="permSaving"
+            :disabled="permDrawerLoading || permissionsLoading || !permissionsLoaded || !rolePermissionsLoaded"
             @click="submitPermissions"
           >
             保存
@@ -279,6 +358,10 @@ const roleColumns: TableColumnsType = [
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.permission-alert {
+  margin-bottom: 14px;
 }
 
 .permission-item {
