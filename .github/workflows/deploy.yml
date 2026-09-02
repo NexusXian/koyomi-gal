@@ -1,5 +1,4 @@
-name: Deploy
-
+name: Deplomaster
 on:
   push:
     branches: [master]
@@ -89,4 +88,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/frontend
-          command: pages deploy .output/public --project-name=${{ vars.CF_PAGES_PROJECT || 'koyomi-gal' }} --branch=main
+          command: pages deploy .output/public --project-name=${{ vars.CF_PAGES_PROJECT || 'koyomi-gal' }} --branch=master
