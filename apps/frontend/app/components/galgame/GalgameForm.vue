@@ -195,7 +195,11 @@ async function submit(): Promise<void> {
     const data = unwrapApiData(response, '保存失败')
     message.success(props.galgameId ? 'Galgame 已更新' : 'Galgame 已创建')
     emit('submitted', data)
-    void router.push(`/galgames/${data.id}`)
+    if (props.galgameId) {
+      void router.push(`/galgames/${data.id}`)
+    } else {
+      void router.push('/')
+    }
   } catch (error) {
     message.error(getApiErrorMessage(error, '保存失败'))
   } finally {
