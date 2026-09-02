@@ -527,6 +527,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/comments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按评论内容、作者或帖子标题搜索全部评论；需要 comment:moderate 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询评论列表",
+                "operationId": "listAdminComments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "评论内容、作者或帖子标题",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "评论列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminCommentListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询评论失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/galgames": {
             "get": {
                 "security": [
@@ -670,6 +742,281 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "查询 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/images": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回全部图片资源；需要 image:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询图片",
+                "operationId": "listAdminImages",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "avatars",
+                            "posts",
+                            "comments",
+                            "galgames",
+                            "backgrounds",
+                            "banners",
+                            "admin"
+                        ],
+                        "type": "string",
+                        "description": "分类",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "上传用户 ID",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "description": "状态",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "图片列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminImageListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询图片失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/images/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 返回任意状态的图片元数据；需要 image:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查看图片",
+                "operationId": "getAdminImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "图片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "图片详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImageDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "图片 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除任意用户的图片；需要 image:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端删除图片",
+                "operationId": "deleteAdminImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "图片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "图片已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "图片 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/posts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按标题、内容、作者或 Galgame 标题搜索全部帖子；需要 post:moderate 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询帖子列表",
+                "operationId": "listAdminPosts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "标题、内容、作者或 Galgame 标题",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "帖子列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminPostListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询帖子失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -2651,6 +2998,376 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/images/presign": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "校验类型、大小和分类权限后，创建 pending 图片记录并返回 R2 Presigned PUT URL；该 URL 仅用于上传，与访问图片的 CDN URL 不同",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "申请图片上传凭证",
+                "operationId": "presignImageUpload",
+                "parameters": [
+                    {
+                        "description": "上传申请",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PresignImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "上传凭证",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PresignImageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "图片类型、大小或分类不合法",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有该分类的上传权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "上传请求过于频繁或超出每日配额",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "生成上传凭证失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/images/{id}": {
+            "get": {
+                "description": "返回 active 状态图片的元数据和 CDN 访问 URL",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "查看图片",
+                "operationId": "getImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "图片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "图片详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImageDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "图片 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除 R2 对象并将记录标记为 deleted；用户只能删除自己上传的图片，拥有 image:delete 权限可以删除任意图片",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "删除图片",
+                "operationId": "deleteImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "图片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "图片已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "图片 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "只能删除自己上传的图片",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/images/{id}/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "通过 R2 HeadObject 验证对象存在且与申请一致后将图片置为 active；重复确认已 active 的图片是幂等的",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "确认图片上传完成",
+                "operationId": "completeImageUpload",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "图片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "图片尺寸",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompleteUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "图片详情，包含 CDN 访问 URL",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImageDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "图片 ID 或参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "只能操作自己上传的图片",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "对象尚未上传或与申请不一致",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新头像引用；头像必须是本人上传的 avatars 分类图片，更换后旧头像资源会被删除",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "更新当前用户资料",
+                "operationId": "updateMe",
+                "parameters": [
+                    {
+                        "description": "资料更新请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateMeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新后的用户资料",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数或头像资源不合法",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/galgames": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户上传或收藏的 Galgame",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "查询我的 Galgame",
+                "operationId": "listMyGalgames",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "uploaded",
+                        "description": "列表类型：uploaded、favorite",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Galgame 列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询我的 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/me/permissions": {
             "get": {
                 "security": [
@@ -2682,6 +3399,100 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "查询用户权限失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/preferences": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回当前用户的背景偏好；从未设置时返回默认值",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "查看个性化背景设置",
+                "operationId": "getMePreferences",
+                "responses": {
+                    "200": {
+                        "description": "背景偏好",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserPreferencesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "保存背景偏好；custom 来源必须引用本人上传的 backgrounds 分类图片，更换后旧背景资源会被删除",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "更新个性化背景设置",
+                "operationId": "updateMePreferences",
+                "parameters": [
+                    {
+                        "description": "背景偏好更新请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUserPreferencesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "保存后的背景偏好",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserPreferencesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数或背景资源不合法",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "保存失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -4565,6 +5376,361 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按用户名、邮箱或精确数字 ID 搜索用户；需要 user:list 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端查询用户列表",
+                "operationId": "listAdminUsers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名、邮箱或用户 ID",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建用户并分配默认 user 角色；需要 user:create 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端创建用户",
+                "operationId": "createAdminUser",
+                "parameters": [
+                    {
+                        "description": "创建用户请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateAdminUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "用户名或邮箱已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "创建用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 返回用户详情；需要 user:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端查看用户详情",
+                "operationId": "getAdminUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "用户 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新提供的用户名、邮箱、封禁状态或密码；省略字段保持不变；需要 user:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端更新用户",
+                "operationId": "updateAdminUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新用户请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateAdminUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "用户名或邮箱已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除用户及用户角色关系，不能删除当前登录用户；需要 user:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端删除用户",
+                "operationId": "deleteAdminUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "用户 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "不能删除当前登录用户",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/{id}/roles": {
             "get": {
                 "security": [
@@ -4963,6 +6129,229 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AdminCommentData": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "author_name": {
+                    "type": "string",
+                    "example": "koyomi"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "同感！"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "parent_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "post_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "post_title": {
+                    "type": "string",
+                    "example": "千恋＊万花通关感想"
+                },
+                "reply_to_user_id": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AdminCommentListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AdminCommentData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "dto.AdminCommentListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminCommentListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.AdminImageListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImageData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "dto.AdminImageListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminImageListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.AdminPostData": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "author_name": {
+                    "type": "string",
+                    "example": "koyomi"
+                },
+                "comment_count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "content": {
+                    "type": "string",
+                    "example": "剧情感想……"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "editor_mode": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.EditorMode"
+                        }
+                    ],
+                    "example": "plain"
+                },
+                "favorite_count": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "galgame_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "galgame_title": {
+                    "type": "string",
+                    "example": "千恋＊万花"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "title": {
+                    "type": "string",
+                    "example": "千恋＊万花通关感想"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AdminPostListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AdminPostData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "dto.AdminPostListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminPostListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.AdminResourceListData": {
             "type": "object",
             "properties": {
@@ -4995,6 +6384,88 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.AdminResourceListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.AdminUserData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_banned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
+        "dto.AdminUserDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminUserData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.AdminUserListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AdminUserData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "dto.AdminUserListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminUserListData"
                 },
                 "msg": {
                     "type": "string",
@@ -5392,6 +6863,10 @@ const docTemplate = `{
         "dto.CommentData": {
             "type": "object",
             "properties": {
+                "author_avatar": {
+                    "type": "string",
+                    "example": "https://img.example.com/avatars/1/2026/09/uuid.png"
+                },
                 "author_id": {
                     "type": "integer",
                     "example": 1
@@ -5517,6 +6992,53 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.CompleteUploadRequest": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer",
+                    "maximum": 100000,
+                    "minimum": 1,
+                    "example": 1080
+                },
+                "width": {
+                    "type": "integer",
+                    "maximum": 100000,
+                    "minimum": 1,
+                    "example": 1920
+                }
+            }
+        },
+        "dto.CreateAdminUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                },
+                "is_banned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8,
+                    "example": "password123"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "koyomi"
                 }
             }
         },
@@ -6212,6 +7734,10 @@ const docTemplate = `{
                 "statistics": {
                     "$ref": "#/definitions/dto.GalgameStatistics"
                 },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -6440,6 +7966,100 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ImageData": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "posts"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "extension": {
+                    "type": "string",
+                    "example": "png"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "image/png"
+                },
+                "object_key": {
+                    "type": "string",
+                    "example": "posts/10001/2026/09/uuid.png"
+                },
+                "original_name": {
+                    "type": "string",
+                    "example": "cover.png"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 204800
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://img.example.com/posts/10001/2026/09/uuid.png"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 10001
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ImageDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ImageData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.MeData": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string",
+                    "example": "https://img.example.com/avatars/1/2026/09/uuid.png"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
         "dto.MePermissionsData": {
             "type": "object",
             "properties": {
@@ -6473,6 +8093,22 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.MePermissionsData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.MeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MeData"
                 },
                 "msg": {
                     "type": "string",
@@ -6571,6 +8207,10 @@ const docTemplate = `{
         "dto.PostData": {
             "type": "object",
             "properties": {
+                "author_avatar": {
+                    "type": "string",
+                    "example": "https://img.example.com/avatars/1/2026/09/uuid.png"
+                },
                 "author_id": {
                     "type": "integer",
                     "example": 1
@@ -6750,6 +8390,80 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.PostListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.PresignImageData": {
+            "type": "object",
+            "properties": {
+                "expires_in": {
+                    "type": "integer",
+                    "example": 300
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "object_key": {
+                    "type": "string",
+                    "example": "posts/10001/2026/09/01991e1d-a1b2-7c8d-9e0f-a1b2c3d4e5f6.png"
+                },
+                "upload_url": {
+                    "type": "string",
+                    "example": "https://example.r2.cloudflarestorage.com/koyomi-gal-assets/posts/...?X-Amz-Signature=..."
+                }
+            }
+        },
+        "dto.PresignImageRequest": {
+            "type": "object",
+            "required": [
+                "category",
+                "content_type",
+                "filename",
+                "size"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "enum": [
+                        "avatars",
+                        "posts",
+                        "comments",
+                        "galgames",
+                        "backgrounds",
+                        "banners",
+                        "admin"
+                    ],
+                    "example": "posts"
+                },
+                "content_type": {
+                    "type": "string",
+                    "example": "image/png"
+                },
+                "filename": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "cover.png"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 204800
+                }
+            }
+        },
+        "dto.PresignImageResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.PresignImageData"
                 },
                 "msg": {
                     "type": "string",
@@ -7198,6 +8912,31 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateAdminUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                },
+                "is_banned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8,
+                    "example": "new-password123"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "koyomi"
+                }
+            }
+        },
         "dto.UpdateArticleRequest": {
             "type": "object",
             "required": [
@@ -7458,6 +9197,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateMeRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_asset_id": {
+                    "description": "AvatarAssetID references an image_assets row; null clears the avatar.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 123
+                }
+            }
+        },
         "dto.UpdatePermissionRequest": {
             "type": "object",
             "required": [
@@ -7619,6 +9369,58 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateUserPreferencesRequest": {
+            "type": "object",
+            "required": [
+                "background_source"
+            ],
+            "properties": {
+                "background_asset_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 100
+                },
+                "background_blur": {
+                    "type": "number",
+                    "maximum": 20,
+                    "minimum": 0,
+                    "example": 0
+                },
+                "background_opacity": {
+                    "type": "number",
+                    "maximum": 1,
+                    "minimum": 0,
+                    "example": 0.35
+                },
+                "background_position": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "center center"
+                },
+                "background_preset": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "default-01"
+                },
+                "background_size": {
+                    "type": "string",
+                    "enum": [
+                        "cover",
+                        "contain"
+                    ],
+                    "example": "cover"
+                },
+                "background_source": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "preset",
+                        "custom"
+                    ],
+                    "example": "custom"
+                }
+            }
+        },
         "dto.UpdateUserRolesRequest": {
             "type": "object",
             "required": [
@@ -7702,6 +9504,59 @@ const docTemplate = `{
                     "maxLength": 255,
                     "minLength": 8,
                     "example": "password123"
+                }
+            }
+        },
+        "dto.UserPreferencesData": {
+            "type": "object",
+            "properties": {
+                "background_asset_id": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "background_blur": {
+                    "type": "number",
+                    "example": 0
+                },
+                "background_image_url": {
+                    "description": "BackgroundImageURL is the resolved CDN URL of the custom background.",
+                    "type": "string"
+                },
+                "background_opacity": {
+                    "type": "number",
+                    "example": 0.35
+                },
+                "background_position": {
+                    "type": "string",
+                    "example": "center center"
+                },
+                "background_preset": {
+                    "type": "string",
+                    "example": "default-01"
+                },
+                "background_size": {
+                    "type": "string",
+                    "example": "cover"
+                },
+                "background_source": {
+                    "type": "string",
+                    "example": "preset"
+                }
+            }
+        },
+        "dto.UserPreferencesResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.UserPreferencesData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },

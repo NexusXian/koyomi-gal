@@ -38,6 +38,162 @@ definitions:
         example: success
         type: string
     type: object
+  dto.AdminCommentData:
+    properties:
+      author_id:
+        example: 1
+        type: integer
+      author_name:
+        example: koyomi
+        type: string
+      content:
+        example: 同感！
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      like_count:
+        example: 5
+        type: integer
+      parent_id:
+        example: 1
+        type: integer
+      post_id:
+        example: 1
+        type: integer
+      post_title:
+        example: 千恋＊万花通关感想
+        type: string
+      reply_to_user_id:
+        example: 2
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.AdminCommentListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.AdminCommentData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  dto.AdminCommentListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AdminCommentListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.AdminImageListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ImageData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  dto.AdminImageListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AdminImageListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.AdminPostData:
+    properties:
+      author_id:
+        example: 1
+        type: integer
+      author_name:
+        example: koyomi
+        type: string
+      comment_count:
+        example: 3
+        type: integer
+      content:
+        example: 剧情感想……
+        type: string
+      created_at:
+        type: string
+      editor_mode:
+        allOf:
+        - $ref: '#/definitions/model.EditorMode'
+        example: plain
+      favorite_count:
+        example: 2
+        type: integer
+      galgame_id:
+        example: 1
+        type: integer
+      galgame_title:
+        example: 千恋＊万花
+        type: string
+      id:
+        example: 1
+        type: integer
+      like_count:
+        example: 10
+        type: integer
+      title:
+        example: 千恋＊万花通关感想
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.AdminPostListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.AdminPostData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  dto.AdminPostListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AdminPostListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.AdminResourceListData:
     properties:
       items:
@@ -61,6 +217,63 @@ definitions:
         type: integer
       data:
         $ref: '#/definitions/dto.AdminResourceListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.AdminUserData:
+    properties:
+      created_at:
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_banned:
+        example: false
+        type: boolean
+      updated_at:
+        type: string
+      username:
+        example: koyomi
+        type: string
+    type: object
+  dto.AdminUserDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AdminUserData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.AdminUserListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.AdminUserData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  dto.AdminUserListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AdminUserListData'
       msg:
         example: success
         type: string
@@ -340,6 +553,9 @@ definitions:
     type: object
   dto.CommentData:
     properties:
+      author_avatar:
+        example: https://img.example.com/avatars/1/2026/09/uuid.png
+        type: string
       author_id:
         example: 1
         type: integer
@@ -429,6 +645,42 @@ definitions:
       msg:
         example: success
         type: string
+    type: object
+  dto.CompleteUploadRequest:
+    properties:
+      height:
+        example: 1080
+        maximum: 100000
+        minimum: 1
+        type: integer
+      width:
+        example: 1920
+        maximum: 100000
+        minimum: 1
+        type: integer
+    type: object
+  dto.CreateAdminUserRequest:
+    properties:
+      email:
+        example: user@example.com
+        maxLength: 254
+        type: string
+      is_banned:
+        example: false
+        type: boolean
+      password:
+        example: password123
+        maxLength: 255
+        minLength: 8
+        type: string
+      username:
+        example: koyomi
+        maxLength: 50
+        type: string
+    required:
+    - email
+    - password
+    - username
     type: object
   dto.CreateArticleRequest:
     properties:
@@ -939,6 +1191,9 @@ definitions:
         type: string
       statistics:
         $ref: '#/definitions/dto.GalgameStatistics'
+      status:
+        example: 1
+        type: integer
       tags:
         items:
           $ref: '#/definitions/dto.TagSummary'
@@ -1096,6 +1351,73 @@ definitions:
         example: success
         type: string
     type: object
+  dto.ImageData:
+    properties:
+      category:
+        example: posts
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      extension:
+        example: png
+        type: string
+      height:
+        type: integer
+      id:
+        example: 123
+        type: integer
+      mime_type:
+        example: image/png
+        type: string
+      object_key:
+        example: posts/10001/2026/09/uuid.png
+        type: string
+      original_name:
+        example: cover.png
+        type: string
+      size:
+        example: 204800
+        type: integer
+      status:
+        example: 1
+        type: integer
+      url:
+        example: https://img.example.com/posts/10001/2026/09/uuid.png
+        type: string
+      user_id:
+        example: 10001
+        type: integer
+      width:
+        type: integer
+    type: object
+  dto.ImageDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ImageData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.MeData:
+    properties:
+      avatar:
+        example: https://img.example.com/avatars/1/2026/09/uuid.png
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      username:
+        example: koyomi
+        type: string
+    type: object
   dto.MePermissionsData:
     properties:
       permissions:
@@ -1119,6 +1441,17 @@ definitions:
         type: integer
       data:
         $ref: '#/definitions/dto.MePermissionsData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.MeResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.MeData'
       msg:
         example: success
         type: string
@@ -1187,6 +1520,9 @@ definitions:
     type: object
   dto.PostData:
     properties:
+      author_avatar:
+        example: https://img.example.com/avatars/1/2026/09/uuid.png
+        type: string
       author_id:
         example: 1
         type: integer
@@ -1312,6 +1648,61 @@ definitions:
         type: integer
       data:
         $ref: '#/definitions/dto.PostListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.PresignImageData:
+    properties:
+      expires_in:
+        example: 300
+        type: integer
+      id:
+        example: 123
+        type: integer
+      object_key:
+        example: posts/10001/2026/09/01991e1d-a1b2-7c8d-9e0f-a1b2c3d4e5f6.png
+        type: string
+      upload_url:
+        example: https://example.r2.cloudflarestorage.com/koyomi-gal-assets/posts/...?X-Amz-Signature=...
+        type: string
+    type: object
+  dto.PresignImageRequest:
+    properties:
+      category:
+        enum:
+        - avatars
+        - posts
+        - comments
+        - galgames
+        - backgrounds
+        - banners
+        - admin
+        example: posts
+        type: string
+      content_type:
+        example: image/png
+        type: string
+      filename:
+        example: cover.png
+        maxLength: 255
+        type: string
+      size:
+        example: 204800
+        type: integer
+    required:
+    - category
+    - content_type
+    - filename
+    - size
+    type: object
+  dto.PresignImageResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PresignImageData'
       msg:
         example: success
         type: string
@@ -1624,6 +2015,25 @@ definitions:
         example: 纯爱
         type: string
     type: object
+  dto.UpdateAdminUserRequest:
+    properties:
+      email:
+        example: user@example.com
+        maxLength: 254
+        type: string
+      is_banned:
+        example: false
+        type: boolean
+      password:
+        example: new-password123
+        maxLength: 255
+        minLength: 8
+        type: string
+      username:
+        example: koyomi
+        maxLength: 50
+        type: string
+    type: object
   dto.UpdateArticleRequest:
     properties:
       content:
@@ -1822,6 +2232,15 @@ definitions:
     - status
     - title
     type: object
+  dto.UpdateMeRequest:
+    properties:
+      avatar_asset_id:
+        description: AvatarAssetID references an image_assets row; null clears the
+          avatar.
+        example: 123
+        minimum: 1
+        type: integer
+    type: object
   dto.UpdatePermissionRequest:
     properties:
       description:
@@ -1939,6 +2358,46 @@ definitions:
     - name
     - slug
     type: object
+  dto.UpdateUserPreferencesRequest:
+    properties:
+      background_asset_id:
+        example: 100
+        minimum: 1
+        type: integer
+      background_blur:
+        example: 0
+        maximum: 20
+        minimum: 0
+        type: number
+      background_opacity:
+        example: 0.35
+        maximum: 1
+        minimum: 0
+        type: number
+      background_position:
+        example: center center
+        maxLength: 64
+        type: string
+      background_preset:
+        example: default-01
+        maxLength: 64
+        type: string
+      background_size:
+        enum:
+        - cover
+        - contain
+        example: cover
+        type: string
+      background_source:
+        enum:
+        - none
+        - preset
+        - custom
+        example: custom
+        type: string
+    required:
+    - background_source
+    type: object
   dto.UpdateUserRolesRequest:
     properties:
       role_ids:
@@ -2002,6 +2461,44 @@ definitions:
     required:
     - account
     - password
+    type: object
+  dto.UserPreferencesData:
+    properties:
+      background_asset_id:
+        example: 100
+        type: integer
+      background_blur:
+        example: 0
+        type: number
+      background_image_url:
+        description: BackgroundImageURL is the resolved CDN URL of the custom background.
+        type: string
+      background_opacity:
+        example: 0.35
+        type: number
+      background_position:
+        example: center center
+        type: string
+      background_preset:
+        example: default-01
+        type: string
+      background_size:
+        example: cover
+        type: string
+      background_source:
+        example: preset
+        type: string
+    type: object
+  dto.UserPreferencesResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.UserPreferencesData'
+      msg:
+        example: success
+        type: string
     type: object
   dto.UserRegisterRequest:
     properties:
@@ -2426,6 +2923,53 @@ paths:
       summary: 更新 Banner
       tags:
       - admin
+  /api/v1/admin/comments:
+    get:
+      description: 按评论内容、作者或帖子标题搜索全部评论；需要 comment:moderate 权限
+      operationId: listAdminComments
+      parameters:
+      - description: 评论内容、作者或帖子标题
+        in: query
+        name: keyword
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评论列表
+          schema:
+            $ref: '#/definitions/dto.AdminCommentListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询评论失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询评论列表
+      tags:
+      - admin
   /api/v1/admin/galgames:
     get:
       description: 查询全部状态（pending/published/rejected/hidden）的 Galgame；需要 galgame:review
@@ -2523,6 +3067,188 @@ paths:
       security:
       - BearerAuth: []
       summary: 管理端查看 Galgame 详情
+      tags:
+      - admin
+  /api/v1/admin/images:
+    get:
+      description: 分页返回全部图片资源；需要 image:read 权限
+      operationId: listAdminImages
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      - description: 分类
+        enum:
+        - avatars
+        - posts
+        - comments
+        - galgames
+        - backgrounds
+        - banners
+        - admin
+        in: query
+        name: category
+        type: string
+      - description: 上传用户 ID
+        in: query
+        name: user_id
+        type: integer
+      - description: 状态
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 图片列表
+          schema:
+            $ref: '#/definitions/dto.AdminImageListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询图片失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询图片
+      tags:
+      - admin
+  /api/v1/admin/images/{id}:
+    delete:
+      description: 删除任意用户的图片；需要 image:delete 权限
+      operationId: deleteAdminImage
+      parameters:
+      - description: 图片 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 图片已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 图片 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 图片不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端删除图片
+      tags:
+      - admin
+    get:
+      description: 按 ID 返回任意状态的图片元数据；需要 image:read 权限
+      operationId: getAdminImage
+      parameters:
+      - description: 图片 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 图片详情
+          schema:
+            $ref: '#/definitions/dto.ImageDataResponse'
+        "400":
+          description: 图片 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 图片不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查看图片
+      tags:
+      - admin
+  /api/v1/admin/posts:
+    get:
+      description: 按标题、内容、作者或 Galgame 标题搜索全部帖子；需要 post:moderate 权限
+      operationId: listAdminPosts
+      parameters:
+      - description: 标题、内容、作者或 Galgame 标题
+        in: query
+        name: keyword
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 帖子列表
+          schema:
+            $ref: '#/definitions/dto.AdminPostListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询帖子失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询帖子列表
       tags:
       - admin
   /api/v1/admin/resource-reports:
@@ -3820,6 +4546,247 @@ paths:
       summary: 获取首页数据
       tags:
       - home
+  /api/v1/images/{id}:
+    delete:
+      description: 删除 R2 对象并将记录标记为 deleted；用户只能删除自己上传的图片，拥有 image:delete 权限可以删除任意图片
+      operationId: deleteImage
+      parameters:
+      - description: 图片 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 图片已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 图片 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 只能删除自己上传的图片
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 图片不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除图片
+      tags:
+      - images
+    get:
+      description: 返回 active 状态图片的元数据和 CDN 访问 URL
+      operationId: getImage
+      parameters:
+      - description: 图片 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 图片详情
+          schema:
+            $ref: '#/definitions/dto.ImageDataResponse'
+        "400":
+          description: 图片 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 图片不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看图片
+      tags:
+      - images
+  /api/v1/images/{id}/complete:
+    post:
+      consumes:
+      - application/json
+      description: 通过 R2 HeadObject 验证对象存在且与申请一致后将图片置为 active；重复确认已 active 的图片是幂等的
+      operationId: completeImageUpload
+      parameters:
+      - description: 图片 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 图片尺寸
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.CompleteUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 图片详情，包含 CDN 访问 URL
+          schema:
+            $ref: '#/definitions/dto.ImageDataResponse'
+        "400":
+          description: 图片 ID 或参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 只能操作自己上传的图片
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 图片不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 对象尚未上传或与申请不一致
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 确认图片上传完成
+      tags:
+      - images
+  /api/v1/images/presign:
+    post:
+      consumes:
+      - application/json
+      description: 校验类型、大小和分类权限后，创建 pending 图片记录并返回 R2 Presigned PUT URL；该 URL 仅用于上传，与访问图片的
+        CDN URL 不同
+      operationId: presignImageUpload
+      parameters:
+      - description: 上传申请
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PresignImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传凭证
+          schema:
+            $ref: '#/definitions/dto.PresignImageResponse'
+        "400":
+          description: 图片类型、大小或分类不合法
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有该分类的上传权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "429":
+          description: 上传请求过于频繁或超出每日配额
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 生成上传凭证失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 申请图片上传凭证
+      tags:
+      - images
+  /api/v1/me:
+    patch:
+      consumes:
+      - application/json
+      description: 更新头像引用；头像必须是本人上传的 avatars 分类图片，更换后旧头像资源会被删除
+      operationId: updateMe
+      parameters:
+      - description: 资料更新请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新后的用户资料
+          schema:
+            $ref: '#/definitions/dto.MeResponse'
+        "400":
+          description: 请求参数或头像资源不合法
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新当前用户资料
+      tags:
+      - me
+  /api/v1/me/galgames:
+    get:
+      description: 查询当前用户上传或收藏的 Galgame
+      operationId: listMyGalgames
+      parameters:
+      - default: uploaded
+        description: 列表类型：uploaded、favorite
+        in: query
+        name: type
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Galgame 列表
+          schema:
+            $ref: '#/definitions/dto.GalgameListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询我的 Galgame 失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询我的 Galgame
+      tags:
+      - me
   /api/v1/me/permissions:
     get:
       description: 返回当前登录用户的角色 code 与权限 code 集合，用于前端控制 UI 展示
@@ -3842,6 +4809,66 @@ paths:
       security:
       - BearerAuth: []
       summary: 查看当前用户权限
+      tags:
+      - me
+  /api/v1/me/preferences:
+    get:
+      description: 返回当前用户的背景偏好；从未设置时返回默认值
+      operationId: getMePreferences
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 背景偏好
+          schema:
+            $ref: '#/definitions/dto.UserPreferencesResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看个性化背景设置
+      tags:
+      - me
+    patch:
+      consumes:
+      - application/json
+      description: 保存背景偏好；custom 来源必须引用本人上传的 backgrounds 分类图片，更换后旧背景资源会被删除
+      operationId: updateMePreferences
+      parameters:
+      - description: 背景偏好更新请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserPreferencesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 保存后的背景偏好
+          schema:
+            $ref: '#/definitions/dto.UserPreferencesResponse'
+        "400":
+          description: 请求参数或背景资源不合法
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 保存失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新个性化背景设置
       tags:
       - me
   /api/v1/permissions:
@@ -5065,6 +6092,237 @@ paths:
       summary: 更新 Tag
       tags:
       - tags
+  /api/v1/users:
+    get:
+      description: 按用户名、邮箱或精确数字 ID 搜索用户；需要 user:list 权限
+      operationId: listAdminUsers
+      parameters:
+      - description: 用户名、邮箱或用户 ID
+        in: query
+        name: keyword
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户列表
+          schema:
+            $ref: '#/definitions/dto.AdminUserListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询用户失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询用户列表
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: 创建用户并分配默认 user 角色；需要 user:create 权限
+      operationId: createAdminUser
+      parameters:
+      - description: 创建用户请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAdminUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.AdminUserDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 用户名或邮箱已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建用户失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端创建用户
+      tags:
+      - users
+  /api/v1/users/{id}:
+    delete:
+      description: 删除用户及用户角色关系，不能删除当前登录用户；需要 user:delete 权限
+      operationId: deleteAdminUser
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 用户 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 不能删除当前登录用户
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除用户失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端删除用户
+      tags:
+      - users
+    get:
+      description: 按 ID 返回用户详情；需要 user:read 权限
+      operationId: getAdminUser
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户详情
+          schema:
+            $ref: '#/definitions/dto.AdminUserDataResponse'
+        "400":
+          description: 用户 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询用户失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查看用户详情
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: 更新提供的用户名、邮箱、封禁状态或密码；省略字段保持不变；需要 user:update 权限
+      operationId: updateAdminUser
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新用户请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateAdminUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.AdminUserDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 用户名或邮箱已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新用户失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端更新用户
+      tags:
+      - users
   /api/v1/users/{id}/roles:
     get:
       description: 返回指定用户拥有的全部角色
