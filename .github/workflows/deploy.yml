@@ -2,19 +2,25 @@ name: Deploy
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
+  # =========================
+  # Backend
+  # =========================
   deploy-backend:
     name: Deploy backend to server
     runs-on: ubuntu-latest
     concurrency: deploy-backend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: apps/backend/go.mod
           cache-dependency-path: apps/backend/go.sum
@@ -27,8 +33,18 @@ jobs:
           GOARCH: amd64
         run: |
           mkdir -p dist
-          go build -trimpath -ldflags='-s -w' -o dist/server.new ./cmd/server
-          go build -trimpath -ldflags='-s -w' -o dist/worker.new ./cmd/worker
+
+          go build \
+            -trimpath \
+            -ldflags='-s -w' \
+            -o dist/server.new \
+            ./cmd/server
+
+          go build \
+            -trimpath \
+            -ldflags='-s -w' \
+            -o dist/worker.new \
+            ./cmd/worker
 
       - name: Upload binaries
         uses: appleboy/scp-action@v1
@@ -58,12 +74,15 @@ jobs:
 
             chmod +x server worker
 
-            sudo systemctl restart koyomi-server
-            sudo systemctl restart koyomi-worker
+            systemctl restart koyomi-server
+            systemctl restart koyomi-worker
 
-            sudo systemctl is-active koyomi-server
-            sudo systemctl is-active koyomi-worker
+            systemctl is-active koyomi-server
+            systemctl is-active koyomi-worker
 
+  # =========================
+  # Frontend
+  # =========================
   deploy-frontend:
     name: Deploy frontend to Cloudflare Pages
     runs-on: ubuntu-latest
@@ -74,13 +93,16 @@ jobs:
         working-directory: apps/frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
@@ -89,10 +111,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build frontend
-        run: pnpm build
-        env:
-          NITRO_PRESET: cloudflare-pages
+      - name: Build frontend for Cloudflare Pages
+        run: pnpm exec nuxi build --preset=cloudflare_pages
+
+      - name: Check build output
+        run: |
+          echo "===== dist ====="
+          ls -lah dist
+
+          echo "===== dist files ====="
+          find dist -maxdepth 2 -type f | head -100
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
@@ -100,4 +128,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/frontend
-          command: pages deploy .output/public --project-name=${{ secrets.CF_PAGES_PROJECT }} --branch=master
+          command: pages deploy dist --project-name=${{ secrets.CF_PAGES_PROJECT }} --branch=master
