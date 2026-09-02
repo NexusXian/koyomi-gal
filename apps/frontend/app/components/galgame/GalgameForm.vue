@@ -30,6 +30,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const { has } = usePermissions()
+const { initialize } = useAuth()
 const { isAuthenticated } = storeToRefs(useUserStore())
 
 const formState = reactive({
@@ -153,7 +154,11 @@ async function loadGalgame(): Promise<void> {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Wait for the in-flight session refresh (auth-init plugin) so a full page
+  // load is not misread as "not logged in".
+  await initialize()
+
   if (!isAuthenticated.value) {
     message.warning('登录后才能创建或编辑 Galgame')
     void router.replace('/login')
@@ -198,12 +203,6 @@ async function submit(): Promise<void> {
   }
 }
 
-onMounted(() => {
-  if (!isAuthenticated.value) {
-    message.warning('登录后才能创建或编辑 Galgame')
-    void router.replace('/login')
-  }
-})
 </script>
 
 <template>

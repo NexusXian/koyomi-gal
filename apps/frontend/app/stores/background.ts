@@ -1,7 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import {
-  BACKGROUND_PRESETS,
   BACKGROUND_SETTINGS_STORAGE_KEY
 } from '~/constants/backgrounds'
 import { useImageUpload } from '~/composables/useImageUpload'
@@ -57,10 +56,6 @@ function normalizeSettings(value: unknown): BackgroundSettings {
       : DEFAULT_BACKGROUND_SETTINGS.position
   const size: BackgroundSize = candidate.size === 'contain' ? 'contain' : 'cover'
 
-  if (source === 'preset' && !BACKGROUND_PRESETS.some((preset) => preset.id === presetId)) {
-    return { ...createDefaultSettings(), opacity, blur, position, size }
-  }
-
   // Custom backgrounds live in R2 and require a server asset; local storage
   // can no longer back them, so legacy custom entries fall back to none.
   if (source === 'custom' || customImageId !== null) {
@@ -73,7 +68,7 @@ function normalizeSettings(value: unknown): BackgroundSettings {
 export const useBackgroundStore = defineStore('background', () => {
   const userStore = useUserStore()
   const settings = ref<BackgroundSettings>(createDefaultSettings())
-  const presets = ref<BackgroundPreset[]>([...BACKGROUND_PRESETS])
+  const presets = ref<BackgroundPreset[]>([])
   const initialized = ref(false)
   const initializing = ref(false)
   const customImageUrl = ref<string | null>(null)
@@ -116,7 +111,7 @@ export const useBackgroundStore = defineStore('background', () => {
     try {
       presets.value = await backgroundPresetService().listPresets()
     } catch {
-      // Keep the built-in presets when the server list is unavailable.
+      // Keep the current presets when the server list is unavailable.
     }
   }
 

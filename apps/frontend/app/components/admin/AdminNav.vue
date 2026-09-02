@@ -23,6 +23,12 @@ const items: AdminNavItem[] = [
     permissions: ['resource_report:list']
   },
   {
+    key: '/admin/feedback',
+    label: '意见反馈',
+    icon: 'lucide:inbox',
+    permissions: ['feedback:read']
+  },
+  {
     key: '/admin/images',
     label: '图片管理',
     icon: 'lucide:image',
@@ -57,6 +63,17 @@ const items: AdminNavItem[] = [
     label: '轮播图',
     icon: 'lucide:gallery-horizontal-end',
     permissions: ['banner:read']
+  },
+  {
+    key: '/admin/backgrounds',
+    label: '背景预设',
+    icon: 'lucide:wallpaper',
+    permissions: [
+      'background_preset:read',
+      'background_preset:create',
+      'background_preset:update',
+      'background_preset:delete'
+    ]
   },
   {
     key: '/admin/articles',

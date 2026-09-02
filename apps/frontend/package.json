@@ -11,6 +11,7 @@
     "api:generate": "orval --config orval.config.ts"
   },
   "dependencies": {
+    "@iconify-json/lucide": "^1.2.127",
     "@kungal/ui-core": "^2.25.1",
     "@kungal/ui-nuxt": "^2.25.1",
     "@kungal/ui-tokens": "^2.25.1",
@@ -30,7 +31,6 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.127",
     "@types/markdown-it": "^14.2.0",
     "@types/sanitize-html": "^2.16.1",
     "orval": "^8.26.0"

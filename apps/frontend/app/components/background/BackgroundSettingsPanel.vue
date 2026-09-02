@@ -60,7 +60,8 @@ async function resetBackground(): Promise<void> {
 
       <section class="settings-section">
         <h3>预置背景</h3>
-        <div class="preset-grid">
+        <p v-if="!presets.length" class="preset-empty">暂无预置背景</p>
+        <div v-else class="preset-grid">
           <BackgroundPresetCard
             v-for="preset in presets"
             :key="preset.id"
@@ -144,6 +145,12 @@ async function resetBackground(): Promise<void> {
 .option-check {
   margin-left: auto;
   color: var(--color-primary);
+}
+
+.preset-empty {
+  margin: 0;
+  color: var(--color-default-500);
+  font-size: 12px;
 }
 
 .preset-grid {

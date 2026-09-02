@@ -174,11 +174,14 @@ useHead(() => ({
 
 .app-content {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   padding-top: 60px;
   transition: margin-left var(--kun-dur-base) var(--ease-kun-standard);
 }
 
 .app-main {
+  flex: 1;
   width: 100%;
   max-width: 1360px;
   margin: 0 auto;

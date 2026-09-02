@@ -53,10 +53,10 @@ const legalLinks = [
 
 <style scoped>
 .app-footer {
-  margin-top: 24px;
+  margin-top: 16px;
   border-top: 1px solid var(--app-glass-border);
   background: var(--color-content1, transparent);
-  padding: 28px 14px 32px;
+  padding: 18px 14px 22px;
 }
 
 .footer-inner {
@@ -65,7 +65,7 @@ const legalLinks = [
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   text-align: center;
 }
 
@@ -102,7 +102,7 @@ const legalLinks = [
 }
 
 .footer-copyright {
-  margin: 6px 0 0;
+  margin: 2px 0 0;
   color: var(--color-default-400, inherit);
   font-size: 12px;
 }

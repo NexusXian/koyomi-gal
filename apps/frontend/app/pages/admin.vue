@@ -6,9 +6,14 @@ useSeoMeta({
 
 const router = useRouter()
 const { load, hasAny } = usePermissions()
+const { initialize } = useAuth()
 const { isAuthenticated } = storeToRefs(useUserStore())
 
 onMounted(async () => {
+  // Wait for the in-flight session refresh (auth-init plugin) so a full page
+  // load is not misread as "not logged in".
+  await initialize()
+
   if (!isAuthenticated.value) {
     void router.replace('/login')
     return
@@ -42,7 +47,9 @@ onMounted(async () => {
       'user:update',
       'user:delete',
       'banner:read',
-      'article:read'
+      'background_preset:read',
+      'article:read',
+      'feedback:read'
     ])
   ) {
     throw createError({

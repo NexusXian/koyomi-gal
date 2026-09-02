@@ -77,6 +77,12 @@ function search(): void {
   void load()
 }
 
+function openEdit(item: DtoGalgameListItem): void {
+  if (item.id) {
+    void navigateTo(`/galgames/${item.id}/edit`)
+  }
+}
+
 const QUICK_ACTIONS: Record<number, { status: number; label: string }[]> = {
   0: [
     { status: 1, label: '通过发布' },
@@ -274,7 +280,7 @@ const columns = computed<TableColumnsType>(() => [
             >
               {{ action.label }}
             </a-button>
-            <a-button size="small" :href="`/galgames/${record.id}/edit`">
+            <a-button size="small" @click="openEdit(record)">
               编辑
             </a-button>
           </div>
