@@ -10,9 +10,11 @@ export function useAuth() {
   const authService = createAuthService($api)
   const { user, status, initialized, isAuthenticated } =
     storeToRefs(userStore)
+  const { reset: resetPermissions } = usePermissions()
 
   const login = async (credentials: LoginCredentials): Promise<User> => {
     $invalidateRefreshSession()
+    resetPermissions()
     userStore.setStatus('loading')
 
     try {
@@ -53,6 +55,7 @@ export function useAuth() {
   const logout = async (): Promise<void> => {
     $invalidateRefreshSession()
     userStore.clearSession()
+    resetPermissions()
 
     await authService.logout()
   }

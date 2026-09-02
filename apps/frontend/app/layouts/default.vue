@@ -8,11 +8,14 @@ const colorMode = useCookie<'light' | 'dark'>('koyomi-color-mode', {
 })
 
 const { isAuthenticated } = storeToRefs(useUserStore())
-const { load: loadPermissions, has, hasAny } = usePermissions()
+const { load: loadPermissions, reset: resetPermissions, has, hasAny } =
+  usePermissions()
 
 watchEffect(() => {
   if (isAuthenticated.value) {
     void loadPermissions()
+  } else {
+    resetPermissions()
   }
 })
 
