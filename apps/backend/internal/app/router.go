@@ -31,6 +31,7 @@ func (app *App) setupRoutes() {
 	v1.GET("/posts", app.PostHandler.ListPosts)
 	v1.GET("/posts/:id", app.PostHandler.GetPost)
 	v1.GET("/banners", app.BannerHandler.ListBanners)
+	v1.GET("/images/:id", app.ImageHandler.GetImage)
 	v1.GET("/articles", app.ArticleHandler.ListArticles)
 	v1.GET("/articles/:id", app.ArticleHandler.GetArticle)
 	v1.GET("/home", app.HomeHandler.GetHome)
@@ -90,6 +91,9 @@ func (app *App) setupRoutes() {
 		admin.POST("/articles", requirePermission("article:create"), app.ArticleHandler.CreateAdminArticle)
 		admin.PUT("/articles/:id", app.ArticleHandler.UpdateAdminArticle)
 		admin.DELETE("/articles/:id", requirePermission("article:delete"), app.ArticleHandler.DeleteAdminArticle)
+		admin.GET("/images", requirePermission("image:read"), app.ImageHandler.ListAdminImages)
+		admin.GET("/images/:id", requirePermission("image:read"), app.ImageHandler.GetAdminImage)
+		admin.DELETE("/images/:id", requirePermission("image:delete"), app.ImageHandler.DeleteAdminImage)
 	}
 
 	posts := protected.Group("/posts")
@@ -102,6 +106,13 @@ func (app *App) setupRoutes() {
 		posts.POST("/:id/favorite", app.InteractionHandler.FavoritePost)
 		posts.DELETE("/:id/favorite", app.InteractionHandler.UnfavoritePost)
 		posts.POST("/:id/comments", app.CommentHandler.CreateComment)
+	}
+
+	images := protected.Group("/images")
+	{
+		images.POST("/presign", app.ImageHandler.PresignUpload)
+		images.POST("/:id/complete", app.ImageHandler.CompleteUpload)
+		images.DELETE("/:id", app.ImageHandler.DeleteImage)
 	}
 
 	comments := protected.Group("/comments")

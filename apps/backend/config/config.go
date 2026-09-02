@@ -22,6 +22,15 @@ type Config struct {
 	Auth         *Auth
 	Verification *Verification
 	RBAC         *RBAC
+	R2           *R2
+}
+
+type R2 struct {
+	AccountID       string
+	AccessKeyID     string
+	SecretAccessKey string
+	Bucket          string
+	PublicURL       string
 }
 
 type RBAC struct {
@@ -172,6 +181,11 @@ func Load() (*Config, error) {
 		return nil, errors.New("VERIFICATION_RESEND_INTERVAL must be shorter than VERIFICATION_CODE_TTL")
 	}
 
+	r2Config, err := loadR2()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
 		Postgres: &Postgres{
 			Host:     postgresHost,
@@ -203,6 +217,44 @@ func Load() (*Config, error) {
 		RBAC: &RBAC{
 			SuperAdminAccount: strings.TrimSpace(os.Getenv("RBAC_SUPER_ADMIN_ACCOUNT")),
 		},
+		R2: r2Config,
+	}, nil
+}
+
+func loadR2() (*R2, error) {
+	accountID, err := requiredEnv("R2_ACCOUNT_ID")
+	if err != nil {
+		return nil, err
+	}
+	accessKeyID, err := requiredEnv("R2_ACCESS_KEY_ID")
+	if err != nil {
+		return nil, err
+	}
+	secretAccessKey, err := requiredEnv("R2_SECRET_ACCESS_KEY")
+	if err != nil {
+		return nil, err
+	}
+	bucket, err := requiredEnv("R2_BUCKET")
+	if err != nil {
+		return nil, err
+	}
+	publicURL, err := requiredEnv("R2_PUBLIC_URL")
+	if err != nil {
+		return nil, err
+	}
+	parsed, err := url.Parse(publicURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
+		parsed.Host == "" || parsed.User != nil ||
+		(parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return nil, errors.New("R2_PUBLIC_URL must be an origin like https://img.example.com")
+	}
+
+	return &R2{
+		AccountID:       accountID,
+		AccessKeyID:     accessKeyID,
+		SecretAccessKey: secretAccessKey,
+		Bucket:          bucket,
+		PublicURL:       publicURL,
 	}, nil
 }
 

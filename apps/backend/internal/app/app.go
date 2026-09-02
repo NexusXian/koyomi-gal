@@ -20,9 +20,13 @@ import (
 	galgameService "backend/internal/galgame/service"
 	homeHandler "backend/internal/home/handler"
 	homeService "backend/internal/home/service"
+	imageHandler "backend/internal/image/handler"
+	imageRepo "backend/internal/image/repository"
+	imageService "backend/internal/image/service"
 	"backend/internal/infrastructures/database"
 	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
+	"backend/internal/infrastructures/storage"
 	"backend/internal/migrations"
 	notificationService "backend/internal/notification/service"
 	rbacHandler "backend/internal/rbac/handler"
@@ -70,6 +74,8 @@ type App struct {
 	ArticleHandler      *articleHandler.ArticleHandler
 	HomeHandler         *homeHandler.HomeHandler
 	HealthHandler       *healthHandler.HealthHandler
+	ImageHandler        *imageHandler.ImageHandler
+	stopImageCleanup    func()
 }
 
 func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
@@ -146,6 +152,24 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	articleRepository := articleRepo.NewArticleRepository(postgresDB)
 	bannerSvc := bannerService.NewBannerService(bannerRepository, redisClient)
 	articleSvc := articleService.NewArticleService(articleRepository, rbacSvc, redisClient)
+
+	r2Storage, err := storage.NewR2(cfg.R2)
+	if err != nil {
+		if sqlDB, dbErr := postgresDB.DB(); dbErr == nil {
+			_ = sqlDB.Close()
+		}
+		return nil, fmt.Errorf("init r2 storage: %w", err)
+	}
+	imageRepository := imageRepo.NewImageAssetRepository(postgresDB)
+	imageSvc := imageService.NewImageAssetService(
+		imageRepository,
+		r2Storage,
+		rbacSvc,
+		redisClient,
+		cfg.R2.PublicURL,
+	)
+	stopImageCleanup := imageSvc.StartCleanupLoop(context.Background())
+
 	homeSvc := homeService.NewHomeService(
 		bannerRepository,
 		articleRepository,
@@ -203,6 +227,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		ArticleHandler:     articleHandler.NewArticleHandler(articleSvc),
 		HomeHandler:        homeHandler.NewHomeHandler(homeSvc),
 		HealthHandler:      healthHandler.NewHealthHandler(healthService),
+		ImageHandler:       imageHandler.NewImageHandler(imageSvc),
+		stopImageCleanup:   stopImageCleanup,
 	}
 	ginApp := gin.Default()
 	if err := ginApp.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
@@ -229,6 +255,9 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 }
 
 func (app *App) Close() {
+	if app.stopImageCleanup != nil {
+		app.stopImageCleanup()
+	}
 	if app.MailWorker != nil {
 		app.MailWorker.Shutdown()
 	}

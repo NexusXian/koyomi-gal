@@ -70,6 +70,9 @@ var seedPermissions = []seedPermission{
 	{Code: "article:update", Name: "更新文章", Description: "允许更新文章内容和置顶状态"},
 	{Code: "article:delete", Name: "删除文章", Description: "允许删除文章"},
 	{Code: "article:publish", Name: "发布文章", Description: "允许发布、定时发布和取消发布文章"},
+	{Code: "image:manage", Name: "上传管理图片", Description: "允许上传 galgames、banners、admin 分类的图片"},
+	{Code: "image:read", Name: "查看图片资源", Description: "允许查看管理端图片资源列表"},
+	{Code: "image:delete", Name: "删除图片资源", Description: "允许删除任意用户上传的图片"},
 }
 
 // seedRolePermissions maps seed role codes to granted seed permission codes.
@@ -102,6 +105,9 @@ var seedRolePermissions = map[string][]string{
 		"article:update",
 		"article:delete",
 		"article:publish",
+		"image:manage",
+		"image:read",
+		"image:delete",
 	},
 }
 
