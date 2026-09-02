@@ -195,7 +195,7 @@ async function submit(): Promise<void> {
     const data = unwrapApiData(response, '保存失败')
     message.success(props.galgameId ? 'Galgame 已更新' : 'Galgame 已创建')
     emit('submitted', data)
-    if (props.galgameId) {
+    if (data.status === 1) {
       void router.push(`/galgames/${data.id}`)
     } else {
       void router.push('/')
