@@ -6,10 +6,77 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
-  DtoMePermissionsResponse
+  DtoGalgameListResponse,
+  DtoMePermissionsResponse,
+  DtoMeResponse,
+  DtoUpdateMeRequest,
+  DtoUpdateUserPreferencesRequest,
+  DtoUserPreferencesResponse,
+  ListMyGalgamesParams
 } from '../models';
 
 import { apiMutator } from '../../mutator';
+
+export const getUpdateMeUrl = () => {
+
+
+
+
+  return `/api/v1/me`
+}
+
+/**
+ * 更新头像引用；头像必须是本人上传的 avatars 分类图片，更换后旧头像资源会被删除
+ * @summary 更新当前用户资料
+ */
+export const updateMe = async (dtoUpdateMeRequest: DtoUpdateMeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoMeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoMeResponse>(getUpdateMeUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateMeRequest)
+  }
+);}
+
+
+export const getListMyGalgamesUrl = (params?: ListMyGalgamesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/me/galgames?${stringifiedParams}` : `/api/v1/me/galgames`
+}
+
+/**
+ * 查询当前用户上传或收藏的 Galgame
+ * @summary 查询我的 Galgame
+ */
+export const listMyGalgames = async (params?: ListMyGalgamesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameListResponse> => {
+
+  return apiMutator<DtoGalgameListResponse>(getListMyGalgamesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
 
 export const getGetMePermissionsUrl = () => {
 
@@ -31,6 +98,60 @@ export const getMePermissions = async ( options?: Parameters<typeof apiMutator>[
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getGetMePreferencesUrl = () => {
+
+
+
+
+  return `/api/v1/me/preferences`
+}
+
+/**
+ * 返回当前用户的背景偏好；从未设置时返回默认值
+ * @summary 查看个性化背景设置
+ */
+export const getMePreferences = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoUserPreferencesResponse> => {
+
+  return apiMutator<DtoUserPreferencesResponse>(getGetMePreferencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateMePreferencesUrl = () => {
+
+
+
+
+  return `/api/v1/me/preferences`
+}
+
+/**
+ * 保存背景偏好；custom 来源必须引用本人上传的 backgrounds 分类图片，更换后旧背景资源会被删除
+ * @summary 更新个性化背景设置
+ */
+export const updateMePreferences = async (dtoUpdateUserPreferencesRequest: DtoUpdateUserPreferencesRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoUserPreferencesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoUserPreferencesResponse>(getUpdateMePreferencesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateUserPreferencesRequest)
   }
 );}
 

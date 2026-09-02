@@ -8,6 +8,7 @@
 import type { ModelEditorMode } from './modelEditorMode';
 
 export interface DtoPostData {
+  author_avatar?: string;
   author_id?: number;
   author_name?: string;
   comment_count?: number;

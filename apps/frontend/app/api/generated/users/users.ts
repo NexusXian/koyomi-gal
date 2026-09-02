@@ -6,12 +6,157 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  DtoAdminUserDataResponse,
+  DtoAdminUserListResponse,
+  DtoCreateAdminUserRequest,
   DtoRoleListResponse,
+  DtoUpdateAdminUserRequest,
   DtoUpdateUserRolesRequest,
+  ListAdminUsersParams,
   ResponseMessageResponse
 } from '../models';
 
 import { apiMutator } from '../../mutator';
+
+export const getListAdminUsersUrl = (params?: ListAdminUsersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users?${stringifiedParams}` : `/api/v1/users`
+}
+
+/**
+ * 按用户名、邮箱或精确数字 ID 搜索用户；需要 user:list 权限
+ * @summary 管理端查询用户列表
+ */
+export const listAdminUsers = async (params?: ListAdminUsersParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserListResponse> => {
+
+  return apiMutator<DtoAdminUserListResponse>(getListAdminUsersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateAdminUserUrl = () => {
+
+
+
+
+  return `/api/v1/users`
+}
+
+/**
+ * 创建用户并分配默认 user 角色；需要 user:create 权限
+ * @summary 管理端创建用户
+ */
+export const createAdminUser = async (dtoCreateAdminUserRequest: DtoCreateAdminUserRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoAdminUserDataResponse>(getCreateAdminUserUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCreateAdminUserRequest)
+  }
+);}
+
+
+export const getGetAdminUserUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/users/${id}`
+}
+
+/**
+ * 按 ID 返回用户详情；需要 user:read 权限
+ * @summary 管理端查看用户详情
+ */
+export const getAdminUser = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserDataResponse> => {
+
+  return apiMutator<DtoAdminUserDataResponse>(getGetAdminUserUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateAdminUserUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/users/${id}`
+}
+
+/**
+ * 更新提供的用户名、邮箱、封禁状态或密码；省略字段保持不变；需要 user:update 权限
+ * @summary 管理端更新用户
+ */
+export const updateAdminUser = async (id: number,
+    dtoUpdateAdminUserRequest: DtoUpdateAdminUserRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoAdminUserDataResponse>(getUpdateAdminUserUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateAdminUserRequest)
+  }
+);}
+
+
+export const getDeleteAdminUserUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/users/${id}`
+}
+
+/**
+ * 删除用户及用户角色关系，不能删除当前登录用户；需要 user:delete 权限
+ * @summary 管理端删除用户
+ */
+export const deleteAdminUser = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminUserUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
 
 export const getListUserRolesUrl = (id: number,) => {
 

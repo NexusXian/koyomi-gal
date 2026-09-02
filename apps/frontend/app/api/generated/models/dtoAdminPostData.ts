@@ -5,18 +5,20 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { ModelEditorMode } from './modelEditorMode';
 
-export interface DtoCommentData {
-  author_avatar?: string;
+export interface DtoAdminPostData {
   author_id?: number;
   author_name?: string;
+  comment_count?: number;
   content?: string;
   created_at?: string;
+  editor_mode?: ModelEditorMode;
+  favorite_count?: number;
+  galgame_id?: number;
+  galgame_title?: string;
   id?: number;
   like_count?: number;
-  parent_id?: number;
-  post_id?: number;
-  reply_count?: number;
-  reply_to_user_id?: number;
+  title?: string;
   updated_at?: string;
 }

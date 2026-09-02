@@ -21,6 +21,7 @@ export interface DtoGalgameListItem {
   romaji_title?: string;
   slug?: string;
   statistics?: DtoGalgameStatistics;
+  status?: number;
   tags?: DtoTagSummary[];
   title?: string;
 }

@@ -6,20 +6,349 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  DtoAdminArticleListResponse,
+  DtoAdminBannerListResponse,
+  DtoAdminCommentListResponse,
+  DtoAdminImageListResponse,
+  DtoAdminPostListResponse,
   DtoAdminResourceListResponse,
+  DtoArticleDataResponse,
+  DtoBannerDataResponse,
+  DtoCreateArticleRequest,
+  DtoCreateBannerRequest,
   DtoGalgameDataResponse,
   DtoGalgameListResponse,
   DtoHandleResourceReportRequest,
+  DtoImageDataResponse,
   DtoResourceDataResponse,
   DtoResourceReportDataResponse,
   DtoResourceReportListResponse,
   DtoReviewResourceRequest,
+  DtoUpdateArticleRequest,
+  DtoUpdateBannerRequest,
+  ListAdminArticlesParams,
+  ListAdminBannersParams,
+  ListAdminCommentsParams,
   ListAdminGalgamesParams,
+  ListAdminImagesParams,
+  ListAdminPostsParams,
   ListAdminResourcesParams,
-  ListResourceReportsParams
+  ListResourceReportsParams,
+  ResponseMessageResponse
 } from '../models';
 
 import { apiMutator } from '../../mutator';
+
+export const getListAdminArticlesUrl = (params?: ListAdminArticlesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/articles?${stringifiedParams}` : `/api/v1/admin/articles`
+}
+
+/**
+ * 分页返回全部文章；需要 article:read 权限
+ * @summary 管理端查询文章
+ */
+export const listAdminArticles = async (params?: ListAdminArticlesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminArticleListResponse> => {
+
+  return apiMutator<DtoAdminArticleListResponse>(getListAdminArticlesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateAdminArticleUrl = () => {
+
+
+
+
+  return `/api/v1/admin/articles`
+}
+
+/**
+ * 创建草稿或文章；设置发布时间还需要 article:publish 权限
+ * @summary 创建文章
+ */
+export const createAdminArticle = async (dtoCreateArticleRequest: DtoCreateArticleRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoArticleDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoArticleDataResponse>(getCreateAdminArticleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCreateArticleRequest)
+  }
+);}
+
+
+export const getGetAdminArticleUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/articles/${id}`
+}
+
+/**
+ * 按 ID 返回任意发布状态的文章；需要 article:read 权限
+ * @summary 管理端查看文章
+ */
+export const getAdminArticle = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoArticleDataResponse> => {
+
+  return apiMutator<DtoArticleDataResponse>(getGetAdminArticleUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateAdminArticleUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/articles/${id}`
+}
+
+/**
+ * 全量更新；内容变更需要 article:update，发布时间变更需要 article:publish
+ * @summary 更新文章
+ */
+export const updateAdminArticle = async (id: number,
+    dtoUpdateArticleRequest: DtoUpdateArticleRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoArticleDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoArticleDataResponse>(getUpdateAdminArticleUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateArticleRequest)
+  }
+);}
+
+
+export const getDeleteAdminArticleUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/articles/${id}`
+}
+
+/**
+ * 删除文章；需要 article:delete 权限
+ * @summary 删除文章
+ */
+export const deleteAdminArticle = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminArticleUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListAdminBannersUrl = (params?: ListAdminBannersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/banners?${stringifiedParams}` : `/api/v1/admin/banners`
+}
+
+/**
+ * 分页返回全部 Banner；需要 banner:read 权限
+ * @summary 管理端查询 Banner
+ */
+export const listAdminBanners = async (params?: ListAdminBannersParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminBannerListResponse> => {
+
+  return apiMutator<DtoAdminBannerListResponse>(getListAdminBannersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateAdminBannerUrl = () => {
+
+
+
+
+  return `/api/v1/admin/banners`
+}
+
+/**
+ * 创建首页 Banner；需要 banner:create 权限
+ * @summary 创建 Banner
+ */
+export const createAdminBanner = async (dtoCreateBannerRequest: DtoCreateBannerRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBannerDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoBannerDataResponse>(getCreateAdminBannerUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCreateBannerRequest)
+  }
+);}
+
+
+export const getGetAdminBannerUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/banners/${id}`
+}
+
+/**
+ * 按 ID 返回 Banner；需要 banner:read 权限
+ * @summary 管理端查看 Banner
+ */
+export const getAdminBanner = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBannerDataResponse> => {
+
+  return apiMutator<DtoBannerDataResponse>(getGetAdminBannerUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateAdminBannerUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/banners/${id}`
+}
+
+/**
+ * 全量更新 Banner；需要 banner:update 权限
+ * @summary 更新 Banner
+ */
+export const updateAdminBanner = async (id: number,
+    dtoUpdateBannerRequest: DtoUpdateBannerRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBannerDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoBannerDataResponse>(getUpdateAdminBannerUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateBannerRequest)
+  }
+);}
+
+
+export const getDeleteAdminBannerUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/banners/${id}`
+}
+
+/**
+ * 删除 Banner；需要 banner:delete 权限
+ * @summary 删除 Banner
+ */
+export const deleteAdminBanner = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminBannerUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListAdminCommentsUrl = (params?: ListAdminCommentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/comments?${stringifiedParams}` : `/api/v1/admin/comments`
+}
+
+/**
+ * 按评论内容、作者或帖子标题搜索全部评论；需要 comment:moderate 权限
+ * @summary 管理端查询评论列表
+ */
+export const listAdminComments = async (params?: ListAdminCommentsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminCommentListResponse> => {
+
+  return apiMutator<DtoAdminCommentListResponse>(getListAdminCommentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
 
 export const getListAdminGalgamesUrl = (params?: ListAdminGalgamesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -67,6 +396,116 @@ export const getGetAdminGalgameUrl = (id: number,) => {
 export const getAdminGalgame = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameDataResponse> => {
 
   return apiMutator<DtoGalgameDataResponse>(getGetAdminGalgameUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListAdminImagesUrl = (params?: ListAdminImagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/images?${stringifiedParams}` : `/api/v1/admin/images`
+}
+
+/**
+ * 分页返回全部图片资源；需要 image:read 权限
+ * @summary 管理端查询图片
+ */
+export const listAdminImages = async (params?: ListAdminImagesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminImageListResponse> => {
+
+  return apiMutator<DtoAdminImageListResponse>(getListAdminImagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getGetAdminImageUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/images/${id}`
+}
+
+/**
+ * 按 ID 返回任意状态的图片元数据；需要 image:read 权限
+ * @summary 管理端查看图片
+ */
+export const getAdminImage = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoImageDataResponse> => {
+
+  return apiMutator<DtoImageDataResponse>(getGetAdminImageUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getDeleteAdminImageUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/images/${id}`
+}
+
+/**
+ * 删除任意用户的图片；需要 image:delete 权限
+ * @summary 管理端删除图片
+ */
+export const deleteAdminImage = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminImageUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListAdminPostsUrl = (params?: ListAdminPostsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/posts?${stringifiedParams}` : `/api/v1/admin/posts`
+}
+
+/**
+ * 按标题、内容、作者或 Galgame 标题搜索全部帖子；需要 post:moderate 权限
+ * @summary 管理端查询帖子列表
+ */
+export const listAdminPosts = async (params?: ListAdminPostsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminPostListResponse> => {
+
+  return apiMutator<DtoAdminPostListResponse>(getListAdminPostsUrl(params),
   {
     ...options,
     method: 'GET'

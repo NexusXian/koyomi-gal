@@ -6,8 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface DtoCommentData {
-  author_avatar?: string;
+export interface DtoAdminCommentData {
   author_id?: number;
   author_name?: string;
   content?: string;
@@ -16,7 +15,7 @@ export interface DtoCommentData {
   like_count?: number;
   parent_id?: number;
   post_id?: number;
-  reply_count?: number;
+  post_title?: string;
   reply_to_user_id?: number;
   updated_at?: string;
 }
