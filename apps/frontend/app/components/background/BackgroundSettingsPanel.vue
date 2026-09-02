@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { message } from 'ant-design-vue'
-import { BACKGROUND_PRESETS } from '~/constants/backgrounds'
 import type { BackgroundSize } from '~/types/background'
 
 const open = defineModel<boolean>({ default: false })
 const backgroundStore = useBackgroundStore()
-const { settings } = storeToRefs(backgroundStore)
+const { settings, presets } = storeToRefs(backgroundStore)
 const resetting = ref(false)
 
 const opacityPercent = computed({
@@ -63,7 +62,7 @@ async function resetBackground(): Promise<void> {
         <h3>预置背景</h3>
         <div class="preset-grid">
           <BackgroundPresetCard
-            v-for="preset in BACKGROUND_PRESETS"
+            v-for="preset in presets"
             :key="preset.id"
             :preset="preset"
             :selected="settings.source === 'preset' && settings.presetId === preset.id"

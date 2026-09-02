@@ -29,6 +29,7 @@ const navigationItems = computed(() => {
     hasAny([
       'galgame:review',
       'resource_report:list',
+      'feedback:read',
       'image:read',
       'image:manage',
       'resource:review',
@@ -51,6 +52,7 @@ const navigationItems = computed(() => {
       'user:update',
       'user:delete',
       'banner:read',
+      'background_preset:read',
       'article:read'
     ])
   ) {
@@ -58,7 +60,9 @@ const navigationItems = computed(() => {
       ? '/admin/galgames'
       : has('resource_report:list')
         ? '/admin/reports'
-        : hasAny(['image:read', 'image:manage'])
+        : has('feedback:read')
+          ? '/admin/feedback'
+          : hasAny(['image:read', 'image:manage'])
           ? '/admin/images'
           : has('resource:review')
             ? '/admin/resources'
@@ -68,7 +72,9 @@ const navigationItems = computed(() => {
                 ? '/admin/tags'
                 : has('banner:read')
                   ? '/admin/banners'
-                  : has('article:read')
+                  : has('background_preset:read')
+                    ? '/admin/backgrounds'
+                    : has('article:read')
                     ? '/admin/articles'
                     : hasAny([
                         'user:list',
@@ -132,6 +138,7 @@ useHead(() => ({
       <main id="main-content" class="app-main" tabindex="-1">
         <slot />
       </main>
+      <AppFooter />
     </div>
   </div>
 </template>

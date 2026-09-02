@@ -39,6 +39,17 @@ definitions:
         example: success
         type: string
     type: object
+  dto.AdminBackgroundPresetListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.BackgroundPresetListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.AdminBannerListResponse:
     properties:
       code:
@@ -107,6 +118,17 @@ definitions:
         type: integer
       data:
         $ref: '#/definitions/dto.AdminCommentListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.AdminFeedbackListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.FeedbackListData'
       msg:
         example: success
         type: string
@@ -467,6 +489,71 @@ definitions:
         example: koyomi
         type: string
     type: object
+  dto.BackgroundPresetData:
+    properties:
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      image_url:
+        example: https://img.example.com/presets/backgrounds/default-01.webp
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      key:
+        example: default-01
+        type: string
+      name:
+        example: 暮色花海
+        type: string
+      sort_order:
+        example: 50
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.BackgroundPresetDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.BackgroundPresetData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.BackgroundPresetListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.BackgroundPresetData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 5
+        type: integer
+    type: object
+  dto.BackgroundPresetListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.BackgroundPresetData'
+        type: array
+      msg:
+        example: success
+        type: string
+    type: object
   dto.Banner:
     properties:
       id:
@@ -740,6 +827,26 @@ definitions:
     - title
     - type
     type: object
+  dto.CreateBackgroundPresetRequest:
+    properties:
+      image_url:
+        example: presets/backgrounds/default-01.webp
+        maxLength: 2048
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: 暮色花海
+        maxLength: 255
+        type: string
+      sort_order:
+        example: 50
+        type: integer
+    required:
+    - image_url
+    - name
+    type: object
   dto.CreateBannerRequest:
     properties:
       end_at:
@@ -825,6 +932,27 @@ definitions:
     required:
     - name
     - slug
+    type: object
+  dto.CreateFeedbackRequest:
+    properties:
+      contact:
+        example: someone@example.com
+        maxLength: 255
+        type: string
+      content:
+        example: 希望增加深色模式的邮件模板
+        maxLength: 2000
+        minLength: 5
+        type: string
+      type:
+        enum:
+        - feedback
+        - copyright
+        example: feedback
+        type: string
+    required:
+    - content
+    - type
     type: object
   dto.CreateGalgameRequest:
     properties:
@@ -1123,6 +1251,65 @@ definitions:
         example: success
         type: string
     type: object
+  dto.FeedbackData:
+    properties:
+      contact:
+        example: someone@example.com
+        type: string
+      content:
+        example: 希望增加深色模式的邮件模板
+        type: string
+      created_at:
+        type: string
+      handled_at:
+        type: string
+      handled_by:
+        example: 3
+        type: integer
+      id:
+        example: 1
+        type: integer
+      ip:
+        example: 203.0.113.10
+        type: string
+      type:
+        example: feedback
+        type: string
+      updated_at:
+        type: string
+      user_agent:
+        example: Mozilla/5.0
+        type: string
+      user_id:
+        type: integer
+    type: object
+  dto.FeedbackDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.FeedbackData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.FeedbackListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.FeedbackData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
   dto.Galgame:
     properties:
       cover_url:
@@ -1313,6 +1500,14 @@ definitions:
       msg:
         example: success
         type: string
+    type: object
+  dto.HandleFeedbackRequest:
+    properties:
+      handled:
+        example: true
+        type: boolean
+    required:
+    - handled
     type: object
   dto.HandleResourceReportRequest:
     properties:
@@ -2187,6 +2382,27 @@ definitions:
     - title
     - type
     type: object
+  dto.UpdateBackgroundPresetRequest:
+    properties:
+      image_url:
+        example: presets/backgrounds/default-01.webp
+        maxLength: 2048
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: 暮色花海
+        maxLength: 255
+        type: string
+      sort_order:
+        example: 50
+        type: integer
+    required:
+    - image_url
+    - is_active
+    - name
+    type: object
   dto.UpdateBannerRequest:
     properties:
       end_at:
@@ -2905,6 +3121,152 @@ paths:
       summary: 更新文章
       tags:
       - admin
+  /api/v1/admin/background-presets:
+    get:
+      description: 分页返回全部背景预设；需要 background_preset:read 权限
+      operationId: listAdminBackgroundPresets
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 背景预设列表
+          schema:
+            $ref: '#/definitions/dto.AdminBackgroundPresetListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询背景预设失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询背景预设
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: 创建背景预设；需要 background_preset:create 权限
+      operationId: createAdminBackgroundPreset
+      parameters:
+      - description: 创建背景预设请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateBackgroundPresetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.BackgroundPresetDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建背景预设
+      tags:
+      - admin
+  /api/v1/admin/background-presets/{id}:
+    delete:
+      description: 删除背景预设；需要 background_preset:delete 权限
+      operationId: deleteAdminBackgroundPreset
+      parameters:
+      - description: 背景预设 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 背景预设已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 背景预设 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 背景预设不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除背景预设
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 全量更新背景预设；需要 background_preset:update 权限
+      operationId: updateAdminBackgroundPreset
+      parameters:
+      - description: 背景预设 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新背景预设请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateBackgroundPresetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.BackgroundPresetDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 背景预设不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新背景预设
+      tags:
+      - admin
   /api/v1/admin/banners:
     get:
       description: 分页返回全部 Banner；需要 banner:read 权限
@@ -3125,6 +3487,98 @@ paths:
       security:
       - BearerAuth: []
       summary: 管理端查询评论列表
+      tags:
+      - admin
+  /api/v1/admin/feedback:
+    get:
+      description: 分页返回意见反馈与版权投诉；需要 feedback:read 权限
+      operationId: listAdminFeedback
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      - description: 类型
+        enum:
+        - feedback
+        - copyright
+        in: query
+        name: type
+        type: string
+      - description: 是否已处理
+        in: query
+        name: handled
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 反馈列表
+          schema:
+            $ref: '#/definitions/dto.AdminFeedbackListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询反馈失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询反馈
+      tags:
+      - admin
+  /api/v1/admin/feedback/{id}/handle:
+    put:
+      consumes:
+      - application/json
+      description: 标记反馈为已处理或待处理；需要 feedback:handle 权限
+      operationId: handleFeedback
+      parameters:
+      - description: 反馈 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 处理反馈请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.HandleFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 处理成功
+          schema:
+            $ref: '#/definitions/dto.FeedbackDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 反馈不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 处理反馈
       tags:
       - admin
   /api/v1/admin/galgames:
@@ -3884,6 +4338,24 @@ paths:
       summary: 发送邮箱验证码
       tags:
       - verification
+  /api/v1/background-presets:
+    get:
+      description: 返回当前启用的背景预设列表，按排序值倒序
+      operationId: listBackgroundPresets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 背景预设列表
+          schema:
+            $ref: '#/definitions/dto.BackgroundPresetListResponse'
+        "500":
+          description: 查询背景预设失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看启用的背景预设
+      tags:
+      - backgrounds
   /api/v1/banners:
     get:
       description: 返回当前启用且在展示时间范围内的 Banner
@@ -4219,6 +4691,41 @@ paths:
       summary: 更新开发商
       tags:
       - developers
+  /api/v1/feedback:
+    post:
+      consumes:
+      - application/json
+      description: 匿名提交，按 IP 每小时限 5 次
+      operationId: createFeedback
+      parameters:
+      - description: 提交反馈请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 提交成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "429":
+          description: 提交过于频繁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 提交失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 提交意见反馈或版权投诉
+      tags:
+      - feedback
   /api/v1/galgames:
     get:
       description: 查询已发布 Galgame；多个 tag_ids 使用 AND 语义

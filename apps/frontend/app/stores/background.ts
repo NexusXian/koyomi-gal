@@ -5,10 +5,12 @@ import {
   BACKGROUND_SETTINGS_STORAGE_KEY
 } from '~/constants/backgrounds'
 import { useImageUpload } from '~/composables/useImageUpload'
+import { createBackgroundPresetService } from '~/services/backgroundPreset'
 import { createPreferenceService } from '~/services/preference'
 import { useUserStore } from '~/stores/user'
 import {
   DEFAULT_BACKGROUND_SETTINGS,
+  type BackgroundPreset,
   type BackgroundSettings,
   type BackgroundSize,
   type BackgroundSource,
@@ -71,6 +73,7 @@ function normalizeSettings(value: unknown): BackgroundSettings {
 export const useBackgroundStore = defineStore('background', () => {
   const userStore = useUserStore()
   const settings = ref<BackgroundSettings>(createDefaultSettings())
+  const presets = ref<BackgroundPreset[]>([...BACKGROUND_PRESETS])
   const initialized = ref(false)
   const initializing = ref(false)
   const customImageUrl = ref<string | null>(null)
@@ -84,9 +87,7 @@ export const useBackgroundStore = defineStore('background', () => {
       return null
     }
 
-    return (
-      BACKGROUND_PRESETS.find((preset) => preset.id === settings.value.presetId) ?? null
-    )
+    return presets.value.find((preset) => preset.id === settings.value.presetId) ?? null
   })
 
   const backgroundUrl = computed(() => {
@@ -105,6 +106,18 @@ export const useBackgroundStore = defineStore('background', () => {
 
   function preferenceService() {
     return createPreferenceService(useNuxtApp().$api)
+  }
+
+  function backgroundPresetService() {
+    return createBackgroundPresetService(useNuxtApp().$api)
+  }
+
+  async function loadPresets(): Promise<void> {
+    try {
+      presets.value = await backgroundPresetService().listPresets()
+    } catch {
+      // Keep the built-in presets when the server list is unavailable.
+    }
   }
 
   function persistSettings(): void {
@@ -235,6 +248,7 @@ export const useBackgroundStore = defineStore('background', () => {
     initializing.value = true
     try {
       loadLocalSettings()
+      void loadPresets()
     } finally {
       initialized.value = true
       initializing.value = false
@@ -262,7 +276,7 @@ export const useBackgroundStore = defineStore('background', () => {
   }
 
   function selectPreset(id: string): void {
-    if (!BACKGROUND_PRESETS.some((preset) => preset.id === id)) {
+    if (!presets.value.some((preset) => preset.id === id)) {
       return
     }
 
@@ -350,6 +364,7 @@ export const useBackgroundStore = defineStore('background', () => {
   return {
     settings,
     initialized,
+    presets,
     customImageUrl,
     activePreset,
     backgroundUrl,

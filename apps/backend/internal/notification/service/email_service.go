@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	userService "backend/internal/user/service"
@@ -14,11 +15,12 @@ type Mailer interface {
 }
 
 type EmailService struct {
-	mailer Mailer
+	mailer    Mailer
+	publicURL string
 }
 
-func NewEmailService(mailer Mailer) *EmailService {
-	return &EmailService{mailer: mailer}
+func NewEmailService(mailer Mailer, publicURL string) *EmailService {
+	return &EmailService{mailer: mailer, publicURL: publicURL}
 }
 
 func (s *EmailService) SendVerificationCode(
@@ -43,6 +45,7 @@ func (s *EmailService) SendVerificationCode(
 		return errors.New("verification code expired")
 	}
 	minutes := int((remaining + time.Minute - 1) / time.Minute)
+	bannerURL := strings.TrimRight(s.publicURL, "/") + "/avatars/1/2026/09/8062221c-3653-437c-b31d-9acc372bfc3f.png"
 	subject := fmt.Sprintf("Koyomi Gal | %s验证码", purposeName)
 
 	body := fmt.Sprintf(`
@@ -73,7 +76,7 @@ func (s *EmailService) SendVerificationCode(
   <tr>
     <td>
       <img
-        src="https://img.example.com/email/banner.webp"
+        src="%s"
         width="560"
         alt="Koyomi Gal"
         style="display:block;width:100%%;border:0;"
@@ -233,6 +236,7 @@ func (s *EmailService) SendVerificationCode(
 </body>
 </html>
 `,
+		bannerURL,
 		purposeName,
 		code,
 		minutes,

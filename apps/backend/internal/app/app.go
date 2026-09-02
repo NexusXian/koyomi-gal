@@ -9,12 +9,18 @@ import (
 	articleHandler "backend/internal/article/handler"
 	articleRepo "backend/internal/article/repository"
 	articleService "backend/internal/article/service"
+	backgroundHandler "backend/internal/background/handler"
+	backgroundRepo "backend/internal/background/repository"
+	backgroundService "backend/internal/background/service"
 	bannerHandler "backend/internal/banner/handler"
 	bannerRepo "backend/internal/banner/repository"
 	bannerService "backend/internal/banner/service"
 	communityHandler "backend/internal/community/handler"
 	communityRepo "backend/internal/community/repository"
 	communityService "backend/internal/community/service"
+	feedbackHandler "backend/internal/feedback/handler"
+	feedbackRepo "backend/internal/feedback/repository"
+	feedbackService "backend/internal/feedback/service"
 	galgameHandler "backend/internal/galgame/handler"
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
@@ -72,10 +78,12 @@ type App struct {
 	UserRelationHandler *galgameHandler.UserRelationHandler
 	ResourceHandler     *resourceHandler.ResourceHandler
 	ReportHandler       *resourceHandler.ReportHandler
+	FeedbackHandler     *feedbackHandler.FeedbackHandler
 	PostHandler         *communityHandler.PostHandler
 	CommentHandler      *communityHandler.CommentHandler
 	InteractionHandler  *communityHandler.InteractionHandler
 	BannerHandler       *bannerHandler.BannerHandler
+	BackgroundHandler   *backgroundHandler.BackgroundPresetHandler
 	ArticleHandler      *articleHandler.ArticleHandler
 	HomeHandler         *homeHandler.HomeHandler
 	HealthHandler       *healthHandler.HealthHandler
@@ -152,6 +160,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	reportRepository := resourceRepo.NewReportRepository(postgresDB)
 	reportSvc := resourceService.NewReportService(reportRepository, resourceRepository)
 	reportSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
+	feedbackRepository := feedbackRepo.NewFeedbackRepository(postgresDB)
+	feedbackSvc := feedbackService.NewFeedbackService(feedbackRepository, redisClient)
 
 	postRepository := communityRepo.NewPostRepository(postgresDB, cfg.R2.PublicURL)
 	commentRepository := communityRepo.NewCommentRepository(postgresDB, cfg.R2.PublicURL)
@@ -163,6 +173,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	articleRepository := articleRepo.NewArticleRepository(postgresDB)
 	bannerSvc := bannerService.NewBannerService(bannerRepository, redisClient)
 	articleSvc := articleService.NewArticleService(articleRepository, rbacSvc, redisClient)
+	backgroundPresetRepository := backgroundRepo.NewBackgroundPresetRepository(postgresDB)
+	backgroundPresetSvc := backgroundService.NewBackgroundPresetService(backgroundPresetRepository, cfg.R2.PublicURL)
 
 	r2Storage, err := storage.NewR2(cfg.R2)
 	if err != nil {
@@ -243,10 +255,12 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		),
 		ResourceHandler:     resourceHandler.NewResourceHandler(resourceSvc),
 		ReportHandler:       resourceHandler.NewReportHandler(reportSvc),
+		FeedbackHandler:     feedbackHandler.NewFeedbackHandler(feedbackSvc),
 		PostHandler:         communityHandler.NewPostHandler(postService),
 		CommentHandler:      communityHandler.NewCommentHandler(commentService),
 		InteractionHandler:  communityHandler.NewInteractionHandler(interactionService),
 		BannerHandler:       bannerHandler.NewBannerHandler(bannerSvc),
+		BackgroundHandler:   backgroundHandler.NewBackgroundPresetHandler(backgroundPresetSvc),
 		ArticleHandler:      articleHandler.NewArticleHandler(articleSvc),
 		HomeHandler:         homeHandler.NewHomeHandler(homeSvc),
 		HealthHandler:       healthHandler.NewHealthHandler(healthService),
@@ -263,7 +277,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	app.setupRoutes()
 
 	mailer := mailInfrastructure.NewSMTPMailer(workerCfg.SMTP)
-	emailService := notificationService.NewEmailService(mailer)
+	emailService := notificationService.NewEmailService(mailer, cfg.R2.PublicURL)
 	mailWorker := queue.NewServer(workerCfg.Redis, workerCfg.Concurrency)
 	if err := mailWorker.Start(queue.NewServeMux(
 		emailService,

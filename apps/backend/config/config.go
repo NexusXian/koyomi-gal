@@ -92,6 +92,7 @@ type WorkerConfig struct {
 	SMTP               *SMTP
 	VerificationSecret string
 	Concurrency        int
+	R2PublicURL        string
 }
 
 func Load() (*Config, error) {
@@ -238,15 +239,9 @@ func loadR2() (*R2, error) {
 	if err != nil {
 		return nil, err
 	}
-	publicURL, err := requiredEnv("R2_PUBLIC_URL")
+	publicURL, err := loadR2PublicURL()
 	if err != nil {
 		return nil, err
-	}
-	parsed, err := url.Parse(publicURL)
-	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
-		parsed.Host == "" || parsed.User != nil ||
-		(parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
-		return nil, errors.New("R2_PUBLIC_URL must be an origin like https://img.example.com")
 	}
 
 	return &R2{
@@ -256,6 +251,20 @@ func loadR2() (*R2, error) {
 		Bucket:          bucket,
 		PublicURL:       publicURL,
 	}, nil
+}
+
+func loadR2PublicURL() (string, error) {
+	publicURL, err := requiredEnv("R2_PUBLIC_URL")
+	if err != nil {
+		return "", err
+	}
+	parsed, err := url.Parse(publicURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
+		parsed.Host == "" || parsed.User != nil ||
+		(parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", errors.New("R2_PUBLIC_URL must be an origin like https://img.example.com")
+	}
+	return publicURL, nil
 }
 
 func LoadWorker() (*WorkerConfig, error) {
@@ -317,6 +326,11 @@ func LoadWorker() (*WorkerConfig, error) {
 		return nil, err
 	}
 
+	r2PublicURL, err := loadR2PublicURL()
+	if err != nil {
+		return nil, err
+	}
+
 	return &WorkerConfig{
 		Redis: redisConfig,
 		SMTP: &SMTP{
@@ -331,6 +345,7 @@ func LoadWorker() (*WorkerConfig, error) {
 		},
 		VerificationSecret: verificationSecret,
 		Concurrency:        concurrency,
+		R2PublicURL:        r2PublicURL,
 	}, nil
 }
 

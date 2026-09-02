@@ -3,3 +3,9 @@
 .env.*
 !.env.example
 !.env.*.example
+
+# macOS
+.DS_Store
+
+# Agent config
+AGENTS.md

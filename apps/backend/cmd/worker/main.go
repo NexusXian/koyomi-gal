@@ -34,7 +34,7 @@ func main() {
 	defer redisClient.Close()
 
 	mailer := mailInfrastructure.NewSMTPMailer(cfg.SMTP)
-	emailService := notificationService.NewEmailService(mailer)
+	emailService := notificationService.NewEmailService(mailer, cfg.R2PublicURL)
 	verificationRepository := userRepository.NewVerificationRepository(redisClient)
 	server := queue.NewServer(cfg.Redis, cfg.Concurrency)
 

@@ -256,6 +256,232 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/background-presets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回全部背景预设；需要 background_preset:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询背景预设",
+                "operationId": "listAdminBackgroundPresets",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "背景预设列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminBackgroundPresetListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询背景预设失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建背景预设；需要 background_preset:create 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "创建背景预设",
+                "operationId": "createAdminBackgroundPreset",
+                "parameters": [
+                    {
+                        "description": "创建背景预设请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateBackgroundPresetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BackgroundPresetDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/background-presets/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "全量更新背景预设；需要 background_preset:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "更新背景预设",
+                "operationId": "updateAdminBackgroundPreset",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "背景预设 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新背景预设请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateBackgroundPresetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BackgroundPresetDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "背景预设不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除背景预设；需要 background_preset:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "删除背景预设",
+                "operationId": "deleteAdminBackgroundPreset",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "背景预设 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "背景预设已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "背景预设 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "背景预设不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/banners": {
             "get": {
                 "security": [
@@ -592,6 +818,147 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "查询评论失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/feedback": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回意见反馈与版权投诉；需要 feedback:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询反馈",
+                "operationId": "listAdminFeedback",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "feedback",
+                            "copyright"
+                        ],
+                        "type": "string",
+                        "description": "类型",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否已处理",
+                        "name": "handled",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "反馈列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminFeedbackListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询反馈失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/feedback/{id}/handle": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "标记反馈为已处理或待处理；需要 feedback:handle 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "处理反馈",
+                "operationId": "handleFeedback",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "反馈 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "处理反馈请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandleFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "处理成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FeedbackDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "反馈不存在",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -1745,6 +2112,33 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/background-presets": {
+            "get": {
+                "description": "返回当前启用的背景预设列表，按排序值倒序",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "backgrounds"
+                ],
+                "summary": "查看启用的背景预设",
+                "operationId": "listBackgroundPresets",
+                "responses": {
+                    "200": {
+                        "description": "背景预设列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BackgroundPresetListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询背景预设失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/banners": {
             "get": {
                 "description": "返回当前启用且在展示时间范围内的 Banner",
@@ -2251,6 +2645,59 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "更新开发商失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/feedback": {
+            "post": {
+                "description": "匿名提交，按 IP 每小时限 5 次",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "提交意见反馈或版权投诉",
+                "operationId": "createFeedback",
+                "parameters": [
+                    {
+                        "description": "提交反馈请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "提交过于频繁",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "提交失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -6420,6 +6867,22 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AdminBackgroundPresetListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BackgroundPresetListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.AdminBannerListResponse": {
             "type": "object",
             "properties": {
@@ -6515,6 +6978,22 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.AdminCommentListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.AdminFeedbackListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.FeedbackListData"
                 },
                 "msg": {
                     "type": "string",
@@ -7031,6 +7510,99 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BackgroundPresetData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "https://img.example.com/presets/backgrounds/default-01.webp"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "key": {
+                    "type": "string",
+                    "example": "default-01"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "暮色花海"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BackgroundPresetDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BackgroundPresetData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.BackgroundPresetListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BackgroundPresetData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "dto.BackgroundPresetListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BackgroundPresetData"
+                    }
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.Banner": {
             "type": "object",
             "properties": {
@@ -7409,6 +7981,33 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateBackgroundPresetRequest": {
+            "type": "object",
+            "required": [
+                "image_url",
+                "name"
+            ],
+            "properties": {
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "presets/backgrounds/default-01.webp"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "暮色花海"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
         "dto.CreateBannerRequest": {
             "type": "object",
             "required": [
@@ -7520,6 +8119,34 @@ const docTemplate = `{
                 "website": {
                     "type": "string",
                     "example": "https://www.yuzu-soft.com"
+                }
+            }
+        },
+        "dto.CreateFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "type"
+            ],
+            "properties": {
+                "contact": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "someone@example.com"
+                },
+                "content": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 5,
+                    "example": "希望增加深色模式的邮件模板"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "feedback",
+                        "copyright"
+                    ],
+                    "example": "feedback"
                 }
             }
         },
@@ -7928,6 +8555,90 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.FeedbackData": {
+            "type": "object",
+            "properties": {
+                "contact": {
+                    "type": "string",
+                    "example": "someone@example.com"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "希望增加深色模式的邮件模板"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "handled_at": {
+                    "type": "string"
+                },
+                "handled_by": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ip": {
+                    "type": "string",
+                    "example": "203.0.113.10"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "feedback"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string",
+                    "example": "Mozilla/5.0"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.FeedbackDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.FeedbackData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.FeedbackListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.FeedbackData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
         "dto.Galgame": {
             "type": "object",
             "properties": {
@@ -8197,6 +8908,18 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.HandleFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "handled"
+            ],
+            "properties": {
+                "handled": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -9442,6 +10165,34 @@ const docTemplate = `{
                         "update"
                     ],
                     "example": "announcement"
+                }
+            }
+        },
+        "dto.UpdateBackgroundPresetRequest": {
+            "type": "object",
+            "required": [
+                "image_url",
+                "is_active",
+                "name"
+            ],
+            "properties": {
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "presets/backgrounds/default-01.webp"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "暮色花海"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 50
                 }
             }
         },

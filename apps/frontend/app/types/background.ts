@@ -9,6 +9,24 @@ export interface BackgroundPreset {
   thumbnail?: string
 }
 
+export interface BackgroundPresetData {
+  id: number
+  key: string
+  name: string
+  image_url: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface BackgroundPresetPayload {
+  name: string
+  image_url: string
+  sort_order: number
+  is_active: boolean
+}
+
 export interface BackgroundSettings {
   source: BackgroundSource
   presetId: string | null

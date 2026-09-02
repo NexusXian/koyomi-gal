@@ -131,7 +131,7 @@ func (m *SMTPMailer) message(recipient string, subject string, body string) (str
 		"Subject: " + encodedSubject,
 		"Date: " + time.Now().Format(time.RFC1123Z),
 		"MIME-Version: 1.0",
-		"Content-Type: text/plain; charset=UTF-8",
+		"Content-Type: text/html; charset=UTF-8",
 		"Content-Transfer-Encoding: quoted-printable",
 		"",
 		encodedBody.String(),
