@@ -79,6 +79,52 @@ func (h *CatalogHandler) ListGalgames(c *gin.Context) {
 	})
 }
 
+// ListMyGalgames godoc
+// @Summary      查询我的 Galgame
+// @Description  查询当前用户上传或收藏的 Galgame
+// @ID           listMyGalgames
+// @Tags         me
+// @Produce      json
+// @Param        type query string false "列表类型：uploaded、favorite" default(uploaded)
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
+// @Success      200 {object} dto.GalgameListResponse "Galgame 列表"
+// @Failure      400 {object} response.ErrorResponse "查询参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      500 {object} response.ErrorResponse "查询我的 Galgame 失败"
+// @Security     BearerAuth
+// @Router       /api/v1/me/galgames [get]
+func (h *CatalogHandler) ListMyGalgames(c *gin.Context) {
+	var query dto.MyGalgameQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	galgames, total, page, limit, err := h.catalogService.ListMyGalgames(
+		c.Request.Context(), userID, &query,
+	)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidMyGalgameType) {
+			response.Error(c, appErrors.ErrValidation("type 不受支持"))
+			return
+		}
+		logger.Error("list my galgames", zap.Uint("user_id", userID), zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("查询我的 Galgame 失败"))
+		return
+	}
+	response.Ok(c, dto.GalgameListData{
+		Items: dto.NewGalgameListItems(galgames),
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	})
+}
+
 // GetGalgame godoc
 // @Summary      查看 Galgame 详情
 // @Description  按 ID 返回已发布 Galgame 详情

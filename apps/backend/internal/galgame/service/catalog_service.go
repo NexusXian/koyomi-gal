@@ -16,20 +16,21 @@ import (
 )
 
 var (
-	ErrDeveloperNotFound   = errors.New("developer not found")
-	ErrDeveloperSlugExists = errors.New("developer slug already exists")
-	ErrTagNotFound         = errors.New("tag not found")
-	ErrTagNameExists       = errors.New("tag name already exists")
-	ErrTagSlugExists       = errors.New("tag slug already exists")
-	ErrGalgameNotFound     = errors.New("galgame not found")
-	ErrGalgameSlugExists   = errors.New("galgame slug already exists")
-	ErrUnknownTagIDs       = errors.New("tag ids contain unknown tag")
-	ErrInvalidReleaseDate  = errors.New("invalid release date")
-	ErrInvalidAgeRating    = errors.New("invalid age rating")
-	ErrInvalidStatus       = errors.New("invalid galgame status")
-	ErrInvalidSort         = errors.New("invalid galgame sort")
-	ErrInvalidReleaseRange = errors.New("invalid release year range")
-	ErrInvalidCatalogInput = errors.New("invalid catalog input")
+	ErrDeveloperNotFound    = errors.New("developer not found")
+	ErrDeveloperSlugExists  = errors.New("developer slug already exists")
+	ErrTagNotFound          = errors.New("tag not found")
+	ErrTagNameExists        = errors.New("tag name already exists")
+	ErrTagSlugExists        = errors.New("tag slug already exists")
+	ErrGalgameNotFound      = errors.New("galgame not found")
+	ErrGalgameSlugExists    = errors.New("galgame slug already exists")
+	ErrUnknownTagIDs        = errors.New("tag ids contain unknown tag")
+	ErrInvalidReleaseDate   = errors.New("invalid release date")
+	ErrInvalidAgeRating     = errors.New("invalid age rating")
+	ErrInvalidStatus        = errors.New("invalid galgame status")
+	ErrInvalidSort          = errors.New("invalid galgame sort")
+	ErrInvalidReleaseRange  = errors.New("invalid release year range")
+	ErrInvalidCatalogInput  = errors.New("invalid catalog input")
+	ErrInvalidMyGalgameType = errors.New("invalid my galgame type")
 )
 
 type CatalogService struct {
@@ -460,6 +461,44 @@ func (s *CatalogService) ListPublishedGalgames(
 	})
 	if err != nil {
 		logger.Error("list published galgames", zap.Error(err))
+		return nil, 0, page, limit, err
+	}
+	return galgames, total, page, limit, nil
+}
+
+func (s *CatalogService) ListMyGalgames(
+	ctx context.Context,
+	userID uint,
+	query *dto.MyGalgameQuery,
+) ([]model.Galgame, int64, int, int, error) {
+	page := query.Page
+	if page == 0 {
+		page = 1
+	}
+	limit := query.Limit
+	if limit == 0 {
+		limit = 20
+	}
+	collectionType := strings.ToLower(strings.TrimSpace(query.Type))
+	if collectionType == "" {
+		collectionType = "uploaded"
+	}
+
+	var (
+		galgames []model.Galgame
+		total    int64
+		err      error
+	)
+	switch collectionType {
+	case "uploaded":
+		galgames, total, err = s.galgames.ListByCreator(ctx, userID, page, limit)
+	case "favorite":
+		galgames, total, err = s.galgames.ListFavoritesByUser(ctx, userID, page, limit)
+	default:
+		return nil, 0, page, limit, ErrInvalidMyGalgameType
+	}
+	if err != nil {
+		logger.Error("list my galgames", zap.Uint("user_id", userID), zap.Error(err))
 		return nil, 0, page, limit, err
 	}
 	return galgames, total, page, limit, nil

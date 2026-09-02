@@ -180,6 +180,70 @@ func (r *GalgameRepository) ListAdmin(
 	return galgames, total, nil
 }
 
+func (r *GalgameRepository) ListByCreator(
+	ctx context.Context,
+	userID uint,
+	page int,
+	limit int,
+) ([]model.Galgame, int64, error) {
+	base := r.db.WithContext(ctx).Table("galgames AS g").Where("g.created_by = ?", userID)
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count user galgames: %w", err)
+	}
+
+	query := r.db.WithContext(ctx).
+		Model(&model.Galgame{}).
+		Table("galgames AS g").
+		Select("g.*").
+		Where("g.created_by = ?", userID)
+	query = r.withAssociations(query).
+		Order("g.created_at DESC").
+		Order("g.id DESC").
+		Offset((page - 1) * limit).
+		Limit(limit)
+
+	var galgames []model.Galgame
+	if err := query.Find(&galgames).Error; err != nil {
+		return nil, 0, fmt.Errorf("list user galgames: %w", err)
+	}
+	return galgames, total, nil
+}
+
+func (r *GalgameRepository) ListFavoritesByUser(
+	ctx context.Context,
+	userID uint,
+	page int,
+	limit int,
+) ([]model.Galgame, int64, error) {
+	base := r.db.WithContext(ctx).
+		Table("galgames AS g").
+		Joins("JOIN galgame_favorites AS f ON f.galgame_id = g.id").
+		Where("f.user_id = ? AND g.status = ?", userID, model.GalgameStatusPublished)
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count user favorite galgames: %w", err)
+	}
+
+	query := r.db.WithContext(ctx).
+		Model(&model.Galgame{}).
+		Table("galgames AS g").
+		Select("g.*").
+		Joins("JOIN galgame_favorites AS f ON f.galgame_id = g.id").
+		Where("f.user_id = ? AND g.status = ?", userID, model.GalgameStatusPublished)
+	query = r.withAssociations(query).
+		Order("f.created_at DESC").
+		Order("g.id DESC").
+		Offset((page - 1) * limit).
+		Limit(limit)
+
+	var galgames []model.Galgame
+	if err := query.Find(&galgames).Error; err != nil {
+		return nil, 0, fmt.Errorf("list user favorite galgames: %w", err)
+	}
+	return galgames, total, nil
+}
+
 func (r *GalgameRepository) ReplaceAliases(ctx context.Context, galgameID uint, aliases []string) error {
 	if err := r.db.WithContext(ctx).Where("galgame_id = ?", galgameID).Delete(&model.Alias{}).Error; err != nil {
 		return fmt.Errorf("delete galgame aliases: %w", err)

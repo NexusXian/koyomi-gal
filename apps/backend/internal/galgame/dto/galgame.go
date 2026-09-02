@@ -60,6 +60,12 @@ type AdminGalgameQuery struct {
 	Limit   int    `form:"limit" binding:"omitempty,min=1,max=100"`
 }
 
+type MyGalgameQuery struct {
+	Type  string `form:"type" binding:"omitempty,oneof=uploaded favorite"`
+	Page  int    `form:"page" binding:"omitempty,min=1,max=1000000"`
+	Limit int    `form:"limit" binding:"omitempty,min=1,max=100"`
+}
+
 type DeveloperSummary struct {
 	ID   uint   `json:"id" example:"1"`
 	Name string `json:"name" example:"YUZUSOFT"`
@@ -90,6 +96,7 @@ type GalgameListItem struct {
 	CoverURL      string            `json:"cover_url" example:"https://example.com/cover.jpg"`
 	ReleaseDate   *string           `json:"release_date" example:"2016-07-29"`
 	AgeRating     int16             `json:"age_rating" example:"3"`
+	Status        int16             `json:"status" example:"1"`
 	Developer     *DeveloperSummary `json:"developer"`
 	Tags          []TagSummary      `json:"tags"`
 	Rating        RatingSummary     `json:"rating"`
@@ -149,6 +156,7 @@ func NewGalgameListItems(galgames []model.Galgame) []GalgameListItem {
 			CoverURL:      galgame.CoverURL,
 			ReleaseDate:   formatDate(galgame.ReleaseDate),
 			AgeRating:     galgame.AgeRating,
+			Status:        galgame.Status,
 			Developer:     newDeveloperSummary(galgame.Developer),
 			Tags:          newTagSummaries(galgame.Tags),
 			Rating:        newRatingSummary(galgame),
