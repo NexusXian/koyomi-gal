@@ -1,0 +1,1 @@
+ALTER SEQUENCE users_id_seq START WITH 1;
