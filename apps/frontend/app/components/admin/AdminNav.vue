@@ -135,7 +135,12 @@ const selectedKeys = computed(() => {
 
 <template>
   <KunCard v-if="canSeeAdmin" padding="none" class-name="admin-nav-card">
-    <a-menu mode="horizontal" :selected-keys="selectedKeys" class="admin-menu">
+    <a-menu
+      mode="horizontal"
+      :selected-keys="selectedKeys"
+      :disabled-overflow="true"
+      class="admin-menu"
+    >
       <a-menu-item
         v-for="item in visibleItems"
         :key="item.key"
@@ -158,7 +163,11 @@ const selectedKeys = computed(() => {
 
 :deep(.admin-menu) {
   border-bottom: 0;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  row-gap: 2px;
+  padding-block: 4px;
+  height: auto;
+  line-height: 2.5;
 }
 
 .admin-menu-item {
