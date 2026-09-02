@@ -2,6 +2,7 @@
 import { message } from 'ant-design-vue'
 import {
   addGalgameFavorite,
+  deleteGalgame,
   deleteGalgameRating,
   deleteGalgameUserState,
   getGalgame,
@@ -10,7 +11,10 @@ import {
   upsertGalgameRating,
   upsertGalgameUserState
 } from '~/api/generated/galgames/galgames'
-import { listGalgameResources } from '~/api/generated/resources/resources'
+import {
+  deleteResource,
+  listGalgameResources
+} from '~/api/generated/resources/resources'
 import { listPosts } from '~/api/generated/posts/posts'
 import type {
   DtoGalgameListData,
@@ -21,7 +25,7 @@ import type {
 } from '~/api/generated/models'
 import {
   AGE_RATINGS,
-  GALGAME_STATUS,
+  RESOURCE_STATUS,
   RESOURCE_TYPES,
   USER_STATES,
   domainLabel
@@ -62,6 +66,10 @@ const resourceTotal = ref(0)
 const resourcePage = ref(1)
 const resourceLimit = 20
 const resourcesLoading = ref(false)
+const deletingGalgame = ref(false)
+const deletingResourceId = ref<number | null>(null)
+const editingResource = ref<DtoResourceData | null>(null)
+const editResourceOpen = ref(false)
 const relatedPosts = ref<DtoPostListData['items']>([])
 const relationLoaded = ref(false)
 const favorited = ref(false)
@@ -112,6 +120,65 @@ function updateResourcePage(next: number): void {
 function handleResourceCreated(): void {
   resourcePage.value = 1
   void loadResources()
+}
+
+function isResourceOwner(resource: DtoResourceData): boolean {
+  return Boolean(
+    isAuthenticated.value &&
+      userStore.getUser?.id &&
+      resource.uploader_id === userStore.getUser.id
+  )
+}
+
+function canEditResource(resource: DtoResourceData): boolean {
+  return isResourceOwner(resource) || has('resource:update')
+}
+
+function canDeleteResource(resource: DtoResourceData): boolean {
+  return isResourceOwner(resource) || has('resource:delete')
+}
+
+function openResourceEdit(resource: DtoResourceData): void {
+  editingResource.value = resource
+  editResourceOpen.value = true
+}
+
+async function reloadResourcePage(): Promise<void> {
+  await loadResources()
+  if (resources.value.length === 0 && resourcePage.value > 1) {
+    resourcePage.value -= 1
+    await loadResources()
+  }
+}
+
+async function removeResource(resource: DtoResourceData): Promise<void> {
+  if (!resource.id) {
+    return
+  }
+
+  deletingResourceId.value = resource.id
+  try {
+    await deleteResource(resource.id)
+    message.success('资源已删除')
+    await reloadResourcePage()
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '删除资源失败'))
+  } finally {
+    deletingResourceId.value = null
+  }
+}
+
+async function removeGalgame(): Promise<void> {
+  deletingGalgame.value = true
+  try {
+    await deleteGalgame(galgameId.value)
+    message.success('Galgame 已删除')
+    await router.push('/galgames')
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '删除 Galgame 失败'))
+  } finally {
+    deletingGalgame.value = false
+  }
 }
 
 async function loadRelation(): Promise<void> {
@@ -356,6 +423,23 @@ onMounted(() => {
               <KunIcon name="lucide:pencil" />
               编辑
             </KunButton>
+
+            <a-popconfirm
+              v-if="has('galgame:delete')"
+              :title="`确定删除「${galgame?.title ?? '该 Galgame'}」吗？此操作无法撤销。`"
+              ok-text="删除"
+              cancel-text="取消"
+              @confirm="removeGalgame"
+            >
+              <KunButton
+                color="danger"
+                variant="bordered"
+                :disabled="deletingGalgame"
+              >
+                <KunIcon name="lucide:trash-2" />
+                删除
+              </KunButton>
+            </a-popconfirm>
           </div>
         </div>
       </div>
@@ -517,9 +601,9 @@ onMounted(() => {
               <h4 class="resource-title">{{ resource.title }}</h4>
               <a-tag
                 v-if="resource.status !== undefined && resource.status !== 1"
-                :color="GALGAME_STATUS[resource.status]?.color"
+                :color="RESOURCE_STATUS[resource.status]?.color"
               >
-                {{ domainLabel(GALGAME_STATUS, resource.status) }}
+                {{ domainLabel(RESOURCE_STATUS, resource.status) }}
               </a-tag>
             </div>
 
@@ -546,6 +630,30 @@ onMounted(() => {
             </ul>
 
             <div class="resource-actions">
+              <a-button
+                v-if="canEditResource(resource)"
+                size="small"
+                @click="openResourceEdit(resource)"
+              >
+                <template #icon><KunIcon name="lucide:pencil" /></template>
+                编辑
+              </a-button>
+              <a-popconfirm
+                v-if="canDeleteResource(resource)"
+                :title="`确定删除资源「${resource.title ?? resource.id}」吗？`"
+                ok-text="删除"
+                cancel-text="取消"
+                @confirm="removeResource(resource)"
+              >
+                <a-button
+                  size="small"
+                  danger
+                  :loading="deletingResourceId === resource.id"
+                >
+                  <template #icon><KunIcon name="lucide:trash-2" /></template>
+                  删除
+                </a-button>
+              </a-popconfirm>
               <a-button size="small" danger @click="openReport(resource.id ?? 0)">
                 <template #icon><KunIcon name="lucide:flag" /></template>
                 举报
@@ -569,6 +677,12 @@ onMounted(() => {
       v-model:open="uploadOpen"
       :galgame-id="galgameId"
       @created="handleResourceCreated"
+    />
+
+    <ResourceEditModal
+      v-model:open="editResourceOpen"
+      :resource="editingResource"
+      @updated="reloadResourcePage"
     />
 
     <ResourceReportModal

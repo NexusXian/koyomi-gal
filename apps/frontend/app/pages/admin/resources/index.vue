@@ -2,6 +2,7 @@
 import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import { listAdminResources, reviewResource } from '~/api/generated/admin/admin'
+import { deleteResource } from '~/api/generated/resources/resources'
 import type { DtoResourceData } from '~/api/generated/models'
 import {
   RESOURCE_STATUS,
@@ -13,12 +14,17 @@ import {
 useSeoMeta({ title: '资源审核 - Koyomi' })
 
 const activeStatus = ref(0)
+const userStore = useUserStore()
+const { has } = usePermissions()
 const page = ref(1)
 const limit = 20
 const items = ref<DtoResourceData[]>([])
 const total = ref(0)
 const loading = ref(false)
 const reviewing = ref<number | null>(null)
+const deletingId = ref<number | null>(null)
+const editing = ref<DtoResourceData | null>(null)
+const editOpen = ref(false)
 
 const TABS = RESOURCE_STATUS.map((item) => ({
   key: item.value,
@@ -49,8 +55,11 @@ onMounted(() => {
 })
 
 watch(activeStatus, () => {
-  page.value = 1
-  void load()
+  if (page.value !== 1) {
+    page.value = 1
+  } else {
+    void load()
+  }
 })
 
 watch(page, () => {
@@ -61,7 +70,7 @@ async function review(
   resource: DtoResourceData,
   status: 1 | 2 | 3
 ): Promise<void> {
-  if (!resource.id) {
+  if (!resource.id || !has('resource:review')) {
     return
   }
 
@@ -76,6 +85,46 @@ async function review(
     message.error(getApiErrorMessage(error, '审核失败'))
   } finally {
     reviewing.value = null
+  }
+}
+
+function isOwner(resource: DtoResourceData): boolean {
+  return Boolean(
+    userStore.getUser?.id && resource.uploader_id === userStore.getUser.id
+  )
+}
+
+function canEdit(resource: DtoResourceData): boolean {
+  return isOwner(resource) || has('resource:update')
+}
+
+function canDelete(resource: DtoResourceData): boolean {
+  return isOwner(resource) || has('resource:delete')
+}
+
+function openEdit(resource: DtoResourceData): void {
+  editing.value = resource
+  editOpen.value = true
+}
+
+async function remove(resource: DtoResourceData): Promise<void> {
+  if (!resource.id) {
+    return
+  }
+
+  deletingId.value = resource.id
+  try {
+    await deleteResource(resource.id)
+    message.success('资源已删除')
+    if (items.value.length === 1 && page.value > 1) {
+      page.value -= 1
+    } else {
+      await load()
+    }
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '删除资源失败'))
+  } finally {
+    deletingId.value = null
   }
 }
 
@@ -114,7 +163,7 @@ const columns: TableColumnsType = [
   {
     title: '操作',
     key: 'actions',
-    width: 170
+    width: 280
   }
 ]
 </script>
@@ -182,7 +231,14 @@ const columns: TableColumnsType = [
         <template v-else-if="column.key === 'actions'">
           <div class="table-actions">
             <a-button
-              v-if="record.status !== 1"
+              v-if="canEdit(record)"
+              size="small"
+              @click="openEdit(record)"
+            >
+              编辑
+            </a-button>
+            <a-button
+              v-if="has('resource:review') && record.status !== 1"
               size="small"
               type="primary"
               :loading="reviewing === record.id"
@@ -191,7 +247,7 @@ const columns: TableColumnsType = [
               通过
             </a-button>
             <a-button
-              v-if="record.status === 0"
+              v-if="has('resource:review') && record.status === 0"
               size="small"
               danger
               :loading="reviewing === record.id"
@@ -200,17 +256,38 @@ const columns: TableColumnsType = [
               拒绝
             </a-button>
             <a-button
-              v-if="record.status === 1"
+              v-if="has('resource:review') && record.status === 1"
               size="small"
               :loading="reviewing === record.id"
               @click="review(record, 3)"
             >
               隐藏
             </a-button>
+            <a-popconfirm
+              v-if="canDelete(record)"
+              :title="`确定删除资源「${record.title ?? record.id}」吗？`"
+              ok-text="删除"
+              cancel-text="取消"
+              @confirm="remove(record)"
+            >
+              <a-button
+                size="small"
+                danger
+                :loading="deletingId === record.id"
+              >
+                删除
+              </a-button>
+            </a-popconfirm>
           </div>
         </template>
       </template>
     </a-table>
+
+    <ResourceEditModal
+      v-model:open="editOpen"
+      :resource="editing"
+      @updated="load"
+    />
   </div>
 </template>
 
