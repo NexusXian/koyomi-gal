@@ -3,12 +3,14 @@ import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import { createContentService } from '~/services/content'
 import type { Article, ArticlePayload } from '~/types/content'
+import type { ImageAsset } from '~/types/image'
 import { EDITOR_MODE_OPTIONS, normalizeEditorMode, type EditorMode } from '~/types/post'
 
 useSeoMeta({ title: '文章管理 - Koyomi' })
 
 const contentService = createContentService(useNuxtApp().$api)
 const { has } = usePermissions()
+const canUploadImages = computed(() => has('image:manage'))
 const items = ref<Article[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -35,6 +37,11 @@ const editorModeOptions = EDITOR_MODE_OPTIONS
 
 function isScheduled(article: Article): boolean {
   return Boolean(article.is_published && article.published_at && new Date(article.published_at).getTime() > Date.now())
+}
+
+function onCoverUploaded(asset: ImageAsset): void {
+  formState.cover_url = asset.url
+  message.success('文章封面已上传')
 }
 
 function toDateInput(value?: string | null): string {
@@ -254,7 +261,20 @@ const columns: TableColumnsType = [
         <a-form-item label="正文" required>
           <PostEditor v-model="formState.content" :mode="formState.editor_mode" :disabled="saving" />
         </a-form-item>
-        <a-form-item label="封面地址"><a-input v-model:value="formState.cover_url" placeholder="https://" /></a-form-item>
+        <a-form-item label="封面">
+          <div class="cover-field">
+            <ImageUploader
+              v-if="canUploadImages"
+              category="admin"
+              :preview-url="formState.cover_url || null"
+              width="112px"
+              height="84px"
+              @success="onCoverUploaded"
+              @remove="formState.cover_url = ''"
+            />
+            <a-input v-model:value="formState.cover_url" placeholder="https:// 或上传后自动填充" />
+          </div>
+        </a-form-item>
         <div class="form-grid">
           <a-form-item label="类型" required>
             <a-select v-model:value="formState.type" :options="[{ value: 'news', label: '资讯' }, { value: 'announcement', label: '公告' }, { value: 'event', label: '活动' }, { value: 'update', label: '更新' }]" />
@@ -274,6 +294,7 @@ const columns: TableColumnsType = [
 .table-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .status-tags, .table-actions, .switch-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cover-field { display: flex; flex-direction: column; gap: 8px; }
 .switch-row { gap: 24px; }
 .switch-row span { display: inline-flex; align-items: center; gap: 8px; }
 @media (max-width: 639px) { .table-toolbar { align-items: stretch; flex-direction: column; } .form-grid { grid-template-columns: 1fr; gap: 0; } }

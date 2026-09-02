@@ -3,11 +3,13 @@ import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import { createContentService } from '~/services/content'
 import type { BannerAdmin, BannerPayload } from '~/types/content'
+import type { ImageAsset } from '~/types/image'
 
 useSeoMeta({ title: '轮播图管理 - Koyomi' })
 
 const contentService = createContentService(useNuxtApp().$api)
 const { has } = usePermissions()
+const canUploadImages = computed(() => has('image:manage'))
 const items = ref<BannerAdmin[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -152,6 +154,11 @@ async function remove(banner: BannerAdmin): Promise<void> {
   }
 }
 
+function onBannerImageUploaded(asset: ImageAsset): void {
+  formState.image_url = asset.url
+  message.success('Banner 图片已上传')
+}
+
 const columns: TableColumnsType = [
   { title: '排序', dataIndex: 'sort_order', width: 74 },
   { title: '预览', key: 'preview', width: 112 },
@@ -236,7 +243,20 @@ const columns: TableColumnsType = [
       <a-form layout="vertical">
         <a-form-item label="标题" required><a-input v-model:value="formState.title" :maxlength="255" /></a-form-item>
         <a-form-item label="副标题"><a-textarea v-model:value="formState.subtitle" :rows="2" :maxlength="500" /></a-form-item>
-        <a-form-item label="图片地址" required><a-input v-model:value="formState.image_url" placeholder="https://" /></a-form-item>
+        <a-form-item label="图片" required>
+          <div class="banner-image-field">
+            <ImageUploader
+              v-if="canUploadImages"
+              category="banners"
+              :preview-url="formState.image_url || null"
+              width="160px"
+              height="72px"
+              @success="onBannerImageUploaded"
+              @remove="formState.image_url = ''"
+            />
+            <a-input v-model:value="formState.image_url" placeholder="https:// 或上传后自动填充" />
+          </div>
+        </a-form-item>
         <div class="form-grid">
           <a-form-item label="跳转类型">
             <a-select
@@ -271,6 +291,7 @@ const columns: TableColumnsType = [
 .schedule-text { display: flex; flex-direction: column; gap: 2px; color: var(--color-default-500); font-size: 12px; }
 .table-actions { display: flex; gap: 6px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.banner-image-field { display: flex; flex-direction: column; gap: 8px; }
 .full-width { width: 100%; }
 @media (max-width: 639px) { .table-toolbar { align-items: stretch; flex-direction: column; } .form-grid { grid-template-columns: 1fr; gap: 0; } }
 </style>

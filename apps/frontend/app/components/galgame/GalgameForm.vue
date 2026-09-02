@@ -18,6 +18,7 @@ import type {
   DtoGalgameResponse,
   DtoTagSummary
 } from '~/api/generated/models'
+import type { ImageAsset } from '~/types/image'
 
 const props = defineProps<{
   galgameId?: number
@@ -64,6 +65,17 @@ const rules: Record<string, Rule[]> = {
 }
 
 const canReview = computed(() => has('galgame:review'))
+const canUploadImages = computed(() => has('image:manage'))
+
+function onCoverUploaded(asset: ImageAsset): void {
+  formState.cover_url = asset.url
+  message.success('封面已上传')
+}
+
+function onBannerUploaded(asset: ImageAsset): void {
+  formState.banner_url = asset.url
+  message.success('横幅已上传')
+}
 
 function slugify(value: string): string {
   return value
@@ -280,12 +292,40 @@ onMounted(() => {
             />
           </a-form-item>
 
-          <a-form-item label="封面地址">
-            <a-input v-model:value="formState.cover_url" placeholder="https://" />
+          <a-form-item label="封面">
+            <div class="image-field">
+              <ImageUploader
+                v-if="canUploadImages"
+                category="galgames"
+                :preview-url="formState.cover_url || null"
+                width="112px"
+                height="84px"
+                @success="onCoverUploaded"
+                @remove="formState.cover_url = ''"
+              />
+              <a-input
+                v-model:value="formState.cover_url"
+                placeholder="https:// 或上传后自动填充"
+              />
+            </div>
           </a-form-item>
 
-          <a-form-item label="横幅地址">
-            <a-input v-model:value="formState.banner_url" placeholder="https://" />
+          <a-form-item label="横幅">
+            <div class="image-field">
+              <ImageUploader
+                v-if="canUploadImages"
+                category="galgames"
+                :preview-url="formState.banner_url || null"
+                width="112px"
+                height="84px"
+                @success="onBannerUploaded"
+                @remove="formState.banner_url = ''"
+              />
+              <a-input
+                v-model:value="formState.banner_url"
+                placeholder="https:// 或上传后自动填充"
+              />
+            </div>
           </a-form-item>
 
           <a-form-item
@@ -350,6 +390,12 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 20px;
+}
+
+.image-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .form-actions {

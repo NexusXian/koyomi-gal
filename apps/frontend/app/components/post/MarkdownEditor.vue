@@ -1,22 +1,46 @@
 <script setup lang="ts">
 import type Cherry from 'cherry-markdown'
+import { message } from 'ant-design-vue'
+import { useImageUpload } from '~/composables/useImageUpload'
+import type { ImageCategory } from '~/types/image'
 
-const props = defineProps<{
-  modelValue: string
-  disabled?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: string
+    disabled?: boolean
+    uploadCategory?: ImageCategory
+  }>(),
+  { uploadCategory: 'posts' }
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
 const container = ref<HTMLElement | null>(null)
+const { uploadImage } = useImageUpload()
 
 let cherry: Cherry | null = null
 // Guards against feedback loops between Cherry's afterChange and the external
 // modelValue watcher.
 let applyingExternal = false
 let disposed = false
+
+// Cherry invokes this for toolbar uploads, pasted images, and dropped images;
+// the file goes browser -> R2 via a presigned URL and only the CDN URL lands
+// in the markdown.
+function handleFileUpload(
+  file: File,
+  callback: (url: string, params?: { name?: string }) => void
+): void {
+  uploadImage(file, props.uploadCategory)
+    .then((asset) => {
+      callback(asset.url, { name: file.name })
+    })
+    .catch((error: unknown) => {
+      message.error(error instanceof Error ? error.message : '图片上传失败')
+    })
+}
 
 onMounted(async () => {
   if (!container.value) {
@@ -71,7 +95,8 @@ onMounted(async () => {
           return
         }
         emit('update:modelValue', markdown)
-      }
+      },
+      fileUpload: handleFileUpload
     }
   })
   cherry.editor.setReadOnly(Boolean(props.disabled))
