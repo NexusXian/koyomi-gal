@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { DtoGalgameListItem } from '~/api/generated/models'
+import { GALGAME_STATUS, domainLabel } from '~/constants/domain'
 
 const props = defineProps<{
   galgame: DtoGalgameListItem
+  showStatus?: boolean
+  to?: string
 }>()
 
 const fallbackCover = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -14,6 +17,19 @@ const ratingAverage = computed(() =>
     ? Number(props.galgame.rating.average.toFixed(1))
     : null
 )
+
+const statusColor = computed(() => {
+  switch (props.galgame.status) {
+    case 1:
+      return 'success'
+    case 2:
+      return 'danger'
+    case 3:
+      return 'warning'
+    default:
+      return 'default'
+  }
+})
 </script>
 
 <template>
@@ -23,13 +39,22 @@ const ratingAverage = computed(() =>
     class-name="galgame-card"
     content-class="galgame-card-content"
   >
-    <NuxtLink :to="`/galgames/${galgame.id}`" class="galgame-link">
+    <NuxtLink :to="to || `/galgames/${galgame.id}`" class="galgame-link">
       <div class="galgame-cover">
         <img
           :src="galgame.cover_url || fallbackCover"
           :alt="galgame.title || 'Galgame 封面'"
           loading="lazy"
         />
+        <KunChip
+          v-if="showStatus"
+          class-name="status-badge"
+          :color="statusColor"
+          variant="solid"
+          size="sm"
+        >
+          {{ domainLabel(GALGAME_STATUS, galgame.status) }}
+        </KunChip>
         <span v-if="galgame.age_rating === 3" class="age-badge">R18</span>
       </div>
 
@@ -133,6 +158,12 @@ const ratingAverage = computed(() =>
   color: #fff;
   font-size: 12px;
   font-weight: 700;
+}
+
+:deep(.status-badge) {
+  position: absolute;
+  top: 8px;
+  left: 8px;
 }
 
 .galgame-body {

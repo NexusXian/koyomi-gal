@@ -20,7 +20,18 @@ const emit = defineEmits<{
   reply: [comment: DtoCommentData]
 }>()
 
-const { isAuthenticated } = storeToRefs(useUserStore())
+const { user, isAuthenticated } = storeToRefs(useUserStore())
+const { has } = usePermissions()
+const canManageComment = computed(
+  () =>
+    isAuthenticated.value &&
+    (user.value?.id === props.comment.author_id || has('comment:moderate'))
+)
+const commentAuthor = computed(() => ({
+  id: props.comment.author_id ?? 0,
+  name: props.comment.author_name ?? '',
+  avatar: props.comment.author_avatar ?? ''
+}))
 const likePending = ref(false)
 const likeState = ref(false)
 const editing = ref(false)
@@ -116,12 +127,20 @@ async function toggleLike(): Promise<void> {
 }
 
 async function startEdit(): Promise<void> {
+  if (!canManageComment.value) {
+    return
+  }
+
   editing.value = true
   editContent.value = props.comment.content ?? ''
 }
 
 async function saveEdit(): Promise<void> {
-  if (!props.comment.id || !editContent.value.trim()) {
+  if (
+    !canManageComment.value ||
+    !props.comment.id ||
+    !editContent.value.trim()
+  ) {
     return
   }
 
@@ -138,7 +157,7 @@ async function saveEdit(): Promise<void> {
 }
 
 async function removeComment(): Promise<void> {
-  if (!props.comment.id) {
+  if (!canManageComment.value || !props.comment.id) {
     return
   }
 
@@ -155,9 +174,7 @@ async function removeComment(): Promise<void> {
 <template>
   <div class="comment-item">
     <div class="comment-main">
-      <span class="comment-avatar" aria-hidden="true">
-        <KunIcon name="lucide:user-round" />
-      </span>
+      <KunAvatar :user="commentAuthor" :is-navigation="false" size="lg" />
 
       <div class="comment-body">
         <div class="comment-head">
@@ -206,12 +223,18 @@ async function removeComment(): Promise<void> {
             {{ repliesExpanded ? '收起回复' : `${replyTotal} 条回复` }}
           </button>
 
-          <button type="button" class="action-button" @click="startEdit">
+          <button
+            v-if="canManageComment"
+            type="button"
+            class="action-button"
+            @click="startEdit"
+          >
             <KunIcon name="lucide:pencil" />
             编辑
           </button>
 
           <a-popconfirm
+            v-if="canManageComment"
             title="确定删除这条评论吗？"
             ok-text="删除"
             cancel-text="取消"
@@ -262,18 +285,6 @@ async function removeComment(): Promise<void> {
 .comment-main {
   display: flex;
   gap: 12px;
-}
-
-.comment-avatar {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: var(--color-primary-600);
-  font-size: 18px;
 }
 
 .comment-body {

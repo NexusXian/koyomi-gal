@@ -42,6 +42,12 @@ if (error.value || !post.value) {
 
 const postEditorMode = computed(() => normalizeEditorMode(post.value?.editor_mode))
 
+const postAuthor = computed(() => ({
+  id: post.value?.author_id ?? 0,
+  name: post.value?.author_name ?? '',
+  avatar: post.value?.author_avatar ?? ''
+}))
+
 const postExcerpt = computed(() => {
   const content = post.value?.content ?? ''
   return postEditorMode.value === 'markdown'
@@ -55,7 +61,13 @@ useSeoMeta({
 })
 
 const userStore = useUserStore()
-const { isAuthenticated } = storeToRefs(userStore)
+const { user, isAuthenticated } = storeToRefs(userStore)
+const { has } = usePermissions()
+const canManagePost = computed(
+  () =>
+    isAuthenticated.value &&
+    (user.value?.id === post.value?.author_id || has('post:moderate'))
+)
 
 const comments = ref<DtoCommentData[]>([])
 const commentTotal = ref(0)
@@ -194,6 +206,10 @@ function setReply(target: DtoCommentData): void {
 }
 
 async function removePost(): Promise<void> {
+  if (!canManagePost.value) {
+    return
+  }
+
   try {
     await deletePost(postId.value)
     message.success('帖子已删除')
@@ -222,7 +238,7 @@ onMounted(() => {
         <h1>{{ post?.title }}</h1>
         <div class="post-meta">
           <span>
-            <KunIcon name="lucide:user-round" />
+            <KunAvatar :user="postAuthor" :is-navigation="false" size="sm" />
             {{ post?.author_name || (post?.author_id ? `用户 #${post.author_id}` : '未知') }}
           </span>
           <span>
@@ -268,7 +284,7 @@ onMounted(() => {
         </button>
 
         <NuxtLink
-          v-if="isAuthenticated"
+          v-if="canManagePost"
           class="pill-button"
           :to="`/posts/${postId}/edit`"
         >
@@ -277,7 +293,7 @@ onMounted(() => {
         </NuxtLink>
 
         <a-popconfirm
-          v-if="isAuthenticated"
+          v-if="canManagePost"
           title="确定删除这篇帖子吗？"
           ok-text="删除"
           cancel-text="取消"
