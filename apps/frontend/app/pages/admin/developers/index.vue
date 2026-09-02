@@ -10,6 +10,7 @@ import type { DtoDeveloperResponse } from '~/api/generated/models'
 
 useSeoMeta({ title: '开发商管理 - Koyomi' })
 
+const { has } = usePermissions()
 const items = ref<DtoDeveloperResponse[]>([])
 const loading = ref(false)
 const modalOpen = ref(false)
@@ -41,6 +42,10 @@ onMounted(() => {
 })
 
 function openCreate(): void {
+  if (!has('galgame:create')) {
+    return
+  }
+
   editing.value = null
   Object.assign(formState, {
     name: '',
@@ -54,6 +59,10 @@ function openCreate(): void {
 }
 
 function openEdit(developer: DtoDeveloperResponse): void {
+  if (!has('galgame:update')) {
+    return
+  }
+
   editing.value = developer
   Object.assign(formState, {
     name: developer.name ?? '',
@@ -67,6 +76,13 @@ function openEdit(developer: DtoDeveloperResponse): void {
 }
 
 async function submit(): Promise<void> {
+  if (
+    (editing.value && !has('galgame:update')) ||
+    (!editing.value && !has('galgame:create'))
+  ) {
+    return
+  }
+
   if (!formState.name.trim() || !formState.slug.trim()) {
     message.warning('请填写名称和 Slug')
     return
@@ -97,24 +113,22 @@ async function submit(): Promise<void> {
   }
 }
 
-const columns: TableColumnsType = [
+const columns = computed<TableColumnsType>(() => [
   { title: 'ID', dataIndex: 'id', width: 70 },
   { title: '名称', dataIndex: 'name', width: 160 },
   { title: 'Slug', dataIndex: 'slug', width: 150, ellipsis: true },
   { title: '原名', dataIndex: 'original_name', width: 160, ellipsis: true },
   { title: '官网', dataIndex: 'website', ellipsis: true },
   { title: '简介', dataIndex: 'description', ellipsis: true },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 100
-  }
-]
+  ...(has('galgame:update')
+    ? [{ title: '操作', key: 'actions', width: 100 }]
+    : [])
+])
 </script>
 
 <template>
   <div>
-    <div class="table-toolbar">
+    <div v-if="has('galgame:create')" class="table-toolbar">
       <a-button type="primary" @click="openCreate">
         新建开发商
       </a-button>
@@ -146,7 +160,13 @@ const columns: TableColumnsType = [
 
         <template v-else-if="column.key === 'actions'">
           <div class="table-actions">
-            <a-button size="small" @click="openEdit(record)">编辑</a-button>
+            <a-button
+              v-if="has('galgame:update')"
+              size="small"
+              @click="openEdit(record)"
+            >
+              编辑
+            </a-button>
           </div>
         </template>
       </template>

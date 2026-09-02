@@ -13,6 +13,11 @@ const emit = defineEmits<{
   changed: []
 }>()
 
+const { load: loadPermissions, has } = usePermissions()
+const canList = computed(() => has('permission:list'))
+const canCreate = computed(() => has('permission:create'))
+const canUpdate = computed(() => has('permission:update'))
+const canDelete = computed(() => has('permission:delete'))
 const items = ref<DtoPermissionResponse[]>([])
 const loading = ref(false)
 const modalOpen = ref(false)
@@ -22,6 +27,8 @@ const saving = ref(false)
 const formState = reactive({ code: '', name: '', description: '' })
 
 async function load(): Promise<void> {
+  if (!canList.value) return
+
   loading.value = true
   try {
     items.value = unwrapApiData(await listPermissions()) ?? []
@@ -32,17 +39,22 @@ async function load(): Promise<void> {
   }
 }
 
-onMounted(() => {
-  void load()
+onMounted(async () => {
+  await loadPermissions()
+  await load()
 })
 
 function openCreate(): void {
+  if (!canCreate.value) return
+
   editing.value = null
   Object.assign(formState, { code: '', name: '', description: '' })
   modalOpen.value = true
 }
 
 function openEdit(permission: DtoPermissionResponse): void {
+  if (!canUpdate.value) return
+
   editing.value = permission
   Object.assign(formState, {
     code: permission.code ?? '',
@@ -53,6 +65,9 @@ function openEdit(permission: DtoPermissionResponse): void {
 }
 
 async function submit(): Promise<void> {
+  if ((editing.value && !canUpdate.value) || (!editing.value && !canCreate.value)) {
+    return
+  }
   if (!formState.code.trim() || !formState.name.trim()) {
     message.warning('请填写权限代码和名称')
     return
@@ -60,15 +75,17 @@ async function submit(): Promise<void> {
 
   saving.value = true
   try {
-    const payload = {
-      code: formState.code.trim(),
-      name: formState.name.trim(),
-      description: formState.description.trim() || undefined
-    }
     if (editing.value?.id) {
-      await updatePermission(editing.value.id, payload)
+      await updatePermission(editing.value.id, {
+        name: formState.name.trim(),
+        description: formState.description.trim() || undefined
+      })
     } else {
-      await createPermission(payload)
+      await createPermission({
+        code: formState.code.trim(),
+        name: formState.name.trim(),
+        description: formState.description.trim() || undefined
+      })
     }
     message.success(editing.value ? '权限已更新' : '权限已创建')
     modalOpen.value = false
@@ -82,7 +99,7 @@ async function submit(): Promise<void> {
 }
 
 async function remove(permission: DtoPermissionResponse): Promise<void> {
-  if (!permission.id) {
+  if (!permission.id || !canDelete.value) {
     return
   }
 
@@ -96,17 +113,19 @@ async function remove(permission: DtoPermissionResponse): Promise<void> {
   }
 }
 
-const columns: TableColumnsType = [
-  { title: 'ID', dataIndex: 'id', width: 70 },
-  { title: '代码', dataIndex: 'code', width: 170 },
-  { title: '名称', dataIndex: 'name', width: 170 },
-  { title: '描述', dataIndex: 'description', ellipsis: true },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 150
+const hasActions = computed(() => canUpdate.value || canDelete.value)
+const columns = computed<TableColumnsType>(() => {
+  const result: TableColumnsType = [
+    { title: 'ID', dataIndex: 'id', width: 70 },
+    { title: '代码', dataIndex: 'code', width: 170 },
+    { title: '名称', dataIndex: 'name', width: 170 },
+    { title: '描述', dataIndex: 'description', ellipsis: true }
+  ]
+  if (hasActions.value) {
+    result.push({ title: '操作', key: 'actions', width: 150 })
   }
-]
+  return result
+})
 
 defineExpose({ reload: load })
 </script>
@@ -114,10 +133,11 @@ defineExpose({ reload: load })
 <template>
   <div>
     <div class="table-toolbar">
-      <a-button type="primary" @click="openCreate">新建权限</a-button>
+      <a-button v-if="canCreate" type="primary" @click="openCreate">新建权限</a-button>
     </div>
 
     <a-table
+      v-if="canList"
       :columns="columns"
       :data-source="items"
       :loading="loading"
@@ -131,8 +151,9 @@ defineExpose({ reload: load })
 
         <template v-else-if="column.key === 'actions'">
           <div class="table-actions">
-            <a-button size="small" @click="openEdit(record)">编辑</a-button>
+            <a-button v-if="canUpdate" size="small" @click="openEdit(record)">编辑</a-button>
             <a-popconfirm
+              v-if="canDelete"
               :title="`确定删除权限「${record.name}」吗？`"
               ok-text="删除"
               cancel-text="取消"
@@ -155,7 +176,7 @@ defineExpose({ reload: load })
     >
       <a-form layout="vertical">
         <a-form-item label="权限代码" required>
-          <a-input v-model:value="formState.code" :maxlength="64" />
+          <a-input v-model:value="formState.code" :maxlength="64" :disabled="Boolean(editing)" />
         </a-form-item>
         <a-form-item label="名称" required>
           <a-input v-model:value="formState.name" :maxlength="64" />

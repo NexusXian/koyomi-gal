@@ -10,6 +10,7 @@ import type { DtoTagResponse } from '~/api/generated/models'
 
 useSeoMeta({ title: 'Tag 管理 - Koyomi' })
 
+const { has } = usePermissions()
 const items = ref<DtoTagResponse[]>([])
 const loading = ref(false)
 const modalOpen = ref(false)
@@ -38,12 +39,20 @@ onMounted(() => {
 })
 
 function openCreate(): void {
+  if (!has('galgame:create')) {
+    return
+  }
+
   editing.value = null
   Object.assign(formState, { name: '', slug: '', description: '' })
   modalOpen.value = true
 }
 
 function openEdit(tag: DtoTagResponse): void {
+  if (!has('galgame:update')) {
+    return
+  }
+
   editing.value = tag
   Object.assign(formState, {
     name: tag.name ?? '',
@@ -54,6 +63,13 @@ function openEdit(tag: DtoTagResponse): void {
 }
 
 async function submit(): Promise<void> {
+  if (
+    (editing.value && !has('galgame:update')) ||
+    (!editing.value && !has('galgame:create'))
+  ) {
+    return
+  }
+
   if (!formState.name.trim() || !formState.slug.trim()) {
     message.warning('请填写名称和 Slug')
     return
@@ -81,22 +97,20 @@ async function submit(): Promise<void> {
   }
 }
 
-const columns: TableColumnsType = [
+const columns = computed<TableColumnsType>(() => [
   { title: 'ID', dataIndex: 'id', width: 70 },
   { title: '名称', dataIndex: 'name', width: 160 },
   { title: 'Slug', dataIndex: 'slug', width: 160 },
   { title: '描述', dataIndex: 'description', ellipsis: true },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 100
-  }
-]
+  ...(has('galgame:update')
+    ? [{ title: '操作', key: 'actions', width: 100 }]
+    : [])
+])
 </script>
 
 <template>
   <div>
-    <div class="table-toolbar">
+    <div v-if="has('galgame:create')" class="table-toolbar">
       <a-button type="primary" @click="openCreate">
         新建 Tag
       </a-button>
@@ -116,7 +130,13 @@ const columns: TableColumnsType = [
 
         <template v-else-if="column.key === 'actions'">
           <div class="table-actions">
-            <a-button size="small" @click="openEdit(record)">编辑</a-button>
+            <a-button
+              v-if="has('galgame:update')"
+              size="small"
+              @click="openEdit(record)"
+            >
+              编辑
+            </a-button>
           </div>
         </template>
       </template>

@@ -16,6 +16,7 @@ import {
 
 useSeoMeta({ title: '资源举报 - Koyomi' })
 
+const { has } = usePermissions()
 const activeStatus = ref(0)
 const page = ref(1)
 const limit = 20
@@ -65,7 +66,7 @@ async function handle(
   report: DtoResourceReportData,
   status: 1 | 2
 ): Promise<void> {
-  if (!report.id) {
+  if (!report.id || !has('resource_report:handle')) {
     return
   }
 
@@ -83,7 +84,7 @@ async function handle(
   }
 }
 
-const columns: TableColumnsType = [
+const columns = computed<TableColumnsType>(() => [
   { title: 'ID', dataIndex: 'id', width: 70 },
   {
     title: '资源',
@@ -110,12 +111,10 @@ const columns: TableColumnsType = [
     dataIndex: 'handled_at',
     width: 170
   },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 170
-  }
-]
+  ...(has('resource_report:handle')
+    ? [{ title: '操作', key: 'actions', width: 170 }]
+    : [])
+])
 </script>
 
 <template>
@@ -176,7 +175,10 @@ const columns: TableColumnsType = [
         </template>
 
         <template v-else-if="column.key === 'actions'">
-          <div v-if="record.status === 0" class="table-actions">
+          <div
+            v-if="has('resource_report:handle') && record.status === 0"
+            class="table-actions"
+          >
             <a-button
               size="small"
               type="primary"

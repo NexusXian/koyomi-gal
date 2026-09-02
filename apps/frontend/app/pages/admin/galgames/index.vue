@@ -11,6 +11,7 @@ import { GALGAME_SORTS, domainSortSlug } from '~/constants/domain'
 
 useSeoMeta({ title: 'Galgame 审核 - Koyomi' })
 
+const { has } = usePermissions()
 const query = reactive({
   status: undefined as number | undefined,
   keyword: '',
@@ -98,7 +99,7 @@ async function changeStatus(
   item: DtoGalgameListItem,
   status: number
 ): Promise<void> {
-  if (!item.id) {
+  if (!item.id || !has('galgame:update')) {
     return
   }
 
@@ -133,7 +134,7 @@ async function changeStatus(
   }
 }
 
-const columns: TableColumnsType = [
+const columns = computed<TableColumnsType>(() => [
   { title: 'ID', dataIndex: 'id', width: 70 },
   {
     title: '标题',
@@ -161,12 +162,10 @@ const columns: TableColumnsType = [
     key: 'favorite',
     width: 80
   },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 230
-  }
-]
+  ...(has('galgame:update')
+    ? [{ title: '操作', key: 'actions', width: 230 }]
+    : [])
+])
 </script>
 
 <template>
@@ -253,7 +252,7 @@ const columns: TableColumnsType = [
         </template>
 
         <template v-else-if="column.key === 'actions'">
-          <div class="table-actions">
+          <div v-if="has('galgame:update')" class="table-actions">
             <a-button
               v-for="action in QUICK_ACTIONS[record.status as number] ?? []"
               :key="action.status"
