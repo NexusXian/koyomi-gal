@@ -10,6 +10,17 @@ interface ChangelogEntry {
 
 const entries: ChangelogEntry[] = [
   {
+    date: '2026-09-03',
+    version: 'v0.4.1',
+    title: '用户身份展示与管理端优化',
+    items: [
+      { type: 'new', text: '管理端用户列表与详情展示用户身份标签，新建用户即时回显默认身份' },
+      { type: 'improve', text: '新用户 ID 从 1001 起始' },
+      { type: 'fix', text: '修复反馈处理角色缺失与顶部栏图标显示' },
+      { type: 'fix', text: '调整管理端侧边管理栏宽度' }
+    ]
+  },
+  {
     date: '2026-09-02',
     version: 'v0.4.0',
     title: '背景预设管理、站点页脚与反馈系统',

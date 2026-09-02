@@ -7195,6 +7195,12 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AdminUserRoleData"
+                    }
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -7256,6 +7262,23 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.AdminUserRoleData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "user"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "name": {
+                    "type": "string",
+                    "example": "普通用户"
                 }
             }
         },

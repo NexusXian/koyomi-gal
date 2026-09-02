@@ -27,12 +27,19 @@ type UpdateAdminUserRequest struct {
 }
 
 type AdminUserData struct {
-	ID        uint      `json:"id" example:"1"`
-	Username  string    `json:"username" example:"koyomi"`
-	Email     string    `json:"email" example:"user@example.com"`
-	IsBanned  bool      `json:"is_banned" example:"false"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uint                `json:"id" example:"1"`
+	Username  string              `json:"username" example:"koyomi"`
+	Email     string              `json:"email" example:"user@example.com"`
+	IsBanned  bool                `json:"is_banned" example:"false"`
+	Roles     []AdminUserRoleData `json:"roles"`
+	CreatedAt time.Time           `json:"created_at"`
+	UpdatedAt time.Time           `json:"updated_at"`
+}
+
+type AdminUserRoleData struct {
+	ID   int64  `json:"id" example:"2"`
+	Name string `json:"name" example:"普通用户"`
+	Code string `json:"code" example:"user"`
 }
 
 type AdminUserListData struct {
@@ -55,11 +62,20 @@ type AdminUserDataResponse struct {
 }
 
 func NewAdminUserData(user *model.User) AdminUserData {
+	roles := make([]AdminUserRoleData, 0, len(user.Roles))
+	for _, role := range user.Roles {
+		roles = append(roles, AdminUserRoleData{
+			ID:   role.ID,
+			Name: role.Name,
+			Code: role.Code,
+		})
+	}
 	return AdminUserData{
 		ID:        user.ID,
 		Username:  user.Username,
 		Email:     user.Email,
 		IsBanned:  user.IsBanned,
+		Roles:     roles,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}

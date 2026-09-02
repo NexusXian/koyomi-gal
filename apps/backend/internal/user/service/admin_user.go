@@ -113,6 +113,8 @@ func (s *UserAdminService) Create(
 	if s.rbac != nil {
 		if err := s.rbac.AssignRoleByCode(ctx, user.ID, defaultRegisterRoleCode); err != nil {
 			logger.Warn("assign default admin-created user role", zap.Uint("user_id", user.ID), zap.Error(err))
+		} else {
+			return s.Get(ctx, user.ID)
 		}
 	}
 	return user, nil

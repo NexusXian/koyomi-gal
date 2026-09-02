@@ -5,12 +5,14 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoAdminUserRoleData } from './dtoAdminUserRoleData';
 
 export interface DtoAdminUserData {
   created_at?: string;
   email?: string;
   id?: number;
   is_banned?: boolean;
+  roles?: DtoAdminUserRoleData[];
   updated_at?: string;
   username?: string;
 }

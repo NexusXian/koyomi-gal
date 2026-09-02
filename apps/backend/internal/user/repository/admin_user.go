@@ -48,7 +48,7 @@ func (r *UserAdminRepository) List(
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
 	users := make([]model.User, 0)
-	if err := base().Order("id DESC").Offset((page - 1) * limit).Limit(limit).Find(&users).Error; err != nil {
+	if err := preloadUserRoles(base()).Order("id DESC").Offset((page - 1) * limit).Limit(limit).Find(&users).Error; err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
 	}
 	return users, total, nil
@@ -56,7 +56,7 @@ func (r *UserAdminRepository) List(
 
 func (r *UserAdminRepository) FindByID(ctx context.Context, id uint) (*model.User, error) {
 	var user model.User
-	err := r.db.WithContext(ctx).First(&user, id).Error
+	err := preloadUserRoles(r.db.WithContext(ctx)).First(&user, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -64,6 +64,12 @@ func (r *UserAdminRepository) FindByID(ctx context.Context, id uint) (*model.Use
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 	return &user, nil
+}
+
+func preloadUserRoles(db *gorm.DB) *gorm.DB {
+	return db.Preload("Roles", func(db *gorm.DB) *gorm.DB {
+		return db.Select("roles.id", "roles.name", "roles.code").Order("roles.id")
+	})
 }
 
 func (r *UserAdminRepository) UsernameExists(ctx context.Context, username string, excludeID uint) (bool, error) {

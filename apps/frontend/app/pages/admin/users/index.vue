@@ -83,6 +83,7 @@ const userColumns = computed<TableColumnsType>(() => {
     { title: 'ID', dataIndex: 'id', width: 70 },
     { title: '用户名', dataIndex: 'username', width: 160 },
     { title: '邮箱', dataIndex: 'email', ellipsis: true },
+    { title: '身份', key: 'roles', width: 180 },
     { title: '状态', key: 'status', width: 90 },
     { title: '创建时间', dataIndex: 'created_at', width: 180 }
   ]
@@ -347,6 +348,7 @@ async function saveRoles(): Promise<void> {
     await updateUserRoles(roleUserId.value, { role_ids: selectedRoleIds.value })
     message.success('用户角色已更新')
     roleDrawerOpen.value = false
+    if (canList.value) void loadUsers()
   } catch (error) {
     message.error(getApiErrorMessage(error, '角色保存失败'))
   } finally {
@@ -362,6 +364,13 @@ function formatDate(value?: string): string {
 
 function isSelf(id?: number | null): boolean {
   return Boolean(id && currentUser.value?.id === id)
+}
+
+function roleColor(code?: string): string {
+  if (code === 'super_admin') return 'red'
+  if (code === 'admin') return 'orange'
+  if (code === 'user') return 'green'
+  return 'blue'
 }
 </script>
 
@@ -404,11 +413,23 @@ function isSelf(id?: number | null): boolean {
           showTotal: (count: number) => `共 ${count} 位用户`
         }"
         row-key="id"
-        :scroll="{ x: 980 }"
+        :scroll="{ x: 1160 }"
         @change="changePage"
       >
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
+          <template v-if="column.key === 'roles'">
+            <div v-if="record.roles?.length" class="user-roles">
+              <a-tag
+                v-for="role in record.roles"
+                :key="role.id"
+                :color="roleColor(role.code)"
+              >
+                {{ role.name }}
+              </a-tag>
+            </div>
+            <span v-else class="empty-role">未分配</span>
+          </template>
+          <template v-else-if="column.key === 'status'">
             <a-tag :color="record.is_banned ? 'error' : 'success'">
               {{ record.is_banned ? '已封禁' : '正常' }}
             </a-tag>
@@ -487,6 +508,18 @@ function isSelf(id?: number | null): boolean {
           <a-descriptions-item label="ID">{{ detailUser.id }}</a-descriptions-item>
           <a-descriptions-item label="用户名">{{ detailUser.username }}</a-descriptions-item>
           <a-descriptions-item label="邮箱">{{ detailUser.email }}</a-descriptions-item>
+          <a-descriptions-item label="身份">
+            <div v-if="detailUser.roles?.length" class="user-roles">
+              <a-tag
+                v-for="role in detailUser.roles"
+                :key="role.id"
+                :color="roleColor(role.code)"
+              >
+                {{ role.name }}
+              </a-tag>
+            </div>
+            <span v-else class="empty-role">未分配</span>
+          </a-descriptions-item>
           <a-descriptions-item label="状态">
             <a-tag :color="detailUser.is_banned ? 'error' : 'success'">
               {{ detailUser.is_banned ? '已封禁' : '正常' }}
@@ -612,6 +645,20 @@ function isSelf(id?: number | null): boolean {
 
 .search-row :deep(.ant-input-search) {
   max-width: 520px;
+}
+
+.user-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.user-roles :deep(.ant-tag) {
+  margin-inline-end: 0;
+}
+
+.empty-role {
+  color: var(--color-default-400);
 }
 
 .manual-heading {
