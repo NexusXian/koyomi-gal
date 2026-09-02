@@ -59,6 +59,7 @@ type App struct {
 	MailWorker          *asynq.Server
 	UserAuthHandler     *userHandler.UserAuthHandler
 	VerificationHandler *userHandler.VerificationHandler
+	UserProfileHandler  *userHandler.UserProfileHandler
 	RBACService         *rbacService.RBACService
 	RoleHandler         *rbacHandler.RoleHandler
 	PermissionHandler   *rbacHandler.PermissionHandler
@@ -142,8 +143,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	reportRepository := resourceRepo.NewReportRepository(postgresDB)
 	reportSvc := resourceService.NewReportService(reportRepository, resourceRepository)
 
-	postRepository := communityRepo.NewPostRepository(postgresDB)
-	commentRepository := communityRepo.NewCommentRepository(postgresDB)
+	postRepository := communityRepo.NewPostRepository(postgresDB, cfg.R2.PublicURL)
+	commentRepository := communityRepo.NewCommentRepository(postgresDB, cfg.R2.PublicURL)
 	postService := communityService.NewPostService(postRepository, galgameRepository, rbacSvc)
 	commentService := communityService.NewCommentService(commentRepository, postRepository, rbacSvc)
 	interactionService := communityService.NewInteractionService(postRepository, commentRepository)
@@ -188,11 +189,18 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		cfg.Verification.IPWindow,
 		cfg.Verification.IPLimit,
 	)
+	userPreferenceRepository := userRepo.NewUserPreferenceRepository(postgresDB)
+	userProfileService := userService.NewUserProfileService(
+		userAuthRepository,
+		userPreferenceRepository,
+		imageSvc,
+	)
 	userAuthService := userService.NewUserAuthService(
 		userAuthRepository,
 		refreshSessionRepository,
 		verificationService,
 		rbacSvc,
+		imageSvc,
 		cfg.Auth.AccessTokenSecret,
 		cfg.Auth.AccessTokenTTL,
 		cfg.Auth.RefreshTokenTTL,
@@ -207,6 +215,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 			cfg.Auth.RefreshTokenTTL,
 		),
 		VerificationHandler: userHandler.NewVerificationHandler(verificationService),
+		UserProfileHandler:  userHandler.NewUserProfileHandler(userProfileService),
 		RBACService:         rbacSvc,
 		RoleHandler:         rbacHandler.NewRoleHandler(rbacSvc),
 		PermissionHandler:   rbacHandler.NewPermissionHandler(rbacSvc),

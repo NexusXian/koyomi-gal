@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"backend/internal/community/model"
@@ -13,16 +14,17 @@ import (
 )
 
 type CommentRepository struct {
-	db *gorm.DB
+	db            *gorm.DB
+	avatarBaseURL string
 }
 
-func NewCommentRepository(db *gorm.DB) *CommentRepository {
-	return &CommentRepository{db: db}
+func NewCommentRepository(db *gorm.DB, avatarBaseURL string) *CommentRepository {
+	return &CommentRepository{db: db, avatarBaseURL: strings.TrimRight(avatarBaseURL, "/")}
 }
 
 func (r *CommentRepository) Transaction(ctx context.Context, fn func(tx *CommentRepository) error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return fn(&CommentRepository{db: tx})
+		return fn(&CommentRepository{db: tx, avatarBaseURL: r.avatarBaseURL})
 	})
 }
 
@@ -70,12 +72,13 @@ func (r *CommentRepository) FindByID(ctx context.Context, id uint) (*model.Comme
 	return &comment, nil
 }
 
-// withAuthorName joins the comment author's username for display.
+// withAuthorName joins the comment author's username and avatar for display.
 func (r *CommentRepository) withAuthorName(query *gorm.DB) *gorm.DB {
 	return query.
 		Model(&model.Comment{}).
-		Select("comments.*, authors.username AS author_name").
-		Joins("LEFT JOIN users AS authors ON authors.id = comments.author_id")
+		Select("comments.*, authors.username AS author_name, "+authorAvatarExpr("authors", "comment_avatar_assets"), r.avatarBaseURL).
+		Joins("LEFT JOIN users AS authors ON authors.id = comments.author_id").
+		Joins(authorAvatarJoin("authors", "comment_avatar_assets"))
 }
 
 // ListTopLevelByPost returns one page of top-level comments plus the total

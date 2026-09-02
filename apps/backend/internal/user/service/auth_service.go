@@ -1,6 +1,7 @@
 package service
 
 import (
+	imageService "backend/internal/image/service"
 	"backend/internal/user/dto"
 	"backend/internal/user/model"
 	"backend/internal/user/repository"
@@ -51,6 +52,7 @@ type UserAuthService struct {
 	refreshSessionRepo  *repository.RefreshSessionRepository
 	verificationService *VerificationService
 	roleAssigner        RoleAssigner
+	images              *imageService.ImageAssetService
 	accessTokenSecret   []byte
 	accessTokenTTL      time.Duration
 	refreshTokenTTL     time.Duration
@@ -61,6 +63,7 @@ func NewUserAuthService(
 	refreshSessionRepo *repository.RefreshSessionRepository,
 	verificationService *VerificationService,
 	roleAssigner RoleAssigner,
+	images *imageService.ImageAssetService,
 	accessTokenSecret string,
 	accessTokenTTL time.Duration,
 	refreshTokenTTL time.Duration,
@@ -70,6 +73,7 @@ func NewUserAuthService(
 		refreshSessionRepo:  refreshSessionRepo,
 		verificationService: verificationService,
 		roleAssigner:        roleAssigner,
+		images:              images,
 		accessTokenSecret:   []byte(accessTokenSecret),
 		accessTokenTTL:      accessTokenTTL,
 		refreshTokenTTL:     refreshTokenTTL,
@@ -221,7 +225,7 @@ func (s *UserAuthService) UserLogin(
 		return nil, "", err
 	}
 
-	return newAuthSession(user, accessToken), refreshToken, nil
+	return s.newAuthSession(ctx, user, accessToken), refreshToken, nil
 }
 
 func (s *UserAuthService) RefreshSession(
@@ -266,7 +270,7 @@ func (s *UserAuthService) RefreshSession(
 		return nil, "", err
 	}
 
-	return newAuthSession(user, accessToken), replacementToken, nil
+	return s.newAuthSession(ctx, user, accessToken), replacementToken, nil
 }
 
 func (s *UserAuthService) Logout(ctx context.Context, refreshToken string) error {
@@ -359,14 +363,18 @@ func randomToken(size int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(value), nil
 }
 
-func newAuthSession(user *model.User, accessToken string) *dto.AuthSession {
+func (s *UserAuthService) newAuthSession(
+	ctx context.Context,
+	user *model.User,
+	accessToken string,
+) *dto.AuthSession {
 	return &dto.AuthSession{
 		Token: accessToken,
 		User: dto.AuthUser{
 			ID:       user.ID,
 			Username: user.Username,
 			Email:    user.Email,
-			Avatar:   user.Avatar,
+			Avatar:   resolveAvatarURL(ctx, s.images, user),
 		},
 	}
 }

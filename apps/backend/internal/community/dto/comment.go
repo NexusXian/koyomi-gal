@@ -30,6 +30,7 @@ type CommentData struct {
 	PostID        uint      `json:"post_id" example:"1"`
 	AuthorID      *uint     `json:"author_id" example:"1"`
 	AuthorName    string    `json:"author_name" example:"koyomi"`
+	AuthorAvatar  string    `json:"author_avatar" example:"https://img.example.com/avatars/1/2026/09/uuid.png"`
 	ParentID      *uint     `json:"parent_id" example:"1"`
 	ReplyToUserID *uint     `json:"reply_to_user_id" example:"2"`
 	Content       string    `json:"content" example:"同感！"`
@@ -53,9 +54,9 @@ type CommentListResponse struct {
 }
 
 type CommentDataResponse struct {
-	Code int         `json:"code" example:"0"`
-	Data CommentData `json:"data"`
-	Msg  string      `json:"msg" example:"success"`
+	Code int              `json:"code" example:"0"`
+	Data CommentData      `json:"data"`
+	Msg  string           `json:"msg" example:"success"`
 }
 
 type PostLikeData struct {
@@ -97,6 +98,7 @@ func NewCommentData(comment *model.Comment, replyCount int64) CommentData {
 		PostID:        comment.PostID,
 		AuthorID:      comment.AuthorID,
 		AuthorName:    comment.AuthorName,
+		AuthorAvatar:  comment.AuthorAvatar,
 		ParentID:      comment.ParentID,
 		ReplyToUserID: comment.ReplyToUserID,
 		Content:       comment.Content,

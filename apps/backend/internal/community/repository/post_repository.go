@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"backend/internal/community/model"
+	imageModel "backend/internal/image/model"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -19,16 +21,17 @@ type PostListOptions struct {
 }
 
 type PostRepository struct {
-	db *gorm.DB
+	db            *gorm.DB
+	avatarBaseURL string
 }
 
-func NewPostRepository(db *gorm.DB) *PostRepository {
-	return &PostRepository{db: db}
+func NewPostRepository(db *gorm.DB, avatarBaseURL string) *PostRepository {
+	return &PostRepository{db: db, avatarBaseURL: strings.TrimRight(avatarBaseURL, "/")}
 }
 
 func (r *PostRepository) Transaction(ctx context.Context, fn func(tx *PostRepository) error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return fn(&PostRepository{db: tx})
+		return fn(&PostRepository{db: tx, avatarBaseURL: r.avatarBaseURL})
 	})
 }
 
@@ -82,10 +85,28 @@ func (r *PostRepository) FindByID(ctx context.Context, id uint) (*model.Post, er
 func (r *PostRepository) withNames(query *gorm.DB) *gorm.DB {
 	return query.
 		Model(&model.Post{}).
-		Select(`posts.*, users.username AS author_name, users.avatar AS author_avatar,
-galgames.title AS galgame_title, galgames.cover_url AS galgame_cover_url`).
+		Select(`posts.*, users.username AS author_name, `+authorAvatarExpr("users", "avatar_assets")+`,
+galgames.title AS galgame_title, galgames.cover_url AS galgame_cover_url`, r.avatarBaseURL).
 		Joins("LEFT JOIN users ON users.id = posts.author_id").
+		Joins(authorAvatarJoin("users", "avatar_assets")).
 		Joins("LEFT JOIN galgames ON galgames.id = posts.galgame_id")
+}
+
+// authorAvatarExpr mirrors the user service avatar resolution: prefer the
+// author's active avatar asset URL, fall back to the legacy avatar column.
+// The base URL must be bound as the first Select argument.
+func authorAvatarExpr(usersAlias, assetsAlias string) string {
+	return fmt.Sprintf(
+		"CASE WHEN %s.object_key IS NOT NULL THEN CAST(? AS text) || '/' || %s.object_key ELSE %s.avatar END AS author_avatar",
+		assetsAlias, assetsAlias, usersAlias,
+	)
+}
+
+func authorAvatarJoin(usersAlias, assetsAlias string) string {
+	return fmt.Sprintf(
+		"LEFT JOIN image_assets AS %s ON %s.id = %s.avatar_asset_id AND %s.user_id = %s.id AND %s.status = %d",
+		assetsAlias, assetsAlias, usersAlias, assetsAlias, usersAlias, assetsAlias, imageModel.ImageStatusActive,
+	)
 }
 
 func (r *PostRepository) ListHome(ctx context.Context, sort string, limit int) ([]model.Post, error) {

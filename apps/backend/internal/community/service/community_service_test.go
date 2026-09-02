@@ -38,8 +38,8 @@ func newCommunityTestEnv(t *testing.T) *communityTestEnv {
 	if err := rbacSvc.SeedDefaults(context.Background()); err != nil {
 		t.Fatalf("seed rbac defaults: %v", err)
 	}
-	postRepo := communityRepo.NewPostRepository(db)
-	commentRepo := communityRepo.NewCommentRepository(db)
+	postRepo := communityRepo.NewPostRepository(db, "https://img.example.com")
+	commentRepo := communityRepo.NewCommentRepository(db, "https://img.example.com")
 	return &communityTestEnv{
 		posts:        NewPostService(postRepo, galgameRepository, rbacSvc),
 		comments:     NewCommentService(commentRepo, postRepo, rbacSvc),
@@ -497,7 +497,7 @@ func TestCommunityWritesRollbackOnError(t *testing.T) {
 	post := env.createPost(t, author, "rollback post", uintPtr(galgameID))
 
 	err := env.db.Transaction(func(tx *gorm.DB) error {
-		comments := communityRepo.NewCommentRepository(tx)
+		comments := communityRepo.NewCommentRepository(tx, "https://img.example.com")
 		comment := &model.Comment{
 			PostID:   post.ID,
 			AuthorID: uintPtr(author),

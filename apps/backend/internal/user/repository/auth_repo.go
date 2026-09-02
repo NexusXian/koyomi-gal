@@ -48,6 +48,12 @@ func (r *UserAuthRepository) UpdateUser(ctx context.Context, user *model.User) e
 	return r.db.WithContext(ctx).Updates(user).Error
 }
 
+func (r *UserAuthRepository) UpdateAvatarAssetID(ctx context.Context, userID uint, assetID *uint) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).
+		Where("id = ?", userID).
+		Update("avatar_asset_id", assetID).Error
+}
+
 func (r *UserAuthRepository) FindUserByID(ctx context.Context, userID uint) (*model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).First(&user, userID).Error
@@ -59,3 +65,4 @@ func (r *UserAuthRepository) FindUserByID(ctx context.Context, userID uint) (*mo
 	}
 	return &user, nil
 }
+

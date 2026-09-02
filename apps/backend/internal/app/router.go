@@ -149,4 +149,7 @@ func (app *App) setupRoutes() {
 	}
 
 	protected.GET("/me/permissions", app.AssignmentHandler.MePermissions)
+	protected.PATCH("/me", app.UserProfileHandler.UpdateMe)
+	protected.GET("/me/preferences", app.UserProfileHandler.GetPreferences)
+	protected.PATCH("/me/preferences", app.UserProfileHandler.UpdatePreferences)
 }

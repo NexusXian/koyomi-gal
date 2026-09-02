@@ -53,7 +53,8 @@ type Comment struct {
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	// Filled by repository joins, never written to the database.
-	AuthorName string `gorm:"->" json:"author_name"`
+	AuthorName   string `gorm:"->" json:"author_name"`
+	AuthorAvatar string `gorm:"->" json:"author_avatar"`
 }
 
 type PostLike struct {

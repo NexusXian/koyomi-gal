@@ -62,8 +62,8 @@ func newCommunityHandlerEnv(t *testing.T) *communityHandlerEnv {
 	if err := rbacSvc.SeedDefaults(context.Background()); err != nil {
 		t.Fatalf("seed rbac defaults: %v", err)
 	}
-	postRepo := communityRepo.NewPostRepository(db)
-	commentRepo := communityRepo.NewCommentRepository(db)
+	postRepo := communityRepo.NewPostRepository(db, "https://img.example.com")
+	commentRepo := communityRepo.NewCommentRepository(db, "https://img.example.com")
 	postHandler := NewPostHandler(communityService.NewPostService(
 		postRepo, galgameRepo.NewGalgameRepository(db), rbacSvc,
 	))
