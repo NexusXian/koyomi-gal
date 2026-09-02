@@ -1719,7 +1719,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "验证码发送任务已创建",
+                        "description": "验证码已发送，请查收",
                         "schema": {
                             "$ref": "#/definitions/response.MessageResponse"
                         }

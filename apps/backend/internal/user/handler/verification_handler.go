@@ -29,7 +29,7 @@ func NewVerificationHandler(verificationService *service.VerificationService) *V
 // @Accept       json
 // @Produce      json
 // @Param        request body dto.SendVerificationCodeRequest true "发送验证码请求"
-// @Success      202 {object} response.MessageResponse "验证码发送任务已创建"
+// @Success      202 {object} response.MessageResponse "验证码已发送，请查收"
 // @Failure      400 {object} response.ErrorResponse "邮箱或验证码用途格式不正确"
 // @Failure      429 {object} response.ErrorResponse "请求过于频繁"
 // @Failure      500 {object} response.ErrorResponse "验证码发送任务创建失败"
@@ -62,5 +62,5 @@ func (h *VerificationHandler) SendCode(c *gin.Context) {
 		return
 	}
 
-	response.AcceptedWithMsg(c, "验证码发送任务已创建")
+	response.AcceptedWithMsg(c, "验证码已发送，请查收")
 }
