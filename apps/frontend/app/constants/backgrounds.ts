@@ -9,7 +9,7 @@ export const ALLOWED_BACKGROUND_TYPES = [
   'image/avif'
 ] as const
 
-export const MAX_BACKGROUND_SIZE = 10 * 1024 * 1024
+export const MAX_BACKGROUND_SIZE = 20 * 1024 * 1024
 
 export const BACKGROUND_PRESETS: BackgroundPreset[] = [
   {

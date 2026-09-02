@@ -1,4 +1,7 @@
-import { AUTH_ENDPOINTS } from '~/constants/api'
+import {
+  AUTH_ENDPOINTS,
+  USER_ENDPOINTS
+} from '~/constants/api'
 import type { ApiClient, ApiResponse } from '~/types/api'
 import type {
   AuthSessionPayload,
@@ -6,7 +9,7 @@ import type {
   RegistrationCredentials,
   VerificationPurpose
 } from '~/types/auth'
-import type { UserSession } from '~/types/user'
+import type { User, UserSession } from '~/types/user'
 
 function getResponseData<T>(response: ApiResponse<T>): T {
   if (response.code !== 0 || response.data === undefined) {
@@ -104,6 +107,17 @@ export function createAuthService(api: ApiClient) {
       if (response.code !== 0) {
         throw new Error(response.msg || 'Logout failed')
       }
+    },
+
+    async updateMe(payload: {
+      avatar_asset_id: number | null
+    }): Promise<User> {
+      const response = await api<ApiResponse<User>>(USER_ENDPOINTS.me, {
+        method: 'PATCH',
+        body: payload
+      })
+
+      return getResponseData(response)
     }
   }
 }

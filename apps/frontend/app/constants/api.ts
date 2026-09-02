@@ -7,3 +7,8 @@ export const AUTH_ENDPOINTS = {
   logout: `${API_PREFIX}/auth/logout`,
   verificationCodes: `${API_PREFIX}/auth/verification-codes`
 } as const
+
+export const USER_ENDPOINTS = {
+  me: `${API_PREFIX}/me`,
+  mePreferences: `${API_PREFIX}/me/preferences`
+} as const

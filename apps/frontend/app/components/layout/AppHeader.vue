@@ -34,6 +34,16 @@ const avatarUser = computed(() =>
 )
 
 async function handleAccountAction({ key }: { key: string | number }): Promise<void> {
+  if (key === 'galgames') {
+    void router.push('/my')
+    return
+  }
+
+  if (key === 'settings') {
+    void router.push('/settings/profile')
+    return
+  }
+
   if (key === 'logout') {
     loggingOut.value = true
     try {
@@ -177,10 +187,16 @@ onMounted(() => {
             </div>
             <template #overlay>
               <a-menu @click="handleAccountAction">
-                <a-menu-item key="galgames" disabled>
+                <a-menu-item key="settings">
+                  <span class="menu-item-label">
+                    <KunIcon name="lucide:settings" />
+                    个人设置
+                  </span>
+                </a-menu-item>
+                <a-menu-item key="galgames">
                   <span class="menu-item-label">
                     <KunIcon name="lucide:gamepad-2" />
-                    我的 Galgame
+                    我的
                   </span>
                 </a-menu-item>
                 <a-menu-divider />

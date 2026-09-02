@@ -12,7 +12,7 @@ export interface BackgroundPreset {
 export interface BackgroundSettings {
   source: BackgroundSource
   presetId: string | null
-  customImageId: string | null
+  customImageId: number | null
   opacity: number
   blur: number
   position: string
@@ -27,4 +27,25 @@ export const DEFAULT_BACKGROUND_SETTINGS: BackgroundSettings = {
   blur: 0,
   position: 'center center',
   size: 'cover'
+}
+
+export interface UserPreferences {
+  background_source: BackgroundSource
+  background_asset_id: number | null
+  background_preset: string | null
+  background_opacity: number
+  background_blur: number
+  background_position: string
+  background_size: BackgroundSize
+  background_image_url: string
+}
+
+export interface UserPreferencesPayload {
+  background_source: BackgroundSource
+  background_asset_id?: number | null
+  background_preset?: string | null
+  background_opacity: number
+  background_blur: number
+  background_position: string
+  background_size: BackgroundSize
 }

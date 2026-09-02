@@ -1,17 +1,18 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import {
-  ALLOWED_BACKGROUND_TYPES,
   BACKGROUND_PRESETS,
-  BACKGROUND_SETTINGS_STORAGE_KEY,
-  MAX_BACKGROUND_SIZE
+  BACKGROUND_SETTINGS_STORAGE_KEY
 } from '~/constants/backgrounds'
-import { useBackgroundStorage } from '~/composables/useBackgroundStorage'
+import { useImageUpload } from '~/composables/useImageUpload'
+import { createPreferenceService } from '~/services/preference'
+import { useUserStore } from '~/stores/user'
 import {
   DEFAULT_BACKGROUND_SETTINGS,
   type BackgroundSettings,
   type BackgroundSize,
-  type BackgroundSource
+  type BackgroundSource,
+  type UserPreferences
 } from '~/types/background'
 
 const PERSISTENCE_DELAY = 250
@@ -24,6 +25,18 @@ function isBackgroundSource(value: unknown): value is BackgroundSource {
   return value === 'none' || value === 'preset' || value === 'custom'
 }
 
+function clampOpacity(value: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : DEFAULT_BACKGROUND_SETTINGS.opacity
+}
+
+function clampBlur(value: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(20, Math.max(0, value))
+    : DEFAULT_BACKGROUND_SETTINGS.blur
+}
+
 function normalizeSettings(value: unknown): BackgroundSettings {
   if (!value || typeof value !== 'object') {
     return createDefaultSettings()
@@ -33,63 +46,36 @@ function normalizeSettings(value: unknown): BackgroundSettings {
   const source = isBackgroundSource(candidate.source) ? candidate.source : 'none'
   const presetId = typeof candidate.presetId === 'string' ? candidate.presetId : null
   const customImageId =
-    typeof candidate.customImageId === 'string' ? candidate.customImageId : null
-  const opacity =
-    typeof candidate.opacity === 'number' && Number.isFinite(candidate.opacity)
-      ? Math.min(1, Math.max(0, candidate.opacity))
-      : DEFAULT_BACKGROUND_SETTINGS.opacity
-  const blur =
-    typeof candidate.blur === 'number' && Number.isFinite(candidate.blur)
-      ? Math.min(20, Math.max(0, candidate.blur))
-      : DEFAULT_BACKGROUND_SETTINGS.blur
+    typeof candidate.customImageId === 'number' ? candidate.customImageId : null
+  const opacity = clampOpacity(candidate.opacity ?? DEFAULT_BACKGROUND_SETTINGS.opacity)
+  const blur = clampBlur(candidate.blur ?? DEFAULT_BACKGROUND_SETTINGS.blur)
   const position =
     typeof candidate.position === 'string' && candidate.position.trim()
       ? candidate.position
       : DEFAULT_BACKGROUND_SETTINGS.position
   const size: BackgroundSize = candidate.size === 'contain' ? 'contain' : 'cover'
 
-  if (
-    source === 'preset' &&
-    !BACKGROUND_PRESETS.some((preset) => preset.id === presetId)
-  ) {
-    return {
-      ...createDefaultSettings(),
-      opacity,
-      blur,
-      position,
-      size,
-      customImageId
-    }
+  if (source === 'preset' && !BACKGROUND_PRESETS.some((preset) => preset.id === presetId)) {
+    return { ...createDefaultSettings(), opacity, blur, position, size }
   }
 
-  if (source === 'custom' && !customImageId) {
-    return {
-      ...createDefaultSettings(),
-      opacity,
-      blur,
-      position,
-      size,
-      presetId
-    }
+  // Custom backgrounds live in R2 and require a server asset; local storage
+  // can no longer back them, so legacy custom entries fall back to none.
+  if (source === 'custom' || customImageId !== null) {
+    return { ...createDefaultSettings(), opacity, blur, position, size }
   }
 
-  return {
-    source,
-    presetId,
-    customImageId,
-    opacity,
-    blur,
-    position,
-    size
-  }
+  return { source, presetId, customImageId: null, opacity, blur, position, size }
 }
 
 export const useBackgroundStore = defineStore('background', () => {
+  const userStore = useUserStore()
   const settings = ref<BackgroundSettings>(createDefaultSettings())
   const initialized = ref(false)
   const initializing = ref(false)
   const customImageUrl = ref<string | null>(null)
-  const storage = useBackgroundStorage()
+  // True once preferences have been loaded from the server for this login.
+  const serverSynced = ref(false)
   let persistenceTimer: ReturnType<typeof setTimeout> | null = null
   let pendingPersistence = false
 
@@ -117,13 +103,31 @@ export const useBackgroundStore = defineStore('background', () => {
 
   const hasBackground = computed(() => Boolean(backgroundUrl.value))
 
+  function preferenceService() {
+    return createPreferenceService(useNuxtApp().$api)
+  }
+
   function persistSettings(): void {
     if (!import.meta.client || !initialized.value) {
       return
     }
 
+    if (serverSynced.value) {
+      const payload = toPayload()
+      if (payload.background_source === 'custom' && !payload.background_asset_id) {
+        return
+      }
+      preferenceService().updatePreferences(payload).catch(() => {
+        // Preference sync is best-effort; the local state stays applied.
+      })
+      return
+    }
+
     try {
-      localStorage.setItem(BACKGROUND_SETTINGS_STORAGE_KEY, JSON.stringify(settings.value))
+      localStorage.setItem(
+        BACKGROUND_SETTINGS_STORAGE_KEY,
+        JSON.stringify(settings.value)
+      )
     } catch {
       // Browsers may block local storage in private or restricted contexts.
     }
@@ -149,12 +153,78 @@ export const useBackgroundStore = defineStore('background', () => {
     }, PERSISTENCE_DELAY)
   }
 
-  function setCustomImageUrl(url: string | null): void {
-    if (customImageUrl.value && customImageUrl.value !== url) {
-      URL.revokeObjectURL(customImageUrl.value)
+  function toPayload() {
+    const source = settings.value.source
+    return {
+      background_source: source,
+      background_asset_id:
+        source === 'custom' ? settings.value.customImageId : null,
+      background_preset: source === 'preset' ? settings.value.presetId : null,
+      background_opacity: settings.value.opacity,
+      background_blur: settings.value.blur,
+      background_position: settings.value.position,
+      background_size: settings.value.size
+    }
+  }
+
+  function applyPreferences(preferences: UserPreferences): void {
+    const source = isBackgroundSource(preferences.background_source)
+      ? preferences.background_source
+      : 'none'
+    const imageUrl = preferences.background_image_url || null
+
+    // A custom reference without a resolvable URL (e.g. deleted by an admin)
+    // degrades to no background instead of showing a broken one.
+    if (source === 'custom' && !imageUrl) {
+      settings.value = {
+        ...createDefaultSettings(),
+        opacity: clampOpacity(preferences.background_opacity),
+        blur: clampBlur(preferences.background_blur),
+        position: preferences.background_position || DEFAULT_BACKGROUND_SETTINGS.position,
+        size: preferences.background_size === 'contain' ? 'contain' : 'cover'
+      }
+      customImageUrl.value = null
+      return
     }
 
-    customImageUrl.value = url
+    settings.value = {
+      source,
+      presetId: preferences.background_preset ?? null,
+      customImageId: preferences.background_asset_id ?? null,
+      opacity: clampOpacity(preferences.background_opacity),
+      blur: clampBlur(preferences.background_blur),
+      position: preferences.background_position || DEFAULT_BACKGROUND_SETTINGS.position,
+      size: preferences.background_size === 'contain' ? 'contain' : 'cover'
+    }
+    customImageUrl.value = imageUrl
+  }
+
+  function loadLocalSettings(): void {
+    try {
+      const savedSettings = localStorage.getItem(BACKGROUND_SETTINGS_STORAGE_KEY)
+      settings.value = savedSettings
+        ? normalizeSettings(JSON.parse(savedSettings))
+        : createDefaultSettings()
+    } catch {
+      settings.value = createDefaultSettings()
+    }
+  }
+
+  async function loadFromServer(): Promise<void> {
+    try {
+      const preferences = await preferenceService().getPreferences()
+      applyPreferences(preferences)
+      serverSynced.value = true
+      initialized.value = true
+    } catch {
+      // Keep the local (guest) settings when preferences cannot be loaded.
+    }
+  }
+
+  function revertToGuest(): void {
+    serverSynced.value = false
+    customImageUrl.value = null
+    loadLocalSettings()
   }
 
   async function initialize(): Promise<void> {
@@ -163,42 +233,32 @@ export const useBackgroundStore = defineStore('background', () => {
     }
 
     initializing.value = true
-    let shouldPersist = false
-
     try {
-      try {
-        const savedSettings = localStorage.getItem(BACKGROUND_SETTINGS_STORAGE_KEY)
-        settings.value = savedSettings
-          ? normalizeSettings(JSON.parse(savedSettings))
-          : createDefaultSettings()
-      } catch {
-        settings.value = createDefaultSettings()
-      }
-
-      if (settings.value.source === 'custom' && settings.value.customImageId) {
-        try {
-          const blob = await storage.getBackground(settings.value.customImageId)
-          if (blob) {
-            setCustomImageUrl(URL.createObjectURL(blob))
-          } else {
-            settings.value.source = 'none'
-            settings.value.customImageId = null
-            shouldPersist = true
-          }
-        } catch {
-          settings.value.source = 'none'
-          settings.value.customImageId = null
-          shouldPersist = true
-        }
-      }
+      loadLocalSettings()
     } finally {
       initialized.value = true
       initializing.value = false
-      if (shouldPersist || pendingPersistence) {
+      if (pendingPersistence) {
         persistSettings()
         pendingPersistence = false
       }
     }
+  }
+
+  // Server preferences take over once the user is authenticated; logging out
+  // falls back to the guest (localStorage) state.
+  if (import.meta.client) {
+    watch(
+      () => userStore.isAuthenticated,
+      (authenticated) => {
+        if (authenticated && !serverSynced.value) {
+          void loadFromServer()
+        } else if (!authenticated && serverSynced.value) {
+          revertToGuest()
+        }
+      },
+      { immediate: true }
+    )
   }
 
   function selectPreset(id: string): void {
@@ -211,60 +271,36 @@ export const useBackgroundStore = defineStore('background', () => {
     schedulePersistence()
   }
 
-  async function selectCustomImage(id: string): Promise<void> {
-    if (!import.meta.client) {
+  function useCustomImage(): void {
+    if (!settings.value.customImageId) {
       return
     }
 
-    const blob = await storage.getBackground(id)
-    if (!blob) {
-      throw new Error('自定义背景图片已不存在')
-    }
-
-    setCustomImageUrl(URL.createObjectURL(blob))
-    settings.value.customImageId = id
     settings.value.source = 'custom'
     schedulePersistence()
   }
 
   async function uploadCustomImage(file: File): Promise<void> {
-    if (!ALLOWED_BACKGROUND_TYPES.includes(file.type as (typeof ALLOWED_BACKGROUND_TYPES)[number])) {
-      throw new Error('不支持的图片格式')
+    if (!userStore.isAuthenticated) {
+      throw new Error('登录后才能上传自定义背景')
     }
 
-    if (file.size > MAX_BACKGROUND_SIZE) {
-      throw new Error('背景图片不能超过 10MB')
-    }
+    const { uploadImage } = useImageUpload()
+    const asset = await uploadImage(file, 'backgrounds')
 
-    const id = await storage.saveBackground(file)
-    const previousImageId = settings.value.customImageId
-
-    if (previousImageId) {
-      try {
-        await storage.deleteBackground(previousImageId)
-      } catch (error) {
-        try {
-          await storage.deleteBackground(id)
-        } catch {
-          // Keep the original image active when replacement cleanup cannot finish.
-        }
-        throw error
-      }
-    }
-
-    setCustomImageUrl(URL.createObjectURL(file))
-    settings.value.customImageId = id
+    customImageUrl.value = asset.url
+    settings.value.customImageId = asset.id
     settings.value.source = 'custom'
     schedulePersistence()
   }
 
   function setOpacity(value: number): void {
-    settings.value.opacity = Math.min(1, Math.max(0, value))
+    settings.value.opacity = clampOpacity(value)
     schedulePersistence()
   }
 
   function setBlur(value: number): void {
-    settings.value.blur = Math.min(20, Math.max(0, value))
+    settings.value.blur = clampBlur(value)
     schedulePersistence()
   }
 
@@ -287,13 +323,8 @@ export const useBackgroundStore = defineStore('background', () => {
     schedulePersistence()
   }
 
-  async function deleteCustomImage(): Promise<void> {
-    const id = settings.value.customImageId
-    if (id) {
-      await storage.deleteBackground(id)
-    }
-
-    setCustomImageUrl(null)
+  function deleteCustomImage(): void {
+    customImageUrl.value = null
     settings.value.customImageId = null
     if (settings.value.source === 'custom') {
       settings.value.source = 'none'
@@ -301,17 +332,9 @@ export const useBackgroundStore = defineStore('background', () => {
     schedulePersistence()
   }
 
-  async function reset(): Promise<void> {
-    try {
-      await storage.clearBackgrounds()
-    } catch {
-      if (settings.value.customImageId) {
-        throw new Error('无法删除已保存的自定义背景')
-      }
-    }
-
-    setCustomImageUrl(null)
+  function reset(): void {
     settings.value = createDefaultSettings()
+    customImageUrl.value = null
     schedulePersistence()
   }
 
@@ -321,7 +344,7 @@ export const useBackgroundStore = defineStore('background', () => {
       persistSettings()
       persistenceTimer = null
     }
-    setCustomImageUrl(null)
+    customImageUrl.value = null
   }
 
   return {
@@ -333,7 +356,7 @@ export const useBackgroundStore = defineStore('background', () => {
     hasBackground,
     initialize,
     selectPreset,
-    selectCustomImage,
+    useCustomImage,
     uploadCustomImage,
     setOpacity,
     setBlur,
@@ -342,7 +365,6 @@ export const useBackgroundStore = defineStore('background', () => {
     disableBackground,
     deleteCustomImage,
     reset,
-    setCustomImageUrl,
     dispose
   }
 })

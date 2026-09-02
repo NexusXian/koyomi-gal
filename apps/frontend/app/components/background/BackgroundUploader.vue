@@ -4,13 +4,14 @@ import { message } from 'ant-design-vue'
 import { ALLOWED_BACKGROUND_TYPES, MAX_BACKGROUND_SIZE } from '~/constants/backgrounds'
 
 const backgroundStore = useBackgroundStore()
+const userStore = useUserStore()
 const { settings } = storeToRefs(backgroundStore)
 const input = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
-const deleting = ref(false)
 
 const accept = ALLOWED_BACKGROUND_TYPES.join(',')
-const hasCustomImage = computed(() => Boolean(settings.value.customImageId))
+const isAuthenticated = computed(() => userStore.isAuthenticated)
+const hasCustomImage = computed(() => settings.value.customImageId !== null)
 const customImageActive = computed(() => settings.value.source === 'custom')
 
 function openFilePicker(): void {
@@ -37,29 +38,13 @@ async function handleFileChange(event: Event): Promise<void> {
   }
 }
 
-async function useCustomImage(): Promise<void> {
-  const id = settings.value.customImageId
-  if (!id) {
-    return
-  }
-
-  try {
-    await backgroundStore.selectCustomImage(id)
-  } catch (error) {
-    message.error(error instanceof Error ? error.message : '无法读取自定义背景')
-  }
+function useCustomImage(): void {
+  backgroundStore.useCustomImage()
 }
 
 async function deleteCustomImage(): Promise<void> {
-  deleting.value = true
-  try {
-    await backgroundStore.deleteCustomImage()
-    message.success('自定义背景已删除')
-  } catch {
-    message.error('自定义背景删除失败，请重试')
-  } finally {
-    deleting.value = false
-  }
+  backgroundStore.deleteCustomImage()
+  message.success('自定义背景已删除')
 }
 </script>
 
@@ -73,36 +58,43 @@ async function deleteCustomImage(): Promise<void> {
       @change="handleFileChange"
     >
 
-    <a-button block :loading="uploading" @click="openFilePicker">
-      <template #icon>
-        <KunIcon name="lucide:upload" />
-      </template>
-      {{ hasCustomImage ? '更换自定义背景' : '上传自定义背景' }}
-    </a-button>
+    <template v-if="isAuthenticated">
+      <a-button block :loading="uploading" @click="openFilePicker">
+        <template #icon>
+          <KunIcon name="lucide:upload" />
+        </template>
+        {{ hasCustomImage ? '更换自定义背景' : '上传自定义背景' }}
+      </a-button>
 
-    <p class="upload-hint">
-      支持 JPG、PNG、WebP、AVIF，最大 {{ MAX_BACKGROUND_SIZE / 1024 / 1024 }}MB
-    </p>
+      <p class="upload-hint">
+        支持 JPG、PNG、WebP、AVIF，最大 {{ MAX_BACKGROUND_SIZE / 1024 / 1024 }}MB
+      </p>
 
-    <div v-if="hasCustomImage" class="custom-actions">
-      <span class="saved-label">
-        <KunIcon name="lucide:image" />
-        已保存自定义背景
-      </span>
-      <div class="action-buttons">
-        <a-button v-if="!customImageActive" size="small" @click="useCustomImage">
-          使用
-        </a-button>
-        <a-popconfirm
-          title="确定删除自定义背景吗？"
-          ok-text="删除"
-          cancel-text="取消"
-          @confirm="deleteCustomImage"
-        >
-          <a-button size="small" danger :loading="deleting">删除</a-button>
-        </a-popconfirm>
+      <div v-if="hasCustomImage" class="custom-actions">
+        <span class="saved-label">
+          <KunIcon name="lucide:image" />
+          已保存自定义背景
+        </span>
+        <div class="action-buttons">
+          <a-button v-if="!customImageActive" size="small" @click="useCustomImage">
+            使用
+          </a-button>
+          <a-popconfirm
+            title="确定删除自定义背景吗？"
+            ok-text="删除"
+            cancel-text="取消"
+            @confirm="deleteCustomImage"
+          >
+            <a-button size="small" danger>删除</a-button>
+          </a-popconfirm>
+        </div>
       </div>
-    </div>
+    </template>
+
+    <p v-else class="upload-hint login-hint">
+      <KunIcon name="lucide:lock" />
+      登录后可上传自定义背景
+    </p>
   </div>
 </template>
 
@@ -110,7 +102,8 @@ async function deleteCustomImage(): Promise<void> {
 .background-uploader,
 .custom-actions,
 .saved-label,
-.action-buttons {
+.action-buttons,
+.login-hint {
   display: flex;
 }
 
@@ -135,13 +128,18 @@ async function deleteCustomImage(): Promise<void> {
   font-size: 12px;
 }
 
+.login-hint {
+  align-items: center;
+  gap: 6px;
+}
+
 .custom-actions {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--app-glass-border);
-  border-radius: var(--radius-kun-md);
+  border-radius: var(--radius-kun-md, 8px);
   background: var(--color-content2);
 }
 
