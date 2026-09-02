@@ -109,7 +109,7 @@ onMounted(() => {
         <div class="brand">
           <KunBrand
             name="Koyomi"
-            icon-src="/images/icons/Koyomi.png"
+            icon-src="/images/icons/koyomi.png"
             icon-alt="Koyomi"
             icon-class="size-9 rounded-kun-lg"
             name-class="text-xl font-bold tracking-tight"

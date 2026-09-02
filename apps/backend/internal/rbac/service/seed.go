@@ -90,6 +90,7 @@ var seedRolePermissions = map[string][]string{
 		"user:create",
 		"user:update",
 		"role:list",
+		"role:assign",
 		"permission:list",
 		"galgame:create",
 		"galgame:update",
