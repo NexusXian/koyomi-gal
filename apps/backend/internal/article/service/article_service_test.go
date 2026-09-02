@@ -113,7 +113,7 @@ func grantPermission(
 	if err != nil {
 		t.Fatalf("create role for %s: %v", permissionCode, err)
 	}
-	if err := rbac.SetRolePermissions(ctx, role.ID, []int64{permission.ID}); err != nil {
+	if err := rbac.SetRolePermissions(ctx, 0, role.ID, []int64{permission.ID}); err != nil {
 		t.Fatalf("grant permission %s: %v", permissionCode, err)
 	}
 	if err := rbac.AssignRoleToUser(ctx, userID, role.ID); err != nil {

@@ -43,7 +43,10 @@ func (app *App) setupRoutes() {
 	v2.GET("/posts/:id/comments", app.CommentHandler.ListPostComments)
 	v2.GET("/comments/:id/replies", app.CommentHandler.ListCommentReplies)
 
-	protected := v1.Group("", middleware.Auth(app.Config.Auth.AccessTokenSecret))
+	protected := v1.Group("", middleware.AuthWithUserChecker(
+		app.Config.Auth.AccessTokenSecret,
+		app.UserAuthRepository,
+	))
 	requirePermission := middleware.RequirePermission(app.RBACService)
 
 	protected.POST("/galgames", requirePermission("galgame:create"), app.CatalogHandler.CreateGalgame)
@@ -133,7 +136,7 @@ func (app *App) setupRoutes() {
 		roles.PUT("/:id", requirePermission("role:update"), app.RoleHandler.Update)
 		roles.DELETE("/:id", requirePermission("role:delete"), app.RoleHandler.Delete)
 		roles.GET("/:id/permissions", requirePermission("role:list"), app.RoleHandler.GetPermissions)
-		roles.PUT("/:id/permissions", requirePermission("role:assign"), app.RoleHandler.UpdatePermissions)
+		roles.PUT("/:id/permissions", requirePermission("permission:assign"), app.RoleHandler.UpdatePermissions)
 	}
 
 	permissions := protected.Group("/permissions")
@@ -146,6 +149,11 @@ func (app *App) setupRoutes() {
 
 	users := protected.Group("/users")
 	{
+		users.GET("", requirePermission("user:list"), app.UserAdminHandler.List)
+		users.GET("/:id", requirePermission("user:read"), app.UserAdminHandler.Get)
+		users.POST("", requirePermission("user:create"), app.UserAdminHandler.Create)
+		users.PUT("/:id", requirePermission("user:update"), app.UserAdminHandler.Update)
+		users.DELETE("/:id", requirePermission("user:delete"), app.UserAdminHandler.Delete)
 		users.GET("/:id/roles", requirePermission("role:list"), app.AssignmentHandler.ListUserRoles)
 		users.PUT("/:id/roles", requirePermission("role:assign"), app.AssignmentHandler.UpdateUserRoles)
 	}

@@ -44,7 +44,7 @@ var seedPermissions = []seedPermission{
 	{Code: "role:create", Name: "创建角色", Description: "允许创建角色"},
 	{Code: "role:update", Name: "更新角色", Description: "允许更新角色"},
 	{Code: "role:delete", Name: "删除角色", Description: "允许删除角色"},
-	{Code: "role:assign", Name: "分配角色", Description: "允许分配用户角色和角色权限"},
+	{Code: "role:assign", Name: "分配角色", Description: "允许分配用户角色"},
 	{Code: "permission:list", Name: "查看权限", Description: "允许查看权限列表"},
 	{Code: "permission:create", Name: "创建权限", Description: "允许创建权限"},
 	{Code: "permission:update", Name: "更新权限", Description: "允许更新权限"},

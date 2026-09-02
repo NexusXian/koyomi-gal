@@ -58,8 +58,10 @@ type App struct {
 	Queue               *queue.VerificationClient
 	MailWorker          *asynq.Server
 	UserAuthHandler     *userHandler.UserAuthHandler
+	UserAuthRepository  *userRepo.UserAuthRepository
 	VerificationHandler *userHandler.VerificationHandler
 	UserProfileHandler  *userHandler.UserProfileHandler
+	UserAdminHandler    *userHandler.UserAdminHandler
 	RBACService         *rbacService.RBACService
 	RoleHandler         *rbacHandler.RoleHandler
 	PermissionHandler   *rbacHandler.PermissionHandler
@@ -190,6 +192,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		cfg.Verification.IPLimit,
 	)
 	userPreferenceRepository := userRepo.NewUserPreferenceRepository(postgresDB)
+	userAdminRepository := userRepo.NewUserAdminRepository(postgresDB)
 	userProfileService := userService.NewUserProfileService(
 		userAuthRepository,
 		userPreferenceRepository,
@@ -205,6 +208,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		cfg.Auth.AccessTokenTTL,
 		cfg.Auth.RefreshTokenTTL,
 	)
+	userAdminService := userService.NewUserAdminService(userAdminRepository, rbacSvc)
 	app := &App{
 		Config:   cfg,
 		Postgres: postgresDB,
@@ -214,8 +218,10 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 			userAuthService,
 			cfg.Auth.RefreshTokenTTL,
 		),
+		UserAuthRepository:  userAuthRepository,
 		VerificationHandler: userHandler.NewVerificationHandler(verificationService),
 		UserProfileHandler:  userHandler.NewUserProfileHandler(userProfileService),
+		UserAdminHandler:    userHandler.NewUserAdminHandler(userAdminService),
 		RBACService:         rbacSvc,
 		RoleHandler:         rbacHandler.NewRoleHandler(rbacSvc),
 		PermissionHandler:   rbacHandler.NewPermissionHandler(rbacSvc),

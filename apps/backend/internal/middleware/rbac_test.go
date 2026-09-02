@@ -95,7 +95,7 @@ func (s *rbacTestServer) bindRoles(t *testing.T, userID uint, rolePermissions ma
 			}
 			permissionIDs = append(permissionIDs, permission.ID)
 		}
-		if err := s.svc.SetRolePermissions(ctx, role.ID, permissionIDs); err != nil {
+		if err := s.svc.SetRolePermissions(ctx, 0, role.ID, permissionIDs); err != nil {
 			t.Fatalf("set role permissions for %s: %v", roleCode, err)
 		}
 		if err := s.svc.AssignRoleToUser(ctx, userID, role.ID); err != nil {

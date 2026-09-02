@@ -1,14 +1,17 @@
 package middleware
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
 	appErrors "backend/pkg/errors"
+	"backend/pkg/logger"
 	"backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"go.uber.org/zap"
 )
 
 const (
@@ -23,8 +26,17 @@ type accessTokenClaims struct {
 	jwt.RegisteredClaims
 }
 
+type AccessUserChecker interface {
+	AccessUserStatus(ctx context.Context, userID uint) (exists, banned bool, err error)
+}
+
 // Auth validates the Bearer access token and stores the userID in the context.
 func Auth(secret string) gin.HandlerFunc {
+	return AuthWithUserChecker(secret, nil)
+}
+
+// AuthWithUserChecker additionally rejects tokens for deleted or banned users.
+func AuthWithUserChecker(secret string, checker AccessUserChecker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, ok := strings.CutPrefix(c.GetHeader("Authorization"), bearerPrefix)
 		if !ok || strings.TrimSpace(token) == "" {
@@ -38,6 +50,26 @@ func Auth(secret string) gin.HandlerFunc {
 			response.Error(c, appErrors.ErrAuthExpired())
 			c.Abort()
 			return
+		}
+
+		if checker != nil {
+			exists, banned, err := checker.AccessUserStatus(c.Request.Context(), userID)
+			if err != nil {
+				logger.Error("check access token user", zap.Uint("user_id", userID), zap.Error(err))
+				response.Error(c, appErrors.ErrInternal("用户状态校验失败"))
+				c.Abort()
+				return
+			}
+			if !exists {
+				response.Error(c, appErrors.ErrAuthExpired())
+				c.Abort()
+				return
+			}
+			if banned {
+				response.Error(c, appErrors.ErrAccountBanned())
+				c.Abort()
+				return
+			}
 		}
 
 		c.Set(contextUserIDKey, userID)

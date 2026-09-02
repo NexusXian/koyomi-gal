@@ -237,14 +237,21 @@ func (h *RoleHandler) UpdatePermissions(c *gin.Context) {
 		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
 		return
 	}
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
 
-	err = h.rbacService.SetRolePermissions(c.Request.Context(), roleID, req.PermissionIDs)
+	err = h.rbacService.SetRolePermissions(c.Request.Context(), actorID, roleID, req.PermissionIDs)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrRoleNotFound):
 			response.Error(c, appErrors.ErrNotFound("角色不存在"))
 		case errors.Is(err, service.ErrUnknownPermissionIDs):
 			response.Error(c, appErrors.ErrValidation("权限列表包含不存在的权限"))
+		case errors.Is(err, service.ErrSuperAdminPermissions):
+			response.Error(c, appErrors.ErrForbidden("只有超级管理员可以修改超级管理员角色权限"))
 		default:
 			logger.Error("update role permissions", zap.Int64("role_id", roleID), zap.Error(err))
 			response.Error(c, appErrors.ErrInternal("更新角色权限失败"))
@@ -252,12 +259,11 @@ func (h *RoleHandler) UpdatePermissions(c *gin.Context) {
 		return
 	}
 
-	operatorID, _ := middleware.CurrentUserID(c)
 	logger.Info(
 		"update role permissions",
 		zap.Int64("role_id", roleID),
 		zap.Int64s("permission_ids", req.PermissionIDs),
-		zap.Uint("operator_id", operatorID),
+		zap.Uint("operator_id", actorID),
 	)
 	response.OkWithMsg(c, "角色权限已更新")
 }

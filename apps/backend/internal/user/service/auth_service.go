@@ -165,6 +165,9 @@ func (s *UserAuthService) UserRegister(
 	}
 
 	if err := s.authRepo.CreateUser(ctx, newUser); err != nil {
+		if conflict := userConflictError(err); conflict != nil {
+			return conflict
+		}
 		logger.Error(
 			"failed to create user",
 			zap.String("username", username),

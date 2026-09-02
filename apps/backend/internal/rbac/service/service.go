@@ -12,6 +12,7 @@ import (
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 var (
@@ -25,6 +26,11 @@ var (
 	ErrUnknownRoleIDs        = errors.New("role ids contain unknown role")
 	ErrUnknownPermissionIDs  = errors.New("permission ids contain unknown permission")
 	ErrRoleProtected         = errors.New("role is protected")
+	ErrSelfRoleChange        = errors.New("cannot change own roles")
+	ErrSuperAdminRoleGuard   = errors.New("super admin role change requires super admin")
+	ErrLastSuperAdmin        = errors.New("cannot remove last super admin")
+	ErrSuperAdminPermissions = errors.New("super admin permissions require super admin")
+	ErrSuperAdminUserGuard   = errors.New("super admin user mutation requires super admin")
 )
 
 var (
@@ -128,7 +134,7 @@ func (s *RBACService) DeleteRole(ctx context.Context, roleID int64) error {
 	if role == nil {
 		return ErrRoleNotFound
 	}
-	if role.Code == RoleCodeSuperAdmin {
+	if isSeededRole(role.Code) {
 		return ErrRoleProtected
 	}
 
@@ -290,25 +296,53 @@ func (s *RBACService) AssignRoleByCode(ctx context.Context, userID uint, roleCod
 	return s.repo.InsertUserRoles(ctx, userID, []int64{role.ID})
 }
 
-// SetUserRoles replaces all roles of the user inside one transaction.
-func (s *RBACService) SetUserRoles(ctx context.Context, userID uint, roleIDs []int64) error {
-	if err := s.ensureUserExists(ctx, userID); err != nil {
-		return err
+// SetUserRoles replaces roles after applying actor and super-admin lockout guards.
+func (s *RBACService) SetUserRoles(
+	ctx context.Context,
+	actorID, userID uint,
+	roleIDs []int64,
+) error {
+	if actorID == userID {
+		return ErrSelfRoleChange
 	}
-
 	roleIDs = uniqueInt64(roleIDs)
-	if len(roleIDs) > 0 {
-		count, err := s.repo.CountRolesByIDs(ctx, roleIDs)
-		if err != nil {
-			logger.Error("count roles by ids", zap.Error(err))
-			return err
-		}
-		if count != int64(len(roleIDs)) {
-			return ErrUnknownRoleIDs
-		}
-	}
 
 	return s.repo.Transaction(ctx, func(tx *repository.RBACRepository) error {
+		superAdmin, err := tx.FindRoleByCodeForUpdate(ctx, RoleCodeSuperAdmin)
+		if err != nil {
+			return err
+		}
+		if err := ensureUserExists(ctx, tx, userID); err != nil {
+			return err
+		}
+		if err := validateRoleIDs(ctx, tx, roleIDs); err != nil {
+			return err
+		}
+
+		if superAdmin != nil {
+			actorIsSuperAdmin, err := tx.HasRole(ctx, actorID, RoleCodeSuperAdmin)
+			if err != nil {
+				return err
+			}
+			targetIsSuperAdmin, err := tx.HasRole(ctx, userID, RoleCodeSuperAdmin)
+			if err != nil {
+				return err
+			}
+			willBeSuperAdmin := containsInt64(roleIDs, superAdmin.ID)
+			if (targetIsSuperAdmin || willBeSuperAdmin) && !actorIsSuperAdmin {
+				return ErrSuperAdminRoleGuard
+			}
+			if targetIsSuperAdmin && !willBeSuperAdmin {
+				count, err := tx.CountUsersByRoleID(ctx, superAdmin.ID)
+				if err != nil {
+					return err
+				}
+				if count <= 1 {
+					return ErrLastSuperAdmin
+				}
+			}
+		}
+
 		if err := tx.DeleteUserRolesByUserID(ctx, userID); err != nil {
 			return err
 		}
@@ -328,34 +362,78 @@ func (s *RBACService) GetRolePermissions(ctx context.Context, roleID int64) ([]m
 	return s.repo.GetRolePermissions(ctx, roleID)
 }
 
-// SetRolePermissions replaces all permissions of the role inside one transaction.
-func (s *RBACService) SetRolePermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
-	role, err := s.repo.FindRoleByID(ctx, roleID)
-	if err != nil {
-		logger.Error("find role by id", zap.Int64("role_id", roleID), zap.Error(err))
-		return err
-	}
-	if role == nil {
-		return ErrRoleNotFound
-	}
-
+// SetRolePermissions protects the super-admin permission set from non-super-admin actors.
+func (s *RBACService) SetRolePermissions(
+	ctx context.Context,
+	actorID uint,
+	roleID int64,
+	permissionIDs []int64,
+) error {
 	permissionIDs = uniqueInt64(permissionIDs)
-	if len(permissionIDs) > 0 {
-		count, err := s.repo.CountPermissionsByIDs(ctx, permissionIDs)
+	return s.repo.Transaction(ctx, func(tx *repository.RBACRepository) error {
+		role, err := tx.FindRoleByIDForUpdate(ctx, roleID)
 		if err != nil {
-			logger.Error("count permissions by ids", zap.Error(err))
 			return err
 		}
-		if count != int64(len(permissionIDs)) {
-			return ErrUnknownPermissionIDs
+		if role == nil {
+			return ErrRoleNotFound
 		}
-	}
-
-	return s.repo.Transaction(ctx, func(tx *repository.RBACRepository) error {
+		if role.Code == RoleCodeSuperAdmin {
+			actorIsSuperAdmin, err := tx.HasRole(ctx, actorID, RoleCodeSuperAdmin)
+			if err != nil {
+				return err
+			}
+			if !actorIsSuperAdmin {
+				return ErrSuperAdminPermissions
+			}
+		}
+		if err := validatePermissionIDs(ctx, tx, permissionIDs); err != nil {
+			return err
+		}
 		if err := tx.DeleteRolePermissionsByRoleID(ctx, roleID); err != nil {
 			return err
 		}
 		return tx.InsertRolePermissions(ctx, roleID, permissionIDs)
+	})
+}
+
+// RunUserAdminMutation serializes super-admin account checks with role changes.
+func (s *RBACService) RunUserAdminMutation(
+	ctx context.Context,
+	actorID, targetID uint,
+	deleting bool,
+	mutate func(tx *gorm.DB) error,
+) error {
+	return s.repo.TransactionWithDB(ctx, func(tx *repository.RBACRepository, db *gorm.DB) error {
+		superAdmin, err := tx.FindRoleByCodeForUpdate(ctx, RoleCodeSuperAdmin)
+		if err != nil {
+			return err
+		}
+		if superAdmin != nil {
+			targetIsSuperAdmin, err := tx.HasRole(ctx, targetID, RoleCodeSuperAdmin)
+			if err != nil {
+				return err
+			}
+			if targetIsSuperAdmin {
+				actorIsSuperAdmin, err := tx.HasRole(ctx, actorID, RoleCodeSuperAdmin)
+				if err != nil {
+					return err
+				}
+				if !actorIsSuperAdmin {
+					return ErrSuperAdminUserGuard
+				}
+				if deleting {
+					count, err := tx.CountUsersByRoleID(ctx, superAdmin.ID)
+					if err != nil {
+						return err
+					}
+					if count <= 1 {
+						return ErrLastSuperAdmin
+					}
+				}
+			}
+		}
+		return mutate(db)
 	})
 }
 
@@ -382,4 +460,56 @@ func uniqueInt64(values []int64) []int64 {
 		unique = append(unique, value)
 	}
 	return unique
+}
+
+func ensureUserExists(ctx context.Context, repo *repository.RBACRepository, userID uint) error {
+	exists, err := repo.UserExists(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+func validateRoleIDs(ctx context.Context, repo *repository.RBACRepository, roleIDs []int64) error {
+	if len(roleIDs) == 0 {
+		return nil
+	}
+	count, err := repo.CountRolesByIDs(ctx, roleIDs)
+	if err != nil {
+		return err
+	}
+	if count != int64(len(roleIDs)) {
+		return ErrUnknownRoleIDs
+	}
+	return nil
+}
+
+func validatePermissionIDs(ctx context.Context, repo *repository.RBACRepository, permissionIDs []int64) error {
+	if len(permissionIDs) == 0 {
+		return nil
+	}
+	count, err := repo.CountPermissionsByIDs(ctx, permissionIDs)
+	if err != nil {
+		return err
+	}
+	if count != int64(len(permissionIDs)) {
+		return ErrUnknownPermissionIDs
+	}
+	return nil
+}
+
+func containsInt64(values []int64, target int64) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
+func isSeededRole(code string) bool {
+	return code == RoleCodeSuperAdmin || code == RoleCodeAdmin || code == RoleCodeUser
 }

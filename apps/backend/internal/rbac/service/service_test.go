@@ -53,7 +53,7 @@ func TestHasPermissionThroughRole(t *testing.T) {
 	plainUser := testutil.CreateUser(t, db, "svc-plain")
 	role := createRole(t, svc, "deleter")
 	permission := createPermission(t, svc, "user:delete")
-	if err := svc.SetRolePermissions(ctx, role.ID, []int64{permission.ID}); err != nil {
+	if err := svc.SetRolePermissions(ctx, 0, role.ID, []int64{permission.ID}); err != nil {
 		t.Fatalf("set role permissions: %v", err)
 	}
 	if err := svc.AssignRoleToUser(ctx, adminUser, role.ID); err != nil {
@@ -121,11 +121,12 @@ func TestSetUserRoles(t *testing.T) {
 	ctx := context.Background()
 
 	userID := testutil.CreateUser(t, db, "replace-me")
+	actorID := testutil.CreateUser(t, db, "replace-actor")
 	roleA := createRole(t, svc, "replace_a")
 	roleB := createRole(t, svc, "replace_b")
 	roleC := createRole(t, svc, "replace_c")
 
-	if err := svc.SetUserRoles(ctx, userID, []int64{roleA.ID, roleA.ID}); err != nil {
+	if err := svc.SetUserRoles(ctx, actorID, userID, []int64{roleA.ID, roleA.ID}); err != nil {
 		t.Fatalf("set user roles: %v", err)
 	}
 	roles, err := svc.GetUserRoles(ctx, userID)
@@ -133,7 +134,7 @@ func TestSetUserRoles(t *testing.T) {
 		t.Fatalf("expected 1 unique role, got %d err=%v", len(roles), err)
 	}
 
-	if err := svc.SetUserRoles(ctx, userID, []int64{roleB.ID, roleC.ID}); err != nil {
+	if err := svc.SetUserRoles(ctx, actorID, userID, []int64{roleB.ID, roleC.ID}); err != nil {
 		t.Fatalf("set user roles: %v", err)
 	}
 	roles, err = svc.GetUserRoles(ctx, userID)
@@ -141,7 +142,7 @@ func TestSetUserRoles(t *testing.T) {
 		t.Fatalf("expected roles [replace_b replace_c], got %+v err=%v", roles, err)
 	}
 
-	if err := svc.SetUserRoles(ctx, userID, []int64{}); err != nil {
+	if err := svc.SetUserRoles(ctx, actorID, userID, []int64{}); err != nil {
 		t.Fatalf("clear user roles: %v", err)
 	}
 	roles, err = svc.GetUserRoles(ctx, userID)
@@ -149,12 +150,12 @@ func TestSetUserRoles(t *testing.T) {
 		t.Fatalf("expected roles cleared, got %+v err=%v", roles, err)
 	}
 
-	err = svc.SetUserRoles(ctx, userID, []int64{roleB.ID, roleB.ID + 1000})
+	err = svc.SetUserRoles(ctx, actorID, userID, []int64{roleB.ID, roleB.ID + 1000})
 	if !errors.Is(err, ErrUnknownRoleIDs) {
 		t.Fatalf("expected ErrUnknownRoleIDs, got %v", err)
 	}
 
-	err = svc.SetUserRoles(ctx, userID+1000, []int64{roleB.ID})
+	err = svc.SetUserRoles(ctx, actorID, userID+1000, []int64{roleB.ID})
 	if !errors.Is(err, ErrUserNotFound) {
 		t.Fatalf("expected ErrUserNotFound, got %v", err)
 	}
@@ -187,7 +188,7 @@ func TestDeleteRoleCleansAssociations(t *testing.T) {
 	userID := testutil.CreateUser(t, db, "orphan-check")
 	role := createRole(t, svc, "doomed")
 	permission := createPermission(t, svc, "doomed:act")
-	if err := svc.SetRolePermissions(ctx, role.ID, []int64{permission.ID}); err != nil {
+	if err := svc.SetRolePermissions(ctx, 0, role.ID, []int64{permission.ID}); err != nil {
 		t.Fatalf("set role permissions: %v", err)
 	}
 	if err := svc.AssignRoleToUser(ctx, userID, role.ID); err != nil {
@@ -219,7 +220,7 @@ func TestDeletePermissionCleansAssociations(t *testing.T) {
 
 	role := createRole(t, svc, "perm_loser")
 	permission := createPermission(t, svc, "gone:act")
-	if err := svc.SetRolePermissions(ctx, role.ID, []int64{permission.ID}); err != nil {
+	if err := svc.SetRolePermissions(ctx, 0, role.ID, []int64{permission.ID}); err != nil {
 		t.Fatalf("set role permissions: %v", err)
 	}
 
@@ -242,7 +243,7 @@ func TestSetRolePermissions(t *testing.T) {
 	permissionA := createPermission(t, svc, "grant:a")
 	permissionB := createPermission(t, svc, "grant:b")
 
-	if err := svc.SetRolePermissions(ctx, role.ID, []int64{permissionA.ID, permissionA.ID}); err != nil {
+	if err := svc.SetRolePermissions(ctx, 0, role.ID, []int64{permissionA.ID, permissionA.ID}); err != nil {
 		t.Fatalf("set role permissions: %v", err)
 	}
 	permissions, err := svc.GetRolePermissions(ctx, role.ID)
@@ -250,7 +251,7 @@ func TestSetRolePermissions(t *testing.T) {
 		t.Fatalf("expected 1 unique permission, got %d err=%v", len(permissions), err)
 	}
 
-	if err := svc.SetRolePermissions(ctx, role.ID, []int64{permissionB.ID}); err != nil {
+	if err := svc.SetRolePermissions(ctx, 0, role.ID, []int64{permissionB.ID}); err != nil {
 		t.Fatalf("set role permissions: %v", err)
 	}
 	permissions, err = svc.GetRolePermissions(ctx, role.ID)
@@ -258,12 +259,12 @@ func TestSetRolePermissions(t *testing.T) {
 		t.Fatalf("expected permissions replaced with grant:b, got %+v err=%v", permissions, err)
 	}
 
-	err = svc.SetRolePermissions(ctx, role.ID, []int64{permissionB.ID + 1000})
+	err = svc.SetRolePermissions(ctx, 0, role.ID, []int64{permissionB.ID + 1000})
 	if !errors.Is(err, ErrUnknownPermissionIDs) {
 		t.Fatalf("expected ErrUnknownPermissionIDs, got %v", err)
 	}
 
-	err = svc.SetRolePermissions(ctx, role.ID+1000, []int64{permissionB.ID})
+	err = svc.SetRolePermissions(ctx, 0, role.ID+1000, []int64{permissionB.ID})
 	if !errors.Is(err, ErrRoleNotFound) {
 		t.Fatalf("expected ErrRoleNotFound, got %v", err)
 	}
@@ -322,6 +323,43 @@ func TestSeedDefaults(t *testing.T) {
 
 	if err := svc.DeleteRole(ctx, superAdmin.ID); !errors.Is(err, ErrRoleProtected) {
 		t.Fatalf("expected ErrRoleProtected when deleting super_admin, got %v", err)
+	}
+	if err := svc.DeleteRole(ctx, admin.ID); !errors.Is(err, ErrRoleProtected) {
+		t.Fatalf("expected ErrRoleProtected when deleting admin, got %v", err)
+	}
+	if err := svc.DeleteRole(ctx, user.ID); !errors.Is(err, ErrRoleProtected) {
+		t.Fatalf("expected ErrRoleProtected when deleting user, got %v", err)
+	}
+}
+
+func TestActorAwareSuperAdminGuards(t *testing.T) {
+	svc, db := newTestService(t)
+	ctx := context.Background()
+	if err := svc.SeedDefaults(ctx); err != nil {
+		t.Fatalf("seed defaults: %v", err)
+	}
+	actorID := testutil.CreateUser(t, db, "role-actor")
+	targetID := testutil.CreateUser(t, db, "role-target")
+	superAdminID := testutil.CreateUser(t, db, "role-super")
+	if err := svc.AssignRoleByCode(ctx, superAdminID, RoleCodeSuperAdmin); err != nil {
+		t.Fatalf("assign super admin: %v", err)
+	}
+	superAdminRole, err := svc.repo.FindRoleByCode(ctx, RoleCodeSuperAdmin)
+	if err != nil || superAdminRole == nil {
+		t.Fatalf("find super admin role: %v", err)
+	}
+
+	if err := svc.SetUserRoles(ctx, actorID, actorID, nil); !errors.Is(err, ErrSelfRoleChange) {
+		t.Fatalf("expected self-role rejection, got %v", err)
+	}
+	if err := svc.SetUserRoles(ctx, actorID, targetID, []int64{superAdminRole.ID}); !errors.Is(err, ErrSuperAdminRoleGuard) {
+		t.Fatalf("expected super-admin assignment rejection, got %v", err)
+	}
+	if err := svc.SetUserRoles(ctx, actorID, superAdminID, nil); !errors.Is(err, ErrSuperAdminRoleGuard) {
+		t.Fatalf("expected super-admin modification rejection, got %v", err)
+	}
+	if err := svc.SetRolePermissions(ctx, actorID, superAdminRole.ID, nil); !errors.Is(err, ErrSuperAdminPermissions) {
+		t.Fatalf("expected super-admin permission rejection, got %v", err)
 	}
 }
 

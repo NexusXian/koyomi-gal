@@ -82,14 +82,25 @@ func (h *AssignmentHandler) UpdateUserRoles(c *gin.Context) {
 		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
 		return
 	}
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
 
-	err = h.rbacService.SetUserRoles(c.Request.Context(), uint(userID), req.RoleIDs)
+	err = h.rbacService.SetUserRoles(c.Request.Context(), actorID, uint(userID), req.RoleIDs)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrUserNotFound):
 			response.Error(c, appErrors.ErrNotFound("用户不存在"))
 		case errors.Is(err, service.ErrUnknownRoleIDs):
 			response.Error(c, appErrors.ErrValidation("角色列表包含不存在的角色"))
+		case errors.Is(err, service.ErrSelfRoleChange):
+			response.Error(c, appErrors.ErrForbidden("不能修改自己的角色"))
+		case errors.Is(err, service.ErrSuperAdminRoleGuard):
+			response.Error(c, appErrors.ErrForbidden("只有超级管理员可以调整超级管理员角色"))
+		case errors.Is(err, service.ErrLastSuperAdmin):
+			response.Error(c, appErrors.ErrConflict("不能移除最后一个超级管理员"))
 		default:
 			logger.Error("update user roles", zap.Uint("user_id", uint(userID)), zap.Error(err))
 			response.Error(c, appErrors.ErrInternal("更新用户角色失败"))
@@ -97,12 +108,11 @@ func (h *AssignmentHandler) UpdateUserRoles(c *gin.Context) {
 		return
 	}
 
-	operatorID, _ := middleware.CurrentUserID(c)
 	logger.Info(
 		"assign user roles",
 		zap.Uint("user_id", uint(userID)),
 		zap.Int64s("role_ids", req.RoleIDs),
-		zap.Uint("operator_id", operatorID),
+		zap.Uint("operator_id", actorID),
 	)
 	response.OkWithMsg(c, "用户角色已更新")
 }
