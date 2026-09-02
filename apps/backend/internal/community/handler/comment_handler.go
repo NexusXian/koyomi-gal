@@ -98,6 +98,38 @@ func (h *CommentHandler) ListCommentReplies(c *gin.Context) {
 	response.Ok(c, dto.CommentListData{Items: items, Total: total, Page: page, Limit: limit})
 }
 
+// ListAdminComments godoc
+// @Summary      管理端查询评论列表
+// @Description  按评论内容、作者或帖子标题搜索全部评论；需要 comment:moderate 权限
+// @ID           listAdminComments
+// @Tags         admin
+// @Produce      json
+// @Param        keyword query string false "评论内容、作者或帖子标题"
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
+// @Success      200 {object} dto.AdminCommentListResponse "评论列表"
+// @Failure      400 {object} response.ErrorResponse "查询参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      500 {object} response.ErrorResponse "查询评论失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/comments [get]
+func (h *CommentHandler) ListAdminComments(c *gin.Context) {
+	var query dto.AdminCommunityQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	comments, total, page, limit, err := h.commentService.ListAdmin(c.Request.Context(), &query)
+	if err != nil {
+		response.Error(c, appErrors.ErrInternal("查询评论失败"))
+		return
+	}
+	response.Ok(c, dto.AdminCommentListData{
+		Items: dto.NewAdminCommentList(comments), Total: total, Page: page, Limit: limit,
+	})
+}
+
 // CreateComment godoc
 // @Summary      发表评论
 // @Description  登录用户评论帖子；parent_id 指向一级评论，回复另一条回复时传 reply_to_comment_id

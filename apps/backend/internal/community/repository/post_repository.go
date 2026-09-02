@@ -20,6 +20,12 @@ type PostListOptions struct {
 	Limit     int
 }
 
+type AdminCommunityListOptions struct {
+	Keyword string
+	Page    int
+	Limit   int
+}
+
 type PostRepository struct {
 	db            *gorm.DB
 	avatarBaseURL string
@@ -143,6 +149,44 @@ func (r *PostRepository) List(ctx context.Context, options PostListOptions) ([]m
 		return nil, 0, fmt.Errorf("list posts: %w", err)
 	}
 	return posts, total, nil
+}
+
+func (r *PostRepository) ListAdmin(
+	ctx context.Context,
+	options AdminCommunityListOptions,
+) ([]model.Post, int64, error) {
+	base := func() *gorm.DB {
+		query := r.db.WithContext(ctx).Model(&model.Post{})
+		if options.Keyword == "" {
+			return query
+		}
+		pattern := "%" + escapeCommunityLikePattern(options.Keyword) + "%"
+		return query.Where(`(
+posts.title ILIKE ? ESCAPE E'\\' OR posts.content ILIKE ? ESCAPE E'\\' OR
+EXISTS (SELECT 1 FROM users WHERE users.id = posts.author_id AND users.username ILIKE ? ESCAPE E'\\') OR
+EXISTS (SELECT 1 FROM galgames WHERE galgames.id = posts.galgame_id AND galgames.title ILIKE ? ESCAPE E'\\')
+)`, pattern, pattern, pattern, pattern)
+	}
+	var total int64
+	if err := base().Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count admin posts: %w", err)
+	}
+	posts := make([]model.Post, 0)
+	if err := r.withNames(base()).
+		Order("posts.created_at DESC").Order("posts.id DESC").
+		Offset((options.Page - 1) * options.Limit).Limit(options.Limit).
+		Find(&posts).Error; err != nil {
+		return nil, 0, fmt.Errorf("list admin posts: %w", err)
+	}
+	return posts, total, nil
+}
+
+func escapeCommunityLikePattern(value string) string {
+	return strings.NewReplacer(
+		`\`, `\\`,
+		`%`, `\%`,
+		`_`, `\_`,
+	).Replace(value)
 }
 
 func (r *PostRepository) IncrementGalgamePostCount(ctx context.Context, galgameID uint) error {

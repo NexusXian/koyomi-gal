@@ -123,6 +123,33 @@ func (s *PostService) List(
 	return posts, total, page, limit, nil
 }
 
+func (s *PostService) ListAdmin(
+	ctx context.Context,
+	query *dto.AdminCommunityQuery,
+) ([]model.Post, int64, int, int, error) {
+	page, limit := communityAdminPagination(query.Page, query.Limit)
+	posts, total, err := s.posts.ListAdmin(ctx, repository.AdminCommunityListOptions{
+		Keyword: strings.TrimSpace(query.Keyword), Page: page, Limit: limit,
+	})
+	if err != nil {
+		logger.Error("list admin posts", zap.Error(err))
+	}
+	return posts, total, page, limit, err
+}
+
+func communityAdminPagination(page, limit int) (int, int) {
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	return page, limit
+}
+
 // Update replaces title and content. The actor must be the author or hold
 // the post:moderate permission.
 func (s *PostService) Update(

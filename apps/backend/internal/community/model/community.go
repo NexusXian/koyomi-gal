@@ -55,6 +55,7 @@ type Comment struct {
 	// Filled by repository joins, never written to the database.
 	AuthorName   string `gorm:"->" json:"author_name"`
 	AuthorAvatar string `gorm:"->" json:"author_avatar"`
+	PostTitle    string `gorm:"->" json:"post_title"`
 }
 
 type PostLike struct {

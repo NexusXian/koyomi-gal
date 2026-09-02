@@ -163,6 +163,45 @@ func (r *CommentRepository) ListRepliesByParentID(
 	return replies, total, nil
 }
 
+func (r *CommentRepository) ListAdmin(
+	ctx context.Context,
+	options AdminCommunityListOptions,
+) ([]model.Comment, int64, error) {
+	base := func() *gorm.DB {
+		query := r.db.WithContext(ctx).Model(&model.Comment{})
+		if options.Keyword == "" {
+			return query
+		}
+		pattern := "%" + escapeCommunityLikePattern(options.Keyword) + "%"
+		return query.Where(`(
+comments.content ILIKE ? ESCAPE E'\\' OR
+EXISTS (SELECT 1 FROM users WHERE users.id = comments.author_id AND users.username ILIKE ? ESCAPE E'\\') OR
+EXISTS (SELECT 1 FROM posts WHERE posts.id = comments.post_id AND posts.title ILIKE ? ESCAPE E'\\')
+)`, pattern, pattern, pattern)
+	}
+	var total int64
+	if err := base().Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count admin comments: %w", err)
+	}
+	comments := make([]model.Comment, 0)
+	err := r.withAdminAssociations(base()).
+		Order("comments.created_at DESC").Order("comments.id DESC").
+		Offset((options.Page - 1) * options.Limit).Limit(options.Limit).
+		Find(&comments).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("list admin comments: %w", err)
+	}
+	return comments, total, nil
+}
+
+func (r *CommentRepository) withAdminAssociations(query *gorm.DB) *gorm.DB {
+	return query.
+		Model(&model.Comment{}).
+		Select("comments.*, authors.username AS author_name, posts.title AS post_title").
+		Joins("LEFT JOIN users AS authors ON authors.id = comments.author_id").
+		Joins("JOIN posts ON posts.id = comments.post_id")
+}
+
 // CountReplies returns the number of direct replies of a top-level comment;
 // with only two levels this equals the subtree size minus one.
 func (r *CommentRepository) CountReplies(ctx context.Context, parentID uint) (int64, error) {

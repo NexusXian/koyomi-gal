@@ -184,6 +184,20 @@ func (s *CommentService) ListReplies(
 	return replies, total, page, limit, nil
 }
 
+func (s *CommentService) ListAdmin(
+	ctx context.Context,
+	query *dto.AdminCommunityQuery,
+) ([]model.Comment, int64, int, int, error) {
+	page, limit := communityAdminPagination(query.Page, query.Limit)
+	comments, total, err := s.comments.ListAdmin(ctx, repository.AdminCommunityListOptions{
+		Keyword: strings.TrimSpace(query.Keyword), Page: page, Limit: limit,
+	})
+	if err != nil {
+		logger.Error("list admin comments", zap.Error(err))
+	}
+	return comments, total, page, limit, err
+}
+
 // Update replaces the comment content. The actor must be the author or hold
 // the comment:moderate permission.
 func (s *CommentService) Update(

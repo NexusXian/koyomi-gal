@@ -94,6 +94,8 @@ func (app *App) setupRoutes() {
 		admin.GET("/images", requirePermission("image:read"), app.ImageHandler.ListAdminImages)
 		admin.GET("/images/:id", requirePermission("image:read"), app.ImageHandler.GetAdminImage)
 		admin.DELETE("/images/:id", requirePermission("image:delete"), app.ImageHandler.DeleteAdminImage)
+		admin.GET("/posts", requirePermission("post:moderate"), app.PostHandler.ListAdminPosts)
+		admin.GET("/comments", requirePermission("comment:moderate"), app.CommentHandler.ListAdminComments)
 	}
 
 	posts := protected.Group("/posts")

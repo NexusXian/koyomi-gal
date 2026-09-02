@@ -55,6 +55,38 @@ func (h *PostHandler) ListPosts(c *gin.Context) {
 	})
 }
 
+// ListAdminPosts godoc
+// @Summary      管理端查询帖子列表
+// @Description  按标题、内容、作者或 Galgame 标题搜索全部帖子；需要 post:moderate 权限
+// @ID           listAdminPosts
+// @Tags         admin
+// @Produce      json
+// @Param        keyword query string false "标题、内容、作者或 Galgame 标题"
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
+// @Success      200 {object} dto.AdminPostListResponse "帖子列表"
+// @Failure      400 {object} response.ErrorResponse "查询参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      500 {object} response.ErrorResponse "查询帖子失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/posts [get]
+func (h *PostHandler) ListAdminPosts(c *gin.Context) {
+	var query dto.AdminCommunityQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	posts, total, page, limit, err := h.postService.ListAdmin(c.Request.Context(), &query)
+	if err != nil {
+		response.Error(c, appErrors.ErrInternal("查询帖子失败"))
+		return
+	}
+	response.Ok(c, dto.AdminPostListData{
+		Items: dto.NewAdminPostList(posts), Total: total, Page: page, Limit: limit,
+	})
+}
+
 // GetPost godoc
 // @Summary      查看帖子详情
 // @Description  按 ID 返回帖子详情
