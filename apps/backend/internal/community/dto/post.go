@@ -6,6 +6,13 @@ import (
 	"backend/internal/community/model"
 )
 
+type CommunityUserSummary struct {
+	ID          uint   `json:"id"`
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name"`
+	AvatarURL   string `json:"avatar_url"`
+}
+
 type CreatePostRequest struct {
 	Title      string           `json:"title" binding:"required,max=255" example:"千恋＊万花通关感想"`
 	Content    string           `json:"content" binding:"required" example:"剧情感想……"`
@@ -32,20 +39,21 @@ type AdminCommunityQuery struct {
 }
 
 type PostData struct {
-	ID            uint             `json:"id" example:"1"`
-	GalgameID     *uint            `json:"galgame_id" example:"1"`
-	GalgameTitle  string           `json:"galgame_title" example:"千恋＊万花"`
-	AuthorID      *uint            `json:"author_id" example:"1"`
-	AuthorName    string           `json:"author_name" example:"koyomi"`
-	AuthorAvatar  string           `json:"author_avatar" example:"https://img.example.com/avatars/1/2026/09/uuid.png"`
-	Title         string           `json:"title" example:"千恋＊万花通关感想"`
-	Content       string           `json:"content" example:"剧情感想……"`
-	EditorMode    model.EditorMode `json:"editor_mode" example:"plain"`
-	LikeCount     int64            `json:"like_count" example:"10"`
-	CommentCount  int64            `json:"comment_count" example:"3"`
-	FavoriteCount int64            `json:"favorite_count" example:"2"`
-	CreatedAt     time.Time        `json:"created_at"`
-	UpdatedAt     time.Time        `json:"updated_at"`
+	ID            uint                  `json:"id" example:"1"`
+	GalgameID     *uint                 `json:"galgame_id" example:"1"`
+	GalgameTitle  string                `json:"galgame_title" example:"千恋＊万花"`
+	AuthorID      *uint                 `json:"author_id" example:"1"`
+	AuthorName    string                `json:"author_name" example:"koyomi"`
+	AuthorAvatar  string                `json:"author_avatar" example:"https://img.example.com/avatars/1/2026/09/uuid.png"`
+	Author        *CommunityUserSummary `json:"author"`
+	Title         string                `json:"title" example:"千恋＊万花通关感想"`
+	Content       string                `json:"content" example:"剧情感想……"`
+	EditorMode    model.EditorMode      `json:"editor_mode" example:"plain"`
+	LikeCount     int64                 `json:"like_count" example:"10"`
+	CommentCount  int64                 `json:"comment_count" example:"3"`
+	FavoriteCount int64                 `json:"favorite_count" example:"2"`
+	CreatedAt     time.Time             `json:"created_at"`
+	UpdatedAt     time.Time             `json:"updated_at"`
 }
 
 type PostListData struct {
@@ -97,7 +105,7 @@ type AdminPostListResponse struct {
 }
 
 func NewPostData(post *model.Post) PostData {
-	return PostData{
+	data := PostData{
 		ID:            post.ID,
 		GalgameID:     post.GalgameID,
 		GalgameTitle:  post.GalgameTitle,
@@ -113,6 +121,10 @@ func NewPostData(post *model.Post) PostData {
 		CreatedAt:     post.CreatedAt,
 		UpdatedAt:     post.UpdatedAt,
 	}
+	if post.AuthorID != nil {
+		data.Author = &CommunityUserSummary{ID: *post.AuthorID, Username: post.AuthorName, DisplayName: post.AuthorDisplayName, AvatarURL: post.AuthorAvatar}
+	}
+	return data
 }
 
 func NewPostListItems(posts []model.Post) []PostData {

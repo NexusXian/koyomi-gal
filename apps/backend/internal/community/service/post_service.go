@@ -13,6 +13,8 @@ import (
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
+	userModel "backend/internal/user/model"
+	userService "backend/internal/user/service"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -33,6 +35,11 @@ type PostService struct {
 	galgames      *galgameRepository.GalgameRepository
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
+	activities    userService.ActivityRecorder
+}
+
+func (s *PostService) SetActivityRecorder(recorder userService.ActivityRecorder) {
+	s.activities = recorder
 }
 
 func NewPostService(
@@ -93,7 +100,21 @@ func (s *PostService) Create(
 		logger.Error("create post", zap.Uint("author_id", authorID), zap.Error(err))
 		return nil, err
 	}
-	return s.posts.FindByID(ctx, post.ID)
+	created, err := s.posts.FindByID(ctx, post.ID)
+	if err != nil {
+		return nil, err
+	}
+	if s.activities != nil {
+		metadata := map[string]any{"title": created.Title}
+		if created.GalgameID != nil {
+			metadata["galgame_id"] = *created.GalgameID
+			metadata["galgame_title"] = created.GalgameTitle
+		}
+		if recordErr := s.activities.Record(ctx, authorID, userModel.ActivityPostCreated, &created.ID, metadata); recordErr != nil {
+			logger.Error("record post activity", zap.Uint("post_id", created.ID), zap.Error(recordErr))
+		}
+	}
+	return created, nil
 }
 
 func (s *PostService) Get(ctx context.Context, id uint) (*model.Post, error) {

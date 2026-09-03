@@ -6,6 +6,13 @@ import (
 	"backend/internal/resource/model"
 )
 
+type ResourceUserSummary struct {
+	ID          uint   `json:"id"`
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name"`
+	AvatarURL   string `json:"avatar_url"`
+}
+
 type CreateResourceRequest struct {
 	GalgameID   uint     `json:"galgame_id" binding:"required,gt=0" example:"1"`
 	Title       string   `json:"title" binding:"required,max=255" example:"千恋＊万花 官方整合包"`
@@ -39,16 +46,17 @@ type ResourceLinkData struct {
 }
 
 type ResourceData struct {
-	ID          uint               `json:"id" example:"1"`
-	GalgameID   uint               `json:"galgame_id" example:"1"`
-	UploaderID  *uint              `json:"uploader_id" example:"1"`
-	Title       string             `json:"title" example:"千恋＊万花 官方整合包"`
-	Type        int16              `json:"type" example:"1"`
-	Description string             `json:"description" example:"官方汉化整合包"`
-	Status      int16              `json:"status" example:"1"`
-	Links       []ResourceLinkData `json:"links"`
-	CreatedAt   time.Time          `json:"created_at"`
-	UpdatedAt   time.Time          `json:"updated_at"`
+	ID          uint                 `json:"id" example:"1"`
+	GalgameID   uint                 `json:"galgame_id" example:"1"`
+	UploaderID  *uint                `json:"uploader_id" example:"1"`
+	Uploader    *ResourceUserSummary `json:"uploader"`
+	Title       string               `json:"title" example:"千恋＊万花 官方整合包"`
+	Type        int16                `json:"type" example:"1"`
+	Description string               `json:"description" example:"官方汉化整合包"`
+	Status      int16                `json:"status" example:"1"`
+	Links       []ResourceLinkData   `json:"links"`
+	CreatedAt   time.Time            `json:"created_at"`
+	UpdatedAt   time.Time            `json:"updated_at"`
 }
 
 type ResourceListData struct {
@@ -92,7 +100,7 @@ func NewResourceData(resource *model.Resource) ResourceData {
 			CreatedAt: link.CreatedAt,
 		})
 	}
-	return ResourceData{
+	data := ResourceData{
 		ID:          resource.ID,
 		GalgameID:   resource.GalgameID,
 		UploaderID:  resource.UploaderID,
@@ -104,6 +112,13 @@ func NewResourceData(resource *model.Resource) ResourceData {
 		CreatedAt:   resource.CreatedAt,
 		UpdatedAt:   resource.UpdatedAt,
 	}
+	if resource.UploaderID != nil {
+		data.Uploader = &ResourceUserSummary{
+			ID: *resource.UploaderID, Username: resource.UploaderName,
+			DisplayName: resource.UploaderDisplayName, AvatarURL: resource.UploaderAvatar,
+		}
+	}
+	return data
 }
 
 func NewResourceListData(resources []model.Resource) []ResourceData {

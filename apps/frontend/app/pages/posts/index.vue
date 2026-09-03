@@ -83,6 +83,10 @@ watch([galgameId, page], () => {
 function updatePage(next: number): void {
   page.value = next
 }
+
+function openPost(id?: number): void {
+  if (id) void router.push(`/posts/${id}`)
+}
 </script>
 
 <template>
@@ -131,14 +135,30 @@ function updatePage(next: number): void {
         padding="md"
         :is-hoverable="true"
       >
-        <NuxtLink :to="`/posts/${post.id}`" class="post-link">
+        <article
+          class="post-link"
+          role="link"
+          tabindex="0"
+          @click="openPost(post.id)"
+          @keydown.enter="openPost(post.id)"
+        >
           <h3 class="post-title">{{ post.title }}</h3>
           <p class="post-excerpt">{{ postExcerpt(post) }}</p>
           <div class="post-meta">
-            <span class="post-author">
-              <KunIcon name="lucide:user-round" />
-              {{ post.author_name || (post.author_id ? `用户 #${post.author_id}` : '未知') }}
-            </span>
+            <UserLink
+              class="post-author"
+              :username="post.author?.username"
+              :display-name="post.author?.display_name || post.author_name"
+              :user-id="post.author?.id || post.author_id"
+            >
+              <UserAvatar
+                :avatar-url="post.author?.avatar_url || post.author_avatar"
+                :display-name="post.author?.display_name || post.author_name"
+                :username="post.author?.username"
+                size="sm"
+              />
+              {{ post.author?.display_name || post.author_name || post.author?.username || (post.author_id ? `用户 #${post.author_id}` : '未知') }}
+            </UserLink>
             <span class="post-item">
               <KunIcon name="lucide:calendar" />
               {{ formatDate(post.created_at) }}
@@ -156,7 +176,7 @@ function updatePage(next: number): void {
               {{ post.favorite_count ?? 0 }}
             </span>
           </div>
-        </NuxtLink>
+        </article>
       </KunCard>
     </div>
 
@@ -190,6 +210,7 @@ function updatePage(next: number): void {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  cursor: pointer;
 }
 
 .post-title {

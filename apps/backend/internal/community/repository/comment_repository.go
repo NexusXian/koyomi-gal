@@ -76,9 +76,18 @@ func (r *CommentRepository) FindByID(ctx context.Context, id uint) (*model.Comme
 func (r *CommentRepository) withAuthorName(query *gorm.DB) *gorm.DB {
 	return query.
 		Model(&model.Comment{}).
-		Select("comments.*, authors.username AS author_name, "+authorAvatarExpr("authors", "comment_avatar_assets"), r.avatarBaseURL).
+		Select(`comments.*, authors.username AS author_name,
+COALESCE(NULLIF(author_profiles.display_name, ''), authors.username) AS author_display_name,
+`+authorAvatarExpr("authors", "comment_avatar_assets")+`,
+reply_users.username AS reply_to_name,
+COALESCE(NULLIF(reply_profiles.display_name, ''), reply_users.username) AS reply_to_display_name,
+CASE WHEN reply_avatar_assets.object_key IS NOT NULL THEN CAST(? AS text) || '/' || reply_avatar_assets.object_key ELSE reply_users.avatar END AS reply_to_avatar`, r.avatarBaseURL, r.avatarBaseURL).
 		Joins("LEFT JOIN users AS authors ON authors.id = comments.author_id").
-		Joins(authorAvatarJoin("authors", "comment_avatar_assets"))
+		Joins("LEFT JOIN user_profiles AS author_profiles ON author_profiles.user_id = authors.id").
+		Joins(authorAvatarJoin("authors", "comment_avatar_assets")).
+		Joins("LEFT JOIN users AS reply_users ON reply_users.id = comments.reply_to_user_id").
+		Joins("LEFT JOIN user_profiles AS reply_profiles ON reply_profiles.user_id = reply_users.id").
+		Joins(authorAvatarJoin("reply_users", "reply_avatar_assets"))
 }
 
 // ListTopLevelByPost returns one page of top-level comments plus the total

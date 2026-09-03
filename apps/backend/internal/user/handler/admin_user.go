@@ -38,7 +38,7 @@ func NewUserAdminHandler(users *service.UserAdminService) *UserAdminHandler {
 // @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
 // @Failure      500 {object} response.ErrorResponse "查询用户失败"
 // @Security     BearerAuth
-// @Router       /api/v1/users [get]
+// @Router       /api/v1/admin/users [get]
 func (h *UserAdminHandler) List(c *gin.Context) {
 	var query dto.AdminUserQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -69,7 +69,7 @@ func (h *UserAdminHandler) List(c *gin.Context) {
 // @Failure      404 {object} response.ErrorResponse "用户不存在"
 // @Failure      500 {object} response.ErrorResponse "查询用户失败"
 // @Security     BearerAuth
-// @Router       /api/v1/users/{id} [get]
+// @Router       /api/v1/admin/users/{id} [get]
 func (h *UserAdminHandler) Get(c *gin.Context) {
 	id, ok := parseAdminUserID(c)
 	if !ok {
@@ -98,7 +98,7 @@ func (h *UserAdminHandler) Get(c *gin.Context) {
 // @Failure      409 {object} response.ErrorResponse "用户名或邮箱已存在"
 // @Failure      500 {object} response.ErrorResponse "创建用户失败"
 // @Security     BearerAuth
-// @Router       /api/v1/users [post]
+// @Router       /api/v1/admin/users [post]
 func (h *UserAdminHandler) Create(c *gin.Context) {
 	var req dto.CreateAdminUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -132,7 +132,7 @@ func (h *UserAdminHandler) Create(c *gin.Context) {
 // @Failure      409 {object} response.ErrorResponse "用户名或邮箱已存在"
 // @Failure      500 {object} response.ErrorResponse "更新用户失败"
 // @Security     BearerAuth
-// @Router       /api/v1/users/{id} [put]
+// @Router       /api/v1/admin/users/{id} [put]
 func (h *UserAdminHandler) Update(c *gin.Context) {
 	id, ok := parseAdminUserID(c)
 	if !ok {
@@ -172,7 +172,7 @@ func (h *UserAdminHandler) Update(c *gin.Context) {
 // @Failure      409 {object} response.ErrorResponse "不能删除当前登录用户"
 // @Failure      500 {object} response.ErrorResponse "删除用户失败"
 // @Security     BearerAuth
-// @Router       /api/v1/users/{id} [delete]
+// @Router       /api/v1/admin/users/{id} [delete]
 func (h *UserAdminHandler) Delete(c *gin.Context) {
 	id, ok := parseAdminUserID(c)
 	if !ok {

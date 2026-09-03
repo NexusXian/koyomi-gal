@@ -8,6 +8,8 @@
 
 export interface DtoActorData {
   avatar?: string;
+  avatar_url?: string;
+  display_name?: string;
   id?: number;
   username?: string;
 }

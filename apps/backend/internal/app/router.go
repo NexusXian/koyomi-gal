@@ -46,6 +46,20 @@ func (app *App) setupRoutes() {
 	v2.GET("/posts/:id/comments", app.CommentHandler.ListPostComments)
 	v2.GET("/comments/:id/replies", app.CommentHandler.ListCommentReplies)
 
+	publicUsers := v1.Group("/users", middleware.OptionalAuthWithUserChecker(
+		app.Config.Auth.AccessTokenSecret,
+		app.UserAuthRepository,
+	))
+	{
+		publicUsers.GET("/me", app.UserProfileHandler.GetPublicProfile)
+		publicUsers.GET("/:username", app.UserProfileHandler.GetPublicProfile)
+		publicUsers.GET("/:username/posts", app.UserProfileHandler.ListUserPosts)
+		publicUsers.GET("/:username/comments", app.UserProfileHandler.ListUserComments)
+		publicUsers.GET("/:username/ratings", app.UserProfileHandler.ListUserRatings)
+		publicUsers.GET("/:username/favorites", app.UserProfileHandler.ListUserFavorites)
+		publicUsers.GET("/:username/activities", app.UserProfileHandler.ListUserActivities)
+	}
+
 	protected := v1.Group("", middleware.AuthWithUserChecker(
 		app.Config.Auth.AccessTokenSecret,
 		app.UserAuthRepository,
@@ -114,6 +128,13 @@ func (app *App) setupRoutes() {
 		admin.DELETE("/images/:id", requirePermission("image:delete"), app.ImageHandler.DeleteAdminImage)
 		admin.GET("/posts", requirePermission("post:moderate"), app.PostHandler.ListAdminPosts)
 		admin.GET("/comments", requirePermission("comment:moderate"), app.CommentHandler.ListAdminComments)
+		admin.GET("/users", requirePermission("user:list"), app.UserAdminHandler.List)
+		admin.GET("/users/:id", requirePermission("user:read"), app.UserAdminHandler.Get)
+		admin.POST("/users", requirePermission("user:create"), app.UserAdminHandler.Create)
+		admin.PUT("/users/:id", requirePermission("user:update"), app.UserAdminHandler.Update)
+		admin.DELETE("/users/:id", requirePermission("user:delete"), app.UserAdminHandler.Delete)
+		admin.GET("/users/:id/roles", requirePermission("role:list"), app.AssignmentHandler.ListUserRoles)
+		admin.PUT("/users/:id/roles", requirePermission("role:assign"), app.AssignmentHandler.UpdateUserRoles)
 	}
 
 	posts := protected.Group("/posts")
@@ -170,20 +191,13 @@ func (app *App) setupRoutes() {
 		permissions.DELETE("/:id", requirePermission("permission:delete"), app.PermissionHandler.Delete)
 	}
 
-	users := protected.Group("/users")
-	{
-		users.GET("", requirePermission("user:list"), app.UserAdminHandler.List)
-		users.GET("/:id", requirePermission("user:read"), app.UserAdminHandler.Get)
-		users.POST("", requirePermission("user:create"), app.UserAdminHandler.Create)
-		users.PUT("/:id", requirePermission("user:update"), app.UserAdminHandler.Update)
-		users.DELETE("/:id", requirePermission("user:delete"), app.UserAdminHandler.Delete)
-		users.GET("/:id/roles", requirePermission("role:list"), app.AssignmentHandler.ListUserRoles)
-		users.PUT("/:id/roles", requirePermission("role:assign"), app.AssignmentHandler.UpdateUserRoles)
-	}
-
 	protected.GET("/me/permissions", app.AssignmentHandler.MePermissions)
 	protected.GET("/me/galgames", app.CatalogHandler.ListMyGalgames)
 	protected.PATCH("/me", app.UserProfileHandler.UpdateMe)
 	protected.GET("/me/preferences", app.UserProfileHandler.GetPreferences)
 	protected.PATCH("/me/preferences", app.UserProfileHandler.UpdatePreferences)
+	protected.GET("/users/me/profile", app.UserProfileHandler.GetMyProfile)
+	protected.PATCH("/users/me/profile", app.UserProfileHandler.UpdateProfile)
+	protected.GET("/users/me/privacy", app.UserProfileHandler.GetPrivacy)
+	protected.PATCH("/users/me/privacy", app.UserProfileHandler.UpdatePrivacy)
 }

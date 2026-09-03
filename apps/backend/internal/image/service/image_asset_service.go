@@ -64,13 +64,14 @@ var mimeTypeExtensions = map[string]string{
 
 // categorySizeLimits caps declared upload size per category.
 var categorySizeLimits = map[string]int64{
-	model.CategoryAvatar:     5 << 20,
-	model.CategoryPost:       15 << 20,
-	model.CategoryComment:    10 << 20,
-	model.CategoryGalgame:    maxImageSize,
-	model.CategoryBackground: maxImageSize,
-	model.CategoryBanner:     maxImageSize,
-	model.CategoryAdmin:      maxImageSize,
+	model.CategoryAvatar:        5 << 20,
+	model.CategoryPost:          15 << 20,
+	model.CategoryComment:       10 << 20,
+	model.CategoryGalgame:       maxImageSize,
+	model.CategoryBackground:    maxImageSize,
+	model.CategoryBanner:        maxImageSize,
+	model.CategoryProfileBanner: maxImageSize,
+	model.CategoryAdmin:         maxImageSize,
 }
 
 // adminCategories require an RBAC permission on top of login.

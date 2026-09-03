@@ -73,10 +73,12 @@ func (r *NotificationRepository) List(ctx context.Context, options ListOptions) 
 	notifications := make([]model.Notification, 0)
 	err := base().
 		Select(`notifications.*, actors.username AS actor_name,
+COALESCE(NULLIF(actor_profiles.display_name, ''), actors.username) AS actor_display_name,
 CASE WHEN actor_avatars.object_key IS NOT NULL
 THEN CAST(? AS text) || '/' || actor_avatars.object_key
 ELSE actors.avatar END AS actor_avatar`, r.avatarBaseURL).
 		Joins("LEFT JOIN users AS actors ON actors.id = notifications.actor_id").
+		Joins("LEFT JOIN user_profiles AS actor_profiles ON actor_profiles.user_id = actors.id").
 		Joins(fmt.Sprintf(`LEFT JOIN image_assets AS actor_avatars
 ON actor_avatars.id = actors.avatar_asset_id
 AND actor_avatars.user_id = actors.id

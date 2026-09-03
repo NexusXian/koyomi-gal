@@ -156,7 +156,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	userRelationService := galgameService.NewUserRelationService(galgameRepository, userRelationRepository)
 	galleryRepository := galgameRepo.NewGalleryRepository(postgresDB)
 
-	resourceRepository := resourceRepo.NewResourceRepository(postgresDB)
+	resourceRepository := resourceRepo.NewResourceRepository(postgresDB, cfg.R2.PublicURL)
 	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, rbacSvc)
 	resourceSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
 	reportRepository := resourceRepo.NewReportRepository(postgresDB)
@@ -217,11 +217,20 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	)
 	userPreferenceRepository := userRepo.NewUserPreferenceRepository(postgresDB)
 	userAdminRepository := userRepo.NewUserAdminRepository(postgresDB)
+	userProfileRepository := userRepo.NewUserProfileRepository(postgresDB, cfg.R2.PublicURL)
+	userActivityService := userService.NewUserActivityService(userProfileRepository)
 	userProfileService := userService.NewUserProfileService(
 		userAuthRepository,
 		userPreferenceRepository,
 		imageSvc,
+		userProfileRepository,
 	)
+	postService.SetActivityRecorder(userActivityService)
+	commentService.SetActivityRecorder(userActivityService)
+	ratingService.SetActivityRecorder(userActivityService)
+	favoriteService.SetActivityRecorder(userActivityService)
+	resourceSvc.SetActivityRecorder(userActivityService)
+	catalogService.SetActivityRecorder(userActivityService)
 	userAuthService := userService.NewUserAuthService(
 		userAuthRepository,
 		refreshSessionRepository,

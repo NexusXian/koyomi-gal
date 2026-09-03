@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DtoResourceLinkData } from './dtoResourceLinkData';
+import type { DtoResourceUserSummary } from './dtoResourceUserSummary';
 
 export interface DtoResourceData {
   created_at?: string;
@@ -17,5 +18,6 @@ export interface DtoResourceData {
   title?: string;
   type?: number;
   updated_at?: string;
+  uploader?: DtoResourceUserSummary;
   uploader_id?: number;
 }

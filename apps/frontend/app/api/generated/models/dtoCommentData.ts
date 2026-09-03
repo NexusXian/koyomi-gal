@@ -5,8 +5,10 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoCommunityUserSummary } from './dtoCommunityUserSummary';
 
 export interface DtoCommentData {
+  author?: DtoCommunityUserSummary;
   author_avatar?: string;
   author_id?: number;
   author_name?: string;
@@ -17,6 +19,7 @@ export interface DtoCommentData {
   parent_id?: number;
   post_id?: number;
   reply_count?: number;
+  reply_to?: DtoCommunityUserSummary;
   reply_to_user_id?: number;
   updated_at?: string;
 }

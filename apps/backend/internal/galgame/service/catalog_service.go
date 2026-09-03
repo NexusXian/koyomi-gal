@@ -13,6 +13,8 @@ import (
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
+	userModel "backend/internal/user/model"
+	userService "backend/internal/user/service"
 	"backend/pkg/logger"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -43,6 +45,11 @@ type CatalogService struct {
 	tags          *repository.TagRepository
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
+	activities    userService.ActivityRecorder
+}
+
+func (s *CatalogService) SetActivityRecorder(recorder userService.ActivityRecorder) {
+	s.activities = recorder
 }
 
 func (s *CatalogService) SetNotificationDependencies(
@@ -408,6 +415,11 @@ func (s *CatalogService) ReviewGalgame(
 		return nil, err
 	}
 	s.notifyGalgameReviewResult(ctx, actorID, galgame)
+	if req.Status == model.GalgameStatusPublished && galgame.CreatedBy != nil && s.activities != nil {
+		if recordErr := s.activities.Record(ctx, *galgame.CreatedBy, userModel.ActivityReviewApproved, &galgame.ID, map[string]any{"title": galgame.Title}); recordErr != nil {
+			logger.Error("record galgame approval activity", zap.Uint("galgame_id", galgame.ID), zap.Error(recordErr))
+		}
+	}
 	return galgame, nil
 }
 

@@ -10,7 +10,7 @@ type PresignImageRequest struct {
 	Filename    string `json:"filename" binding:"required,max=255" example:"cover.png"`
 	ContentType string `json:"content_type" binding:"required" example:"image/png"`
 	Size        int64  `json:"size" binding:"required,gt=0" example:"204800"`
-	Category    string `json:"category" binding:"required,oneof=avatars posts comments galgames backgrounds banners admin" example:"posts"`
+	Category    string `json:"category" binding:"required,oneof=avatars posts comments galgames backgrounds banners profile-banners admin" example:"posts"`
 }
 
 type PresignImageData struct {
@@ -57,7 +57,7 @@ type ImageDataResponse struct {
 type AdminImageQuery struct {
 	Page     int    `form:"page" binding:"omitempty,min=1,max=1000000"`
 	Limit    int    `form:"limit" binding:"omitempty,min=1,max=100"`
-	Category string `form:"category" binding:"omitempty,oneof=avatars posts comments galgames backgrounds banners admin" example:"posts"`
+	Category string `form:"category" binding:"omitempty,oneof=avatars posts comments galgames backgrounds banners profile-banners admin" example:"posts"`
 	UserID   *uint  `form:"user_id" binding:"omitempty,min=1"`
 	Status   *int16 `form:"status" binding:"omitempty,oneof=0 1 2 3" example:"1"`
 }

@@ -47,6 +47,8 @@ export interface HomePost {
     id?: number
     username?: string
     avatar?: string
+    avatar_url?: string
+    display_name?: string
   } | null
   galgame?: {
     id?: number

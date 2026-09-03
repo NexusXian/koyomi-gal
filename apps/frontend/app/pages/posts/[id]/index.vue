@@ -43,9 +43,10 @@ if (error.value || !post.value) {
 const postEditorMode = computed(() => normalizeEditorMode(post.value?.editor_mode))
 
 const postAuthor = computed(() => ({
-  id: post.value?.author_id ?? 0,
-  name: post.value?.author_name ?? '',
-  avatar: post.value?.author_avatar ?? ''
+  id: post.value?.author?.id ?? post.value?.author_id,
+  username: post.value?.author?.username,
+  displayName: post.value?.author?.display_name ?? post.value?.author_name,
+  avatarUrl: post.value?.author?.avatar_url ?? post.value?.author_avatar
 }))
 
 const postExcerpt = computed(() => {
@@ -237,10 +238,19 @@ onMounted(() => {
       <div class="post-head">
         <h1>{{ post?.title }}</h1>
         <div class="post-meta">
-          <span>
-            <KunAvatar :user="postAuthor" :is-navigation="false" size="sm" />
-            {{ post?.author_name || (post?.author_id ? `用户 #${post.author_id}` : '未知') }}
-          </span>
+          <UserLink
+            :username="postAuthor.username"
+            :display-name="postAuthor.displayName"
+            :user-id="postAuthor.id"
+          >
+            <UserAvatar
+              :avatar-url="postAuthor.avatarUrl"
+              :display-name="postAuthor.displayName"
+              :username="postAuthor.username"
+              size="sm"
+            />
+            {{ postAuthor.displayName || postAuthor.username || (postAuthor.id ? `用户 #${postAuthor.id}` : '未知') }}
+          </UserLink>
           <span>
             <KunIcon name="lucide:calendar" />
             {{ formatDate(post?.created_at) }}

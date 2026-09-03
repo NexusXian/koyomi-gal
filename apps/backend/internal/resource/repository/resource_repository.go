@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"backend/internal/resource/model"
@@ -12,16 +13,21 @@ import (
 )
 
 type ResourceRepository struct {
-	db *gorm.DB
+	db        *gorm.DB
+	publicURL string
 }
 
-func NewResourceRepository(db *gorm.DB) *ResourceRepository {
-	return &ResourceRepository{db: db}
+func NewResourceRepository(db *gorm.DB, publicURLs ...string) *ResourceRepository {
+	publicURL := ""
+	if len(publicURLs) > 0 {
+		publicURL = strings.TrimRight(publicURLs[0], "/")
+	}
+	return &ResourceRepository{db: db, publicURL: publicURL}
 }
 
 func (r *ResourceRepository) Transaction(ctx context.Context, fn func(tx *ResourceRepository) error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return fn(&ResourceRepository{db: tx})
+		return fn(&ResourceRepository{db: tx, publicURL: r.publicURL})
 	})
 }
 
@@ -70,9 +76,9 @@ func (r *ResourceRepository) FindPublishedByID(ctx context.Context, id uint) (*m
 
 func (r *ResourceRepository) findByID(ctx context.Context, id uint, publishedOnly bool) (*model.Resource, error) {
 	var resource model.Resource
-	query := r.withLinks(r.db.WithContext(ctx))
+	query := r.withLinks(r.withUploader(r.db.WithContext(ctx).Model(&model.Resource{})))
 	if publishedOnly {
-		query = query.Where("status = ?", model.ResourceStatusPublished)
+		query = query.Where("resources.status = ?", model.ResourceStatusPublished)
 	}
 	err := query.First(&resource, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -92,7 +98,7 @@ func (r *ResourceRepository) ListPublishedByGalgame(
 	base := func() *gorm.DB {
 		return r.db.WithContext(ctx).
 			Model(&model.Resource{}).
-			Where("galgame_id = ? AND status = ?", galgameID, model.ResourceStatusPublished)
+			Where("resources.galgame_id = ? AND resources.status = ?", galgameID, model.ResourceStatusPublished)
 	}
 	var total int64
 	if err := base().Count(&total).Error; err != nil {
@@ -100,7 +106,7 @@ func (r *ResourceRepository) ListPublishedByGalgame(
 	}
 
 	var resources []model.Resource
-	err := r.withLinks(base()).
+	err := r.withLinks(r.withUploader(base())).
 		Order("resources.id DESC").
 		Offset((page - 1) * limit).
 		Limit(limit).
@@ -126,7 +132,7 @@ func (r *ResourceRepository) ListAdmin(
 	base := func() *gorm.DB {
 		query := r.db.WithContext(ctx).Model(&model.Resource{})
 		if options.Status != nil {
-			query = query.Where("status = ?", *options.Status)
+			query = query.Where("resources.status = ?", *options.Status)
 		}
 		return query
 	}
@@ -136,7 +142,7 @@ func (r *ResourceRepository) ListAdmin(
 	}
 
 	var resources []model.Resource
-	err := r.withLinks(base()).
+	err := r.withLinks(r.withUploader(base())).
 		Order("resources.id DESC").
 		Offset((options.Page - 1) * options.Limit).
 		Limit(options.Limit).
@@ -194,4 +200,15 @@ func (r *ResourceRepository) DecrementResourceCount(ctx context.Context, galgame
 
 func (r *ResourceRepository) withLinks(query *gorm.DB) *gorm.DB {
 	return query.Preload("Links", func(db *gorm.DB) *gorm.DB { return db.Order("resource_links.id") })
+}
+
+func (r *ResourceRepository) withUploader(query *gorm.DB) *gorm.DB {
+	return query.
+		Select(`resources.*,
+COALESCE(users.username, '') AS uploader_name,
+COALESCE(NULLIF(user_profiles.display_name, ''), users.username, '') AS uploader_display_name,
+CASE WHEN avatar_assets.object_key IS NOT NULL THEN CAST(? AS text) || '/' || avatar_assets.object_key ELSE COALESCE(users.avatar, '') END AS uploader_avatar`, r.publicURL).
+		Joins("LEFT JOIN users ON users.id = resources.uploader_id").
+		Joins("LEFT JOIN user_profiles ON user_profiles.user_id = users.id").
+		Joins("LEFT JOIN image_assets AS avatar_assets ON avatar_assets.id = user_profiles.avatar_asset_id AND avatar_assets.user_id = users.id AND avatar_assets.category = 'avatars' AND avatar_assets.status = 1")
 }

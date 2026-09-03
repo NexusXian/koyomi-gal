@@ -33,10 +33,11 @@ type Post struct {
 	CreatedAt     time.Time  `json:"created_at"`
 	UpdatedAt     time.Time  `json:"updated_at"`
 	// Filled by repository joins, never written to the database.
-	AuthorName      string `gorm:"->" json:"author_name"`
-	AuthorAvatar    string `gorm:"->" json:"author_avatar"`
-	GalgameTitle    string `gorm:"->" json:"galgame_title"`
-	GalgameCoverURL string `gorm:"->" json:"galgame_cover_url"`
+	AuthorName        string `gorm:"->" json:"author_name"`
+	AuthorDisplayName string `gorm:"->" json:"-"`
+	AuthorAvatar      string `gorm:"->" json:"author_avatar"`
+	GalgameTitle      string `gorm:"->" json:"galgame_title"`
+	GalgameCoverURL   string `gorm:"->" json:"galgame_cover_url"`
 }
 
 // Comment uses a two-level display structure: parent_id always references a
@@ -53,9 +54,13 @@ type Comment struct {
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	// Filled by repository joins, never written to the database.
-	AuthorName   string `gorm:"->" json:"author_name"`
-	AuthorAvatar string `gorm:"->" json:"author_avatar"`
-	PostTitle    string `gorm:"->" json:"post_title"`
+	AuthorName         string `gorm:"->" json:"author_name"`
+	AuthorDisplayName  string `gorm:"->" json:"-"`
+	AuthorAvatar       string `gorm:"->" json:"author_avatar"`
+	ReplyToName        string `gorm:"->" json:"-"`
+	ReplyToDisplayName string `gorm:"->" json:"-"`
+	ReplyToAvatar      string `gorm:"->" json:"-"`
+	PostTitle          string `gorm:"->" json:"post_title"`
 }
 
 type PostLike struct {

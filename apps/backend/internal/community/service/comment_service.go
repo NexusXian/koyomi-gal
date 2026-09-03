@@ -12,6 +12,8 @@ import (
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
+	userModel "backend/internal/user/model"
+	userService "backend/internal/user/service"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -34,6 +36,11 @@ type CommentService struct {
 	posts         *repository.PostRepository
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
+	activities    userService.ActivityRecorder
+}
+
+func (s *CommentService) SetActivityRecorder(recorder userService.ActivityRecorder) {
+	s.activities = recorder
 }
 
 func NewCommentService(
@@ -127,6 +134,12 @@ func (s *CommentService) Create(
 		return nil, err
 	}
 	s.notifyCreated(ctx, authorID, post, created)
+	if created != nil && s.activities != nil {
+		metadata := map[string]any{"post_id": post.ID, "post_title": post.Title}
+		if recordErr := s.activities.Record(ctx, authorID, userModel.ActivityCommentCreated, &created.ID, metadata); recordErr != nil {
+			logger.Error("record comment activity", zap.Uint("comment_id", created.ID), zap.Error(recordErr))
+		}
+	}
 	return created, nil
 }
 

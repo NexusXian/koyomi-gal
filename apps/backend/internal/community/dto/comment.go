@@ -26,18 +26,20 @@ type CommentQuery struct {
 }
 
 type CommentData struct {
-	ID            uint      `json:"id" example:"1"`
-	PostID        uint      `json:"post_id" example:"1"`
-	AuthorID      *uint     `json:"author_id" example:"1"`
-	AuthorName    string    `json:"author_name" example:"koyomi"`
-	AuthorAvatar  string    `json:"author_avatar" example:"https://img.example.com/avatars/1/2026/09/uuid.png"`
-	ParentID      *uint     `json:"parent_id" example:"1"`
-	ReplyToUserID *uint     `json:"reply_to_user_id" example:"2"`
-	Content       string    `json:"content" example:"同感！"`
-	LikeCount     int64     `json:"like_count" example:"5"`
-	ReplyCount    int64     `json:"reply_count" example:"3"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            uint                  `json:"id" example:"1"`
+	PostID        uint                  `json:"post_id" example:"1"`
+	AuthorID      *uint                 `json:"author_id" example:"1"`
+	AuthorName    string                `json:"author_name" example:"koyomi"`
+	AuthorAvatar  string                `json:"author_avatar" example:"https://img.example.com/avatars/1/2026/09/uuid.png"`
+	Author        *CommunityUserSummary `json:"author"`
+	ParentID      *uint                 `json:"parent_id" example:"1"`
+	ReplyToUserID *uint                 `json:"reply_to_user_id" example:"2"`
+	ReplyTo       *CommunityUserSummary `json:"reply_to"`
+	Content       string                `json:"content" example:"同感！"`
+	LikeCount     int64                 `json:"like_count" example:"5"`
+	ReplyCount    int64                 `json:"reply_count" example:"3"`
+	CreatedAt     time.Time             `json:"created_at"`
+	UpdatedAt     time.Time             `json:"updated_at"`
 }
 
 type CommentListData struct {
@@ -120,7 +122,7 @@ type PostFavoriteDataResponse struct {
 }
 
 func NewCommentData(comment *model.Comment, replyCount int64) CommentData {
-	return CommentData{
+	data := CommentData{
 		ID:            comment.ID,
 		PostID:        comment.PostID,
 		AuthorID:      comment.AuthorID,
@@ -134,6 +136,13 @@ func NewCommentData(comment *model.Comment, replyCount int64) CommentData {
 		CreatedAt:     comment.CreatedAt,
 		UpdatedAt:     comment.UpdatedAt,
 	}
+	if comment.AuthorID != nil {
+		data.Author = &CommunityUserSummary{ID: *comment.AuthorID, Username: comment.AuthorName, DisplayName: comment.AuthorDisplayName, AvatarURL: comment.AuthorAvatar}
+	}
+	if comment.ReplyToUserID != nil {
+		data.ReplyTo = &CommunityUserSummary{ID: *comment.ReplyToUserID, Username: comment.ReplyToName, DisplayName: comment.ReplyToDisplayName, AvatarURL: comment.ReplyToAvatar}
+	}
+	return data
 }
 
 func NewAdminCommentList(comments []model.Comment) []AdminCommentData {

@@ -2,25 +2,43 @@
 import { formatDate } from '~/constants/domain'
 import type { HomePost } from '~/types/home'
 
-defineProps<{
+const props = defineProps<{
   post: HomePost
 }>()
 
+const router = useRouter()
+
 function authorName(post: HomePost): string {
-  return post.author_name || post.author?.username || `用户 #${post.author_id || post.author?.id || '-'}`
+  return post.author?.display_name || post.author_name || post.author?.username || `用户 #${post.author_id || post.author?.id || '-'}`
 }
 
 function galgameTitle(post: HomePost): string {
   return post.galgame_title || post.galgame?.title || ''
 }
+
+function openPost(): void {
+  void router.push(`/posts/${props.post.id}`)
+}
 </script>
 
 <template>
-  <NuxtLink :to="`/posts/${post.id}`" class="post-item">
+  <article class="post-item" role="link" tabindex="0" @click="openPost" @keydown.enter="openPost">
     <div class="post-main">
       <h3>{{ post.title || '未命名帖子' }}</h3>
       <div class="post-context">
-        <span><KunIcon name="lucide:user-round" /> {{ authorName(post) }}</span>
+        <UserLink
+          :username="post.author?.username"
+          :display-name="post.author?.display_name || post.author_name"
+          :user-id="post.author?.id || post.author_id"
+        >
+          <UserAvatar
+            :avatar-url="post.author?.avatar_url || post.author?.avatar"
+            :display-name="post.author?.display_name || post.author_name"
+            :username="post.author?.username"
+            size="sm"
+          />
+          {{ authorName(post) }}
+        </UserLink>
         <span v-if="galgameTitle(post)" class="galgame-name">
           <KunIcon name="lucide:gamepad-2" />
           {{ galgameTitle(post) }}
@@ -33,7 +51,7 @@ function galgameTitle(post: HomePost): string {
       <span><KunIcon name="lucide:message-circle" /> {{ post.comment_count ?? 0 }}</span>
       <span><KunIcon name="lucide:heart" /> {{ post.favorite_count ?? 0 }}</span>
     </div>
-  </NuxtLink>
+  </article>
 </template>
 
 <style scoped>
@@ -49,6 +67,7 @@ function galgameTitle(post: HomePost): string {
   background: var(--app-glass-background);
   -webkit-backdrop-filter: var(--app-glass-filter);
   backdrop-filter: var(--app-glass-filter);
+  cursor: pointer;
   transition:
     border-color var(--kun-dur-fast) var(--ease-kun-standard),
     transform var(--kun-dur-fast) var(--ease-kun-standard);

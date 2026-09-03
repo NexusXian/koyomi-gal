@@ -134,20 +134,21 @@ func IsValidType(notificationType NotificationType) bool {
 }
 
 type Notification struct {
-	ID          uint                 `gorm:"primaryKey" json:"id"`
-	RecipientID uint                 `gorm:"not null;index" json:"-"`
-	ActorID     *uint                `json:"-"`
-	Category    NotificationCategory `gorm:"type:varchar(32);not null" json:"category"`
-	Type        NotificationType     `gorm:"type:varchar(64);not null" json:"type"`
-	EntityType  *string              `gorm:"type:varchar(32)" json:"entity_type"`
-	EntityID    *uint                `json:"entity_id"`
-	Title       string               `gorm:"size:255;not null" json:"title"`
-	Content     string               `gorm:"not null" json:"content"`
-	TargetURL   *string              `gorm:"type:varchar(512)" json:"target_url"`
-	Metadata    Metadata             `gorm:"type:jsonb;not null" json:"metadata"`
-	IsRead      bool                 `gorm:"not null;default:false" json:"is_read"`
-	ReadAt      *time.Time           `json:"read_at"`
-	CreatedAt   time.Time            `json:"created_at"`
-	ActorName   string               `gorm:"->" json:"-"`
-	ActorAvatar string               `gorm:"->" json:"-"`
+	ID               uint                 `gorm:"primaryKey" json:"id"`
+	RecipientID      uint                 `gorm:"not null;index" json:"-"`
+	ActorID          *uint                `json:"-"`
+	Category         NotificationCategory `gorm:"type:varchar(32);not null" json:"category"`
+	Type             NotificationType     `gorm:"type:varchar(64);not null" json:"type"`
+	EntityType       *string              `gorm:"type:varchar(32)" json:"entity_type"`
+	EntityID         *uint                `json:"entity_id"`
+	Title            string               `gorm:"size:255;not null" json:"title"`
+	Content          string               `gorm:"not null" json:"content"`
+	TargetURL        *string              `gorm:"type:varchar(512)" json:"target_url"`
+	Metadata         Metadata             `gorm:"type:jsonb;not null" json:"metadata"`
+	IsRead           bool                 `gorm:"not null;default:false" json:"is_read"`
+	ReadAt           *time.Time           `json:"read_at"`
+	CreatedAt        time.Time            `json:"created_at"`
+	ActorName        string               `gorm:"->" json:"-"`
+	ActorDisplayName string               `gorm:"->" json:"-"`
+	ActorAvatar      string               `gorm:"->" json:"-"`
 }

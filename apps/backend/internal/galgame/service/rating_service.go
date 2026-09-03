@@ -6,6 +6,8 @@ import (
 
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
+	userModel "backend/internal/user/model"
+	userService "backend/internal/user/service"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -17,8 +19,13 @@ var (
 )
 
 type RatingService struct {
-	galgames  *repository.GalgameRepository
-	relations *repository.UserRelationRepository
+	galgames   *repository.GalgameRepository
+	relations  *repository.UserRelationRepository
+	activities userService.ActivityRecorder
+}
+
+func (s *RatingService) SetActivityRecorder(recorder userService.ActivityRecorder) {
+	s.activities = recorder
 }
 
 func NewRatingService(
@@ -58,6 +65,15 @@ func (s *RatingService) UpsertRating(
 		logger.Error("upsert galgame rating",
 			zap.Uint("galgame_id", galgameID), zap.Uint("user_id", userID), zap.Error(err))
 		return nil, err
+	}
+	if s.activities != nil {
+		metadata := map[string]any{}
+		if galgame, findErr := s.galgames.FindPublishedByID(ctx, galgameID); findErr == nil && galgame != nil {
+			metadata["title"] = galgame.Title
+		}
+		if recordErr := s.activities.Record(ctx, userID, userModel.ActivityRatingCreated, &galgameID, metadata); recordErr != nil {
+			logger.Error("record rating activity", zap.Uint("galgame_id", galgameID), zap.Error(recordErr))
+		}
 	}
 	return rating, nil
 }

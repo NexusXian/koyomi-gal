@@ -9,10 +9,20 @@ import type {
   DtoAdminUserDataResponse,
   DtoAdminUserListResponse,
   DtoCreateAdminUserRequest,
+  DtoProfileCommentListResponse,
+  DtoProfileGalgameListResponse,
+  DtoProfilePostListResponse,
+  DtoPublicUserProfileResponse,
   DtoRoleListResponse,
   DtoUpdateAdminUserRequest,
   DtoUpdateUserRolesRequest,
+  DtoUserActivityListResponse,
   ListAdminUsersParams,
+  ListUserActivitiesParams,
+  ListUserCommentsParams,
+  ListUserFavoritesParams,
+  ListUserPostsParams,
+  ListUserRatingsParams,
   ResponseMessageResponse
 } from '../models';
 
@@ -30,7 +40,7 @@ export const getListAdminUsersUrl = (params?: ListAdminUsersParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/users?${stringifiedParams}` : `/api/v1/users`
+  return stringifiedParams.length > 0 ? `/api/v1/admin/users?${stringifiedParams}` : `/api/v1/admin/users`
 }
 
 /**
@@ -54,7 +64,7 @@ export const getCreateAdminUserUrl = () => {
 
 
 
-  return `/api/v1/users`
+  return `/api/v1/admin/users`
 }
 
 /**
@@ -84,7 +94,7 @@ export const getGetAdminUserUrl = (id: number,) => {
 
 
 
-  return `/api/v1/users/${id}`
+  return `/api/v1/admin/users/${id}`
 }
 
 /**
@@ -108,7 +118,7 @@ export const getUpdateAdminUserUrl = (id: number,) => {
 
 
 
-  return `/api/v1/users/${id}`
+  return `/api/v1/admin/users/${id}`
 }
 
 /**
@@ -139,7 +149,7 @@ export const getDeleteAdminUserUrl = (id: number,) => {
 
 
 
-  return `/api/v1/users/${id}`
+  return `/api/v1/admin/users/${id}`
 }
 
 /**
@@ -163,7 +173,7 @@ export const getListUserRolesUrl = (id: number,) => {
 
 
 
-  return `/api/v1/users/${id}/roles`
+  return `/api/v1/admin/users/${id}/roles`
 }
 
 /**
@@ -187,7 +197,7 @@ export const getUpdateUserRolesUrl = (id: number,) => {
 
 
 
-  return `/api/v1/users/${id}/roles`
+  return `/api/v1/admin/users/${id}/roles`
 }
 
 /**
@@ -209,6 +219,190 @@ return apiMutator<ResponseMessageResponse>(getUpdateUserRolesUrl(id),
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoUpdateUserRolesRequest)
+  }
+);}
+
+
+export const getGetPublicUserProfileUrl = (username: string,) => {
+
+
+
+
+  return `/api/v1/users/${username}`
+}
+
+/**
+ * 私密或仅注册用户可见的资料在无权查看时返回最小身份和访问标记
+ * @summary 查看用户公开资料
+ */
+export const getPublicUserProfile = async (username: string, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPublicUserProfileResponse> => {
+
+  return apiMutator<DtoPublicUserProfileResponse>(getGetPublicUserProfileUrl(username),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListUserActivitiesUrl = (username: string,
+    params?: ListUserActivitiesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users/${username}/activities?${stringifiedParams}` : `/api/v1/users/${username}/activities`
+}
+
+/**
+ * @summary 查看用户动态
+ */
+export const listUserActivities = async (username: string,
+    params?: ListUserActivitiesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoUserActivityListResponse> => {
+
+  return apiMutator<DtoUserActivityListResponse>(getListUserActivitiesUrl(username,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListUserCommentsUrl = (username: string,
+    params?: ListUserCommentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users/${username}/comments?${stringifiedParams}` : `/api/v1/users/${username}/comments`
+}
+
+/**
+ * @summary 查看用户评论
+ */
+export const listUserComments = async (username: string,
+    params?: ListUserCommentsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfileCommentListResponse> => {
+
+  return apiMutator<DtoProfileCommentListResponse>(getListUserCommentsUrl(username,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListUserFavoritesUrl = (username: string,
+    params?: ListUserFavoritesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users/${username}/favorites?${stringifiedParams}` : `/api/v1/users/${username}/favorites`
+}
+
+/**
+ * @summary 查看用户收藏
+ */
+export const listUserFavorites = async (username: string,
+    params?: ListUserFavoritesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfileGalgameListResponse> => {
+
+  return apiMutator<DtoProfileGalgameListResponse>(getListUserFavoritesUrl(username,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListUserPostsUrl = (username: string,
+    params?: ListUserPostsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users/${username}/posts?${stringifiedParams}` : `/api/v1/users/${username}/posts`
+}
+
+/**
+ * @summary 查看用户帖子
+ */
+export const listUserPosts = async (username: string,
+    params?: ListUserPostsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfilePostListResponse> => {
+
+  return apiMutator<DtoProfilePostListResponse>(getListUserPostsUrl(username,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListUserRatingsUrl = (username: string,
+    params?: ListUserRatingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users/${username}/ratings?${stringifiedParams}` : `/api/v1/users/${username}/ratings`
+}
+
+/**
+ * @summary 查看用户评分
+ */
+export const listUserRatings = async (username: string,
+    params?: ListUserRatingsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfileGalgameListResponse> => {
+
+  return apiMutator<DtoProfileGalgameListResponse>(getListUserRatingsUrl(username,params),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 

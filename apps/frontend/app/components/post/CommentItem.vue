@@ -28,9 +28,10 @@ const canManageComment = computed(
     (user.value?.id === props.comment.author_id || has('comment:moderate'))
 )
 const commentAuthor = computed(() => ({
-  id: props.comment.author_id ?? 0,
-  name: props.comment.author_name ?? '',
-  avatar: props.comment.author_avatar ?? ''
+  id: props.comment.author?.id ?? props.comment.author_id,
+  username: props.comment.author?.username,
+  displayName: props.comment.author?.display_name ?? props.comment.author_name,
+  avatarUrl: props.comment.author?.avatar_url ?? props.comment.author_avatar
 }))
 const likePending = ref(false)
 const likeState = ref(false)
@@ -174,13 +175,36 @@ async function removeComment(): Promise<void> {
 <template>
   <div class="comment-item">
     <div class="comment-main">
-      <KunAvatar :user="commentAuthor" :is-navigation="false" size="lg" />
+      <UserLink
+        :username="commentAuthor.username"
+        :display-name="commentAuthor.displayName"
+        :user-id="commentAuthor.id"
+      >
+        <UserAvatar
+          :avatar-url="commentAuthor.avatarUrl"
+          :display-name="commentAuthor.displayName"
+          :username="commentAuthor.username"
+          size="lg"
+        />
+      </UserLink>
 
       <div class="comment-body">
         <div class="comment-head">
-          <span class="comment-author">
-            {{ comment.author_name || (comment.author_id ? `用户 #${comment.author_id}` : '未知') }}
-          </span>
+          <UserLink
+            class="comment-author"
+            :username="commentAuthor.username"
+            :display-name="commentAuthor.displayName"
+            :user-id="commentAuthor.id"
+          />
+          <template v-if="comment.reply_to?.username">
+            <span class="reply-to-label">回复</span>
+            <UserLink
+              class="comment-author"
+              :username="comment.reply_to.username"
+              :display-name="comment.reply_to.display_name"
+              :user-id="comment.reply_to.id"
+            />
+          </template>
           <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
         </div>
 
@@ -306,6 +330,11 @@ async function removeComment(): Promise<void> {
 }
 
 .comment-time {
+  color: var(--color-default-400);
+  font-size: 12px;
+}
+
+.reply-to-label {
   color: var(--color-default-400);
   font-size: 12px;
 }

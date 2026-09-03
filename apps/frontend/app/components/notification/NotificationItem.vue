@@ -7,19 +7,17 @@ const props = defineProps<{
   compact?: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   select: [notification: DtoNotificationData]
 }>()
 
-const avatarUser = computed(() =>
-  props.notification.actor
-    ? {
-        id: props.notification.actor.id ?? 0,
-        name: props.notification.actor.username ?? '',
-        avatar: props.notification.actor.avatar ?? ''
-      }
-    : null
+const actorName = computed(() =>
+  props.notification.actor?.display_name || props.notification.actor?.username
 )
+
+function select(): void {
+  emit('select', props.notification)
+}
 
 const icon = computed(() => {
   switch (props.notification.type) {
@@ -64,18 +62,27 @@ const timeLabel = computed(() => {
 </script>
 
 <template>
-  <button
-    type="button"
+  <div
     class="notification-item"
     :class="{ unread: !notification.is_read, compact }"
-    @click="$emit('select', notification)"
+    role="button"
+    tabindex="0"
+    @click="select"
+    @keydown.enter="select"
   >
-    <KunAvatar
-      v-if="avatarUser"
-      :user="avatarUser"
-      :is-navigation="false"
-      size="sm"
-    />
+    <UserLink
+      v-if="notification.actor"
+      :username="notification.actor.username"
+      :display-name="notification.actor.display_name"
+      :user-id="notification.actor.id"
+    >
+      <UserAvatar
+        :avatar-url="notification.actor.avatar_url || notification.actor.avatar"
+        :display-name="notification.actor.display_name"
+        :username="notification.actor.username"
+        size="sm"
+      />
+    </UserLink>
     <span v-else class="notification-icon">
       <KunIcon :name="icon" />
     </span>
@@ -83,14 +90,21 @@ const timeLabel = computed(() => {
     <span class="notification-body">
       <span class="notification-title">{{ notification.title }}</span>
       <span class="notification-content">
-        <strong v-if="notification.actor?.username">{{ notification.actor.username }}</strong>
+        <UserLink
+          v-if="notification.actor?.username"
+          :username="notification.actor.username"
+          :display-name="notification.actor.display_name"
+          :user-id="notification.actor.id"
+        >
+          <strong>{{ actorName }}</strong>
+        </UserLink>
         {{ notification.content }}
       </span>
       <span class="notification-time">{{ timeLabel }}</span>
     </span>
 
     <span v-if="!notification.is_read" class="unread-dot" aria-label="未读" />
-  </button>
+  </div>
 </template>
 
 <style scoped>

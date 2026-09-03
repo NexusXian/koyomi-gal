@@ -4,6 +4,7 @@ export type ImageCategory =
   | 'comments'
   | 'galgames'
   | 'backgrounds'
+  | 'profile-banners'
   | 'banners'
   | 'admin'
 

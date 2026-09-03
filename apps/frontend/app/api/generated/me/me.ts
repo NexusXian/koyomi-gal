@@ -9,7 +9,11 @@ import type {
   DtoGalgameListResponse,
   DtoMePermissionsResponse,
   DtoMeResponse,
+  DtoPrivacySettingsResponse,
+  DtoPublicUserProfileResponse,
   DtoUpdateMeRequest,
+  DtoUpdatePrivacyRequest,
+  DtoUpdateProfileRequest,
   DtoUpdateUserPreferencesRequest,
   DtoUserPreferencesResponse,
   ListMyGalgamesParams
@@ -152,6 +156,111 @@ return apiMutator<DtoUserPreferencesResponse>(getUpdateMePreferencesUrl(),
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoUpdateUserPreferencesRequest)
+  }
+);}
+
+
+export const getGetMyPrivacyUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/privacy`
+}
+
+/**
+ * @summary 查看当前用户隐私设置
+ */
+export const getMyPrivacy = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoPrivacySettingsResponse> => {
+
+  return apiMutator<DtoPrivacySettingsResponse>(getGetMyPrivacyUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateMyPrivacyUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/privacy`
+}
+
+/**
+ * @summary 更新当前用户隐私设置
+ */
+export const updateMyPrivacy = async (dtoUpdatePrivacyRequest: DtoUpdatePrivacyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPrivacySettingsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoPrivacySettingsResponse>(getUpdateMyPrivacyUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdatePrivacyRequest)
+  }
+);}
+
+
+export const getGetMyProfileUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/profile`
+}
+
+/**
+ * @summary 查看当前用户资料
+ */
+export const getMyProfile = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoPublicUserProfileResponse> => {
+
+  return apiMutator<DtoPublicUserProfileResponse>(getGetMyProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateMyProfileUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/profile`
+}
+
+/**
+ * 头像和横幅只能引用本人已激活的 avatars/profile-banners 图片；null 清除图片
+ * @summary 更新当前用户资料
+ */
+export const updateMyProfile = async (dtoUpdateProfileRequest: DtoUpdateProfileRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPublicUserProfileResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoPublicUserProfileResponse>(getUpdateMyProfileUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateProfileRequest)
   }
 );}
 

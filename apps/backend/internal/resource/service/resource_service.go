@@ -13,6 +13,8 @@ import (
 	"backend/internal/resource/dto"
 	"backend/internal/resource/model"
 	"backend/internal/resource/repository"
+	userModel "backend/internal/user/model"
+	userService "backend/internal/user/service"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -39,6 +41,11 @@ type ResourceService struct {
 	galgames      *galgameRepository.GalgameRepository
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
+	activities    userService.ActivityRecorder
+}
+
+func (s *ResourceService) SetActivityRecorder(recorder userService.ActivityRecorder) {
+	s.activities = recorder
 }
 
 func (s *ResourceService) SetNotificationDependencies(
@@ -151,6 +158,12 @@ func (s *ResourceService) CreateResource(
 	}
 	if created.Status == model.ResourceStatusPending {
 		s.notifyResourceSubmitted(ctx, uploaderID, created)
+	}
+	if s.activities != nil {
+		metadata := map[string]any{"title": created.Title, "galgame_id": created.GalgameID}
+		if recordErr := s.activities.Record(ctx, uploaderID, userModel.ActivityResourceSubmitted, &created.ID, metadata); recordErr != nil {
+			logger.Error("record resource activity", zap.Uint("resource_id", created.ID), zap.Error(recordErr))
+		}
 	}
 	return created, nil
 }

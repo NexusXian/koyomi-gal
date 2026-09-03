@@ -14,9 +14,11 @@ type ListNotificationsQuery struct {
 }
 
 type ActorData struct {
-	ID       uint   `json:"id" example:"2"`
-	Username string `json:"username" example:"koyomi"`
-	Avatar   string `json:"avatar" example:"https://cdn.example.com/avatars/2/avatar.webp"`
+	ID          uint   `json:"id" example:"2"`
+	Username    string `json:"username" example:"koyomi"`
+	DisplayName string `json:"display_name" example:"Koyomi"`
+	Avatar      string `json:"avatar" example:"https://cdn.example.com/avatars/2/avatar.webp"`
+	AvatarURL   string `json:"avatar_url" example:"https://cdn.example.com/avatars/2/avatar.webp"`
 }
 
 type NotificationData struct {
@@ -73,7 +75,7 @@ func NewNotificationData(notification *model.Notification) NotificationData {
 		ReadAt: notification.ReadAt, CreatedAt: notification.CreatedAt,
 	}
 	if notification.ActorID != nil {
-		data.Actor = &ActorData{ID: *notification.ActorID, Username: notification.ActorName, Avatar: notification.ActorAvatar}
+		data.Actor = &ActorData{ID: *notification.ActorID, Username: notification.ActorName, DisplayName: notification.ActorDisplayName, Avatar: notification.ActorAvatar, AvatarURL: notification.ActorAvatar}
 	}
 	if data.Metadata == nil {
 		data.Metadata = model.Metadata{}

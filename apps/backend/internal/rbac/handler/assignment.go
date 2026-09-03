@@ -36,7 +36,7 @@ func NewAssignmentHandler(rbacService *service.RBACService) *AssignmentHandler {
 // @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
 // @Failure      500 {object} response.ErrorResponse "查询用户角色失败"
 // @Security     BearerAuth
-// @Router       /api/v1/users/{id}/roles [get]
+// @Router       /api/v1/admin/users/{id}/roles [get]
 func (h *AssignmentHandler) ListUserRoles(c *gin.Context) {
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil || userID == 0 {
@@ -69,7 +69,7 @@ func (h *AssignmentHandler) ListUserRoles(c *gin.Context) {
 // @Failure      404 {object} response.ErrorResponse "用户不存在"
 // @Failure      500 {object} response.ErrorResponse "更新用户角色失败"
 // @Security     BearerAuth
-// @Router       /api/v1/users/{id}/roles [put]
+// @Router       /api/v1/admin/users/{id}/roles [put]
 func (h *AssignmentHandler) UpdateUserRoles(c *gin.Context) {
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil || userID == 0 {

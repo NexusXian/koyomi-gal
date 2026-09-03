@@ -74,6 +74,7 @@ func newProfileTestEnv(t *testing.T) *profileTestEnv {
 			userRepo.NewUserAuthRepository(db),
 			userRepo.NewUserPreferenceRepository(db),
 			imageSvc,
+			userRepo.NewUserProfileRepository(db, "https://img.example.com"),
 		),
 		images:  imageSvc,
 		storage: objectStorage,

@@ -91,9 +91,11 @@ func (r *PostRepository) FindByID(ctx context.Context, id uint) (*model.Post, er
 func (r *PostRepository) withNames(query *gorm.DB) *gorm.DB {
 	return query.
 		Model(&model.Post{}).
-		Select(`posts.*, users.username AS author_name, `+authorAvatarExpr("users", "avatar_assets")+`,
+		Select(`posts.*, users.username AS author_name,
+COALESCE(NULLIF(author_profiles.display_name, ''), users.username) AS author_display_name, `+authorAvatarExpr("users", "avatar_assets")+`,
 galgames.title AS galgame_title, galgames.cover_url AS galgame_cover_url`, r.avatarBaseURL).
 		Joins("LEFT JOIN users ON users.id = posts.author_id").
+		Joins("LEFT JOIN user_profiles AS author_profiles ON author_profiles.user_id = users.id").
 		Joins(authorAvatarJoin("users", "avatar_assets")).
 		Joins("LEFT JOIN galgames ON galgames.id = posts.galgame_id")
 }

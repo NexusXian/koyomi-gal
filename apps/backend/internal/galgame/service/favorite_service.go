@@ -6,6 +6,8 @@ import (
 
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
+	userModel "backend/internal/user/model"
+	userService "backend/internal/user/service"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -17,8 +19,13 @@ var (
 )
 
 type FavoriteService struct {
-	galgames  *repository.GalgameRepository
-	relations *repository.UserRelationRepository
+	galgames   *repository.GalgameRepository
+	relations  *repository.UserRelationRepository
+	activities userService.ActivityRecorder
+}
+
+func (s *FavoriteService) SetActivityRecorder(recorder userService.ActivityRecorder) {
+	s.activities = recorder
 }
 
 func NewFavoriteService(
@@ -57,6 +64,15 @@ func (s *FavoriteService) AddFavorite(ctx context.Context, galgameID, userID uin
 		logger.Error("add galgame favorite",
 			zap.Uint("galgame_id", galgameID), zap.Uint("user_id", userID), zap.Error(err))
 		return nil, err
+	}
+	if s.activities != nil {
+		metadata := map[string]any{}
+		if galgame, findErr := s.galgames.FindPublishedByID(ctx, galgameID); findErr == nil && galgame != nil {
+			metadata["title"] = galgame.Title
+		}
+		if recordErr := s.activities.Record(ctx, userID, userModel.ActivityFavoriteCreated, &galgameID, metadata); recordErr != nil {
+			logger.Error("record favorite activity", zap.Uint("galgame_id", galgameID), zap.Error(recordErr))
+		}
 	}
 	return favorite, nil
 }

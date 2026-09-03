@@ -20,16 +20,19 @@ const (
 )
 
 type Resource struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
-	GalgameID   uint           `gorm:"not null" json:"galgame_id"`
-	UploaderID  *uint          `json:"uploader_id"`
-	Title       string         `gorm:"size:255;not null" json:"title"`
-	Type        int16          `gorm:"column:resource_type;not null" json:"type"`
-	Description string         `gorm:"not null" json:"description"`
-	Status      int16          `gorm:"not null" json:"status"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	Links       []ResourceLink `gorm:"foreignKey:ResourceID" json:"links,omitempty"`
+	ID                  uint           `gorm:"primaryKey" json:"id"`
+	GalgameID           uint           `gorm:"not null" json:"galgame_id"`
+	UploaderID          *uint          `json:"uploader_id"`
+	Title               string         `gorm:"size:255;not null" json:"title"`
+	Type                int16          `gorm:"column:resource_type;not null" json:"type"`
+	Description         string         `gorm:"not null" json:"description"`
+	Status              int16          `gorm:"not null" json:"status"`
+	CreatedAt           time.Time      `json:"created_at"`
+	UpdatedAt           time.Time      `json:"updated_at"`
+	Links               []ResourceLink `gorm:"foreignKey:ResourceID" json:"links,omitempty"`
+	UploaderName        string         `gorm:"->" json:"-"`
+	UploaderDisplayName string         `gorm:"->" json:"-"`
+	UploaderAvatar      string         `gorm:"->" json:"-"`
 }
 
 type ResourceLink struct {

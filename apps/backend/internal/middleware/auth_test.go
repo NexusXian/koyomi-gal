@@ -68,6 +68,38 @@ func TestAuthRemainsUsableWithoutChecker(t *testing.T) {
 	}
 }
 
+func TestOptionalAuthWithUserChecker(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	const secret = "middleware-auth-test-secret"
+	tests := []struct {
+		name, authorization string
+		checker             AccessUserChecker
+		status              int
+	}{
+		{name: "anonymous", checker: stubAccessUserChecker{}, status: http.StatusNoContent},
+		{name: "blank header", authorization: " ", checker: stubAccessUserChecker{}, status: http.StatusUnauthorized},
+		{name: "active token", authorization: "Bearer " + testAccessToken(t, secret, 42), checker: stubAccessUserChecker{exists: true}, status: http.StatusNoContent},
+		{name: "invalid token", authorization: "Bearer invalid", checker: stubAccessUserChecker{exists: true}, status: http.StatusUnauthorized},
+		{name: "deleted user", authorization: "Bearer " + testAccessToken(t, secret, 42), checker: stubAccessUserChecker{}, status: http.StatusUnauthorized},
+		{name: "banned user", authorization: "Bearer " + testAccessToken(t, secret, 42), checker: stubAccessUserChecker{exists: true, banned: true}, status: http.StatusForbidden},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/", OptionalAuthWithUserChecker(secret, test.checker), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+			request := httptest.NewRequest(http.MethodGet, "/", nil)
+			if test.authorization != "" {
+				request.Header.Set("Authorization", test.authorization)
+			}
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, request)
+			if response.Code != test.status {
+				t.Fatalf("expected status %d, got %d", test.status, response.Code)
+			}
+		})
+	}
+}
+
 func testAccessToken(t *testing.T, secret string, userID uint) string {
 	t.Helper()
 	now := time.Now()

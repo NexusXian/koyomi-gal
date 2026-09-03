@@ -5,9 +5,11 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoCommunityUserSummary } from './dtoCommunityUserSummary';
 import type { ModelEditorMode } from './modelEditorMode';
 
 export interface DtoPostData {
+  author?: DtoCommunityUserSummary;
   author_avatar?: string;
   author_id?: number;
   author_name?: string;

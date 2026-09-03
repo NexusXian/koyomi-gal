@@ -556,6 +556,21 @@ onMounted(() => {
                 {{ post.like_count ?? 0 }}
               </span>
             </NuxtLink>
+            <UserLink
+              v-if="post.author?.username"
+              class="related-post-author"
+              :username="post.author.username"
+              :display-name="post.author.display_name || post.author_name"
+              :user-id="post.author.id || post.author_id"
+            >
+              <UserAvatar
+                :avatar-url="post.author.avatar_url || post.author_avatar"
+                :display-name="post.author.display_name || post.author_name"
+                :username="post.author.username"
+                size="sm"
+              />
+              {{ post.author.display_name || post.author_name || post.author.username }}
+            </UserLink>
           </li>
         </ul>
 
@@ -612,6 +627,23 @@ onMounted(() => {
             <p v-if="resource.description" class="resource-description">
               {{ resource.description }}
             </p>
+
+            <div v-if="resource.uploader?.username" class="resource-uploader">
+              <span>贡献者</span>
+              <UserLink
+                :username="resource.uploader.username"
+                :display-name="resource.uploader.display_name"
+                :user-id="resource.uploader.id || resource.uploader_id"
+              >
+                <UserAvatar
+                  :avatar-url="resource.uploader.avatar_url"
+                  :display-name="resource.uploader.display_name"
+                  :username="resource.uploader.username"
+                  size="sm"
+                />
+                {{ resource.uploader.display_name || resource.uploader.username }}
+              </UserLink>
+            </div>
 
             <ul class="resource-links">
               <li v-for="link in resource.links" :key="link.id">
@@ -934,6 +966,12 @@ onMounted(() => {
   font-size: 12px;
 }
 
+.related-post-author {
+  margin: 2px 10px 8px;
+  color: var(--color-default-500);
+  font-size: 12px;
+}
+
 .new-post-button {
   margin-top: 12px;
 }
@@ -972,6 +1010,15 @@ onMounted(() => {
   color: var(--color-default-500);
   font-size: 13px;
   line-height: 1.7;
+}
+
+.resource-uploader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--color-default-400);
+  font-size: 12px;
 }
 
 .resource-links {

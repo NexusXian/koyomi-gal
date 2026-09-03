@@ -38,7 +38,8 @@ func Auth(secret string) gin.HandlerFunc {
 // AuthWithUserChecker additionally rejects tokens for deleted or banned users.
 func AuthWithUserChecker(secret string, checker AccessUserChecker) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token, ok := strings.CutPrefix(c.GetHeader("Authorization"), bearerPrefix)
+		header := c.GetHeader("Authorization")
+		token, ok := strings.CutPrefix(header, bearerPrefix)
 		if !ok || strings.TrimSpace(token) == "" {
 			response.Error(c, appErrors.ErrAuthExpired())
 			c.Abort()
@@ -74,6 +75,20 @@ func AuthWithUserChecker(secret string, checker AccessUserChecker) gin.HandlerFu
 
 		c.Set(contextUserIDKey, userID)
 		c.Next()
+	}
+}
+
+// OptionalAuthWithUserChecker permits anonymous requests only when the
+// Authorization header is absent. A supplied token is validated exactly like
+// a token on a protected route.
+func OptionalAuthWithUserChecker(secret string, checker AccessUserChecker) gin.HandlerFunc {
+	protected := AuthWithUserChecker(secret, checker)
+	return func(c *gin.Context) {
+		if len(c.Request.Header.Values("Authorization")) == 0 {
+			c.Next()
+			return
+		}
+		protected(c)
 	}
 }
 

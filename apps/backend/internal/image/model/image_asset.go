@@ -10,13 +10,14 @@ const (
 )
 
 const (
-	CategoryAvatar     = "avatars"
-	CategoryPost       = "posts"
-	CategoryComment    = "comments"
-	CategoryGalgame    = "galgames"
-	CategoryBackground = "backgrounds"
-	CategoryBanner     = "banners"
-	CategoryAdmin      = "admin"
+	CategoryAvatar        = "avatars"
+	CategoryPost          = "posts"
+	CategoryComment       = "comments"
+	CategoryGalgame       = "galgames"
+	CategoryBackground    = "backgrounds"
+	CategoryBanner        = "banners"
+	CategoryProfileBanner = "profile-banners"
+	CategoryAdmin         = "admin"
 )
 
 type ImageAsset struct {

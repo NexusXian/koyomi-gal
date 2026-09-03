@@ -2149,6 +2149,495 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按用户名、邮箱或精确数字 ID 搜索用户；需要 user:list 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端查询用户列表",
+                "operationId": "listAdminUsers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名、邮箱或用户 ID",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建用户并分配默认 user 角色；需要 user:create 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端创建用户",
+                "operationId": "createAdminUser",
+                "parameters": [
+                    {
+                        "description": "创建用户请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateAdminUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "用户名或邮箱已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "创建用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 返回用户详情；需要 user:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端查看用户详情",
+                "operationId": "getAdminUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "用户 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新提供的用户名、邮箱、封禁状态或密码；省略字段保持不变；需要 user:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端更新用户",
+                "operationId": "updateAdminUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新用户请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateAdminUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "用户名或邮箱已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除用户及用户角色关系，不能删除当前登录用户；需要 user:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "管理端删除用户",
+                "operationId": "deleteAdminUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "用户 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "不能删除当前登录用户",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/{id}/roles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回指定用户拥有的全部角色",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "查看用户角色",
+                "operationId": "listUserRoles",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户角色列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RoleListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "用户 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询用户角色失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "全量替换指定用户的角色集合，传空数组即清空角色",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "更新用户角色",
+                "operationId": "updateUserRoles",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新用户角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUserRolesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "用户角色已更新",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新用户角色失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/articles": {
             "get": {
                 "description": "分页返回已发布时间不晚于当前时间的文章，不包含正文",
@@ -6544,139 +7033,249 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users": {
+        "/api/v1/users/me/privacy": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "按用户名、邮箱或精确数字 ID 搜索用户；需要 user:list 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "查看当前用户隐私设置",
+                "operationId": "getMyPrivacy",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "更新当前用户隐私设置",
+                "operationId": "updateMyPrivacy",
+                "parameters": [
+                    {
+                        "description": "隐私设置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdatePrivacyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/me/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "查看当前用户资料",
+                "operationId": "getMyProfile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PublicUserProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "头像和横幅只能引用本人已激活的 avatars/profile-banners 图片；null 清除图片",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "更新当前用户资料",
+                "operationId": "updateMyProfile",
+                "parameters": [
+                    {
+                        "description": "资料更新",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PublicUserProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{username}": {
+            "get": {
+                "description": "私密或仅注册用户可见的资料在无权查看时返回最小身份和访问标记",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "管理端查询用户列表",
-                "operationId": "listAdminUsers",
+                "summary": "查看用户公开资料",
+                "operationId": "getPublicUserProfile",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "用户名、邮箱或用户 ID",
-                        "name": "keyword",
-                        "in": "query"
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PublicUserProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "提供的登录凭证失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{username}/activities": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "查看用户动态",
+                "operationId": "listUserActivities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "integer",
-                        "default": 1,
                         "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "default": 20,
-                        "description": "每页数量，最大 100",
+                        "description": "每页数量",
                         "name": "limit",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "用户列表",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.AdminUserListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "查询参数格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "用户登录失效",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "$ref": "#/definitions/dto.UserActivityListResponse"
                         }
                     },
                     "403": {
-                        "description": "没有执行该操作的权限",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "查询用户失败",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "创建用户并分配默认 user 角色；需要 user:create 权限",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "管理端创建用户",
-                "operationId": "createAdminUser",
-                "parameters": [
-                    {
-                        "description": "创建用户请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.CreateAdminUserRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "创建成功",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AdminUserDataResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "用户登录失效",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "没有执行该操作的权限",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "用户名或邮箱已存在",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "创建用户失败",
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -6684,214 +7283,46 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users/{id}": {
+        "/api/v1/users/{username}/comments": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "按 ID 返回用户详情；需要 user:read 权限",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "管理端查看用户详情",
-                "operationId": "getAdminUser",
+                "summary": "查看用户评论",
+                "operationId": "listUserComments",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "用户详情",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AdminUserDataResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "用户 ID 格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "用户登录失效",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "没有执行该操作的权限",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "用户不存在",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "查询用户失败",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "更新提供的用户名、邮箱、封禁状态或密码；省略字段保持不变；需要 user:update 权限",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "管理端更新用户",
-                "operationId": "updateAdminUser",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新用户请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateAdminUserRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新成功",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AdminUserDataResponse"
-                        }
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
                     },
-                    "400": {
-                        "description": "请求参数格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "用户登录失效",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "没有执行该操作的权限",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "用户不存在",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "用户名或邮箱已存在",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "更新用户失败",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "删除用户及用户角色关系，不能删除当前登录用户；需要 user:delete 权限",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "管理端删除用户",
-                "operationId": "deleteAdminUser",
-                "parameters": [
                     {
                         "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "用户已删除",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "用户 ID 格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "用户登录失效",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "$ref": "#/definitions/dto.ProfileCommentListResponse"
                         }
                     },
                     "403": {
-                        "description": "没有执行该操作的权限",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "用户不存在",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "不能删除当前登录用户",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "删除用户失败",
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -6899,133 +7330,140 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users/{id}/roles": {
+        "/api/v1/users/{username}/favorites": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "返回指定用户拥有的全部角色",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "查看用户角色",
-                "operationId": "listUserRoles",
+                "summary": "查看用户收藏",
+                "operationId": "listUserFavorites",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "用户角色列表",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RoleListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "用户 ID 格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "用户登录失效",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "$ref": "#/definitions/dto.ProfileGalgameListResponse"
                         }
                     },
                     "403": {
-                        "description": "没有执行该操作的权限",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "查询用户角色失败",
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
                     }
                 }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "全量替换指定用户的角色集合，传空数组即清空角色",
-                "consumes": [
-                    "application/json"
-                ],
+            }
+        },
+        "/api/v1/users/{username}/posts": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "更新用户角色",
-                "operationId": "updateUserRoles",
+                "summary": "查看用户帖子",
+                "operationId": "listUserPosts",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "用户 ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新用户角色请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateUserRolesRequest"
-                        }
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "用户角色已更新",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数格式不正确",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "用户登录失效",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "$ref": "#/definitions/dto.ProfilePostListResponse"
                         }
                     },
                     "403": {
-                        "description": "没有执行该操作的权限",
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{username}/ratings": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "查看用户评分",
+                "operationId": "listUserRatings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
                     },
-                    "404": {
-                        "description": "用户不存在",
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
+                            "$ref": "#/definitions/dto.ProfileGalgameListResponse"
                         }
                     },
-                    "500": {
-                        "description": "更新用户角色失败",
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -7248,6 +7686,14 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string",
                     "example": "https://cdn.example.com/avatars/2/avatar.webp"
+                },
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://cdn.example.com/avatars/2/avatar.webp"
+                },
+                "display_name": {
+                    "type": "string",
+                    "example": "Koyomi"
                 },
                 "id": {
                     "type": "integer",
@@ -8196,6 +8642,9 @@ const docTemplate = `{
         "dto.CommentData": {
             "type": "object",
             "properties": {
+                "author": {
+                    "$ref": "#/definitions/dto.CommunityUserSummary"
+                },
                 "author_avatar": {
                     "type": "string",
                     "example": "https://img.example.com/avatars/1/2026/09/uuid.png"
@@ -8234,6 +8683,9 @@ const docTemplate = `{
                 "reply_count": {
                     "type": "integer",
                     "example": 3
+                },
+                "reply_to": {
+                    "$ref": "#/definitions/dto.CommunityUserSummary"
                 },
                 "reply_to_user_id": {
                     "type": "integer",
@@ -8325,6 +8777,23 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.CommunityUserSummary": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -9919,6 +10388,9 @@ const docTemplate = `{
         "dto.PostData": {
             "type": "object",
             "properties": {
+                "author": {
+                    "$ref": "#/definitions/dto.CommunityUserSummary"
+                },
                 "author_avatar": {
                     "type": "string",
                     "example": "https://img.example.com/avatars/1/2026/09/uuid.png"
@@ -10148,6 +10620,7 @@ const docTemplate = `{
                         "galgames",
                         "backgrounds",
                         "banners",
+                        "profile-banners",
                         "admin"
                     ],
                     "example": "posts"
@@ -10176,6 +10649,359 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.PresignImageData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.PrivacySettingsData": {
+            "type": "object",
+            "properties": {
+                "profile_visibility": {
+                    "type": "string",
+                    "example": "public"
+                },
+                "show_activity": {
+                    "type": "boolean"
+                },
+                "show_birthday": {
+                    "type": "boolean"
+                },
+                "show_comments": {
+                    "type": "boolean"
+                },
+                "show_favorites": {
+                    "type": "boolean"
+                },
+                "show_location": {
+                    "type": "boolean"
+                },
+                "show_posts": {
+                    "type": "boolean"
+                },
+                "show_ratings": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.PrivacySettingsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.PrivacySettingsData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ProfileAccess": {
+            "type": "object",
+            "properties": {
+                "can_view_activity": {
+                    "type": "boolean"
+                },
+                "can_view_birthday": {
+                    "type": "boolean"
+                },
+                "can_view_comments": {
+                    "type": "boolean"
+                },
+                "can_view_favorites": {
+                    "type": "boolean"
+                },
+                "can_view_location": {
+                    "type": "boolean"
+                },
+                "can_view_posts": {
+                    "type": "boolean"
+                },
+                "can_view_profile": {
+                    "type": "boolean"
+                },
+                "can_view_ratings": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.ProfileCommentData": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "parent_id": {
+                    "type": "integer"
+                },
+                "post_id": {
+                    "type": "integer"
+                },
+                "post_title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProfileCommentListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProfileCommentData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ProfileCommentListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ProfileCommentListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProfileGalgameData": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProfileGalgameListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProfileGalgameData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ProfileGalgameListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ProfileGalgameListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProfilePostData": {
+            "type": "object",
+            "properties": {
+                "comment_count": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "editor_mode": {
+                    "type": "string"
+                },
+                "favorite_count": {
+                    "type": "integer"
+                },
+                "galgame_id": {
+                    "type": "integer"
+                },
+                "galgame_title": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProfilePostListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProfilePostData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ProfilePostListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ProfilePostListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PublicUserProfile": {
+            "type": "object",
+            "properties": {
+                "access": {
+                    "$ref": "#/definitions/dto.ProfileAccess"
+                },
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://img.example.com/avatars/1001/avatar.webp"
+                },
+                "banner_url": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "birthday": {
+                    "type": "string",
+                    "example": "2000-01-02"
+                },
+                "comment_count": {
+                    "type": "integer"
+                },
+                "display_name": {
+                    "type": "string",
+                    "example": "Koyomi"
+                },
+                "favorite_count": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "is_restricted": {
+                    "type": "boolean"
+                },
+                "is_self": {
+                    "type": "boolean"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "post_count": {
+                    "type": "integer"
+                },
+                "rating_count": {
+                    "type": "integer"
+                },
+                "registered_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                },
+                "website_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PublicUserProfileResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.PublicUserProfile"
                 },
                 "msg": {
                     "type": "string",
@@ -10307,6 +11133,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "uploader": {
+                    "$ref": "#/definitions/dto.ResourceUserSummary"
                 },
                 "uploader_id": {
                     "type": "integer",
@@ -10482,6 +11311,23 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.ResourceUserSummary": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -11087,6 +11933,85 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdatePrivacyRequest": {
+            "type": "object",
+            "properties": {
+                "profile_visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "registered",
+                        "private"
+                    ]
+                },
+                "show_activity": {
+                    "type": "boolean"
+                },
+                "show_birthday": {
+                    "type": "boolean"
+                },
+                "show_comments": {
+                    "type": "boolean"
+                },
+                "show_favorites": {
+                    "type": "boolean"
+                },
+                "show_location": {
+                    "type": "boolean"
+                },
+                "show_posts": {
+                    "type": "boolean"
+                },
+                "show_ratings": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.UpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_asset_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "x-nullable": true
+                },
+                "banner_asset_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "x-nullable": true
+                },
+                "bio": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "birthday": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": "2000-01-02"
+                },
+                "display_name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "gender": {
+                    "type": "string",
+                    "enum": [
+                        "male",
+                        "female",
+                        "non_binary",
+                        "undisclosed"
+                    ]
+                },
+                "location": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "website_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
         "dto.UpdateResourceRequest": {
             "type": "object",
             "required": [
@@ -11315,6 +12240,65 @@ const docTemplate = `{
                         5
                     ],
                     "example": 2
+                }
+            }
+        },
+        "dto.UserActivityData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object"
+                },
+                "target_id": {
+                    "type": "integer"
+                },
+                "target_type": {
+                    "type": "string",
+                    "example": "post"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "post_created"
+                }
+            }
+        },
+        "dto.UserActivityListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserActivityData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UserActivityListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.UserActivityListData"
+                },
+                "msg": {
+                    "type": "string"
                 }
             }
         },
