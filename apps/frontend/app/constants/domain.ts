@@ -68,6 +68,14 @@ export const GALGAME_SORTS: DomainOption[] = [
   { value: 4, label: '最热门', slug: 'popular' }
 ]
 
+export const GALLERY_IMAGE_TYPES: DomainOption[] = [
+  { value: 0, label: '游戏截图' },
+  { value: 1, label: 'CG' },
+  { value: 2, label: '角色' },
+  { value: 3, label: 'UI' },
+  { value: 4, label: '宣传图' }
+]
+
 export function domainLabel(
   options: DomainOption[],
   value: number | undefined | null

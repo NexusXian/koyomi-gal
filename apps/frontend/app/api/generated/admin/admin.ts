@@ -7,29 +7,43 @@
  */
 import type {
   DtoAdminArticleListResponse,
+  DtoAdminBackgroundPresetListResponse,
   DtoAdminBannerListResponse,
   DtoAdminCommentListResponse,
+  DtoAdminFeedbackListResponse,
   DtoAdminImageListResponse,
   DtoAdminPostListResponse,
   DtoAdminResourceListResponse,
   DtoArticleDataResponse,
+  DtoBackgroundPresetDataResponse,
   DtoBannerDataResponse,
   DtoCreateArticleRequest,
+  DtoCreateBackgroundPresetRequest,
   DtoCreateBannerRequest,
+  DtoCreateGalleryImageRequest,
+  DtoFeedbackDataResponse,
   DtoGalgameDataResponse,
   DtoGalgameListResponse,
+  DtoGalleryDataResponse,
+  DtoGalleryListResponse,
+  DtoHandleFeedbackRequest,
   DtoHandleResourceReportRequest,
   DtoImageDataResponse,
+  DtoReorderGalleryRequest,
   DtoResourceDataResponse,
   DtoResourceReportDataResponse,
   DtoResourceReportListResponse,
   DtoReviewGalgameRequest,
   DtoReviewResourceRequest,
   DtoUpdateArticleRequest,
+  DtoUpdateBackgroundPresetRequest,
   DtoUpdateBannerRequest,
+  DtoUpdateGalleryImageRequest,
   ListAdminArticlesParams,
+  ListAdminBackgroundPresetsParams,
   ListAdminBannersParams,
   ListAdminCommentsParams,
+  ListAdminFeedbackParams,
   ListAdminGalgamesParams,
   ListAdminImagesParams,
   ListAdminPostsParams,
@@ -171,6 +185,122 @@ export const getDeleteAdminArticleUrl = (id: number,) => {
 export const deleteAdminArticle = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
   return apiMutator<ResponseMessageResponse>(getDeleteAdminArticleUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListAdminBackgroundPresetsUrl = (params?: ListAdminBackgroundPresetsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/background-presets?${stringifiedParams}` : `/api/v1/admin/background-presets`
+}
+
+/**
+ * 分页返回全部背景预设；需要 background_preset:read 权限
+ * @summary 管理端查询背景预设
+ */
+export const listAdminBackgroundPresets = async (params?: ListAdminBackgroundPresetsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminBackgroundPresetListResponse> => {
+
+  return apiMutator<DtoAdminBackgroundPresetListResponse>(getListAdminBackgroundPresetsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateAdminBackgroundPresetUrl = () => {
+
+
+
+
+  return `/api/v1/admin/background-presets`
+}
+
+/**
+ * 创建背景预设；需要 background_preset:create 权限
+ * @summary 创建背景预设
+ */
+export const createAdminBackgroundPreset = async (dtoCreateBackgroundPresetRequest: DtoCreateBackgroundPresetRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBackgroundPresetDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoBackgroundPresetDataResponse>(getCreateAdminBackgroundPresetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCreateBackgroundPresetRequest)
+  }
+);}
+
+
+export const getUpdateAdminBackgroundPresetUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/background-presets/${id}`
+}
+
+/**
+ * 全量更新背景预设；需要 background_preset:update 权限
+ * @summary 更新背景预设
+ */
+export const updateAdminBackgroundPreset = async (id: number,
+    dtoUpdateBackgroundPresetRequest: DtoUpdateBackgroundPresetRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBackgroundPresetDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoBackgroundPresetDataResponse>(getUpdateAdminBackgroundPresetUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateBackgroundPresetRequest)
+  }
+);}
+
+
+export const getDeleteAdminBackgroundPresetUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/background-presets/${id}`
+}
+
+/**
+ * 删除背景预设；需要 background_preset:delete 权限
+ * @summary 删除背景预设
+ */
+export const deleteAdminBackgroundPreset = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminBackgroundPresetUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -351,6 +481,68 @@ export const listAdminComments = async (params?: ListAdminCommentsParams, option
 );}
 
 
+export const getListAdminFeedbackUrl = (params?: ListAdminFeedbackParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/feedback?${stringifiedParams}` : `/api/v1/admin/feedback`
+}
+
+/**
+ * 分页返回意见反馈与版权投诉；需要 feedback:read 权限
+ * @summary 管理端查询反馈
+ */
+export const listAdminFeedback = async (params?: ListAdminFeedbackParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminFeedbackListResponse> => {
+
+  return apiMutator<DtoAdminFeedbackListResponse>(getListAdminFeedbackUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getHandleFeedbackUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/feedback/${id}/handle`
+}
+
+/**
+ * 标记反馈为已处理或待处理；需要 feedback:handle 权限
+ * @summary 处理反馈
+ */
+export const handleFeedback = async (id: number,
+    dtoHandleFeedbackRequest: DtoHandleFeedbackRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoFeedbackDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoFeedbackDataResponse>(getHandleFeedbackUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoHandleFeedbackRequest)
+  }
+);}
+
+
 export const getListAdminGalgamesUrl = (params?: ListAdminGalgamesParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -402,6 +594,151 @@ export const getAdminGalgame = async (id: number, options?: Parameters<typeof ap
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getListAdminGalgameGalleryUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/gallery`
+}
+
+/**
+ * 返回任意状态 Galgame 的游戏画面；需要 galgame_gallery:manage 权限
+ * @summary 管理端查询 Galgame 游戏画面
+ */
+export const listAdminGalgameGallery = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryListResponse> => {
+
+  return apiMutator<DtoGalleryListResponse>(getListAdminGalgameGalleryUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateGalgameGalleryImageUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/gallery`
+}
+
+/**
+ * 把已有图片资源（image_assets）加入 Galgame 画廊，追加到末尾；需要 galgame_gallery:manage 权限
+ * @summary 添加游戏画面
+ */
+export const createGalgameGalleryImage = async (id: number,
+    dtoCreateGalleryImageRequest: DtoCreateGalleryImageRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalleryDataResponse>(getCreateGalgameGalleryImageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCreateGalleryImageRequest)
+  }
+);}
+
+
+export const getReorderGalgameGalleryUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/gallery/order`
+}
+
+/**
+ * 按传入的完整 ID 顺序重写 sort_order（0..n-1）；ID 集合必须恰好覆盖该 Galgame 的全部画廊图片；需要 galgame_gallery:manage 权限
+ * @summary 调整游戏画面排序
+ */
+export const reorderGalgameGallery = async (id: number,
+    dtoReorderGalleryRequest: DtoReorderGalleryRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<ResponseMessageResponse>(getReorderGalgameGalleryUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoReorderGalleryRequest)
+  }
+);}
+
+
+export const getDeleteGalgameGalleryImageUrl = (id: number,
+    galleryId: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/gallery/${galleryId}`
+}
+
+/**
+ * 仅删除画廊关联关系，不删除图片资源和 R2 对象；需要 galgame_gallery:manage 权限
+ * @summary 删除游戏画面
+ */
+export const deleteGalgameGalleryImage = async (id: number,
+    galleryId: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteGalgameGalleryImageUrl(id,galleryId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getUpdateGalgameGalleryImageUrl = (id: number,
+    galleryId: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/gallery/${galleryId}`
+}
+
+/**
+ * 更新游戏画面的标题、描述、类型和剧透标记；需要 galgame_gallery:manage 权限
+ * @summary 编辑游戏画面
+ */
+export const updateGalgameGalleryImage = async (id: number,
+    galleryId: number,
+    dtoUpdateGalleryImageRequest: DtoUpdateGalleryImageRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalleryDataResponse>(getUpdateGalgameGalleryImageUrl(id,galleryId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateGalleryImageRequest)
   }
 );}
 

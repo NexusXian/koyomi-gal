@@ -1039,6 +1039,33 @@ definitions:
     - slug
     - title
     type: object
+  dto.CreateGalleryImageRequest:
+    properties:
+      asset_id:
+        example: 10086
+        type: integer
+      description:
+        example: 游戏标题界面截图
+        type: string
+      image_type:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        example: 0
+        type: integer
+      is_spoiler:
+        example: false
+        type: boolean
+      title:
+        example: 标题画面
+        maxLength: 255
+        type: string
+    required:
+    - asset_id
+    type: object
   dto.CreatePermissionRequest:
     properties:
       code:
@@ -1513,6 +1540,71 @@ definitions:
         type: integer
       data:
         $ref: '#/definitions/dto.GalgameUserRelationData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.GalleryDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalleryImageData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.GalleryImageData:
+    properties:
+      asset_id:
+        example: 3001
+        type: integer
+      description:
+        example: 游戏标题界面截图
+        type: string
+      height:
+        example: 1080
+        type: integer
+      id:
+        example: 1001
+        type: integer
+      image_type:
+        example: 0
+        type: integer
+      is_spoiler:
+        example: false
+        type: boolean
+      sort_order:
+        example: 0
+        type: integer
+      title:
+        example: 标题画面
+        type: string
+      url:
+        example: https://img.example.com/galgames/10001/2026/09/uuid.webp
+        type: string
+      width:
+        example: 1920
+        type: integer
+    type: object
+  dto.GalleryListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.GalleryImageData'
+        type: array
+      total:
+        example: 12
+        type: integer
+    type: object
+  dto.GalleryListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalleryListData'
       msg:
         example: success
         type: string
@@ -2026,6 +2118,21 @@ definitions:
       count:
         example: 120
         type: integer
+    type: object
+  dto.ReorderGalleryRequest:
+    properties:
+      ids:
+        example:
+        - 103
+        - 101
+        - 105
+        - 102
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - ids
     type: object
   dto.ReportedResourceData:
     properties:
@@ -2570,6 +2677,28 @@ definitions:
     - slug
     - status
     - title
+    type: object
+  dto.UpdateGalleryImageRequest:
+    properties:
+      description:
+        example: 共通线结尾画面
+        type: string
+      image_type:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        example: 1
+        type: integer
+      is_spoiler:
+        example: true
+        type: boolean
+      title:
+        example: 游戏实际画面
+        maxLength: 255
+        type: string
     type: object
   dto.UpdateMeRequest:
     properties:
@@ -3694,6 +3823,258 @@ paths:
       security:
       - BearerAuth: []
       summary: 管理端查看 Galgame 详情
+      tags:
+      - admin
+  /api/v1/admin/galgames/{id}/gallery:
+    get:
+      description: 返回任意状态 Galgame 的游戏画面；需要 galgame_gallery:manage 权限
+      operationId: listAdminGalgameGallery
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 游戏画面列表
+          schema:
+            $ref: '#/definitions/dto.GalleryListResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询游戏画面失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询 Galgame 游戏画面
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: 把已有图片资源（image_assets）加入 Galgame 画廊，追加到末尾；需要 galgame_gallery:manage
+        权限
+      operationId: createGalgameGalleryImage
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 添加游戏画面请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateGalleryImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 添加成功
+          schema:
+            $ref: '#/definitions/dto.GalleryDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 或图片资源不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 图片已在画廊中或数量已达上限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 添加游戏画面失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 添加游戏画面
+      tags:
+      - admin
+  /api/v1/admin/galgames/{id}/gallery/{galleryId}:
+    delete:
+      description: 仅删除画廊关联关系，不删除图片资源和 R2 对象；需要 galgame_gallery:manage 权限
+      operationId: deleteGalgameGalleryImage
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 画廊图片 ID
+        in: path
+        name: galleryId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 游戏画面已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 画廊图片不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除游戏画面失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除游戏画面
+      tags:
+      - admin
+    patch:
+      consumes:
+      - application/json
+      description: 更新游戏画面的标题、描述、类型和剧透标记；需要 galgame_gallery:manage 权限
+      operationId: updateGalgameGalleryImage
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 画廊图片 ID
+        in: path
+        name: galleryId
+        required: true
+        type: integer
+      - description: 编辑游戏画面请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateGalleryImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.GalleryDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 画廊图片不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新游戏画面失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 编辑游戏画面
+      tags:
+      - admin
+  /api/v1/admin/galgames/{id}/gallery/order:
+    put:
+      consumes:
+      - application/json
+      description: 按传入的完整 ID 顺序重写 sort_order（0..n-1）；ID 集合必须恰好覆盖该 Galgame 的全部画廊图片；需要
+        galgame_gallery:manage 权限
+      operationId: reorderGalgameGallery
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 排序请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReorderGalleryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序已保存
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: ID 集合与画廊不匹配
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 保存排序失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 调整游戏画面排序
       tags:
       - admin
   /api/v1/admin/galgames/{id}/review:
@@ -5052,6 +5433,38 @@ paths:
       security:
       - BearerAuth: []
       summary: 收藏 Galgame
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/gallery:
+    get:
+      description: 返回已发布 Galgame 的游戏截图 / CG 画廊，按 sort_order 排序，不分页
+      operationId: listGalgameGallery
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 游戏画面列表
+          schema:
+            $ref: '#/definitions/dto.GalleryListResponse'
+        "400":
+          description: Galgame ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询游戏画面失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查询 Galgame 游戏画面
       tags:
       - galgames
   /api/v1/galgames/{id}/me:

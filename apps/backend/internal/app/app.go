@@ -76,6 +76,7 @@ type App struct {
 	AssignmentHandler   *rbacHandler.AssignmentHandler
 	CatalogHandler      *galgameHandler.CatalogHandler
 	UserRelationHandler *galgameHandler.UserRelationHandler
+	GalleryHandler      *galgameHandler.GalleryHandler
 	ResourceHandler     *resourceHandler.ResourceHandler
 	ReportHandler       *resourceHandler.ReportHandler
 	FeedbackHandler     *feedbackHandler.FeedbackHandler
@@ -153,6 +154,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	favoriteService := galgameService.NewFavoriteService(galgameRepository, userRelationRepository)
 	userStateService := galgameService.NewUserStateService(galgameRepository, userRelationRepository)
 	userRelationService := galgameService.NewUserRelationService(galgameRepository, userRelationRepository)
+	galleryRepository := galgameRepo.NewGalleryRepository(postgresDB)
 
 	resourceRepository := resourceRepo.NewResourceRepository(postgresDB)
 	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, rbacSvc)
@@ -192,6 +194,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		cfg.R2.PublicURL,
 	)
 	stopImageCleanup := imageSvc.StartCleanupLoop(context.Background())
+
+	galleryService := galgameService.NewGalleryService(galgameRepository, galleryRepository, imageSvc)
 
 	homeSvc := homeService.NewHomeService(
 		bannerRepository,
@@ -253,6 +257,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 			userStateService,
 			userRelationService,
 		),
+		GalleryHandler:      galgameHandler.NewGalleryHandler(galleryService),
 		ResourceHandler:     resourceHandler.NewResourceHandler(resourceSvc),
 		ReportHandler:       resourceHandler.NewReportHandler(reportSvc),
 		FeedbackHandler:     feedbackHandler.NewFeedbackHandler(feedbackSvc),

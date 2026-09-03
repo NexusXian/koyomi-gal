@@ -455,6 +455,8 @@ onMounted(() => {
       </div>
     </KunCard>
 
+    <GalgameGallery :galgame-id="galgameId" :game-title="galgame?.title" />
+
     <div class="side-grid">
       <KunCard padding="lg" class-name="relation-card">
         <KunHeader name="我的评分" scale="h3" class="section-heading" />

@@ -11,6 +11,7 @@ import type {
   DtoGalgameDataResponse,
   DtoGalgameListResponse,
   DtoGalgameUserRelationResponse,
+  DtoGalleryListResponse,
   DtoRatingDataResponse,
   DtoUpdateGalgameRequest,
   DtoUpsertRatingRequest,
@@ -204,6 +205,30 @@ export const removeGalgameFavorite = async (id: number, options?: Parameters<typ
   {
     ...options,
     method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListGalgameGalleryUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/galgames/${id}/gallery`
+}
+
+/**
+ * 返回已发布 Galgame 的游戏截图 / CG 画廊，按 sort_order 排序，不分页
+ * @summary 查询 Galgame 游戏画面
+ */
+export const listGalgameGallery = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryListResponse> => {
+
+  return apiMutator<DtoGalleryListResponse>(getListGalgameGalleryUrl(id),
+  {
+    ...options,
+    method: 'GET'
 
 
   }

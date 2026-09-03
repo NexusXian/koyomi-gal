@@ -1116,6 +1116,389 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/galgames/{id}/gallery": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回任意状态 Galgame 的游戏画面；需要 galgame_gallery:manage 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询 Galgame 游戏画面",
+                "operationId": "listAdminGalgameGallery",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "游戏画面列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Galgame ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询游戏画面失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "把已有图片资源（image_assets）加入 Galgame 画廊，追加到末尾；需要 galgame_gallery:manage 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "添加游戏画面",
+                "operationId": "createGalgameGalleryImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "添加游戏画面请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateGalleryImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "添加成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 或图片资源不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "图片已在画廊中或数量已达上限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "添加游戏画面失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/gallery/order": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按传入的完整 ID 顺序重写 sort_order（0..n-1）；ID 集合必须恰好覆盖该 Galgame 的全部画廊图片；需要 galgame_gallery:manage 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "调整游戏画面排序",
+                "operationId": "reorderGalgameGallery",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "排序请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReorderGalleryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序已保存",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "ID 集合与画廊不匹配",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "保存排序失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/gallery/{galleryId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "仅删除画廊关联关系，不删除图片资源和 R2 对象；需要 galgame_gallery:manage 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "删除游戏画面",
+                "operationId": "deleteGalgameGalleryImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "画廊图片 ID",
+                        "name": "galleryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "游戏画面已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "画廊图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除游戏画面失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新游戏画面的标题、描述、类型和剧透标记；需要 galgame_gallery:manage 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "编辑游戏画面",
+                "operationId": "updateGalgameGalleryImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "画廊图片 ID",
+                        "name": "galleryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑游戏画面请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateGalleryImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "画廊图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新游戏画面失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/galgames/{id}/review": {
             "put": {
                 "security": [
@@ -3173,6 +3556,54 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "取消收藏失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/galgames/{id}/gallery": {
+            "get": {
+                "description": "返回已发布 Galgame 的游戏截图 / CG 画廊，按 sort_order 排序，不分页",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "查询 Galgame 游戏画面",
+                "operationId": "listGalgameGallery",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "游戏画面列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Galgame ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询游戏画面失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -8264,6 +8695,42 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateGalleryImageRequest": {
+            "type": "object",
+            "required": [
+                "asset_id"
+            ],
+            "properties": {
+                "asset_id": {
+                    "type": "integer",
+                    "example": 10086
+                },
+                "description": {
+                    "type": "string",
+                    "example": "游戏标题界面截图"
+                },
+                "image_type": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                    ],
+                    "example": 0
+                },
+                "is_spoiler": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "标题画面"
+                }
+            }
+        },
         "dto.CreatePermissionRequest": {
             "type": "object",
             "required": [
@@ -8927,6 +9394,98 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.GalgameUserRelationData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.GalleryDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GalleryImageData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.GalleryImageData": {
+            "type": "object",
+            "properties": {
+                "asset_id": {
+                    "type": "integer",
+                    "example": 3001
+                },
+                "description": {
+                    "type": "string",
+                    "example": "游戏标题界面截图"
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 1080
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "image_type": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "is_spoiler": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "title": {
+                    "type": "string",
+                    "example": "标题画面"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://img.example.com/galgames/10001/2026/09/uuid.webp"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 1920
+                }
+            }
+        },
+        "dto.GalleryListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GalleryImageData"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 12
+                }
+            }
+        },
+        "dto.GalleryListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GalleryListData"
                 },
                 "msg": {
                     "type": "string",
@@ -9665,6 +10224,27 @@ const docTemplate = `{
                 "count": {
                     "type": "integer",
                     "example": 120
+                }
+            }
+        },
+        "dto.ReorderGalleryRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        103,
+                        101,
+                        105,
+                        102
+                    ]
                 }
             }
         },
@@ -10416,6 +10996,35 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "千恋＊万花"
+                }
+            }
+        },
+        "dto.UpdateGalleryImageRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "共通线结尾画面"
+                },
+                "image_type": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                    ],
+                    "example": 1
+                },
+                "is_spoiler": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "游戏实际画面"
                 }
             }
         },
