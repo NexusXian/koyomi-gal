@@ -283,20 +283,22 @@ func (s *CatalogService) CreateGalgame(
 		return nil, err
 	}
 
+	description := strings.TrimSpace(req.Description)
 	galgame := &model.Galgame{
-		Title:          title,
-		OriginalTitle:  strings.TrimSpace(req.OriginalTitle),
-		RomajiTitle:    strings.TrimSpace(req.RomajiTitle),
-		Slug:           slug,
-		Description:    strings.TrimSpace(req.Description),
-		CoverURL:       strings.TrimSpace(req.CoverURL),
-		BannerURL:      strings.TrimSpace(req.BannerURL),
-		DeveloperID:    req.DeveloperID,
-		ReleaseDate:    releaseDate,
-		AgeRating:      req.AgeRating,
-		CoverSensitive: req.CoverSensitive,
-		Status:         req.Status,
-		CreatedBy:      &userID,
+		Title:             title,
+		OriginalTitle:     strings.TrimSpace(req.OriginalTitle),
+		RomajiTitle:       strings.TrimSpace(req.RomajiTitle),
+		Slug:              slug,
+		Description:       description,
+		DescriptionSource: descriptionSourceForEdit(description),
+		CoverURL:          strings.TrimSpace(req.CoverURL),
+		BannerURL:         strings.TrimSpace(req.BannerURL),
+		DeveloperID:       req.DeveloperID,
+		ReleaseDate:       releaseDate,
+		AgeRating:         req.AgeRating,
+		CoverSensitive:    req.CoverSensitive,
+		Status:            req.Status,
+		CreatedBy:         &userID,
 	}
 	aliases := uniqueNonEmptyStrings(req.Aliases)
 	write := func(tx *repository.GalgameRepository, db *gorm.DB) error {
@@ -390,11 +392,17 @@ func (s *CatalogService) UpdateGalgame(
 	aliases := uniqueNonEmptyStrings(req.Aliases)
 	changed, coverOnly := galgameUpdateChanges(galgame, req, title, slug, releaseDate, aliases, tagIDs)
 
+	description := strings.TrimSpace(req.Description)
+	descriptionChanged := galgame.Description != description
+
 	galgame.Title = title
 	galgame.OriginalTitle = strings.TrimSpace(req.OriginalTitle)
 	galgame.RomajiTitle = strings.TrimSpace(req.RomajiTitle)
 	galgame.Slug = slug
-	galgame.Description = strings.TrimSpace(req.Description)
+	galgame.Description = description
+	if descriptionChanged {
+		galgame.DescriptionSource = descriptionSourceForEdit(description)
+	}
 	galgame.CoverURL = strings.TrimSpace(req.CoverURL)
 	galgame.BannerURL = strings.TrimSpace(req.BannerURL)
 	galgame.DeveloperID = req.DeveloperID
@@ -787,6 +795,16 @@ func (s *CatalogService) recordInitialGalleryContributions(ctx context.Context, 
 		}
 	}
 	return nil
+}
+
+// descriptionSourceForEdit records human-submitted descriptions as manual so
+// automatic enrichment can no longer overwrite them. Clearing a description
+// resets the source to unknown instead.
+func descriptionSourceForEdit(description string) string {
+	if description == "" {
+		return model.DescriptionSourceUnknown
+	}
+	return model.DescriptionSourceManual
 }
 
 func galgameUpdateChanges(

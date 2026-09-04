@@ -142,11 +142,14 @@ func TestImportNewGame(t *testing.T) {
 	if err := db.Preload("Aliases").Preload("Tags").First(&game, *result.GalgameID).Error; err != nil {
 		t.Fatalf("load imported galgame: %v", err)
 	}
-	if game.Status != galgameModel.GalgameStatusPublished {
-		t.Errorf("status = %d, want published", game.Status)
+	if game.Status != galgameModel.GalgameStatusPending {
+		t.Errorf("status = %d, want pending: external imports require review", game.Status)
 	}
 	if game.SourceType != galgameModel.GalgameSourceVNDB {
 		t.Errorf("source type = %d, want VNDB", game.SourceType)
+	}
+	if game.DescriptionSource != galgameModel.DescriptionSourceVNDB {
+		t.Errorf("description source = %q, want vndb", game.DescriptionSource)
 	}
 	if game.OriginalLanguage != "ja" || game.LengthMinutes == nil || *game.LengthMinutes != 1200 {
 		t.Errorf("language/length = %q/%v", game.OriginalLanguage, game.LengthMinutes)
@@ -334,6 +337,61 @@ func TestImportRollsBackOnFailure(t *testing.T) {
 	}
 	if got := countRows(t, db, &galgameModel.Alias{}); got != 0 {
 		t.Errorf("aliases = %d, want 0", got)
+	}
+}
+
+func TestImportRecordsDescriptionSourceAndPendingStatus(t *testing.T) {
+	release := time.Date(2018, time.June, 29, 0, 0, 0, 0, time.UTC)
+
+	emptyDescription := testExternalGame("v-empty", "No Description Game", &release)
+	emptyDescription.Description = "  \r\n"
+	vndbGame := testExternalGame("v20424", "Summer Pockets", &release)
+	bangumiGame := testExternalGame("b200763", "Summer Pockets", &release)
+	bangumiGame.Source = "bangumi"
+	bangumiGame.Description = "中文简介"
+
+	testutil.SkipWithoutPostgres(t)
+	db := testutil.NewPostgres(t)
+	svc := NewService(importerRepository.NewRepository(db), map[string]provider.Provider{
+		"vndb":    &stubProvider{games: []provider.ExternalGame{vndbGame, emptyDescription}},
+		"bangumi": &stubProvider{games: []provider.ExternalGame{bangumiGame}},
+	}, nil)
+
+	for _, tc := range []struct {
+		provider   string
+		externalID string
+		wantSource string
+	}{
+		{"vndb", "v20424", galgameModel.DescriptionSourceVNDB},
+		{"bangumi", "b200763", galgameModel.DescriptionSourceBangumi},
+		{"vndb", "v-empty", galgameModel.DescriptionSourceUnknown},
+	} {
+		result, err := svc.Import(context.Background(), ImportInput{
+			Provider:        tc.provider,
+			ExternalID:      tc.externalID,
+			DuplicateAction: DuplicateActionCreateNew,
+		})
+		if err != nil {
+			t.Fatalf("import %s/%s: %v", tc.provider, tc.externalID, err)
+		}
+		if result.GalgameID == nil {
+			t.Fatalf("import %s/%s: no galgame id: %+v", tc.provider, tc.externalID, result)
+		}
+		var game galgameModel.Galgame
+		if err := db.First(&game, *result.GalgameID).Error; err != nil {
+			t.Fatalf("load %s/%s: %v", tc.provider, tc.externalID, err)
+		}
+		if game.Status != galgameModel.GalgameStatusPending {
+			t.Errorf("%s/%s: status = %d, want pending", tc.provider, tc.externalID, game.Status)
+		}
+		if game.DescriptionSource != tc.wantSource {
+			t.Errorf("%s/%s: description source = %q, want %q",
+				tc.provider, tc.externalID, game.DescriptionSource, tc.wantSource)
+		}
+		if tc.wantSource == galgameModel.DescriptionSourceUnknown && game.Description != "" {
+			t.Errorf("%s/%s: description = %q, want blank after normalization",
+				tc.provider, tc.externalID, game.Description)
+		}
 	}
 }
 

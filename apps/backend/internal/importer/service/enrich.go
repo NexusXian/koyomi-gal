@@ -179,7 +179,19 @@ func applyEnrichment(
 		setIfAllowed("title", galgame.Title, strings.TrimSpace(game.Title))
 	}
 	if opts.FillDescription {
-		setIfAllowed("description", galgame.Description, strings.TrimSpace(game.Description))
+		incoming := normalizeDescription(game.Description)
+		if incoming != galgame.Description &&
+			shouldReplaceDescription(
+				galgame.Description,
+				galgame.DescriptionSource,
+				incoming,
+				game.Source,
+				opts.Force,
+			) {
+			updates["description"] = incoming
+			updates["description_source"] = normalizeDescriptionSource(game.Source)
+			updated = append(updated, EnrichFieldDescription)
+		}
 	}
 	if opts.FillCover {
 		setIfAllowed("cover_url", galgame.CoverURL, strings.TrimSpace(game.CoverURL))
@@ -541,7 +553,7 @@ type MatchCandidateBatchResult struct {
 
 // MatchCandidateBatchSummary aggregates per-candidate outcomes of one batch.
 type MatchCandidateBatchSummary struct {
-	Results       []MatchCandidateBatchResult
+	Results        []MatchCandidateBatchResult
 	SucceededCount int
 	FailedCount    int
 }

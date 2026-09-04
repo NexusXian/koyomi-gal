@@ -25,3 +25,11 @@ func NormalizeGameTitle(value string) string {
 func casefoldValue(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
 }
+
+// normalizeDescription canonicalizes imported description text before it is
+// stored. The column keeps Markdown source text only.
+func normalizeDescription(value string) string {
+	value = strings.TrimSpace(value)
+	value = strings.ReplaceAll(value, "\r\n", "\n")
+	return value
+}

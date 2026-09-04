@@ -136,7 +136,10 @@ func TestEnrichFillsOnlyEmptyFields(t *testing.T) {
 		t.Fatalf("seed alias: %v", err)
 	}
 	if err := db.Model(&galgameModel.Galgame{}).Where("id = ?", gameID).
-		Update("description", "用户维护的简介").Error; err != nil {
+		Updates(map[string]any{
+			"description":        "用户维护的简介",
+			"description_source": galgameModel.DescriptionSourceManual,
+		}).Error; err != nil {
 		t.Fatalf("seed description: %v", err)
 	}
 
@@ -219,6 +222,131 @@ func assertContainsField(t *testing.T, fields []string, want string) {
 	t.Errorf("updated fields %v missing %q", fields, want)
 }
 
+func TestEnrichBangumiOverridesVndbDescription(t *testing.T) {
+	release := date(2018, time.June, 29)
+	external := bangumiExternalGame("200763", "Summer Pockets", "夏日口袋", release)
+	svc, db := newEnrichTestService(t, &stubSearchProvider{games: []provider.ExternalGame{external}})
+	gameID := seedVndbGalgame(t, db, "Summer Pockets", "サマーポケッツ", "Summer Pockets", release, "Key")
+	if err := db.Model(&galgameModel.Galgame{}).Where("id = ?", gameID).
+		Updates(map[string]any{
+			"description":        "English description from VNDB",
+			"description_source": galgameModel.DescriptionSourceVNDB,
+		}).Error; err != nil {
+		t.Fatalf("seed vndb description: %v", err)
+	}
+
+	result, err := svc.Enrich(context.Background(), gameID, "bangumi", "200763", DefaultEnrichOptions())
+	if err != nil {
+		t.Fatalf("enrich: %v", err)
+	}
+	assertContainsField(t, result.UpdatedFields, EnrichFieldDescription)
+
+	var game galgameModel.Galgame
+	if err := db.First(&game, gameID).Error; err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if game.Description != "中文简介 200763" {
+		t.Errorf("description = %q, want the Bangumi Chinese summary to replace VNDB English", game.Description)
+	}
+	if game.DescriptionSource != galgameModel.DescriptionSourceBangumi {
+		t.Errorf("description source = %q, want bangumi", game.DescriptionSource)
+	}
+}
+
+func TestEnrichKeepsManualDescription(t *testing.T) {
+	release := date(2018, time.June, 29)
+	external := bangumiExternalGame("200763", "Summer Pockets", "夏日口袋", release)
+	svc, db := newEnrichTestService(t, &stubSearchProvider{games: []provider.ExternalGame{external}})
+	gameID := seedVndbGalgame(t, db, "Summer Pockets", "サマーポケッツ", "Summer Pockets", release, "Key")
+	if err := db.Model(&galgameModel.Galgame{}).Where("id = ?", gameID).
+		Updates(map[string]any{
+			"description":        "管理员手写简介",
+			"description_source": galgameModel.DescriptionSourceManual,
+		}).Error; err != nil {
+		t.Fatalf("seed manual description: %v", err)
+	}
+
+	result, err := svc.Enrich(context.Background(), gameID, "bangumi", "200763", DefaultEnrichOptions())
+	if err != nil {
+		t.Fatalf("enrich: %v", err)
+	}
+	for _, field := range result.UpdatedFields {
+		if field == EnrichFieldDescription {
+			t.Error("manual description must not be replaced without force")
+		}
+	}
+
+	var game galgameModel.Galgame
+	if err := db.First(&game, gameID).Error; err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if game.Description != "管理员手写简介" || game.DescriptionSource != galgameModel.DescriptionSourceManual {
+		t.Errorf("description = %q/%q, want the manual content untouched", game.Description, game.DescriptionSource)
+	}
+}
+
+func TestEnrichForceOverridesManualDescription(t *testing.T) {
+	release := date(2018, time.June, 29)
+	external := bangumiExternalGame("200763", "Summer Pockets", "夏日口袋", release)
+	svc, db := newEnrichTestService(t, &stubSearchProvider{games: []provider.ExternalGame{external}})
+	gameID := seedVndbGalgame(t, db, "Summer Pockets", "サマーポケッツ", "Summer Pockets", release, "Key")
+	if err := db.Model(&galgameModel.Galgame{}).Where("id = ?", gameID).
+		Updates(map[string]any{
+			"description":        "管理员手写简介",
+			"description_source": galgameModel.DescriptionSourceManual,
+		}).Error; err != nil {
+		t.Fatalf("seed manual description: %v", err)
+	}
+
+	opts := DefaultEnrichOptions()
+	opts.Force = true
+	if _, err := svc.Enrich(context.Background(), gameID, "bangumi", "200763", opts); err != nil {
+		t.Fatalf("enrich: %v", err)
+	}
+
+	var game galgameModel.Galgame
+	if err := db.First(&game, gameID).Error; err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if game.Description != "中文简介 200763" {
+		t.Errorf("description = %q, want forced overwrite", game.Description)
+	}
+	if game.DescriptionSource != galgameModel.DescriptionSourceBangumi {
+		t.Errorf("description source = %q, want bangumi", game.DescriptionSource)
+	}
+}
+
+func TestEnrichVndbDoesNotOverrideBangumiDescription(t *testing.T) {
+	release := date(2018, time.June, 29)
+	vndbGame := testExternalGame("200763", "Summer Pockets", release)
+	testutil.SkipWithoutPostgres(t)
+	db := testutil.NewPostgres(t)
+	svc := NewService(importerRepository.NewRepository(db), map[string]provider.Provider{
+		"vndb":    &stubProvider{games: []provider.ExternalGame{vndbGame}},
+		"bangumi": &stubSearchProvider{},
+	}, nil)
+	gameID := seedVndbGalgame(t, db, "Summer Pockets", "サマーポケッツ", "Summer Pockets", release, "")
+	if err := db.Model(&galgameModel.Galgame{}).Where("id = ?", gameID).
+		Updates(map[string]any{
+			"description":        "中文简介 200763",
+			"description_source": galgameModel.DescriptionSourceBangumi,
+		}).Error; err != nil {
+		t.Fatalf("seed bangumi description: %v", err)
+	}
+
+	if _, err := svc.Enrich(context.Background(), gameID, "vndb", "200763", DefaultEnrichOptions()); err != nil {
+		t.Fatalf("enrich: %v", err)
+	}
+
+	var game galgameModel.Galgame
+	if err := db.First(&game, gameID).Error; err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if game.Description != "中文简介 200763" || game.DescriptionSource != galgameModel.DescriptionSourceBangumi {
+		t.Errorf("description = %q/%q, want the Bangumi summary kept", game.Description, game.DescriptionSource)
+	}
+}
+
 func TestEnrichForceOverwritesMaintainedFields(t *testing.T) {
 	release := date(2018, time.June, 29)
 	external := bangumiExternalGame("200763", "Summer Pockets", "夏日口袋", release)
@@ -239,6 +367,9 @@ func TestEnrichForceOverwritesMaintainedFields(t *testing.T) {
 	}
 	if game.Description != "中文简介 200763" {
 		t.Errorf("description = %q, want forced overwrite", game.Description)
+	}
+	if game.DescriptionSource != galgameModel.DescriptionSourceBangumi {
+		t.Errorf("description source = %q, want bangumi after forced enrich", game.DescriptionSource)
 	}
 }
 

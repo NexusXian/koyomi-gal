@@ -60,6 +60,18 @@ const tags = ref<DtoTagSummary[]>([])
 const submitting = ref(false)
 const loading = ref(false)
 
+// Orval 类型尚未包含 description_source，先以宽松方式读取后端新增字段
+const DESCRIPTION_SOURCE_LABELS: Record<string, string> = {
+  manual: '手动编辑',
+  bangumi: 'Bangumi',
+  vndb: 'VNDB',
+  unknown: '未知'
+}
+const descriptionSource = ref('')
+const descriptionSourceLabel = computed(
+  () => DESCRIPTION_SOURCE_LABELS[descriptionSource.value] ?? '未知'
+)
+
 const rules: Record<string, Rule[]> = {
   title: [{ required: true, message: '请输入标题' }],
   slug: [
@@ -137,6 +149,9 @@ async function loadGalgame(): Promise<void> {
       // 待审核等未发布条目对公开接口返回 404，回退到管理端接口（需 galgame:review）
       data = unwrapApiData(await getAdminGalgame(props.galgameId))
     }
+    descriptionSource.value =
+      (data as DtoGalgameResponse & { description_source?: string })
+        .description_source ?? ''
     Object.assign(formState, {
       title: data.title ?? '',
       slug: data.slug ?? '',
@@ -377,6 +392,9 @@ async function submit(): Promise<void> {
         </a-form-item>
 
         <a-form-item label="简介（支持 Markdown）">
+          <span class="description-source">
+            当前简介来源：{{ descriptionSourceLabel }}
+          </span>
           <ClientOnly>
             <MarkdownEditor
               v-model="formState.description"
@@ -450,6 +468,13 @@ async function submit(): Promise<void> {
   color: var(--color-default-500);
   font-size: 12px;
   line-height: 1.6;
+}
+
+.description-source {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-default-500);
+  font-size: 13px;
 }
 
 .form-actions {

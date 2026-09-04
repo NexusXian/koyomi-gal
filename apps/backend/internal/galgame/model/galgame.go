@@ -30,6 +30,16 @@ const (
 	GalgameSourceMixed
 )
 
+// Description sources ordered by enrichment priority: manual > bangumi >
+// vndb > unknown. Automatic enrichment may only replace a description
+// coming from a lower-priority source.
+const (
+	DescriptionSourceUnknown = "unknown"
+	DescriptionSourceVNDB    = "vndb"
+	DescriptionSourceBangumi = "bangumi"
+	DescriptionSourceManual  = "manual"
+)
+
 type Galgame struct {
 	ID                uint                 `gorm:"primaryKey" json:"id"`
 	Title             string               `gorm:"size:255;not null" json:"title"`
@@ -37,6 +47,7 @@ type Galgame struct {
 	RomajiTitle       string               `gorm:"size:255;not null" json:"romaji_title"`
 	Slug              string               `gorm:"size:255;uniqueIndex;not null" json:"slug"`
 	Description       string               `gorm:"not null" json:"description"`
+	DescriptionSource string               `gorm:"size:32;not null;default:''" json:"description_source"`
 	CoverURL          string               `gorm:"not null" json:"cover_url"`
 	BannerURL         string               `gorm:"not null" json:"banner_url"`
 	DeveloperID       *uint                `json:"developer_id"`

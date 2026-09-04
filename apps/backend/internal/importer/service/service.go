@@ -359,12 +359,14 @@ func createGalgame(
 		return nil, err
 	}
 	now := time.Now()
+	description := normalizeDescription(game.Description)
 	created := &galgameModel.Galgame{
 		Title:             strings.TrimSpace(game.Title),
 		OriginalTitle:     strings.TrimSpace(game.OriginalTitle),
 		RomajiTitle:       strings.TrimSpace(game.RomajiTitle),
 		Slug:              game.Source + "-" + game.ExternalID,
-		Description:       strings.TrimSpace(game.Description),
+		Description:       description,
+		DescriptionSource: descriptionSourceForImport(game.Source, description),
 		CoverURL:          strings.TrimSpace(game.CoverURL),
 		DeveloperID:       developerID,
 		ReleaseDate:       game.ReleaseDate,
@@ -372,7 +374,7 @@ func createGalgame(
 		LengthMinutes:     game.LengthMinutes,
 		SourceType:        sourceTypeForProvider(game.Source),
 		MetadataUpdatedAt: &now,
-		Status:            galgameModel.GalgameStatusPublished,
+		Status:            galgameModel.GalgameStatusPending,
 		CreatedBy:         createdBy,
 	}
 	if created.Title == "" {
@@ -408,11 +410,13 @@ func updateGalgameMetadata(
 		return err
 	}
 	now := time.Now()
+	description := normalizeDescription(game.Description)
 	updates := map[string]any{
 		"title":               strings.TrimSpace(game.Title),
 		"original_title":      strings.TrimSpace(game.OriginalTitle),
 		"romaji_title":        strings.TrimSpace(game.RomajiTitle),
-		"description":         strings.TrimSpace(game.Description),
+		"description":         description,
+		"description_source":  descriptionSourceForImport(game.Source, description),
 		"cover_url":           strings.TrimSpace(game.CoverURL),
 		"developer_id":        developerID,
 		"release_date":        game.ReleaseDate,
