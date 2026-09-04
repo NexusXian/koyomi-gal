@@ -19,6 +19,8 @@ import type {
   DtoImportPreviewResponse,
   DtoImportProvidersResponse,
   DtoImportSearchResponse,
+  DtoMatchCandidateBatchRequest,
+  DtoMatchCandidateBatchResponse,
   DtoMatchCandidateListResponse,
   GetEnrichStatsParams,
   ListExternalCandidatesParams,
@@ -354,6 +356,66 @@ export const listMatchCandidates = async (params?: ListMatchCandidatesParams, op
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getBatchApproveMatchCandidatesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/import/matches/batch-approve`
+}
+
+/**
+ * 逐条关联候选外部条目并执行默认补全，单条失败不影响其余候选
+ * @summary 批量通过匹配候选
+ */
+export const batchApproveMatchCandidates = async (dtoMatchCandidateBatchRequest: DtoMatchCandidateBatchRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoMatchCandidateBatchResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoMatchCandidateBatchResponse>(getBatchApproveMatchCandidatesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoMatchCandidateBatchRequest)
+  }
+);}
+
+
+export const getBatchRejectMatchCandidatesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/import/matches/batch-reject`
+}
+
+/**
+ * 逐条将待审核候选标记为已拒绝，不产生任何数据变更，单条失败不影响其余候选
+ * @summary 批量拒绝匹配候选
+ */
+export const batchRejectMatchCandidates = async (dtoMatchCandidateBatchRequest: DtoMatchCandidateBatchRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoMatchCandidateBatchResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoMatchCandidateBatchResponse>(getBatchRejectMatchCandidatesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoMatchCandidateBatchRequest)
   }
 );}
 

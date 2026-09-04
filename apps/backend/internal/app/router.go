@@ -113,6 +113,8 @@ func (app *App) setupRoutes() {
 		admin.GET("/import/matches", requirePermission("galgame:import"), app.ImporterHandler.ListMatchCandidates)
 		admin.POST("/import/matches/:id/approve", requirePermission("galgame:import"), app.ImporterHandler.ApproveMatchCandidate)
 		admin.POST("/import/matches/:id/reject", requirePermission("galgame:import"), app.ImporterHandler.RejectMatchCandidate)
+		admin.POST("/import/matches/batch-approve", requirePermission("galgame:import"), app.ImporterHandler.BatchApproveMatchCandidates)
+		admin.POST("/import/matches/batch-reject", requirePermission("galgame:import"), app.ImporterHandler.BatchRejectMatchCandidates)
 		admin.GET("/galgames/:id/gallery", requirePermission("galgame_gallery:manage"), app.GalleryHandler.ListAdminGalgameGallery)
 		admin.POST("/galgames/:id/gallery", requirePermission("galgame_gallery:manage"), app.GalleryHandler.CreateGalgameGalleryImage)
 		admin.PUT("/galgames/:id/gallery/order", requirePermission("galgame_gallery:manage"), app.GalleryHandler.ReorderGalgameGallery)

@@ -2496,6 +2496,122 @@
                 }
             }
         },
+        "/api/v1/admin/import/matches/batch-approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "逐条关联候选外部条目并执行默认补全，单条失败不影响其余候选",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "批量通过匹配候选",
+                "operationId": "batchApproveMatchCandidates",
+                "parameters": [
+                    {
+                        "description": "批量审核请求，单次最多 100 条",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MatchCandidateBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "逐条审核结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MatchCandidateBatchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/matches/batch-reject": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "逐条将待审核候选标记为已拒绝，不产生任何数据变更，单条失败不影响其余候选",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "批量拒绝匹配候选",
+                "operationId": "batchRejectMatchCandidates",
+                "parameters": [
+                    {
+                        "description": "批量审核请求，单次最多 100 条",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MatchCandidateBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "逐条审核结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MatchCandidateBatchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/import/matches/{id}/approve": {
             "post": {
                 "security": [
@@ -11912,6 +12028,83 @@
                 },
                 "data": {
                     "$ref": "#/definitions/dto.ImportSearchData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.MatchCandidateBatchData": {
+            "type": "object",
+            "properties": {
+                "failed_count": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchCandidateBatchItem"
+                    }
+                },
+                "processed_count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "succeeded_count": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "dto.MatchCandidateBatchItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "message": {
+                    "type": "string",
+                    "example": "匹配候选已审核"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "approved"
+                }
+            }
+        },
+        "dto.MatchCandidateBatchRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            }
+        },
+        "dto.MatchCandidateBatchResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MatchCandidateBatchData"
                 },
                 "msg": {
                     "type": "string",

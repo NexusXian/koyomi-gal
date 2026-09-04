@@ -532,6 +532,58 @@ func (s *Service) RejectMatchCandidate(ctx context.Context, candidateID uint64, 
 	return s.repository.ReviewMatchCandidate(ctx, candidateID, importerModel.MatchCandidateStatusRejected, reviewer)
 }
 
+// MatchCandidateBatchResult reports the review outcome of one candidate ID.
+// Err is nil when the candidate was reviewed successfully.
+type MatchCandidateBatchResult struct {
+	ID  uint64
+	Err error
+}
+
+// MatchCandidateBatchSummary aggregates per-candidate outcomes of one batch.
+type MatchCandidateBatchSummary struct {
+	Results       []MatchCandidateBatchResult
+	SucceededCount int
+	FailedCount    int
+}
+
+// MaxMatchCandidateBatchSize caps how many candidates one batch request may
+// review; each approval calls the external provider, so batches stay bounded.
+const MaxMatchCandidateBatchSize = 100
+
+// BatchApproveMatchCandidates approves candidates sequentially. Every item is
+// reported independently so a single failure never aborts the batch.
+func (s *Service) BatchApproveMatchCandidates(ctx context.Context, ids []uint64, reviewer *uint) MatchCandidateBatchSummary {
+	summary := MatchCandidateBatchSummary{Results: make([]MatchCandidateBatchResult, 0, len(ids))}
+	for _, id := range ids {
+		result := MatchCandidateBatchResult{ID: id}
+		if _, err := s.ApproveMatchCandidate(ctx, id, reviewer); err != nil {
+			result.Err = err
+			summary.FailedCount++
+		} else {
+			summary.SucceededCount++
+		}
+		summary.Results = append(summary.Results, result)
+	}
+	return summary
+}
+
+// BatchRejectMatchCandidates rejects candidates sequentially with the same
+// per-item reporting as BatchApproveMatchCandidates.
+func (s *Service) BatchRejectMatchCandidates(ctx context.Context, ids []uint64, reviewer *uint) MatchCandidateBatchSummary {
+	summary := MatchCandidateBatchSummary{Results: make([]MatchCandidateBatchResult, 0, len(ids))}
+	for _, id := range ids {
+		result := MatchCandidateBatchResult{ID: id}
+		if err := s.RejectMatchCandidate(ctx, id, reviewer); err != nil {
+			result.Err = err
+			summary.FailedCount++
+		} else {
+			summary.SucceededCount++
+		}
+		summary.Results = append(summary.Results, result)
+	}
+	return summary
+}
+
 // ListMatchCandidates returns review candidates with galgame context.
 func (s *Service) ListMatchCandidates(
 	ctx context.Context,

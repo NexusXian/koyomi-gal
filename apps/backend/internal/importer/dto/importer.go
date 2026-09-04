@@ -2,6 +2,7 @@ package dto
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"backend/internal/importer/model"
@@ -295,6 +296,29 @@ type MatchCandidateListResponse struct {
 	Msg  string                 `json:"msg" example:"success"`
 }
 
+type MatchCandidateBatchRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1,max=100,dive,gt=0" example:"1,2,3"`
+}
+
+type MatchCandidateBatchItem struct {
+	ID      uint64 `json:"id" example:"1"`
+	Status  string `json:"status" example:"approved"`
+	Message string `json:"message,omitempty" example:"匹配候选已审核"`
+}
+
+type MatchCandidateBatchData struct {
+	Items          []MatchCandidateBatchItem `json:"items"`
+	ProcessedCount int                       `json:"processed_count" example:"3"`
+	SucceededCount int                       `json:"succeeded_count" example:"2"`
+	FailedCount    int                       `json:"failed_count" example:"1"`
+}
+
+type MatchCandidateBatchResponse struct {
+	Code int                     `json:"code" example:"0"`
+	Data MatchCandidateBatchData `json:"data"`
+	Msg  string                  `json:"msg" example:"success"`
+}
+
 func NewEnrichResultData(result *service.EnrichResult) EnrichResultData {
 	fields := result.UpdatedFields
 	if fields == nil {
@@ -370,6 +394,39 @@ func NewMatchCandidateItems(candidates []model.ExternalMatchCandidate) []MatchCa
 		items = append(items, item)
 	}
 	return items
+}
+
+func NewMatchCandidateBatchData(summary service.MatchCandidateBatchSummary, successStatus string) MatchCandidateBatchData {
+	items := make([]MatchCandidateBatchItem, 0, len(summary.Results))
+	for _, result := range summary.Results {
+		item := MatchCandidateBatchItem{ID: result.ID}
+		if result.Err == nil {
+			item.Status = successStatus
+		} else {
+			item.Status = "failed"
+			item.Message = matchCandidateBatchMessage(result.Err)
+		}
+		items = append(items, item)
+	}
+	return MatchCandidateBatchData{
+		Items:          items,
+		ProcessedCount: len(items),
+		SucceededCount: summary.SucceededCount,
+		FailedCount:    summary.FailedCount,
+	}
+}
+
+func matchCandidateBatchMessage(err error) string {
+	switch {
+	case errors.Is(err, service.ErrMatchCandidateNotFound):
+		return "匹配候选不存在"
+	case errors.Is(err, service.ErrMatchCandidateReviewed):
+		return "匹配候选已审核"
+	case errors.Is(err, service.ErrExternalGameNotFound):
+		return "外部条目不存在"
+	default:
+		return "处理失败"
+	}
 }
 
 func NewProvidersData(providers []string) ImportProvidersData {

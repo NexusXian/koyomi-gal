@@ -2343,6 +2343,60 @@ definitions:
         example: success
         type: string
     type: object
+  dto.MatchCandidateBatchData:
+    properties:
+      failed_count:
+        example: 1
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/dto.MatchCandidateBatchItem'
+        type: array
+      processed_count:
+        example: 3
+        type: integer
+      succeeded_count:
+        example: 2
+        type: integer
+    type: object
+  dto.MatchCandidateBatchItem:
+    properties:
+      id:
+        example: 1
+        type: integer
+      message:
+        example: 匹配候选已审核
+        type: string
+      status:
+        example: approved
+        type: string
+    type: object
+  dto.MatchCandidateBatchRequest:
+    properties:
+      ids:
+        example:
+        - 1
+        - 2
+        - 3
+        items:
+          type: integer
+        maxItems: 100
+        minItems: 1
+        type: array
+    required:
+    - ids
+    type: object
+  dto.MatchCandidateBatchResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.MatchCandidateBatchData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.MatchCandidateItem:
     properties:
       confidence:
@@ -5881,6 +5935,80 @@ paths:
       security:
       - BearerAuth: []
       summary: 拒绝匹配候选
+      tags:
+      - adminImport
+  /api/v1/admin/import/matches/batch-approve:
+    post:
+      consumes:
+      - application/json
+      description: 逐条关联候选外部条目并执行默认补全，单条失败不影响其余候选
+      operationId: batchApproveMatchCandidates
+      parameters:
+      - description: 批量审核请求，单次最多 100 条
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MatchCandidateBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 逐条审核结果
+          schema:
+            $ref: '#/definitions/dto.MatchCandidateBatchResponse'
+        "400":
+          description: 请求格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 批量通过匹配候选
+      tags:
+      - adminImport
+  /api/v1/admin/import/matches/batch-reject:
+    post:
+      consumes:
+      - application/json
+      description: 逐条将待审核候选标记为已拒绝，不产生任何数据变更，单条失败不影响其余候选
+      operationId: batchRejectMatchCandidates
+      parameters:
+      - description: 批量审核请求，单次最多 100 条
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MatchCandidateBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 逐条审核结果
+          schema:
+            $ref: '#/definitions/dto.MatchCandidateBatchResponse'
+        "400":
+          description: 请求格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 批量拒绝匹配候选
       tags:
       - adminImport
   /api/v1/admin/import/providers:

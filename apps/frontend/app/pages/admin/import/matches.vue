@@ -3,6 +3,8 @@ import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import {
   approveMatchCandidate,
+  batchApproveMatchCandidates,
+  batchRejectMatchCandidates,
   listMatchCandidates,
   rejectMatchCandidate
 } from '~/api/generated/admin-import/admin-import'
@@ -34,6 +36,8 @@ const items = ref<DtoMatchCandidateItem[]>([])
 const total = ref(0)
 const loading = ref(false)
 const actingId = ref<number | null>(null)
+const selectedIds = ref<number[]>([])
+const batchLoading = ref<'approve' | 'reject' | null>(null)
 
 async function load(): Promise<void> {
   loading.value = true
@@ -47,6 +51,7 @@ async function load(): Promise<void> {
     )
     items.value = data.items ?? []
     total.value = data.total ?? 0
+    selectedIds.value = []
   } catch (error) {
     message.error(getApiErrorMessage(error, '查询匹配候选失败'))
   } finally {
@@ -101,6 +106,49 @@ async function reject(item: DtoMatchCandidateItem): Promise<void> {
   }
 }
 
+const rowSelection = computed(() =>
+  status.value === 0
+    ? {
+        selectedRowKeys: selectedIds.value,
+        onChange: (keys: (number | string)[]) => {
+          selectedIds.value = keys.map(Number)
+        }
+      }
+    : undefined
+)
+
+async function runBatch(action: 'approve' | 'reject'): Promise<void> {
+  if (selectedIds.value.length === 0) {
+    return
+  }
+  batchLoading.value = action
+  try {
+    const request = { ids: selectedIds.value }
+    const result = unwrapApiData(
+      action === 'approve'
+        ? await batchApproveMatchCandidates(request)
+        : await batchRejectMatchCandidates(request)
+    )
+    const failed = (result.items ?? []).filter((item) => item.status === 'failed')
+    if (failed.length > 0) {
+      const detail = failed
+        .slice(0, 3)
+        .map((item) => `#${item.id} ${item.message ?? '处理失败'}`)
+        .join('；')
+      message.warning(
+        `成功 ${result.succeeded_count ?? 0} 条，失败 ${result.failed_count ?? failed.length} 条：${detail}${failed.length > 3 ? ' 等' : ''}`
+      )
+    } else {
+      message.success(`已批量${action === 'approve' ? '通过' : '拒绝'} ${result.succeeded_count ?? 0} 条`)
+    }
+    await load()
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '批量审核失败'))
+  } finally {
+    batchLoading.value = null
+  }
+}
+
 function formatConfidence(value?: number): string {
   return value === null || value === undefined
     ? '-'
@@ -140,11 +188,53 @@ const columns: TableColumnsType = [
           description="自动匹配产生的中等置信度候选，确认后才会关联外部条目并补全元数据。"
           scale="h3"
         />
-        <a-select
-          v-model:value="status"
-          class="match-review-status"
-          :options="STATUS_OPTIONS"
-        />
+        <a-space>
+          <template v-if="status === 0">
+            <span
+              v-if="selectedIds.length > 0"
+              class="match-review-selected"
+            >
+              已选 {{ selectedIds.length }} 条
+            </span>
+            <a-popconfirm
+              :title="`确认批量关联并补全所选 ${selectedIds.length} 条候选？`"
+              ok-text="确认"
+              cancel-text="取消"
+              :disabled="selectedIds.length === 0"
+              @confirm="runBatch('approve')"
+            >
+              <a-button
+                size="small"
+                type="primary"
+                :disabled="selectedIds.length === 0"
+                :loading="batchLoading === 'approve'"
+              >
+                批量通过
+              </a-button>
+            </a-popconfirm>
+            <a-popconfirm
+              :title="`确认批量拒绝所选 ${selectedIds.length} 条候选？`"
+              ok-text="确认"
+              cancel-text="取消"
+              :disabled="selectedIds.length === 0"
+              @confirm="runBatch('reject')"
+            >
+              <a-button
+                size="small"
+                danger
+                :disabled="selectedIds.length === 0"
+                :loading="batchLoading === 'reject'"
+              >
+                批量拒绝
+              </a-button>
+            </a-popconfirm>
+          </template>
+          <a-select
+            v-model:value="status"
+            class="match-review-status"
+            :options="STATUS_OPTIONS"
+          />
+        </a-space>
       </div>
 
       <a-table
@@ -158,6 +248,7 @@ const columns: TableColumnsType = [
           showSizeChanger: false,
           showTotal: (count: number) => `共 ${count} 条`
         }"
+        :row-selection="rowSelection"
         row-key="id"
         size="middle"
         :scroll="{ x: 1080 }"
@@ -280,6 +371,11 @@ const columns: TableColumnsType = [
 .match-review-status {
   width: 120px;
   flex: none;
+}
+
+.match-review-selected {
+  font-size: 12px;
+  opacity: 0.75;
 }
 
 .match-review-cover {

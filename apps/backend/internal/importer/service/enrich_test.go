@@ -544,3 +544,89 @@ func TestApproveMatchCandidateMissingSubject(t *testing.T) {
 		t.Errorf("status = %d, want still pending after failed approve", reloaded.Status)
 	}
 }
+
+func TestBatchReviewMatchCandidates(t *testing.T) {
+	release := date(2015, time.November, 27)
+	external := bangumiExternalGame("183082", "サクラノ詩", "樱之诗", release)
+	svc, db := newEnrichTestService(t, &stubSearchProvider{games: []provider.ExternalGame{external}})
+	gameID := seedVndbGalgame(t, db, "樱之诗", "サクラノ詩", "Sakura no Uta", release, "Makura")
+
+	matches := MatchBangumiCandidates(MatchInput{
+		Title: "樱之诗", OriginalTitle: "サクラノ詩", ReleaseDate: release,
+	}, []provider.ExternalGame{external})
+	if err := svc.SaveMatchCandidates(context.Background(), gameID, matches); err != nil {
+		t.Fatalf("save candidates: %v", err)
+	}
+	// A candidate whose external subject cannot be fetched.
+	missing := &importerModel.ExternalMatchCandidate{
+		GalgameID:  gameID,
+		Provider:   "bangumi",
+		ExternalID: "404404",
+		Confidence: 0.72,
+		Reasons:    json.RawMessage(`["alias_match"]`),
+	}
+	if err := svc.repository.UpsertMatchCandidate(context.Background(), missing); err != nil {
+		t.Fatalf("seed missing candidate: %v", err)
+	}
+	pending, _, err := svc.ListMatchCandidates(context.Background(), nil, 1, 20)
+	if err != nil || len(pending) != 2 {
+		t.Fatalf("pending: %v %+v", err, pending)
+	}
+
+	var goodID, missingID uint64
+	for _, candidate := range pending {
+		if candidate.ExternalID == "404404" {
+			missingID = candidate.ID
+		} else {
+			goodID = candidate.ID
+		}
+	}
+
+	reviewer := testutil.CreateUser(t, db, "batch-reviewer")
+	summary := svc.BatchApproveMatchCandidates(context.Background(), []uint64{goodID, missingID, 999999}, &reviewer)
+	if summary.SucceededCount != 1 || summary.FailedCount != 2 {
+		t.Fatalf("summary = %+v, want 1 success and 2 failures", summary)
+	}
+	byID := make(map[uint64]MatchCandidateBatchResult, len(summary.Results))
+	for _, result := range summary.Results {
+		byID[result.ID] = result
+	}
+	if byID[goodID].Err != nil {
+		t.Errorf("good candidate err = %v", byID[goodID].Err)
+	}
+	if !errors.Is(byID[missingID].Err, ErrExternalGameNotFound) {
+		t.Errorf("missing subject err = %v, want ErrExternalGameNotFound", byID[missingID].Err)
+	}
+	if !errors.Is(byID[999999].Err, ErrMatchCandidateNotFound) {
+		t.Errorf("unknown id err = %v, want ErrMatchCandidateNotFound", byID[999999].Err)
+	}
+
+	// The failed approve must leave its candidate pending; the good one is approved.
+	var goodRow importerModel.ExternalMatchCandidate
+	if err := db.First(&goodRow, goodID).Error; err != nil {
+		t.Fatalf("reload good: %v", err)
+	}
+	if goodRow.Status != importerModel.MatchCandidateStatusApproved {
+		t.Errorf("good status = %d, want approved", goodRow.Status)
+	}
+	var missingRow importerModel.ExternalMatchCandidate
+	if err := db.First(&missingRow, missingID).Error; err != nil {
+		t.Fatalf("reload missing: %v", err)
+	}
+	if missingRow.Status != importerModel.MatchCandidateStatusPending {
+		t.Errorf("missing status = %d, want still pending", missingRow.Status)
+	}
+
+	// Batch reject: the pending one succeeds, the already approved one fails.
+	summary = svc.BatchRejectMatchCandidates(context.Background(), []uint64{missingID, goodID}, &reviewer)
+	if summary.SucceededCount != 1 || summary.FailedCount != 1 {
+		t.Fatalf("reject summary = %+v, want 1 success and 1 failure", summary)
+	}
+	var rejectedRow importerModel.ExternalMatchCandidate
+	if err := db.First(&rejectedRow, missingID).Error; err != nil {
+		t.Fatalf("reload rejected: %v", err)
+	}
+	if rejectedRow.Status != importerModel.MatchCandidateStatusRejected {
+		t.Errorf("rejected status = %d, want rejected", rejectedRow.Status)
+	}
+}

@@ -531,6 +531,70 @@ func (h *ImporterHandler) RejectMatchCandidate(c *gin.Context) {
 	response.OkWithMsg(c, "已拒绝")
 }
 
+// BatchApproveMatchCandidates godoc
+// @Summary      批量通过匹配候选
+// @Description  逐条关联候选外部条目并执行默认补全，单条失败不影响其余候选
+// @ID           batchApproveMatchCandidates
+// @Tags         adminImport
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.MatchCandidateBatchRequest true "批量审核请求，单次最多 100 条"
+// @Success      200 {object} dto.MatchCandidateBatchResponse "逐条审核结果"
+// @Failure      400 {object} response.ErrorResponse "请求格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/matches/batch-approve [post]
+func (h *ImporterHandler) BatchApproveMatchCandidates(c *gin.Context) {
+	var request dto.MatchCandidateBatchRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求格式不正确"))
+		return
+	}
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	summary := h.importerService.BatchApproveMatchCandidates(c.Request.Context(), request.IDs, &userID)
+	logger.Info("batch approve match candidates",
+		zap.Int("succeeded", summary.SucceededCount),
+		zap.Int("failed", summary.FailedCount))
+	response.Ok(c, dto.NewMatchCandidateBatchData(summary, "approved"))
+}
+
+// BatchRejectMatchCandidates godoc
+// @Summary      批量拒绝匹配候选
+// @Description  逐条将待审核候选标记为已拒绝，不产生任何数据变更，单条失败不影响其余候选
+// @ID           batchRejectMatchCandidates
+// @Tags         adminImport
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.MatchCandidateBatchRequest true "批量审核请求，单次最多 100 条"
+// @Success      200 {object} dto.MatchCandidateBatchResponse "逐条审核结果"
+// @Failure      400 {object} response.ErrorResponse "请求格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/matches/batch-reject [post]
+func (h *ImporterHandler) BatchRejectMatchCandidates(c *gin.Context) {
+	var request dto.MatchCandidateBatchRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求格式不正确"))
+		return
+	}
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	summary := h.importerService.BatchRejectMatchCandidates(c.Request.Context(), request.IDs, &userID)
+	logger.Info("batch reject match candidates",
+		zap.Int("succeeded", summary.SucceededCount),
+		zap.Int("failed", summary.FailedCount))
+	response.Ok(c, dto.NewMatchCandidateBatchData(summary, "rejected"))
+}
+
 func (h *ImporterHandler) respondEnrichError(c *gin.Context, operation string, err error) {
 	switch {
 	case errors.Is(err, service.ErrProviderNotFound):
