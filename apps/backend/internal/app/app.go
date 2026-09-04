@@ -75,6 +75,7 @@ type App struct {
 	PermissionHandler   *rbacHandler.PermissionHandler
 	AssignmentHandler   *rbacHandler.AssignmentHandler
 	CatalogHandler      *galgameHandler.CatalogHandler
+	ContributionHandler *galgameHandler.ContributionHandler
 	UserRelationHandler *galgameHandler.UserRelationHandler
 	GalleryHandler      *galgameHandler.GalleryHandler
 	ResourceHandler     *resourceHandler.ResourceHandler
@@ -140,6 +141,12 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	notificationSvc := notificationService.NewNotificationService(notificationRepository)
 
 	galgameRepository := galgameRepo.NewGalgameRepository(postgresDB)
+	contributionRepository := galgameRepo.NewContributionRepository(postgresDB, cfg.R2.PublicURL)
+	contributionSvc := galgameService.NewContributionService(
+		contributionRepository,
+		galgameRepository,
+		cfg.R2.PublicURL,
+	)
 	developerRepository := galgameRepo.NewDeveloperRepository(postgresDB)
 	tagRepository := galgameRepo.NewTagRepository(postgresDB)
 	catalogService := galgameService.NewCatalogService(
@@ -147,6 +154,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		developerRepository,
 		tagRepository,
 	)
+	catalogService.SetContributionService(contributionSvc)
 	catalogService.SetNotificationDependencies(rbacSvc, notificationSvc)
 
 	userRelationRepository := galgameRepo.NewUserRelationRepository(postgresDB)
@@ -158,6 +166,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 
 	resourceRepository := resourceRepo.NewResourceRepository(postgresDB, cfg.R2.PublicURL)
 	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, rbacSvc)
+	resourceSvc.SetContributionService(contributionSvc)
 	resourceSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
 	reportRepository := resourceRepo.NewReportRepository(postgresDB)
 	reportSvc := resourceService.NewReportService(reportRepository, resourceRepository)
@@ -196,6 +205,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	stopImageCleanup := imageSvc.StartCleanupLoop(context.Background())
 
 	galleryService := galgameService.NewGalleryService(galgameRepository, galleryRepository, imageSvc)
+	galleryService.SetContributionService(contributionSvc)
 
 	homeSvc := homeService.NewHomeService(
 		bannerRepository,
@@ -260,6 +270,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		PermissionHandler:   rbacHandler.NewPermissionHandler(rbacSvc),
 		AssignmentHandler:   rbacHandler.NewAssignmentHandler(rbacSvc),
 		CatalogHandler:      galgameHandler.NewCatalogHandler(catalogService),
+		ContributionHandler: galgameHandler.NewContributionHandler(contributionSvc),
 		UserRelationHandler: galgameHandler.NewUserRelationHandler(
 			ratingService,
 			favoriteService,

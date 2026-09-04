@@ -19,6 +19,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 var (
@@ -43,9 +44,14 @@ type CatalogService struct {
 	galgames      *repository.GalgameRepository
 	developers    *repository.DeveloperRepository
 	tags          *repository.TagRepository
+	contributions *ContributionService
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
+}
+
+func (s *CatalogService) SetContributionService(contributions *ContributionService) {
+	s.contributions = contributions
 }
 
 func (s *CatalogService) SetActivityRecorder(recorder userService.ActivityRecorder) {
@@ -292,15 +298,37 @@ func (s *CatalogService) CreateGalgame(
 		CreatedBy:     &userID,
 	}
 	aliases := uniqueNonEmptyStrings(req.Aliases)
-	err = s.galgames.Transaction(ctx, func(tx *repository.GalgameRepository) error {
+	write := func(tx *repository.GalgameRepository, db *gorm.DB) error {
 		if err := tx.Create(ctx, galgame); err != nil {
 			return err
 		}
 		if err := tx.ReplaceAliases(ctx, galgame.ID, aliases); err != nil {
 			return err
 		}
-		return tx.ReplaceTags(ctx, galgame.ID, tagIDs)
-	})
+		if err := tx.ReplaceTags(ctx, galgame.ID, tagIDs); err != nil {
+			return err
+		}
+		if galgame.Status == model.GalgameStatusPublished && s.contributions != nil {
+			sourceType, sourceID := contributionSource(model.ContributionSourceGalgameCreate, galgame.ID)
+			return s.contributions.RecordContribution(ctx, RecordContributionInput{
+				GalgameID:  galgame.ID,
+				UserID:     userID,
+				Action:     model.ContributionActionCreate,
+				SourceType: sourceType,
+				SourceID:   sourceID,
+			}, db)
+		}
+		return nil
+	}
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewGalgameRepository(db), db)
+		})
+	} else {
+		err = s.galgames.Transaction(ctx, func(tx *repository.GalgameRepository) error {
+			return write(tx, nil)
+		})
+	}
 	if err != nil {
 		if hasConstraint(err, "galgames_slug_unique") {
 			return nil, ErrGalgameSlugExists
@@ -322,6 +350,7 @@ func (s *CatalogService) UpdateGalgame(
 	ctx context.Context,
 	id uint,
 	req *dto.UpdateGalgameRequest,
+	actorIDs ...uint,
 ) (*model.Galgame, error) {
 	title := strings.TrimSpace(req.Title)
 	slug := normalizeSlug(req.Slug)
@@ -353,6 +382,9 @@ func (s *CatalogService) UpdateGalgame(
 	if err := s.ensureGalgameSlugUnique(ctx, id, slug); err != nil {
 		return nil, err
 	}
+	oldStatus := galgame.Status
+	aliases := uniqueNonEmptyStrings(req.Aliases)
+	changed, coverOnly := galgameUpdateChanges(galgame, req, title, slug, releaseDate, aliases, tagIDs)
 
 	galgame.Title = title
 	galgame.OriginalTitle = strings.TrimSpace(req.OriginalTitle)
@@ -365,16 +397,63 @@ func (s *CatalogService) UpdateGalgame(
 	galgame.ReleaseDate = releaseDate
 	galgame.AgeRating = *req.AgeRating
 	galgame.Status = *req.Status
-	aliases := uniqueNonEmptyStrings(req.Aliases)
-	err = s.galgames.Transaction(ctx, func(tx *repository.GalgameRepository) error {
+	write := func(tx *repository.GalgameRepository, db *gorm.DB) error {
 		if err := tx.Update(ctx, galgame); err != nil {
 			return err
 		}
 		if err := tx.ReplaceAliases(ctx, id, aliases); err != nil {
 			return err
 		}
-		return tx.ReplaceTags(ctx, id, tagIDs)
-	})
+		if err := tx.ReplaceTags(ctx, id, tagIDs); err != nil {
+			return err
+		}
+		if changed && galgame.Status == model.GalgameStatusPublished && s.contributions != nil {
+			if oldStatus != model.GalgameStatusPublished {
+				contributorID := uint(0)
+				if galgame.CreatedBy != nil {
+					contributorID = *galgame.CreatedBy
+				} else if len(actorIDs) > 0 {
+					contributorID = actorIDs[0]
+				}
+				if contributorID == 0 {
+					return s.recordInitialGalleryContributions(ctx, db, id)
+				}
+				sourceType, sourceID := contributionSource(model.ContributionSourceGalgameCreate, id)
+				if err := s.contributions.RecordContribution(ctx, RecordContributionInput{
+					GalgameID:  id,
+					UserID:     contributorID,
+					Action:     model.ContributionActionCreate,
+					SourceType: sourceType,
+					SourceID:   sourceID,
+				}, db); err != nil {
+					return err
+				}
+				return s.recordInitialGalleryContributions(ctx, db, id)
+			}
+			if len(actorIDs) == 0 {
+				return nil
+			}
+			action := model.ContributionActionEdit
+			if coverOnly {
+				action = model.ContributionActionCover
+			}
+			return s.contributions.RecordContribution(ctx, RecordContributionInput{
+				GalgameID: id,
+				UserID:    actorIDs[0],
+				Action:    action,
+			}, db)
+		}
+		return nil
+	}
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewGalgameRepository(db), db)
+		})
+	} else {
+		err = s.galgames.Transaction(ctx, func(tx *repository.GalgameRepository) error {
+			return write(tx, nil)
+		})
+	}
 	if err != nil {
 		if hasConstraint(err, "galgames_slug_unique") {
 			return nil, ErrGalgameSlugExists
@@ -405,7 +484,29 @@ func (s *CatalogService) ReviewGalgame(
 		return galgame, nil
 	}
 
-	if err := s.galgames.UpdateStatus(ctx, id, req.Status); err != nil {
+	if req.Status == model.GalgameStatusPublished && s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			if err := repository.NewGalgameRepository(db).UpdateStatus(ctx, id, req.Status); err != nil {
+				return err
+			}
+			if galgame.CreatedBy != nil {
+				sourceType, sourceID := contributionSource(model.ContributionSourceGalgameCreate, id)
+				if err := s.contributions.RecordContribution(ctx, RecordContributionInput{
+					GalgameID:  id,
+					UserID:     *galgame.CreatedBy,
+					Action:     model.ContributionActionCreate,
+					SourceType: sourceType,
+					SourceID:   sourceID,
+				}, db); err != nil {
+					return err
+				}
+			}
+			return s.recordInitialGalleryContributions(ctx, db, id)
+		})
+	} else {
+		err = s.galgames.UpdateStatus(ctx, id, req.Status)
+	}
+	if err != nil {
 		logger.Error("review galgame", zap.Uint("galgame_id", id), zap.Uint("actor_id", actorID), zap.Error(err))
 		return nil, err
 	}
@@ -591,7 +692,111 @@ func (s *CatalogService) getGalgame(
 	if galgame == nil {
 		return nil, ErrGalgameNotFound
 	}
+	if s.contributions != nil {
+		contributors, total, err := s.contributions.repository.ListContributorsByGalgameID(ctx, id, 1, 10)
+		if err != nil {
+			return nil, err
+		}
+		galgame.Contributors = contributors
+		galgame.ContributorCount = total
+	}
 	return galgame, nil
+}
+
+func contributionSource(sourceType string, sourceID uint) (*string, *uint) {
+	return &sourceType, &sourceID
+}
+
+func (s *CatalogService) recordInitialGalleryContributions(ctx context.Context, db *gorm.DB, galgameID uint) error {
+	galleryImages, err := repository.NewGalleryRepository(db).ListByGalgameID(ctx, galgameID)
+	if err != nil {
+		return err
+	}
+	for _, image := range galleryImages {
+		if image.CreatedBy == nil {
+			continue
+		}
+		sourceType, sourceID := contributionSource(model.ContributionSourceGalleryImage, image.ID)
+		if err := s.contributions.RecordContribution(ctx, RecordContributionInput{
+			GalgameID:  galgameID,
+			UserID:     *image.CreatedBy,
+			Action:     model.ContributionActionGallery,
+			SourceType: sourceType,
+			SourceID:   sourceID,
+		}, db); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func galgameUpdateChanges(
+	galgame *model.Galgame,
+	req *dto.UpdateGalgameRequest,
+	title, slug string,
+	releaseDate *time.Time,
+	aliases []string,
+	tagIDs []uint,
+) (bool, bool) {
+	coverChanged := galgame.CoverURL != strings.TrimSpace(req.CoverURL) ||
+		galgame.BannerURL != strings.TrimSpace(req.BannerURL)
+	otherChanged := galgame.Title != title ||
+		galgame.OriginalTitle != strings.TrimSpace(req.OriginalTitle) ||
+		galgame.RomajiTitle != strings.TrimSpace(req.RomajiTitle) ||
+		galgame.Slug != slug ||
+		galgame.Description != strings.TrimSpace(req.Description) ||
+		!equalUintPointers(galgame.DeveloperID, req.DeveloperID) ||
+		!equalTimePointers(galgame.ReleaseDate, releaseDate) ||
+		galgame.AgeRating != *req.AgeRating ||
+		galgame.Status != *req.Status ||
+		!equalAliases(galgame.Aliases, aliases) ||
+		!equalTagIDs(galgame.Tags, tagIDs)
+	return coverChanged || otherChanged, coverChanged && !otherChanged
+}
+
+func equalUintPointers(left, right *uint) bool {
+	return (left == nil && right == nil) ||
+		(left != nil && right != nil && *left == *right)
+}
+
+func equalTimePointers(left, right *time.Time) bool {
+	return (left == nil && right == nil) ||
+		(left != nil && right != nil && left.Equal(*right))
+}
+
+func equalAliases(current []model.Alias, expected []string) bool {
+	if len(current) != len(expected) {
+		return false
+	}
+	counts := make(map[string]int, len(current))
+	for _, alias := range current {
+		counts[alias.Alias]++
+	}
+	for _, alias := range expected {
+		counts[alias]--
+	}
+	for _, count := range counts {
+		if count != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func equalTagIDs(current []model.Tag, expected []uint) bool {
+	if len(current) != len(expected) {
+		return false
+	}
+	ids := make(map[uint]struct{}, len(current))
+	for _, tag := range current {
+		ids[tag.ID] = struct{}{}
+	}
+	for _, id := range expected {
+		if _, ok := ids[id]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *CatalogService) validateRelations(ctx context.Context, developerID *uint, tagIDs []uint) error {

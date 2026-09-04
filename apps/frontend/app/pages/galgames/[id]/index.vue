@@ -457,6 +457,12 @@ onMounted(() => {
 
     <GalgameGallery :galgame-id="galgameId" :game-title="galgame?.title" />
 
+    <GalgameContributors
+      :galgame-id="galgameId"
+      :contributors="galgame?.contributors"
+      :contributor-count="galgame?.contributor_count"
+    />
+
     <div class="side-grid">
       <KunCard padding="lg" class-name="relation-card">
         <KunHeader name="我的评分" scale="h3" class="section-heading" />

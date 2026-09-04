@@ -34,6 +34,12 @@ func newResourceTestEnv(t *testing.T) *resourceTestEnv {
 	testutil.SkipWithoutPostgres(t)
 	db := testutil.NewPostgres(t)
 	galgameRepository := galgameRepo.NewGalgameRepository(db)
+	contributionRepository := galgameRepo.NewContributionRepository(db, "https://img.example.com")
+	contributionSvc := galgameService.NewContributionService(
+		contributionRepository,
+		galgameRepository,
+		"https://img.example.com",
+	)
 	rbacSvc := rbacService.NewRBACService(rbacRepo.NewRBACRepository(db))
 	if err := rbacSvc.SeedDefaults(context.Background()); err != nil {
 		t.Fatalf("seed rbac defaults: %v", err)
@@ -52,6 +58,8 @@ func newResourceTestEnv(t *testing.T) *resourceTestEnv {
 		galgameRepository,
 		rbacSvc,
 	)
+	env.catalog.SetContributionService(contributionSvc)
+	env.resources.SetContributionService(contributionSvc)
 	env.reports = NewReportService(
 		resourceRepo.NewReportRepository(db),
 		resourceRepo.NewResourceRepository(db),
@@ -62,6 +70,47 @@ func newResourceTestEnv(t *testing.T) *resourceTestEnv {
 	env.resources.SetNotificationDependencies(rbacSvc, notificationSvc)
 	env.reports.SetNotificationDependencies(rbacSvc, notificationSvc)
 	return env
+}
+
+func TestResourceContributionReviewLifecycle(t *testing.T) {
+	env := newResourceTestEnv(t)
+	ctx := context.Background()
+	uploader := testutil.CreateUser(t, env.db, "resource-contribution-uploader")
+	reviewer := testutil.CreateUser(t, env.db, "resource-contribution-reviewer")
+	galgameID := env.createPublishedGalgame(t, uploader, "resource-contribution-game")
+	pending := env.createResource(t, uploader, galgameID, "pending contribution", model.ResourceStatusPending, "https://example.com/pending")
+
+	if countResourceContributions(t, env.db, pending.ID) != 0 {
+		t.Fatal("pending resource created a contribution")
+	}
+	if _, err := env.resources.ReviewResource(ctx, pending.ID, &dto.ReviewResourceRequest{Status: model.ResourceStatusRejected}, reviewer); err != nil {
+		t.Fatalf("reject resource: %v", err)
+	}
+	if countResourceContributions(t, env.db, pending.ID) != 0 {
+		t.Fatal("rejected resource created a contribution")
+	}
+
+	approved := env.createResource(t, uploader, galgameID, "approved contribution", model.ResourceStatusPending, "https://example.com/approved")
+	if _, err := env.resources.ReviewResource(ctx, approved.ID, &dto.ReviewResourceRequest{Status: model.ResourceStatusPublished}, reviewer); err != nil {
+		t.Fatalf("approve resource: %v", err)
+	}
+	if _, err := env.resources.ReviewResource(ctx, approved.ID, &dto.ReviewResourceRequest{Status: model.ResourceStatusPublished}, reviewer); err != nil {
+		t.Fatalf("repeat resource approval: %v", err)
+	}
+	if countResourceContributions(t, env.db, approved.ID) != 1 {
+		t.Fatal("approved resource contribution was not idempotent")
+	}
+}
+
+func countResourceContributions(t *testing.T, db *gorm.DB, resourceID uint) int64 {
+	t.Helper()
+	var count int64
+	if err := db.Table("galgame_contributions").
+		Where("source_type = ? AND source_id = ?", "resource", resourceID).
+		Count(&count).Error; err != nil {
+		t.Fatalf("count resource contributions: %v", err)
+	}
+	return count
 }
 
 func (e *resourceTestEnv) createPublishedGalgame(t *testing.T, userID uint, title string) uint {

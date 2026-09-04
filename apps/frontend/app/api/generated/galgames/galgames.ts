@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  DtoContributorListResponse,
   DtoCreateGalgameRequest,
   DtoFavoriteDataResponse,
   DtoGalgameDataResponse,
@@ -17,6 +18,7 @@ import type {
   DtoUpsertRatingRequest,
   DtoUpsertUserStateRequest,
   DtoUserStateDataResponse,
+  ListGalgameContributorsParams,
   ListGalgamesParams,
   ResponseMessageResponse
 } from '../models';
@@ -157,6 +159,39 @@ export const deleteGalgame = async (id: number, options?: Parameters<typeof apiM
   {
     ...options,
     method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListGalgameContributorsUrl = (id: number,
+    params?: ListGalgameContributorsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/galgames/${id}/contributors?${stringifiedParams}` : `/api/v1/galgames/${id}/contributors`
+}
+
+/**
+ * 按贡献次数和最近贡献时间分页返回已发布 Galgame 的贡献者
+ * @summary 查看 Galgame 贡献者
+ */
+export const listGalgameContributors = async (id: number,
+    params?: ListGalgameContributorsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoContributorListResponse> => {
+
+  return apiMutator<DtoContributorListResponse>(getListGalgameContributorsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
 
 
   }

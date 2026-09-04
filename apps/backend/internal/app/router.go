@@ -27,6 +27,7 @@ func (app *App) setupRoutes() {
 
 	v1.GET("/galgames", app.CatalogHandler.ListGalgames)
 	v1.GET("/galgames/:id", app.CatalogHandler.GetGalgame)
+	v1.GET("/galgames/:id/contributors", app.ContributionHandler.ListGalgameContributors)
 	v1.GET("/galgames/:id/gallery", app.GalleryHandler.ListGalgameGallery)
 	v1.GET("/resources/:id", app.ResourceHandler.GetResource)
 	v1.GET("/posts", app.PostHandler.ListPosts)

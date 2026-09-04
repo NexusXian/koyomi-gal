@@ -12,6 +12,7 @@ import (
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 var (
@@ -27,9 +28,14 @@ var (
 const MaxGalleryImages = 30
 
 type GalleryService struct {
-	galgames *repository.GalgameRepository
-	gallery  *repository.GalleryRepository
-	images   *imageService.ImageAssetService
+	galgames      *repository.GalgameRepository
+	gallery       *repository.GalleryRepository
+	images        *imageService.ImageAssetService
+	contributions *ContributionService
+}
+
+func (s *GalleryService) SetContributionService(contributions *ContributionService) {
+	s.contributions = contributions
 }
 
 func NewGalleryService(
@@ -138,7 +144,30 @@ func (s *GalleryService) CreateGalleryImage(
 		IsSpoiler:   req.IsSpoiler,
 		CreatedBy:   &actorID,
 	}
-	if err := s.gallery.Create(ctx, image); err != nil {
+	write := func(gallery *repository.GalleryRepository, db *gorm.DB) error {
+		if err := gallery.Create(ctx, image); err != nil {
+			return err
+		}
+		if galgame.Status == model.GalgameStatusPublished && s.contributions != nil {
+			sourceType, sourceID := contributionSource(model.ContributionSourceGalleryImage, image.ID)
+			return s.contributions.RecordContribution(ctx, RecordContributionInput{
+				GalgameID:  galgameID,
+				UserID:     actorID,
+				Action:     model.ContributionActionGallery,
+				SourceType: sourceType,
+				SourceID:   sourceID,
+			}, db)
+		}
+		return nil
+	}
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewGalleryRepository(db), db)
+		})
+	} else {
+		err = s.gallery.Create(ctx, image)
+	}
+	if err != nil {
 		logger.Error("create gallery image",
 			zap.Uint("galgame_id", galgameID), zap.Uint("asset_id", req.AssetID), zap.Error(err))
 		return nil, err
@@ -161,12 +190,14 @@ func (s *GalleryService) UpdateGalleryImage(
 	ctx context.Context,
 	galgameID, galleryID uint,
 	req *dto.UpdateGalleryImageRequest,
+	actorIDs ...uint,
 ) (*dto.GalleryImageData, error) {
 	image, err := s.findGalgameImage(ctx, galgameID, galleryID)
 	if err != nil {
 		return nil, err
 	}
 
+	before := *image
 	if req.Title != nil {
 		image.Title = strings.TrimSpace(*req.Title)
 	}
@@ -179,7 +210,33 @@ func (s *GalleryService) UpdateGalleryImage(
 	if req.IsSpoiler != nil {
 		image.IsSpoiler = *req.IsSpoiler
 	}
-	if err := s.gallery.Update(ctx, image); err != nil {
+	changed := before.Title != image.Title || before.Description != image.Description ||
+		before.ImageType != image.ImageType || before.IsSpoiler != image.IsSpoiler
+	galgame, err := s.galgames.FindByID(ctx, galgameID)
+	if err != nil {
+		return nil, err
+	}
+	write := func(gallery *repository.GalleryRepository, db *gorm.DB) error {
+		if err := gallery.Update(ctx, image); err != nil {
+			return err
+		}
+		if changed && galgame != nil && galgame.Status == model.GalgameStatusPublished && len(actorIDs) > 0 && s.contributions != nil {
+			return s.contributions.RecordContribution(ctx, RecordContributionInput{
+				GalgameID: galgameID,
+				UserID:    actorIDs[0],
+				Action:    model.ContributionActionGallery,
+			}, db)
+		}
+		return nil
+	}
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewGalleryRepository(db), db)
+		})
+	} else {
+		err = s.gallery.Update(ctx, image)
+	}
+	if err != nil {
 		logger.Error("update gallery image", zap.Uint("gallery_id", galleryID), zap.Error(err))
 		return nil, err
 	}
@@ -189,12 +246,36 @@ func (s *GalleryService) UpdateGalleryImage(
 
 // DeleteGalleryImage removes only the gallery relation. The asset and its R2
 // object are left untouched because other content may reference them.
-func (s *GalleryService) DeleteGalleryImage(ctx context.Context, galgameID, galleryID uint) error {
+func (s *GalleryService) DeleteGalleryImage(ctx context.Context, galgameID, galleryID uint, actorIDs ...uint) error {
 	image, err := s.findGalgameImage(ctx, galgameID, galleryID)
 	if err != nil {
 		return err
 	}
-	if err := s.gallery.Delete(ctx, image.ID); err != nil {
+	galgame, err := s.galgames.FindByID(ctx, galgameID)
+	if err != nil {
+		return err
+	}
+	write := func(gallery *repository.GalleryRepository, db *gorm.DB) error {
+		if err := gallery.Delete(ctx, image.ID); err != nil {
+			return err
+		}
+		if galgame != nil && galgame.Status == model.GalgameStatusPublished && len(actorIDs) > 0 && s.contributions != nil {
+			return s.contributions.RecordContribution(ctx, RecordContributionInput{
+				GalgameID: galgameID,
+				UserID:    actorIDs[0],
+				Action:    model.ContributionActionGallery,
+			}, db)
+		}
+		return nil
+	}
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewGalleryRepository(db), db)
+		})
+	} else {
+		err = s.gallery.Delete(ctx, image.ID)
+	}
+	if err != nil {
 		logger.Error("delete gallery image", zap.Uint("gallery_id", galleryID), zap.Error(err))
 		return err
 	}
@@ -203,7 +284,7 @@ func (s *GalleryService) DeleteGalleryImage(ctx context.Context, galgameID, gall
 
 // ReorderGallery rewrites sort_order so ids map to 0..n-1. The id set must
 // exactly match the galgame's gallery to avoid stale sort_order leftovers.
-func (s *GalleryService) ReorderGallery(ctx context.Context, galgameID uint, req *dto.ReorderGalleryRequest) error {
+func (s *GalleryService) ReorderGallery(ctx context.Context, galgameID uint, req *dto.ReorderGalleryRequest, actorIDs ...uint) error {
 	galgame, err := s.galgames.FindByID(ctx, galgameID)
 	if err != nil {
 		logger.Error("find galgame for gallery reorder", zap.Uint("galgame_id", galgameID), zap.Error(err))
@@ -237,9 +318,35 @@ func (s *GalleryService) ReorderGallery(ctx context.Context, galgameID uint, req
 		seen[id] = struct{}{}
 	}
 
-	err = s.gallery.Transaction(ctx, func(tx *repository.GalleryRepository) error {
-		return tx.UpdateOrder(ctx, galgameID, req.IDs)
-	})
+	changed := false
+	for index, image := range images {
+		if req.IDs[index] != image.ID {
+			changed = true
+			break
+		}
+	}
+	write := func(gallery *repository.GalleryRepository, db *gorm.DB) error {
+		if err := gallery.UpdateOrder(ctx, galgameID, req.IDs); err != nil {
+			return err
+		}
+		if changed && galgame.Status == model.GalgameStatusPublished && len(actorIDs) > 0 && s.contributions != nil {
+			return s.contributions.RecordContribution(ctx, RecordContributionInput{
+				GalgameID: galgameID,
+				UserID:    actorIDs[0],
+				Action:    model.ContributionActionGallery,
+			}, db)
+		}
+		return nil
+	}
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewGalleryRepository(db), db)
+		})
+	} else {
+		err = s.gallery.Transaction(ctx, func(tx *repository.GalleryRepository) error {
+			return write(tx, nil)
+		})
+	}
 	if err != nil {
 		logger.Error("reorder gallery images", zap.Uint("galgame_id", galgameID), zap.Error(err))
 		return err

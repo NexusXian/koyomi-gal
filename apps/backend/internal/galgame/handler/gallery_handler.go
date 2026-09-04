@@ -145,7 +145,12 @@ func (h *GalleryHandler) UpdateGalgameGalleryImage(c *gin.Context) {
 		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
 		return
 	}
-	data, err := h.galleryService.UpdateGalleryImage(c.Request.Context(), id, galleryID, &req)
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	data, err := h.galleryService.UpdateGalleryImage(c.Request.Context(), id, galleryID, &req, actorID)
 	if err != nil {
 		h.respondGalleryError(c, err, "update gallery image", zap.Uint("galgame_id", id), zap.Uint("gallery_id", galleryID))
 		return
@@ -174,7 +179,12 @@ func (h *GalleryHandler) DeleteGalgameGalleryImage(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if err := h.galleryService.DeleteGalleryImage(c.Request.Context(), id, galleryID); err != nil {
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	if err := h.galleryService.DeleteGalleryImage(c.Request.Context(), id, galleryID, actorID); err != nil {
 		h.respondGalleryError(c, err, "delete gallery image", zap.Uint("galgame_id", id), zap.Uint("gallery_id", galleryID))
 		return
 	}
@@ -209,7 +219,12 @@ func (h *GalleryHandler) ReorderGalgameGallery(c *gin.Context) {
 		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
 		return
 	}
-	if err := h.galleryService.ReorderGallery(c.Request.Context(), id, &req); err != nil {
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	if err := h.galleryService.ReorderGallery(c.Request.Context(), id, &req, actorID); err != nil {
 		h.respondGalleryError(c, err, "reorder gallery", zap.Uint("galgame_id", id))
 		return
 	}

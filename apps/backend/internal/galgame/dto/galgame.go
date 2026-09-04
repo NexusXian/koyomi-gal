@@ -108,24 +108,26 @@ type GalgameListItem struct {
 }
 
 type GalgameResponse struct {
-	ID            uint              `json:"id" example:"1"`
-	Title         string            `json:"title" example:"千恋＊万花"`
-	OriginalTitle string            `json:"original_title" example:"千恋＊万花"`
-	RomajiTitle   string            `json:"romaji_title" example:"Senren Banka"`
-	Slug          string            `json:"slug" example:"senren-banka"`
-	Description   string            `json:"description" example:"作品简介"`
-	CoverURL      string            `json:"cover_url" example:"https://example.com/cover.jpg"`
-	BannerURL     string            `json:"banner_url" example:"https://example.com/banner.jpg"`
-	ReleaseDate   *string           `json:"release_date" example:"2016-07-29"`
-	AgeRating     int16             `json:"age_rating" example:"3"`
-	Status        int16             `json:"status" example:"1"`
-	Developer     *DeveloperSummary `json:"developer"`
-	Aliases       []string          `json:"aliases"`
-	Tags          []TagSummary      `json:"tags"`
-	Rating        RatingSummary     `json:"rating"`
-	Statistics    GalgameStatistics `json:"statistics"`
-	CreatedAt     time.Time         `json:"created_at"`
-	UpdatedAt     time.Time         `json:"updated_at"`
+	ID               uint              `json:"id" example:"1"`
+	Title            string            `json:"title" example:"千恋＊万花"`
+	OriginalTitle    string            `json:"original_title" example:"千恋＊万花"`
+	RomajiTitle      string            `json:"romaji_title" example:"Senren Banka"`
+	Slug             string            `json:"slug" example:"senren-banka"`
+	Description      string            `json:"description" example:"作品简介"`
+	CoverURL         string            `json:"cover_url" example:"https://example.com/cover.jpg"`
+	BannerURL        string            `json:"banner_url" example:"https://example.com/banner.jpg"`
+	ReleaseDate      *string           `json:"release_date" example:"2016-07-29"`
+	AgeRating        int16             `json:"age_rating" example:"3"`
+	Status           int16             `json:"status" example:"1"`
+	Developer        *DeveloperSummary `json:"developer"`
+	Aliases          []string          `json:"aliases"`
+	Tags             []TagSummary      `json:"tags"`
+	Rating           RatingSummary     `json:"rating"`
+	Statistics       GalgameStatistics `json:"statistics"`
+	Contributors     []ContributorData `json:"contributors"`
+	ContributorCount int64             `json:"contributor_count" example:"12"`
+	CreatedAt        time.Time         `json:"created_at"`
+	UpdatedAt        time.Time         `json:"updated_at"`
 }
 
 type GalgameListData struct {
@@ -176,24 +178,26 @@ func NewGalgameResponse(galgame *model.Galgame) GalgameResponse {
 		aliases = append(aliases, alias.Alias)
 	}
 	return GalgameResponse{
-		ID:            galgame.ID,
-		Title:         galgame.Title,
-		OriginalTitle: galgame.OriginalTitle,
-		RomajiTitle:   galgame.RomajiTitle,
-		Slug:          galgame.Slug,
-		Description:   galgame.Description,
-		CoverURL:      galgame.CoverURL,
-		BannerURL:     galgame.BannerURL,
-		ReleaseDate:   formatDate(galgame.ReleaseDate),
-		AgeRating:     galgame.AgeRating,
-		Status:        galgame.Status,
-		Developer:     newDeveloperSummary(galgame.Developer),
-		Aliases:       aliases,
-		Tags:          newTagSummaries(galgame.Tags),
-		Rating:        newRatingSummary(galgame),
-		Statistics:    newStatistics(galgame),
-		CreatedAt:     galgame.CreatedAt,
-		UpdatedAt:     galgame.UpdatedAt,
+		ID:               galgame.ID,
+		Title:            galgame.Title,
+		OriginalTitle:    galgame.OriginalTitle,
+		RomajiTitle:      galgame.RomajiTitle,
+		Slug:             galgame.Slug,
+		Description:      galgame.Description,
+		CoverURL:         galgame.CoverURL,
+		BannerURL:        galgame.BannerURL,
+		ReleaseDate:      formatDate(galgame.ReleaseDate),
+		AgeRating:        galgame.AgeRating,
+		Status:           galgame.Status,
+		Developer:        newDeveloperSummary(galgame.Developer),
+		Aliases:          aliases,
+		Tags:             newTagSummaries(galgame.Tags),
+		Rating:           newRatingSummary(galgame),
+		Statistics:       newStatistics(galgame),
+		Contributors:     NewContributorData(galgame.Contributors),
+		ContributorCount: galgame.ContributorCount,
+		CreatedAt:        galgame.CreatedAt,
+		UpdatedAt:        galgame.UpdatedAt,
 	}
 }
 

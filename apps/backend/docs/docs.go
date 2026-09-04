@@ -3930,6 +3930,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/galgames/{id}/contributors": {
+            "get": {
+                "description": "按贡献次数和最近贡献时间分页返回已发布 Galgame 的贡献者",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "查看 Galgame 贡献者",
+                "operationId": "listGalgameContributors",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "贡献者列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ContributorListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询贡献者失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/galgames/{id}/favorite": {
             "post": {
                 "security": [
@@ -8814,6 +8876,72 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ContributorData": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "contribution_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "first_contributed_at": {
+                    "type": "string"
+                },
+                "last_contributed_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "username": {
+                    "type": "string",
+                    "example": "NexusXian"
+                }
+            }
+        },
+        "dto.ContributorListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ContributorData"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 12
+                }
+            }
+        },
+        "dto.ContributorListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ContributorListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.CreateAdminUserRequest": {
             "type": "object",
             "required": [
@@ -9759,6 +9887,16 @@ const docTemplate = `{
                 "banner_url": {
                     "type": "string",
                     "example": "https://example.com/banner.jpg"
+                },
+                "contributor_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ContributorData"
+                    }
                 },
                 "cover_url": {
                     "type": "string",

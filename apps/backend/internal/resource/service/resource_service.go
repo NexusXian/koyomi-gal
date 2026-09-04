@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	galgameModel "backend/internal/galgame/model"
 	galgameRepository "backend/internal/galgame/repository"
+	galgameService "backend/internal/galgame/service"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
@@ -18,6 +20,7 @@ import (
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 var (
@@ -42,10 +45,15 @@ type ResourceService struct {
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
+	contributions *galgameService.ContributionService
 }
 
 func (s *ResourceService) SetActivityRecorder(recorder userService.ActivityRecorder) {
 	s.activities = recorder
+}
+
+func (s *ResourceService) SetContributionService(contributions *galgameService.ContributionService) {
+	s.contributions = contributions
 }
 
 func (s *ResourceService) SetNotificationDependencies(
@@ -138,15 +146,39 @@ func (s *ResourceService) CreateResource(
 		Description: strings.TrimSpace(req.Description),
 		Status:      status,
 	}
-	err := s.resources.Transaction(ctx, func(tx *repository.ResourceRepository) error {
+	write := func(tx *repository.ResourceRepository, db *gorm.DB) error {
 		if err := tx.Create(ctx, resource); err != nil {
 			return err
 		}
 		if err := tx.CreateLinks(ctx, resource.ID, links); err != nil {
 			return err
 		}
-		return tx.IncrementResourceCount(ctx, req.GalgameID)
-	})
+		if err := tx.IncrementResourceCount(ctx, req.GalgameID); err != nil {
+			return err
+		}
+		if status == model.ResourceStatusPublished && s.contributions != nil {
+			sourceType := galgameModel.ContributionSourceResource
+			sourceID := resource.ID
+			return s.contributions.RecordContribution(ctx, galgameService.RecordContributionInput{
+				GalgameID:  req.GalgameID,
+				UserID:     uploaderID,
+				Action:     galgameModel.ContributionActionResource,
+				SourceType: &sourceType,
+				SourceID:   &sourceID,
+			}, db)
+		}
+		return nil
+	}
+	var err error
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewResourceRepository(db), db)
+		})
+	} else {
+		err = s.resources.Transaction(ctx, func(tx *repository.ResourceRepository) error {
+			return write(tx, nil)
+		})
+	}
 	if err != nil {
 		logger.Error("create resource",
 			zap.Uint("galgame_id", req.GalgameID), zap.Uint("uploader_id", uploaderID), zap.Error(err))
@@ -202,16 +234,46 @@ func (s *ResourceService) UpdateResource(
 		return nil, ErrEmptyResourceLinks
 	}
 
+	oldStatus := resource.Status
+	changed := resource.Title != title || resource.Type != req.Type ||
+		resource.Description != strings.TrimSpace(req.Description) ||
+		resource.Status != *req.Status || !resourceLinksEqual(resource.Links, links)
 	resource.Title = title
 	resource.Type = req.Type
 	resource.Description = strings.TrimSpace(req.Description)
 	resource.Status = *req.Status
-	err = s.resources.Transaction(ctx, func(tx *repository.ResourceRepository) error {
+	write := func(tx *repository.ResourceRepository, db *gorm.DB) error {
 		if err := tx.Update(ctx, resource); err != nil {
 			return err
 		}
-		return tx.ReplaceLinks(ctx, id, links)
-	})
+		if err := tx.ReplaceLinks(ctx, id, links); err != nil {
+			return err
+		}
+		if changed && resource.Status == model.ResourceStatusPublished && s.contributions != nil {
+			input := galgameService.RecordContributionInput{
+				GalgameID: resource.GalgameID,
+				UserID:    actorID,
+				Action:    galgameModel.ContributionActionResource,
+			}
+			if oldStatus != model.ResourceStatusPublished {
+				sourceType := galgameModel.ContributionSourceResource
+				sourceID := resource.ID
+				input.SourceType = &sourceType
+				input.SourceID = &sourceID
+			}
+			return s.contributions.RecordContribution(ctx, input, db)
+		}
+		return nil
+	}
+	if s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			return write(repository.NewResourceRepository(db), db)
+		})
+	} else {
+		err = s.resources.Transaction(ctx, func(tx *repository.ResourceRepository) error {
+			return write(tx, nil)
+		})
+	}
 	if err != nil {
 		logger.Error("update resource",
 			zap.Uint("resource_id", id), zap.Uint("actor_id", actorID), zap.Error(err))
@@ -307,7 +369,25 @@ func (s *ResourceService) ReviewResource(
 	}
 
 	resource.Status = req.Status
-	if err := s.resources.Update(ctx, resource); err != nil {
+	if req.Status == model.ResourceStatusPublished && resource.UploaderID != nil && s.contributions != nil {
+		err = s.contributions.Transaction(ctx, func(db *gorm.DB) error {
+			if err := repository.NewResourceRepository(db).Update(ctx, resource); err != nil {
+				return err
+			}
+			sourceType := galgameModel.ContributionSourceResource
+			sourceID := resource.ID
+			return s.contributions.RecordContribution(ctx, galgameService.RecordContributionInput{
+				GalgameID:  resource.GalgameID,
+				UserID:     *resource.UploaderID,
+				Action:     galgameModel.ContributionActionResource,
+				SourceType: &sourceType,
+				SourceID:   &sourceID,
+			}, db)
+		})
+	} else {
+		err = s.resources.Update(ctx, resource)
+	}
+	if err != nil {
 		logger.Error("review resource", zap.Uint("resource_id", id), zap.Error(err))
 		return nil, err
 	}
@@ -454,4 +534,23 @@ func normalizeLinks(values []string) []string {
 		links = append(links, value)
 	}
 	return links
+}
+
+func resourceLinksEqual(current []model.ResourceLink, expected []string) bool {
+	if len(current) != len(expected) {
+		return false
+	}
+	counts := make(map[string]int, len(current))
+	for _, link := range current {
+		counts[link.URL]++
+	}
+	for _, link := range expected {
+		counts[link]--
+	}
+	for _, count := range counts {
+		if count != 0 {
+			return false
+		}
+	}
+	return true
 }

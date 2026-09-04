@@ -5,6 +5,7 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoContributorData } from './dtoContributorData';
 import type { DtoDeveloperSummary } from './dtoDeveloperSummary';
 import type { DtoGalgameStatistics } from './dtoGalgameStatistics';
 import type { DtoRatingSummary } from './dtoRatingSummary';
@@ -14,6 +15,8 @@ export interface DtoGalgameResponse {
   age_rating?: number;
   aliases?: string[];
   banner_url?: string;
+  contributor_count?: number;
+  contributors?: DtoContributorData[];
   cover_url?: string;
   created_at?: string;
   description?: string;
