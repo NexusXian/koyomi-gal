@@ -2,11 +2,14 @@
 import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import {
+  createEnrichBatch,
+  getEnrichStats,
   listImportBatches,
   listImportProviders,
   searchImportGames
 } from '~/api/generated/admin-import/admin-import'
 import type {
+  DtoEnrichStatsData,
   DtoImportJobData,
   DtoImportSearchItem
 } from '~/api/generated/models'
@@ -16,6 +19,8 @@ useSeoMeta({ title: '外部数据导入 - Koyomi' })
 const { has } = usePermissions()
 const canImport = computed(() => has('galgame:import'))
 const canBatch = computed(() => has('galgame:import:batch'))
+
+const ENRICH_PROVIDER = 'bangumi'
 
 const providers = ref<string[]>([])
 const providersLoading = ref(false)
@@ -33,6 +38,11 @@ const previewState = reactive({
   provider: 'vndb',
   externalId: ''
 })
+
+const enrichStats = ref<DtoEnrichStatsData | null>(null)
+const enrichStatsLoading = ref(false)
+const enrichLimit = ref(1000)
+const enrichStarting = ref(false)
 
 const jobsQuery = reactive({
   status: undefined as number | undefined,
@@ -68,6 +78,50 @@ async function loadProviders(): Promise<void> {
     message.error(getApiErrorMessage(error, '获取数据源失败'))
   } finally {
     providersLoading.value = false
+  }
+}
+
+async function loadEnrichStats(): Promise<void> {
+  if (!canImport.value) {
+    return
+  }
+  enrichStatsLoading.value = true
+  try {
+    enrichStats.value = unwrapApiData(
+      await getEnrichStats({ provider: ENRICH_PROVIDER })
+    )
+  } catch {
+    enrichStats.value = null
+  } finally {
+    enrichStatsLoading.value = false
+  }
+}
+
+async function startEnrichBatch(): Promise<void> {
+  if (!enrichLimit.value || enrichLimit.value < 1) {
+    message.warning('请填写最大匹配数量')
+    return
+  }
+  enrichStarting.value = true
+  try {
+    const job = unwrapApiData(
+      await createEnrichBatch({
+        provider: ENRICH_PROVIDER,
+        limit: enrichLimit.value
+      })
+    )
+    message.success(`Bangumi 自动匹配任务 #${job.id ?? ''} 已创建`)
+    jobsQuery.page = 1
+    jobsQuery.status = undefined
+    await loadJobs()
+    await loadEnrichStats()
+    if (job.id) {
+      void navigateTo(`/admin/import/jobs/${job.id}`)
+    }
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '创建自动匹配任务失败'))
+  } finally {
+    enrichStarting.value = false
   }
 }
 
@@ -138,6 +192,7 @@ watch(jobs, () => syncJobsPolling(), { deep: true })
 onMounted(() => {
   if (canImport.value) {
     void loadProviders()
+    void loadEnrichStats()
   }
   void loadJobs()
 })
@@ -187,7 +242,7 @@ const resultColumns = computed<TableColumnsType>(() => [
   { title: '原始标题', key: 'original_title', ellipsis: true },
   { title: '开发商', key: 'developer', width: 140, ellipsis: true },
   { title: '发行时间', key: 'release_date', width: 110 },
-  { title: 'VNDB 评分', key: 'rating', width: 110 },
+  { title: `${searchState.provider.toUpperCase()} 评分`, key: 'rating', width: 110 },
   { title: '状态', key: 'duplicate', width: 90 },
   { title: '操作', key: 'actions', width: 150 }
 ])
@@ -235,7 +290,11 @@ const DUPLICATE_LABELS: Record<string, { text: string; color: string }> = {
           class="admin-import-hint"
           type="info"
           show-icon
-          :message="`当前数据源：${searchState.provider.toUpperCase()}（VNDB）`"
+          :message="
+            searchState.provider === 'bangumi'
+              ? '当前数据源：BANGUMI（建议仅用于手动补录缺失条目，批量建库请使用 VNDB）'
+              : '当前数据源：VNDB（视觉小说主数据源）'
+          "
         />
 
         <a-table
@@ -310,11 +369,84 @@ const DUPLICATE_LABELS: Record<string, { text: string; color: string }> = {
         </a-table>
       </KunCard>
 
+      <KunCard v-if="canImport" padding="md" class="admin-import-section">
+        <h3 class="admin-import-title">Bangumi 元数据补全</h3>
+        <a-spin :spinning="enrichStatsLoading">
+          <div class="admin-import-enrich-stats">
+            <div class="admin-import-enrich-stat">
+              <span class="admin-import-enrich-value">
+                {{ enrichStats?.vndb_count ?? '-' }}
+              </span>
+              <span class="admin-import-enrich-label">VNDB 条目</span>
+            </div>
+            <div class="admin-import-enrich-stat">
+              <span class="admin-import-enrich-value admin-import-enrich-linked">
+                {{ enrichStats?.linked_count ?? '-' }}
+              </span>
+              <span class="admin-import-enrich-label">Bangumi 已关联</span>
+            </div>
+            <div class="admin-import-enrich-stat">
+              <span class="admin-import-enrich-value admin-import-enrich-pending">
+                {{ enrichStats?.unlinked_count ?? '-' }}
+              </span>
+              <span class="admin-import-enrich-label">尚未关联</span>
+            </div>
+            <div class="admin-import-enrich-stat">
+              <span class="admin-import-enrich-value admin-import-enrich-review">
+                {{ enrichStats?.pending_matches ?? '-' }}
+              </span>
+              <span class="admin-import-enrich-label">待确认匹配</span>
+            </div>
+          </div>
+        </a-spin>
+        <a-alert
+          class="admin-import-hint"
+          type="info"
+          show-icon
+          message="Bangumi 只作为中文资料补全源。自动匹配只会关联高置信度候选，中等置信度进入人工审核，默认不覆盖已维护数据。"
+        />
+        <div class="admin-import-enrich-actions">
+          <a-button
+            v-if="canBatch"
+            :loading="enrichStarting"
+            :disabled="(enrichStats?.unlinked_count ?? 0) === 0"
+            @click="startEnrichBatch"
+          >
+            开始自动匹配
+          </a-button>
+          <a-input-number
+            v-if="canBatch"
+            v-model:value="enrichLimit"
+            class="admin-import-enrich-limit"
+            :min="1"
+            :max="5000"
+            :step="100"
+          />
+          <a-button @click="navigateTo('/admin/import/matches')">
+            查看待确认匹配
+          </a-button>
+          <a-button :loading="enrichStatsLoading" @click="loadEnrichStats">
+            刷新统计
+          </a-button>
+        </div>
+      </KunCard>
+
+      <KunCard v-if="canImport" padding="md" class="admin-import-section">
+        <h3 class="admin-import-title">条目补全</h3>
+        <EnrichPanel />
+      </KunCard>
+
       <KunCard v-if="canBatch" padding="md" class="admin-import-section">
         <h3 class="admin-import-title">批量导入</h3>
         <ImportBatchForm
-          :providers="providers.length > 0 ? providers : ['vndb']"
+          :providers="['vndb']"
           @created="onBatchCreated"
+        />
+        <a-alert
+          class="admin-import-hint"
+          type="info"
+          show-icon
+          message="批量建库仅支持 VNDB；Bangumi 通过上方补全流程关联中文资料。"
         />
       </KunCard>
 
@@ -432,5 +564,50 @@ const DUPLICATE_LABELS: Record<string, { text: string; color: string }> = {
 
 .admin-import-jobs-filter {
   width: 140px;
+}
+
+.admin-import-enrich-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.admin-import-enrich-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-import-enrich-value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.admin-import-enrich-linked {
+  color: #52c41a;
+}
+
+.admin-import-enrich-pending {
+  color: #faad14;
+}
+
+.admin-import-enrich-review {
+  color: #1677ff;
+}
+
+.admin-import-enrich-label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.admin-import-enrich-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.admin-import-enrich-limit {
+  width: 120px;
 }
 </style>

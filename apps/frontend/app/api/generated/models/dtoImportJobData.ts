@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DtoImportJobParams } from './dtoImportJobParams';
+import type { DtoImportJobStats } from './dtoImportJobStats';
 
 export interface DtoImportJobData {
   created_at?: string;
@@ -21,6 +22,7 @@ export interface DtoImportJobData {
   provider?: string;
   skipped_count?: number;
   started_at?: string;
+  stats?: DtoImportJobStats;
   status?: number;
   status_label?: string;
   total_count?: number;

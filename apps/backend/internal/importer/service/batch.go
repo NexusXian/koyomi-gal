@@ -109,8 +109,9 @@ func (s *Service) ListImportJobs(
 	return s.repository.ListJobs(ctx, status, page, limit)
 }
 
-// RunImportJob executes one Asynq batch task. Item-level failures are counted
-// and never abort the job; only job-level failures mark it failed.
+// RunImportJob executes one Asynq import task (batch or enrich). Item-level
+// failures are counted and never abort the job; only job-level failures mark
+// it failed.
 func (s *Service) RunImportJob(ctx context.Context, jobID int64) error {
 	job, err := s.repository.FindJob(ctx, jobID)
 	if err != nil {
@@ -130,7 +131,16 @@ func (s *Service) RunImportJob(ctx context.Context, jobID int64) error {
 		return nil
 	}
 
-	if err := s.executeBatchJob(ctx, job); err != nil {
+	var execute func(context.Context, *importerModel.ImportJob) error
+	switch job.JobType {
+	case importerModel.ImportJobTypeBatch:
+		execute = s.executeBatchJob
+	case importerModel.ImportJobTypeEnrich:
+		execute = s.executeEnrichJob
+	default:
+		execute = s.executeBatchJob
+	}
+	if err := execute(ctx, job); err != nil {
 		message := err.Error()
 		if len(message) > 2000 {
 			message = message[:2000]

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -221,12 +222,14 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	importerSvc := importerService.NewService(
 		importerRepository,
 		map[string]provider.Provider{
-			"vndb": provider.NewVNDBProvider(vndbClient),
+			"vndb":    provider.NewVNDBProvider(vndbClient),
+			"bangumi": provider.NewBangumiProvider(vndbClient, os.Getenv("BANGUMI_API_BASE_URL"), os.Getenv("BANGUMI_API_TOKEN")),
 		},
 		contributionSvc,
 	)
 	importQueueClient := queue.NewImportClient(cfg.Redis)
 	importerSvc.SetBatchEnqueuer(importQueueClient.EnqueueVNDBBatch)
+	importerSvc.SetEnrichEnqueuer(importQueueClient.EnqueueBangumiEnrich)
 
 	homeSvc := homeService.NewHomeService(
 		bannerRepository,

@@ -23,6 +23,12 @@ const items: AdminNavItem[] = [
     permissions: ['galgame:import', 'galgame:import:batch']
   },
   {
+    key: '/admin/import/matches',
+    label: '匹配审核',
+    icon: 'lucide:link-2',
+    permissions: ['galgame:import']
+  },
+  {
     key: '/admin/reports',
     label: '资源举报',
     icon: 'lucide:flag',

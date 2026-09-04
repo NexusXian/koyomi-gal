@@ -1016,6 +1016,21 @@ definitions:
     - name
     - slug
     type: object
+  dto.CreateEnrichBatchRequest:
+    properties:
+      limit:
+        example: 1000
+        maximum: 5000
+        minimum: 1
+        type: integer
+      provider:
+        example: bangumi
+        maxLength: 32
+        type: string
+    required:
+    - limit
+    - provider
+    type: object
   dto.CreateFeedbackRequest:
     properties:
       contact:
@@ -1378,6 +1393,149 @@ definitions:
         type: integer
       name:
         example: YUZUSOFT
+        type: string
+    type: object
+  dto.EnrichGalgameRequest:
+    properties:
+      external_id:
+        example: "200763"
+        maxLength: 128
+        type: string
+      fields:
+        example:
+        - title
+        - description
+        - aliases
+        - tags
+        items:
+          type: string
+        type: array
+      force:
+        example: false
+        type: boolean
+      provider:
+        example: bangumi
+        maxLength: 32
+        type: string
+    required:
+    - external_id
+    - provider
+    type: object
+  dto.EnrichGalgameResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.EnrichResultData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.EnrichResultData:
+    properties:
+      external_id:
+        example: "200763"
+        type: string
+      galgame_id:
+        example: 123
+        type: integer
+      provider:
+        example: bangumi
+        type: string
+      updated_fields:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.EnrichStatsData:
+    properties:
+      linked_count:
+        example: 3200
+        type: integer
+      pending_matches:
+        example: 613
+        type: integer
+      provider:
+        example: bangumi
+        type: string
+      unlinked_count:
+        example: 1800
+        type: integer
+      vndb_count:
+        example: 5000
+        type: integer
+    type: object
+  dto.EnrichStatsResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.EnrichStatsData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ExternalCandidateItem:
+    properties:
+      confidence:
+        example: 0.94
+        type: number
+      cover_url:
+        example: https://lain.bgm.tv/pic/cover/l/200763.jpg
+        type: string
+      external_id:
+        example: "200763"
+        type: string
+      linked:
+        example: false
+        type: boolean
+      original_title:
+        example: Summer Pockets
+        type: string
+      rating:
+        example: 8.2
+        type: number
+      rating_count:
+        example: 5819
+        type: integer
+      reasons:
+        items:
+          type: string
+        type: array
+      release_date:
+        example: "2018-06-29"
+        type: string
+      source:
+        example: bangumi
+        type: string
+      title:
+        example: 夏日口袋
+        type: string
+      url:
+        example: https://bgm.tv/subject/200763
+        type: string
+    type: object
+  dto.ExternalCandidateListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ExternalCandidateItem'
+        type: array
+      total:
+        example: 2
+        type: integer
+    type: object
+  dto.ExternalCandidateListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ExternalCandidateListData'
+      msg:
+        example: success
         type: string
     type: object
   dto.ExternalGameDetail:
@@ -2009,6 +2167,8 @@ definitions:
         type: integer
       started_at:
         type: string
+      stats:
+        $ref: '#/definitions/dto.ImportJobStats'
       status:
         example: 1
         type: integer
@@ -2076,6 +2236,21 @@ definitions:
         type: string
       to_year:
         example: 2024
+        type: integer
+    type: object
+  dto.ImportJobStats:
+    properties:
+      failed:
+        example: 12
+        type: integer
+      matched:
+        example: 2834
+        type: integer
+      not_found:
+        example: 917
+        type: integer
+      review:
+        example: 623
         type: integer
     type: object
   dto.ImportPreviewData:
@@ -2166,6 +2341,97 @@ definitions:
         $ref: '#/definitions/dto.ImportSearchData'
       msg:
         example: success
+        type: string
+    type: object
+  dto.MatchCandidateItem:
+    properties:
+      confidence:
+        example: 0.72
+        type: number
+      created_at:
+        type: string
+      external_id:
+        example: "200763"
+        type: string
+      galgame_id:
+        example: 123
+        type: integer
+      galgame_original_title:
+        example: サマーポケッツ
+        type: string
+      galgame_title:
+        example: Summer Pockets
+        type: string
+      id:
+        example: 1
+        type: integer
+      preview:
+        $ref: '#/definitions/dto.MatchCandidatePreview'
+      provider:
+        example: bangumi
+        type: string
+      reasons:
+        items:
+          type: string
+        type: array
+      reviewed_at:
+        type: string
+      status:
+        example: 0
+        type: integer
+      status_label:
+        example: pending
+        type: string
+    type: object
+  dto.MatchCandidateListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.MatchCandidateItem'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 613
+        type: integer
+    type: object
+  dto.MatchCandidateListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.MatchCandidateListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.MatchCandidatePreview:
+    properties:
+      cover_url:
+        example: https://lain.bgm.tv/pic/cover/l/200763.jpg
+        type: string
+      external_id:
+        example: "200763"
+        type: string
+      original_title:
+        example: Summer Pockets
+        type: string
+      rating:
+        example: 8.2
+        type: number
+      rating_count:
+        example: 5819
+        type: integer
+      title:
+        example: 夏日口袋
+        type: string
+      url:
+        example: https://bgm.tv/subject/200763
         type: string
     type: object
   dto.MeData:
@@ -5175,6 +5441,172 @@ paths:
       summary: 查询批量导入任务详情
       tags:
       - adminImport
+  /api/v1/admin/import/enrich/batches:
+    post:
+      consumes:
+      - application/json
+      description: 为已有 VNDB 来源但缺少补全数据源关联的条目创建异步自动匹配任务
+      operationId: createEnrichBatch
+      parameters:
+      - description: 批量补全请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEnrichBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 已创建的补全任务
+          schema:
+            $ref: '#/definitions/dto.ImportJobDataResponse'
+        "400":
+          description: 请求格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建批量元数据补全任务
+      tags:
+      - adminImport
+  /api/v1/admin/import/enrich/stats:
+    get:
+      description: 返回 VNDB 条目覆盖量与 Bangumi 等补全数据源的关联进度
+      operationId: getEnrichStats
+      parameters:
+      - default: bangumi
+        description: 补全数据源
+        example: bangumi
+        in: query
+        name: provider
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 补全统计
+          schema:
+            $ref: '#/definitions/dto.EnrichStatsResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询元数据补全统计
+      tags:
+      - adminImport
+  /api/v1/admin/import/galgames/{id}/enrich:
+    post:
+      consumes:
+      - application/json
+      description: 将外部条目关联到站内作品，默认只填充空缺字段，force 可覆盖已维护数据
+      operationId: enrichGalgame
+      parameters:
+      - description: 站内作品 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 补全请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.EnrichGalgameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 补全结果
+          schema:
+            $ref: '#/definitions/dto.EnrichGalgameResponse'
+        "400":
+          description: 请求格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 站内作品或外部条目不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "502":
+          description: 外部数据源查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 关联外部条目并补全元数据
+      tags:
+      - adminImport
+  /api/v1/admin/import/galgames/{id}/external-candidates:
+    get:
+      description: 按站内条目标题在外部数据源搜索补全候选并返回匹配度
+      operationId: listExternalCandidates
+      parameters:
+      - description: 站内作品 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 补全数据源
+        example: bangumi
+        in: query
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 候选列表
+          schema:
+            $ref: '#/definitions/dto.ExternalCandidateListResponse'
+        "400":
+          description: 参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 站内作品不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "502":
+          description: 外部数据源查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 搜索条目补全候选
+      tags:
+      - adminImport
   /api/v1/admin/import/games:
     post:
       consumes:
@@ -5317,6 +5749,138 @@ paths:
       security:
       - BearerAuth: []
       summary: 搜索外部视觉小说
+      tags:
+      - adminImport
+  /api/v1/admin/import/matches:
+    get:
+      description: 分页返回自动匹配产生的候选及其置信度
+      operationId: listMatchCandidates
+      parameters:
+      - default: 0
+        description: 状态：0 待审核，1 已通过，2 已拒绝
+        in: query
+        name: status
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 候选列表
+          schema:
+            $ref: '#/definitions/dto.MatchCandidateListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询待审核匹配候选
+      tags:
+      - adminImport
+  /api/v1/admin/import/matches/{id}/approve:
+    post:
+      description: 关联候选外部条目并执行默认补全
+      operationId: approveMatchCandidate
+      parameters:
+      - description: 候选 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 补全结果
+          schema:
+            $ref: '#/definitions/dto.EnrichGalgameResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 候选或外部条目不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 候选已审核
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "502":
+          description: 外部数据源查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 通过匹配候选
+      tags:
+      - adminImport
+  /api/v1/admin/import/matches/{id}/reject:
+    post:
+      description: 将候选标记为已拒绝，不产生任何数据变更
+      operationId: rejectMatchCandidate
+      parameters:
+      - description: 候选 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 已拒绝
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 候选不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 候选已审核
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 拒绝匹配候选
       tags:
       - adminImport
   /api/v1/admin/import/providers:

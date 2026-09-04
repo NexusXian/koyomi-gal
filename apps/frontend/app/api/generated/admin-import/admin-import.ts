@@ -6,7 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  DtoCreateEnrichBatchRequest,
   DtoCreateImportBatchRequest,
+  DtoEnrichGalgameRequest,
+  DtoEnrichGalgameResponse,
+  DtoEnrichStatsResponse,
+  DtoExternalCandidateListResponse,
   DtoImportGameRequest,
   DtoImportGameResponse,
   DtoImportJobDataResponse,
@@ -14,7 +19,12 @@ import type {
   DtoImportPreviewResponse,
   DtoImportProvidersResponse,
   DtoImportSearchResponse,
+  DtoMatchCandidateListResponse,
+  GetEnrichStatsParams,
+  ListExternalCandidatesParams,
   ListImportBatchesParams,
+  ListMatchCandidatesParams,
+  ResponseMessageResponse,
   SearchImportGamesParams
 } from '../models';
 
@@ -105,6 +115,131 @@ export const getImportBatch = async (id: number, options?: Parameters<typeof api
 );}
 
 
+export const getCreateEnrichBatchUrl = () => {
+
+
+
+
+  return `/api/v1/admin/import/enrich/batches`
+}
+
+/**
+ * 为已有 VNDB 来源但缺少补全数据源关联的条目创建异步自动匹配任务
+ * @summary 创建批量元数据补全任务
+ */
+export const createEnrichBatch = async (dtoCreateEnrichBatchRequest: DtoCreateEnrichBatchRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoImportJobDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoImportJobDataResponse>(getCreateEnrichBatchUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCreateEnrichBatchRequest)
+  }
+);}
+
+
+export const getGetEnrichStatsUrl = (params?: GetEnrichStatsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/import/enrich/stats?${stringifiedParams}` : `/api/v1/admin/import/enrich/stats`
+}
+
+/**
+ * 返回 VNDB 条目覆盖量与 Bangumi 等补全数据源的关联进度
+ * @summary 查询元数据补全统计
+ */
+export const getEnrichStats = async (params?: GetEnrichStatsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoEnrichStatsResponse> => {
+
+  return apiMutator<DtoEnrichStatsResponse>(getGetEnrichStatsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getEnrichGalgameUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/import/galgames/${id}/enrich`
+}
+
+/**
+ * 将外部条目关联到站内作品，默认只填充空缺字段，force 可覆盖已维护数据
+ * @summary 关联外部条目并补全元数据
+ */
+export const enrichGalgame = async (id: number,
+    dtoEnrichGalgameRequest: DtoEnrichGalgameRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoEnrichGalgameResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoEnrichGalgameResponse>(getEnrichGalgameUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoEnrichGalgameRequest)
+  }
+);}
+
+
+export const getListExternalCandidatesUrl = (id: number,
+    params: ListExternalCandidatesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/import/galgames/${id}/external-candidates?${stringifiedParams}` : `/api/v1/admin/import/galgames/${id}/external-candidates`
+}
+
+/**
+ * 按站内条目标题在外部数据源搜索补全候选并返回匹配度
+ * @summary 搜索条目补全候选
+ */
+export const listExternalCandidates = async (id: number,
+    params: ListExternalCandidatesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoExternalCandidateListResponse> => {
+
+  return apiMutator<DtoExternalCandidateListResponse>(getListExternalCandidatesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
 export const getImportGameUrl = () => {
 
 
@@ -186,6 +321,85 @@ export const previewImportGame = async (provider: string,
   {
     ...options,
     method: 'GET'
+
+
+  }
+);}
+
+
+export const getListMatchCandidatesUrl = (params?: ListMatchCandidatesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/import/matches?${stringifiedParams}` : `/api/v1/admin/import/matches`
+}
+
+/**
+ * 分页返回自动匹配产生的候选及其置信度
+ * @summary 查询待审核匹配候选
+ */
+export const listMatchCandidates = async (params?: ListMatchCandidatesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoMatchCandidateListResponse> => {
+
+  return apiMutator<DtoMatchCandidateListResponse>(getListMatchCandidatesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getApproveMatchCandidateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/import/matches/${id}/approve`
+}
+
+/**
+ * 关联候选外部条目并执行默认补全
+ * @summary 通过匹配候选
+ */
+export const approveMatchCandidate = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoEnrichGalgameResponse> => {
+
+  return apiMutator<DtoEnrichGalgameResponse>(getApproveMatchCandidateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export const getRejectMatchCandidateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/import/matches/${id}/reject`
+}
+
+/**
+ * 将候选标记为已拒绝，不产生任何数据变更
+ * @summary 拒绝匹配候选
+ */
+export const rejectMatchCandidate = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getRejectMatchCandidateUrl(id),
+  {
+    ...options,
+    method: 'POST'
 
 
   }

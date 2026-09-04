@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"backend/internal/importer/dto"
 	"backend/internal/importer/service"
@@ -274,6 +275,292 @@ func (h *ImporterHandler) respondBatchError(c *gin.Context, operation string, er
 	}
 }
 
+// GetEnrichStats godoc
+// @Summary      查询元数据补全统计
+// @Description  返回 VNDB 条目覆盖量与 Bangumi 等补全数据源的关联进度
+// @ID           getEnrichStats
+// @Tags         adminImport
+// @Produce      json
+// @Param        provider query string false "补全数据源" default(bangumi) example(bangumi)
+// @Success      200 {object} dto.EnrichStatsResponse "补全统计"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/enrich/stats [get]
+func (h *ImporterHandler) GetEnrichStats(c *gin.Context) {
+	var query dto.EnrichStatsQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	providerName := strings.ToLower(strings.TrimSpace(query.Provider))
+	if providerName == "" {
+		providerName = "bangumi"
+	}
+	overview, err := h.importerService.EnrichOverview(c.Request.Context(), providerName)
+	if err != nil {
+		logger.Error("get enrich stats", zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("查询补全统计失败"))
+		return
+	}
+	response.Ok(c, dto.NewEnrichStatsData(overview, providerName))
+}
+
+// CreateEnrichBatch godoc
+// @Summary      创建批量元数据补全任务
+// @Description  为已有 VNDB 来源但缺少补全数据源关联的条目创建异步自动匹配任务
+// @ID           createEnrichBatch
+// @Tags         adminImport
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.CreateEnrichBatchRequest true "批量补全请求"
+// @Success      200 {object} dto.ImportJobDataResponse "已创建的补全任务"
+// @Failure      400 {object} response.ErrorResponse "请求格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/enrich/batches [post]
+func (h *ImporterHandler) CreateEnrichBatch(c *gin.Context) {
+	var request dto.CreateEnrichBatchRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求格式不正确"))
+		return
+	}
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	job, err := h.importerService.CreateEnrichJob(c.Request.Context(), request.Provider, request.Limit, &userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrProviderNotFound):
+			response.Error(c, appErrors.ErrValidation("数据源不受支持"))
+		default:
+			logger.Error("create enrich batch", zap.Error(err))
+			response.Error(c, appErrors.ErrInternal("创建补全任务失败"))
+		}
+		return
+	}
+	response.Ok(c, dto.NewImportJobData(job))
+}
+
+// ListExternalCandidates godoc
+// @Summary      搜索条目补全候选
+// @Description  按站内条目标题在外部数据源搜索补全候选并返回匹配度
+// @ID           listExternalCandidates
+// @Tags         adminImport
+// @Produce      json
+// @Param        id path int true "站内作品 ID"
+// @Param        provider query string true "补全数据源" example(bangumi)
+// @Success      200 {object} dto.ExternalCandidateListResponse "候选列表"
+// @Failure      400 {object} response.ErrorResponse "参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Failure      404 {object} response.ErrorResponse "站内作品不存在"
+// @Failure      502 {object} response.ErrorResponse "外部数据源查询失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/galgames/{id}/external-candidates [get]
+func (h *ImporterHandler) ListExternalCandidates(c *gin.Context) {
+	id, ok := parseImportID(c, "id")
+	if !ok {
+		return
+	}
+	var query dto.ExternalCandidateQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	candidates, err := h.importerService.SearchExternalCandidates(c.Request.Context(), id, query.Provider)
+	if err != nil {
+		h.respondEnrichError(c, "list external candidates", err)
+		return
+	}
+	items := dto.NewExternalCandidateItems(candidates)
+	response.Ok(c, dto.ExternalCandidateListData{Items: items, Total: len(items)})
+}
+
+// EnrichGalgame godoc
+// @Summary      关联外部条目并补全元数据
+// @Description  将外部条目关联到站内作品，默认只填充空缺字段，force 可覆盖已维护数据
+// @ID           enrichGalgame
+// @Tags         adminImport
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "站内作品 ID"
+// @Param        request body dto.EnrichGalgameRequest true "补全请求"
+// @Success      200 {object} dto.EnrichGalgameResponse "补全结果"
+// @Failure      400 {object} response.ErrorResponse "请求格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Failure      404 {object} response.ErrorResponse "站内作品或外部条目不存在"
+// @Failure      502 {object} response.ErrorResponse "外部数据源查询失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/galgames/{id}/enrich [post]
+func (h *ImporterHandler) EnrichGalgame(c *gin.Context) {
+	id, ok := parseImportID(c, "id")
+	if !ok {
+		return
+	}
+	var request dto.EnrichGalgameRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求格式不正确"))
+		return
+	}
+	opts, err := service.ParseEnrichFields(request.Fields, request.Force)
+	if err != nil {
+		response.Error(c, appErrors.ErrValidation("补全字段不受支持"))
+		return
+	}
+	result, err := h.importerService.Enrich(c.Request.Context(), id, request.Provider, request.ExternalID, opts)
+	if err != nil {
+		h.respondEnrichError(c, "enrich galgame", err)
+		return
+	}
+	response.Ok(c, dto.NewEnrichResultData(result))
+}
+
+// ListMatchCandidates godoc
+// @Summary      查询待审核匹配候选
+// @Description  分页返回自动匹配产生的候选及其置信度
+// @ID           listMatchCandidates
+// @Tags         adminImport
+// @Produce      json
+// @Param        status query int false "状态：0 待审核，1 已通过，2 已拒绝" default(0)
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
+// @Success      200 {object} dto.MatchCandidateListResponse "候选列表"
+// @Failure      400 {object} response.ErrorResponse "查询参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/matches [get]
+func (h *ImporterHandler) ListMatchCandidates(c *gin.Context) {
+	var query dto.MatchCandidateQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	if query.Page <= 0 {
+		query.Page = 1
+	}
+	if query.Limit <= 0 {
+		query.Limit = defaultSearchLimit
+	}
+	if query.Status == nil {
+		pending := int16(0)
+		query.Status = &pending
+	}
+	candidates, total, err := h.importerService.ListMatchCandidates(c.Request.Context(), query.Status, query.Page, query.Limit)
+	if err != nil {
+		logger.Error("list match candidates", zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("查询匹配候选失败"))
+		return
+	}
+	response.Ok(c, dto.MatchCandidateListData{
+		Items: dto.NewMatchCandidateItems(candidates),
+		Total: total,
+		Page:  query.Page,
+		Limit: query.Limit,
+	})
+}
+
+// ApproveMatchCandidate godoc
+// @Summary      通过匹配候选
+// @Description  关联候选外部条目并执行默认补全
+// @ID           approveMatchCandidate
+// @Tags         adminImport
+// @Produce      json
+// @Param        id path int true "候选 ID"
+// @Success      200 {object} dto.EnrichGalgameResponse "补全结果"
+// @Failure      400 {object} response.ErrorResponse "ID 格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Failure      404 {object} response.ErrorResponse "候选或外部条目不存在"
+// @Failure      409 {object} response.ErrorResponse "候选已审核"
+// @Failure      502 {object} response.ErrorResponse "外部数据源查询失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/matches/{id}/approve [post]
+func (h *ImporterHandler) ApproveMatchCandidate(c *gin.Context) {
+	id, ok := parseImportID64(c, "id")
+	if !ok {
+		return
+	}
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	result, err := h.importerService.ApproveMatchCandidate(c.Request.Context(), id, &userID)
+	if err != nil {
+		h.respondMatchError(c, "approve match candidate", err)
+		return
+	}
+	response.Ok(c, dto.NewEnrichResultData(result))
+}
+
+// RejectMatchCandidate godoc
+// @Summary      拒绝匹配候选
+// @Description  将候选标记为已拒绝，不产生任何数据变更
+// @ID           rejectMatchCandidate
+// @Tags         adminImport
+// @Produce      json
+// @Param        id path int true "候选 ID"
+// @Success      200 {object} response.MessageResponse "已拒绝"
+// @Failure      400 {object} response.ErrorResponse "ID 格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "无权限"
+// @Failure      404 {object} response.ErrorResponse "候选不存在"
+// @Failure      409 {object} response.ErrorResponse "候选已审核"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/import/matches/{id}/reject [post]
+func (h *ImporterHandler) RejectMatchCandidate(c *gin.Context) {
+	id, ok := parseImportID64(c, "id")
+	if !ok {
+		return
+	}
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	if err := h.importerService.RejectMatchCandidate(c.Request.Context(), id, &userID); err != nil {
+		h.respondMatchError(c, "reject match candidate", err)
+		return
+	}
+	response.OkWithMsg(c, "已拒绝")
+}
+
+func (h *ImporterHandler) respondEnrichError(c *gin.Context, operation string, err error) {
+	switch {
+	case errors.Is(err, service.ErrProviderNotFound):
+		response.Error(c, appErrors.ErrValidation("数据源不受支持"))
+	case errors.Is(err, service.ErrExternalGameNotFound):
+		response.Error(c, appErrors.ErrNotFound("外部条目不存在"))
+	case errors.Is(err, service.ErrGalgameNotFound):
+		response.Error(c, appErrors.ErrNotFound("站内作品不存在"))
+	case errors.Is(err, service.ErrMatchInputEmpty):
+		response.Error(c, appErrors.ErrValidation("站内作品缺少可用于匹配的标题"))
+	default:
+		logger.Error(operation, zap.Error(err))
+		response.Error(c, appErrors.New(appErrors.CodeBiz, "外部数据源查询失败", http.StatusBadGateway))
+	}
+}
+
+func (h *ImporterHandler) respondMatchError(c *gin.Context, operation string, err error) {
+	switch {
+	case errors.Is(err, service.ErrMatchCandidateNotFound):
+		response.Error(c, appErrors.ErrNotFound("匹配候选不存在"))
+	case errors.Is(err, service.ErrMatchCandidateReviewed):
+		response.Error(c, appErrors.ErrConflict("匹配候选已审核"))
+	case errors.Is(err, service.ErrExternalGameNotFound):
+		response.Error(c, appErrors.ErrNotFound("外部条目不存在"))
+	default:
+		logger.Error(operation, zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("处理匹配候选失败"))
+	}
+}
+
 func (h *ImporterHandler) respondSearchError(c *gin.Context, operation string, err error) {
 	switch {
 	case errors.Is(err, service.ErrProviderNotFound):
@@ -313,4 +600,15 @@ func parseImportID(c *gin.Context, name string) (uint, bool) {
 		return 0, false
 	}
 	return uint(value), true
+}
+
+// parseImportID64 parses a numeric path parameter into uint64.
+func parseImportID64(c *gin.Context, name string) (uint64, bool) {
+	raw := c.Param(name)
+	value, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil || value == 0 {
+		response.Error(c, appErrors.ErrValidation("ID 格式不正确"))
+		return 0, false
+	}
+	return value, true
 }

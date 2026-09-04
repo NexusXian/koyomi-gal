@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -72,6 +73,21 @@ func (r *Repository) SetJobTotal(ctx context.Context, id int64, total int) error
 		Update("total_count", total).Error
 	if err != nil {
 		return fmt.Errorf("set import job total: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) UpdateJobStats(ctx context.Context, id int64, stats any) error {
+	encoded, err := json.Marshal(stats)
+	if err != nil {
+		return fmt.Errorf("encode import job stats: %w", err)
+	}
+	err = r.db.WithContext(ctx).
+		Model(&importerModel.ImportJob{}).
+		Where("id = ?", id).
+		Update("stats", encoded).Error
+	if err != nil {
+		return fmt.Errorf("update import job stats: %w", err)
 	}
 	return nil
 }

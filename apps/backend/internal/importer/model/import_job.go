@@ -13,7 +13,10 @@ const (
 	ImportJobStatusCancelled
 )
 
-const ImportJobTypeBatch = "batch"
+const (
+	ImportJobTypeBatch  = "batch"
+	ImportJobTypeEnrich = "enrich"
+)
 
 type ImportJob struct {
 	ID             uint            `gorm:"primaryKey" json:"id"`
@@ -26,6 +29,7 @@ type ImportJob struct {
 	SkippedCount   int             `gorm:"not null" json:"skipped_count"`
 	FailedCount    int             `gorm:"not null" json:"failed_count"`
 	Params         json.RawMessage `gorm:"type:jsonb" json:"params,omitempty"`
+	Stats          json.RawMessage `gorm:"type:jsonb;not null;default:'{}'" json:"stats,omitempty"`
 	ErrorMessage   string          `gorm:"not null" json:"error_message"`
 	CreatedBy      *uint           `json:"created_by"`
 	CreatedAt      time.Time       `json:"created_at"`

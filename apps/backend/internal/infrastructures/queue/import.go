@@ -14,7 +14,10 @@ import (
 const (
 	// ImportVNDBBatchTaskType is the Asynq task type for VNDB batch imports.
 	ImportVNDBBatchTaskType = "import:vndb:batch"
-	importQueueName         = "import"
+	// ImportBangumiEnrichTaskType is the Asynq task type for Bangumi batch
+	// metadata enrichment.
+	ImportBangumiEnrichTaskType = "import:bangumi:enrich"
+	importQueueName             = "import"
 )
 
 type importBatchPayload struct {
@@ -48,6 +51,24 @@ func (c *ImportClient) EnqueueVNDBBatch(ctx context.Context, jobID int64) error 
 	return nil
 }
 
+func (c *ImportClient) EnqueueBangumiEnrich(ctx context.Context, jobID int64) error {
+	payload, err := json.Marshal(importBatchPayload{JobID: jobID})
+	if err != nil {
+		return fmt.Errorf("encode import enrich task: %w", err)
+	}
+	task := asynq.NewTask(ImportBangumiEnrichTaskType, payload)
+	_, err = c.client.EnqueueContext(ctx, task,
+		asynq.Queue(importQueueName),
+		asynq.TaskID(fmt.Sprintf("import:enrich:job:%d", jobID)),
+		asynq.MaxRetry(1),
+		asynq.Timeout(6*time.Hour),
+	)
+	if err != nil {
+		return fmt.Errorf("enqueue import enrich task: %w", err)
+	}
+	return nil
+}
+
 func (c *ImportClient) Close() error {
 	return c.client.Close()
 }
@@ -70,11 +91,13 @@ func NewImportServer(cfg *config.Redis, concurrency int) *asynq.Server {
 }
 
 func RegisterImportTasks(mux *asynq.ServeMux, runner ImportBatchRunner) {
-	mux.HandleFunc(ImportVNDBBatchTaskType, func(ctx context.Context, task *asynq.Task) error {
+	runJob := func(ctx context.Context, task *asynq.Task) error {
 		var payload importBatchPayload
 		if err := json.Unmarshal(task.Payload(), &payload); err != nil || payload.JobID <= 0 {
 			return asynq.RevokeTask
 		}
 		return runner.RunImportJob(ctx, payload.JobID)
-	})
+	}
+	mux.HandleFunc(ImportVNDBBatchTaskType, runJob)
+	mux.HandleFunc(ImportBangumiEnrichTaskType, runJob)
 }

@@ -67,10 +67,11 @@ type ImportResult struct {
 }
 
 type Service struct {
-	repository    *importerRepository.Repository
-	providers     map[string]provider.Provider
-	contributions *galgameService.ContributionService
-	batchEnqueuer func(ctx context.Context, jobID int64) error
+	repository     *importerRepository.Repository
+	providers      map[string]provider.Provider
+	contributions  *galgameService.ContributionService
+	batchEnqueuer  func(ctx context.Context, jobID int64) error
+	enrichEnqueuer func(ctx context.Context, jobID int64) error
 }
 
 func NewService(
@@ -547,10 +548,14 @@ func createExternalSource(ctx context.Context, tx *gorm.DB, galgameID uint, game
 }
 
 func externalSourceURL(source, externalID string) string {
-	if source == "vndb" {
+	switch source {
+	case "vndb":
 		return "https://vndb.org/" + externalID
+	case "bangumi":
+		return "https://bgm.tv/subject/" + externalID
+	default:
+		return ""
 	}
-	return ""
 }
 
 func sourceTypeForProvider(name string) int16 {

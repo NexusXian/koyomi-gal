@@ -26,6 +26,12 @@ const status = computed(() => props.job.status ?? 0)
 const statusLabel = computed(
   () => STATUS_LABELS[status.value] ?? props.job.status_label ?? '未知'
 )
+const isEnrich = computed(() => props.job.job_type === 'enrich')
+const createdLabel = computed(() => (isEnrich.value ? '自动匹配' : '新增'))
+const skippedLabel = computed(() => (isEnrich.value ? '未找到' : '跳过'))
+const reviewCount = computed(() =>
+  isEnrich.value ? (props.job.stats?.review ?? 0) : null
+)
 const percent = computed(() => {
   const total = props.job.total_count ?? 0
   const processed = props.job.processed_count ?? 0
@@ -55,10 +61,16 @@ const percentStatus = computed(() =>
     />
     <div class="import-job-progress-stats">
       <span class="import-job-stat import-job-stat-created">
-        新增 {{ job.created_count ?? 0 }}
+        {{ createdLabel }} {{ job.created_count ?? 0 }}
       </span>
       <span class="import-job-stat import-job-stat-skipped">
-        跳过 {{ job.skipped_count ?? 0 }}
+        {{ skippedLabel }} {{ job.skipped_count ?? 0 }}
+      </span>
+      <span
+        v-if="reviewCount !== null"
+        class="import-job-stat import-job-stat-review"
+      >
+        待审核 {{ reviewCount }}
       </span>
       <span class="import-job-stat import-job-stat-failed">
         失败 {{ job.failed_count ?? 0 }}
@@ -95,6 +107,10 @@ const percentStatus = computed(() =>
 
 .import-job-stat-skipped {
   color: #faad14;
+}
+
+.import-job-stat-review {
+  color: #1677ff;
 }
 
 .import-job-stat-failed {

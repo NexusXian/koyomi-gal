@@ -81,6 +81,14 @@ const paramsRows = computed(() => {
   }
   const rows: { key: string; label: string; value: string }[] = []
   rows.push({ key: 'provider', label: '数据源', value: (job.value?.provider ?? '').toUpperCase() })
+  if (job.value?.job_type === 'enrich') {
+    rows.push({
+      key: 'limit',
+      label: '最大匹配数量',
+      value: String(params.limit ?? '-')
+    })
+    return rows
+  }
   rows.push({
     key: 'min_rating',
     label: '最低评分',
@@ -113,6 +121,10 @@ const paramsRows = computed(() => {
   })
   return rows
 })
+
+const jobTypeLabel = computed(() =>
+  job.value?.job_type === 'enrich' ? '元数据补全' : '批量导入'
+)
 </script>
 
 <template>
@@ -129,7 +141,7 @@ const paramsRows = computed(() => {
     <template v-else-if="job">
       <KunCard padding="md" class="import-job-detail-section">
         <h3 class="import-job-detail-title">
-          任务 #{{ job.id }}（{{ (job.provider ?? '').toUpperCase() }} 批量导入）
+          任务 #{{ job.id }}（{{ (job.provider ?? '').toUpperCase() }} {{ jobTypeLabel }}）
         </h3>
         <ImportJobProgress :job="job" />
         <a-alert
@@ -139,6 +151,19 @@ const paramsRows = computed(() => {
           show-icon
           :message="job.error_message"
         />
+        <a-alert
+          v-if="jobTypeLabel === '元数据补全' && job.status === 2 && (job.stats?.review ?? 0) > 0"
+          class="import-job-detail-error"
+          type="warning"
+          show-icon
+          :message="`有 ${job.stats?.review ?? 0} 条中等置信度匹配等待人工确认`"
+        >
+          <template #action>
+            <a-button size="small" type="primary" @click="navigateTo('/admin/import/matches')">
+              去审核
+            </a-button>
+          </template>
+        </a-alert>
       </KunCard>
 
       <KunCard padding="md" class="import-job-detail-section">

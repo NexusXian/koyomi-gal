@@ -6,6 +6,7 @@ import (
 
 	"backend/internal/importer/model"
 	"backend/internal/importer/provider"
+	"backend/internal/importer/repository"
 	"backend/internal/importer/service"
 )
 
@@ -124,6 +125,13 @@ type ImportJobParams struct {
 	Limit            int      `json:"limit" example:"500"`
 }
 
+type ImportJobStats struct {
+	Matched  int `json:"matched" example:"2834"`
+	Review   int `json:"review" example:"623"`
+	NotFound int `json:"not_found" example:"917"`
+	Failed   int `json:"failed" example:"12"`
+}
+
 type ImportJobData struct {
 	ID             int64           `json:"id" example:"1"`
 	Provider       string          `json:"provider" example:"vndb"`
@@ -136,6 +144,7 @@ type ImportJobData struct {
 	SkippedCount   int             `json:"skipped_count" example:"15"`
 	FailedCount    int             `json:"failed_count" example:"5"`
 	Params         ImportJobParams `json:"params"`
+	Stats          ImportJobStats  `json:"stats"`
 	ErrorMessage   string          `json:"error_message" example:""`
 	CreatedBy      *uint           `json:"created_by,omitempty" example:"1"`
 	CreatedAt      time.Time       `json:"created_at"`
@@ -168,6 +177,201 @@ type ImportJobListResponse struct {
 	Msg  string            `json:"msg" example:"success"`
 }
 
+type EnrichStatsQuery struct {
+	Provider string `form:"provider" binding:"omitempty,max=32" example:"bangumi"`
+}
+
+type EnrichStatsData struct {
+	Provider       string `json:"provider" example:"bangumi"`
+	VndbCount      int64  `json:"vndb_count" example:"5000"`
+	LinkedCount    int64  `json:"linked_count" example:"3200"`
+	UnlinkedCount  int64  `json:"unlinked_count" example:"1800"`
+	PendingMatches int64  `json:"pending_matches" example:"613"`
+}
+
+type EnrichStatsResponse struct {
+	Code int             `json:"code" example:"0"`
+	Data EnrichStatsData `json:"data"`
+	Msg  string          `json:"msg" example:"success"`
+}
+
+type CreateEnrichBatchRequest struct {
+	Provider string `json:"provider" binding:"required,max=32" example:"bangumi"`
+	Limit    int    `json:"limit" binding:"required,min=1,max=5000" example:"1000"`
+}
+
+type ExternalCandidateQuery struct {
+	Provider string `form:"provider" binding:"required,max=32" example:"bangumi"`
+}
+
+type ExternalCandidateItem struct {
+	ExternalID    string   `json:"external_id" example:"200763"`
+	Source        string   `json:"source" example:"bangumi"`
+	URL           string   `json:"url" example:"https://bgm.tv/subject/200763"`
+	Title         string   `json:"title" example:"夏日口袋"`
+	OriginalTitle string   `json:"original_title" example:"Summer Pockets"`
+	CoverURL      string   `json:"cover_url" example:"https://lain.bgm.tv/pic/cover/l/200763.jpg"`
+	ReleaseDate   *string  `json:"release_date" example:"2018-06-29"`
+	Rating        *float64 `json:"rating" example:"8.2"`
+	RatingCount   *int     `json:"rating_count" example:"5819"`
+	Confidence    float64  `json:"confidence" example:"0.94"`
+	Reasons       []string `json:"reasons"`
+	Linked        bool     `json:"linked" example:"false"`
+}
+
+type ExternalCandidateListData struct {
+	Items []ExternalCandidateItem `json:"items"`
+	Total int                     `json:"total" example:"2"`
+}
+
+type ExternalCandidateListResponse struct {
+	Code int                       `json:"code" example:"0"`
+	Data ExternalCandidateListData `json:"data"`
+	Msg  string                    `json:"msg" example:"success"`
+}
+
+type EnrichGalgameRequest struct {
+	Provider   string   `json:"provider" binding:"required,max=32" example:"bangumi"`
+	ExternalID string   `json:"external_id" binding:"required,max=128" example:"200763"`
+	Fields     []string `json:"fields" binding:"omitempty,dive,oneof=title description aliases cover tags" example:"title,description,aliases,tags"`
+	Force      bool     `json:"force" example:"false"`
+}
+
+type EnrichResultData struct {
+	GalgameID     uint     `json:"galgame_id" example:"123"`
+	Provider      string   `json:"provider" example:"bangumi"`
+	ExternalID    string   `json:"external_id" example:"200763"`
+	UpdatedFields []string `json:"updated_fields"`
+}
+
+type EnrichGalgameResponse struct {
+	Code int              `json:"code" example:"0"`
+	Data EnrichResultData `json:"data"`
+	Msg  string           `json:"msg" example:"success"`
+}
+
+type MatchCandidateQuery struct {
+	Status *int16 `form:"status" binding:"omitempty,min=0,max=2" example:"0"`
+	Page   int    `form:"page" binding:"omitempty,min=1,max=1000000"`
+	Limit  int    `form:"limit" binding:"omitempty,min=1,max=100"`
+}
+
+type MatchCandidatePreview struct {
+	ExternalID    string   `json:"external_id" example:"200763"`
+	Title         string   `json:"title" example:"夏日口袋"`
+	OriginalTitle string   `json:"original_title" example:"Summer Pockets"`
+	CoverURL      string   `json:"cover_url" example:"https://lain.bgm.tv/pic/cover/l/200763.jpg"`
+	Rating        *float64 `json:"rating" example:"8.2"`
+	RatingCount   *int     `json:"rating_count" example:"5819"`
+	URL           string   `json:"url" example:"https://bgm.tv/subject/200763"`
+}
+
+type MatchCandidateItem struct {
+	ID                   uint64                 `json:"id" example:"1"`
+	GalgameID            uint                   `json:"galgame_id" example:"123"`
+	GalgameTitle         string                 `json:"galgame_title" example:"Summer Pockets"`
+	GalgameOriginalTitle string                 `json:"galgame_original_title" example:"サマーポケッツ"`
+	Provider             string                 `json:"provider" example:"bangumi"`
+	ExternalID           string                 `json:"external_id" example:"200763"`
+	Confidence           float64                `json:"confidence" example:"0.72"`
+	Reasons              []string               `json:"reasons"`
+	Preview              *MatchCandidatePreview `json:"preview,omitempty"`
+	Status               int16                  `json:"status" example:"0"`
+	StatusLabel          string                 `json:"status_label" example:"pending"`
+	CreatedAt            time.Time              `json:"created_at"`
+	ReviewedAt           *time.Time             `json:"reviewed_at"`
+}
+
+type MatchCandidateListData struct {
+	Items []MatchCandidateItem `json:"items"`
+	Total int64                `json:"total" example:"613"`
+	Page  int                  `json:"page" example:"1"`
+	Limit int                  `json:"limit" example:"20"`
+}
+
+type MatchCandidateListResponse struct {
+	Code int                    `json:"code" example:"0"`
+	Data MatchCandidateListData `json:"data"`
+	Msg  string                 `json:"msg" example:"success"`
+}
+
+func NewEnrichResultData(result *service.EnrichResult) EnrichResultData {
+	fields := result.UpdatedFields
+	if fields == nil {
+		fields = []string{}
+	}
+	return EnrichResultData{
+		GalgameID:     result.GalgameID,
+		Provider:      result.Provider,
+		ExternalID:    result.ExternalID,
+		UpdatedFields: fields,
+	}
+}
+
+func NewEnrichStatsData(overview repository.EnrichOverview, providerName string) EnrichStatsData {
+	return EnrichStatsData{
+		Provider:       providerName,
+		VndbCount:      overview.VndbCount,
+		LinkedCount:    overview.LinkedCount,
+		UnlinkedCount:  overview.UnlinkedCount,
+		PendingMatches: overview.PendingCandidates,
+	}
+}
+
+func NewExternalCandidateItems(candidates []service.ExternalCandidate) []ExternalCandidateItem {
+	items := make([]ExternalCandidateItem, 0, len(candidates))
+	for _, candidate := range candidates {
+		items = append(items, ExternalCandidateItem{
+			ExternalID:    candidate.ExternalID,
+			Source:        candidate.Source,
+			URL:           externalGameURL(candidate.Source, candidate.ExternalID),
+			Title:         candidate.Title,
+			OriginalTitle: candidate.OriginalTitle,
+			CoverURL:      candidate.CoverURL,
+			ReleaseDate:   formatDate(candidate.ReleaseDate),
+			Rating:        candidate.Rating,
+			RatingCount:   candidate.RatingCount,
+			Confidence:    candidate.Confidence,
+			Reasons:       candidate.Reasons,
+			Linked:        candidate.Linked,
+		})
+	}
+	return items
+}
+
+func NewMatchCandidateItems(candidates []model.ExternalMatchCandidate) []MatchCandidateItem {
+	items := make([]MatchCandidateItem, 0, len(candidates))
+	statusLabels := map[int16]string{0: "pending", 1: "approved", 2: "rejected"}
+	for _, candidate := range candidates {
+		var reasons []string
+		if len(candidate.Reasons) > 0 {
+			_ = json.Unmarshal(candidate.Reasons, &reasons)
+		}
+		item := MatchCandidateItem{
+			ID:                   candidate.ID,
+			GalgameID:            candidate.GalgameID,
+			GalgameTitle:         candidate.GalgameTitle,
+			GalgameOriginalTitle: candidate.GalgameOriginalTitle,
+			Provider:             candidate.Provider,
+			ExternalID:           candidate.ExternalID,
+			Confidence:           candidate.Confidence,
+			Reasons:              reasons,
+			Status:               candidate.Status,
+			StatusLabel:          statusLabels[candidate.Status],
+			CreatedAt:            candidate.CreatedAt,
+			ReviewedAt:           candidate.ReviewedAt,
+		}
+		if len(candidate.Preview) > 0 {
+			var preview MatchCandidatePreview
+			if err := json.Unmarshal(candidate.Preview, &preview); err == nil {
+				item.Preview = &preview
+			}
+		}
+		items = append(items, item)
+	}
+	return items
+}
+
 func NewProvidersData(providers []string) ImportProvidersData {
 	items := make([]string, 0, len(providers))
 	items = append(items, providers...)
@@ -187,6 +391,10 @@ func NewImportJobData(job *model.ImportJob) ImportJobData {
 	if len(job.Params) > 0 {
 		_ = json.Unmarshal(job.Params, &params)
 	}
+	var stats ImportJobStats
+	if len(job.Stats) > 0 {
+		_ = json.Unmarshal(job.Stats, &stats)
+	}
 	return ImportJobData{
 		ID:             int64(job.ID),
 		Provider:       job.Provider,
@@ -199,6 +407,7 @@ func NewImportJobData(job *model.ImportJob) ImportJobData {
 		SkippedCount:   job.SkippedCount,
 		FailedCount:    job.FailedCount,
 		Params:         params,
+		Stats:          stats,
 		ErrorMessage:   job.ErrorMessage,
 		CreatedBy:      job.CreatedBy,
 		CreatedAt:      job.CreatedAt,
@@ -318,8 +527,12 @@ func tagNames(tags []provider.ExternalTag) []string {
 }
 
 func externalGameURL(source, externalID string) string {
-	if source == "vndb" {
+	switch source {
+	case "vndb":
 		return "https://vndb.org/" + externalID
+	case "bangumi":
+		return "https://bgm.tv/subject/" + externalID
+	default:
+		return ""
 	}
-	return ""
 }

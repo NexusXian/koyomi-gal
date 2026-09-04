@@ -1960,6 +1960,262 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/import/enrich/batches": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "为已有 VNDB 来源但缺少补全数据源关联的条目创建异步自动匹配任务",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "创建批量元数据补全任务",
+                "operationId": "createEnrichBatch",
+                "parameters": [
+                    {
+                        "description": "批量补全请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateEnrichBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "已创建的补全任务",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportJobDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/enrich/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回 VNDB 条目覆盖量与 Bangumi 等补全数据源的关联进度",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "查询元数据补全统计",
+                "operationId": "getEnrichStats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "bangumi",
+                        "example": "bangumi",
+                        "description": "补全数据源",
+                        "name": "provider",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "补全统计",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EnrichStatsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/galgames/{id}/enrich": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将外部条目关联到站内作品，默认只填充空缺字段，force 可覆盖已维护数据",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "关联外部条目并补全元数据",
+                "operationId": "enrichGalgame",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "站内作品 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "补全请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.EnrichGalgameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "补全结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EnrichGalgameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "站内作品或外部条目不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "外部数据源查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/galgames/{id}/external-candidates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按站内条目标题在外部数据源搜索补全候选并返回匹配度",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "搜索条目补全候选",
+                "operationId": "listExternalCandidates",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "站内作品 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "bangumi",
+                        "description": "补全数据源",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "候选列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ExternalCandidateListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "站内作品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "外部数据源查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/import/games": {
             "post": {
                 "security": [
@@ -2172,6 +2428,209 @@ const docTemplate = `{
                     },
                     "502": {
                         "description": "外部数据源查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/matches": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回自动匹配产生的候选及其置信度",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "查询待审核匹配候选",
+                "operationId": "listMatchCandidates",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "状态：0 待审核，1 已通过，2 已拒绝",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "候选列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MatchCandidateListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/matches/{id}/approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "关联候选外部条目并执行默认补全",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "通过匹配候选",
+                "operationId": "approveMatchCandidate",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "候选 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "补全结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EnrichGalgameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "候选或外部条目不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "候选已审核",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "外部数据源查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/matches/{id}/reject": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将候选标记为已拒绝，不产生任何数据变更",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "拒绝匹配候选",
+                "operationId": "rejectMatchCandidate",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "候选 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "已拒绝",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "候选不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "候选已审核",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -9611,6 +10070,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateEnrichBatchRequest": {
+            "type": "object",
+            "required": [
+                "limit",
+                "provider"
+            ],
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "maximum": 5000,
+                    "minimum": 1,
+                    "example": 1000
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "bangumi"
+                }
+            }
+        },
         "dto.CreateFeedbackRequest": {
             "type": "object",
             "required": [
@@ -10097,6 +10576,207 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "YUZUSOFT"
+                }
+            }
+        },
+        "dto.EnrichGalgameRequest": {
+            "type": "object",
+            "required": [
+                "external_id",
+                "provider"
+            ],
+            "properties": {
+                "external_id": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "200763"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "title",
+                        "description",
+                        "aliases",
+                        "tags"
+                    ]
+                },
+                "force": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "bangumi"
+                }
+            }
+        },
+        "dto.EnrichGalgameResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.EnrichResultData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.EnrichResultData": {
+            "type": "object",
+            "properties": {
+                "external_id": {
+                    "type": "string",
+                    "example": "200763"
+                },
+                "galgame_id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "bangumi"
+                },
+                "updated_fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.EnrichStatsData": {
+            "type": "object",
+            "properties": {
+                "linked_count": {
+                    "type": "integer",
+                    "example": 3200
+                },
+                "pending_matches": {
+                    "type": "integer",
+                    "example": 613
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "bangumi"
+                },
+                "unlinked_count": {
+                    "type": "integer",
+                    "example": 1800
+                },
+                "vndb_count": {
+                    "type": "integer",
+                    "example": 5000
+                }
+            }
+        },
+        "dto.EnrichStatsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.EnrichStatsData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ExternalCandidateItem": {
+            "type": "object",
+            "properties": {
+                "confidence": {
+                    "type": "number",
+                    "example": 0.94
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://lain.bgm.tv/pic/cover/l/200763.jpg"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "200763"
+                },
+                "linked": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 8.2
+                },
+                "rating_count": {
+                    "type": "integer",
+                    "example": 5819
+                },
+                "reasons": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2018-06-29"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "bangumi"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "夏日口袋"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://bgm.tv/subject/200763"
+                }
+            }
+        },
+        "dto.ExternalCandidateListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ExternalCandidateItem"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "dto.ExternalCandidateListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ExternalCandidateListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -10990,6 +11670,9 @@ const docTemplate = `{
                 "started_at": {
                     "type": "string"
                 },
+                "stats": {
+                    "$ref": "#/definitions/dto.ImportJobStats"
+                },
                 "status": {
                     "type": "integer",
                     "example": 1
@@ -11085,6 +11768,27 @@ const docTemplate = `{
                 "to_year": {
                     "type": "integer",
                     "example": 2024
+                }
+            }
+        },
+        "dto.ImportJobStats": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "matched": {
+                    "type": "integer",
+                    "example": 2834
+                },
+                "not_found": {
+                    "type": "integer",
+                    "example": 917
+                },
+                "review": {
+                    "type": "integer",
+                    "example": 623
                 }
             }
         },
@@ -11218,6 +11922,134 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.MatchCandidateItem": {
+            "type": "object",
+            "properties": {
+                "confidence": {
+                    "type": "number",
+                    "example": 0.72
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "200763"
+                },
+                "galgame_id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "galgame_original_title": {
+                    "type": "string",
+                    "example": "サマーポケッツ"
+                },
+                "galgame_title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "preview": {
+                    "$ref": "#/definitions/dto.MatchCandidatePreview"
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "bangumi"
+                },
+                "reasons": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "reviewed_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "status_label": {
+                    "type": "string",
+                    "example": "pending"
+                }
+            }
+        },
+        "dto.MatchCandidateListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchCandidateItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 613
+                }
+            }
+        },
+        "dto.MatchCandidateListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MatchCandidateListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.MatchCandidatePreview": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://lain.bgm.tv/pic/cover/l/200763.jpg"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "200763"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 8.2
+                },
+                "rating_count": {
+                    "type": "integer",
+                    "example": 5819
+                },
+                "title": {
+                    "type": "string",
+                    "example": "夏日口袋"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://bgm.tv/subject/200763"
                 }
             }
         },
