@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"backend/internal/importer/textfmt"
+
 	"golang.org/x/time/rate"
 )
 
@@ -25,6 +27,11 @@ const (
 )
 
 var vndbIDPattern = regexp.MustCompile(`^v[1-9][0-9]*$`)
+
+// vndbDescriptionConverter normalizes VNDB formatting codes into the site's
+// canonical Markdown. It is stateless and safe for concurrent use; the raw
+// description stays available in the raw snapshot (ExternalGame.Raw).
+var vndbDescriptionConverter = textfmt.NewVNDBMarkdownConverter()
 
 type VNDBProvider struct {
 	client   *http.Client
@@ -314,7 +321,7 @@ func mapVNDBGame(item vndbGame, raw json.RawMessage) (ExternalGame, error) {
 	}
 	var description string
 	if item.Description != nil {
-		description = *item.Description
+		description = vndbDescriptionConverter.Convert(*item.Description)
 	}
 	var developer *ExternalDeveloper
 	for _, candidate := range item.Developers {
