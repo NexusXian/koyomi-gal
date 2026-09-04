@@ -1133,6 +1133,44 @@ definitions:
     required:
     - asset_id
     type: object
+  dto.CreateImportBatchRequest:
+    properties:
+      from_year:
+        example: 2010
+        maximum: 9999
+        minimum: 1950
+        type: integer
+      limit:
+        example: 500
+        maximum: 5000
+        minimum: 1
+        type: integer
+      min_rating:
+        example: 7.5
+        maximum: 10
+        minimum: 0
+        type: number
+      min_vote_count:
+        example: 100
+        minimum: 0
+        type: integer
+      original_language:
+        example: ja
+        maxLength: 16
+        type: string
+      provider:
+        example: vndb
+        maxLength: 32
+        type: string
+      to_year:
+        example: 2024
+        maximum: 9999
+        minimum: 1950
+        type: integer
+    required:
+    - limit
+    - provider
+    type: object
   dto.CreatePermissionRequest:
     properties:
       code:
@@ -1340,6 +1378,95 @@ definitions:
         type: integer
       name:
         example: YUZUSOFT
+        type: string
+    type: object
+  dto.ExternalGameDetail:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      cover_url:
+        example: https://t.vndb.org/cv/12/20424.jpg
+        type: string
+      description:
+        example: 作品简介
+        type: string
+      developer:
+        example: Key
+        type: string
+      external_id:
+        example: v20424
+        type: string
+      length_minutes:
+        example: 1860
+        type: integer
+      original_language:
+        example: ja
+        type: string
+      original_title:
+        example: サマーポケッツ
+        type: string
+      rating:
+        example: 8.02
+        type: number
+      rating_count:
+        example: 5698
+        type: integer
+      release_date:
+        example: "2018-06-29"
+        type: string
+      romaji_title:
+        example: Summer Pockets
+        type: string
+      source:
+        example: vndb
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        example: Summer Pockets
+        type: string
+      url:
+        example: https://vndb.org/v20424
+        type: string
+    type: object
+  dto.ExternalGameSummary:
+    properties:
+      cover_url:
+        example: https://t.vndb.org/cv/12/20424.jpg
+        type: string
+      developer:
+        example: Key
+        type: string
+      external_id:
+        example: v20424
+        type: string
+      original_title:
+        example: サマーポケッツ
+        type: string
+      rating:
+        example: 8.02
+        type: number
+      rating_count:
+        example: 5698
+        type: integer
+      release_date:
+        example: "2018-06-29"
+        type: string
+      romaji_title:
+        example: Summer Pockets
+        type: string
+      source:
+        example: vndb
+        type: string
+      title:
+        example: Summer Pockets
+        type: string
+      url:
+        example: https://vndb.org/v20424
         type: string
     type: object
   dto.FavoriteData:
@@ -1788,6 +1915,255 @@ definitions:
         type: integer
       data:
         $ref: '#/definitions/dto.ImageData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ImportDuplicateCandidate:
+    properties:
+      id:
+        example: 123
+        type: integer
+      original_title:
+        example: サマーポケッツ
+        type: string
+      release_date:
+        example: "2018-06-29T00:00:00Z"
+        type: string
+      title:
+        example: 夏日口袋
+        type: string
+    type: object
+  dto.ImportGameRequest:
+    properties:
+      duplicate_action:
+        enum:
+        - error
+        - create_new
+        - link_existing
+        example: error
+        type: string
+      existing_galgame_id:
+        example: 123
+        type: integer
+      external_id:
+        example: v17
+        maxLength: 128
+        type: string
+      force_metadata_update:
+        example: false
+        type: boolean
+      provider:
+        example: vndb
+        maxLength: 32
+        type: string
+    required:
+    - external_id
+    - provider
+    type: object
+  dto.ImportGameResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ImportResultData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ImportJobData:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        example: 1
+        type: integer
+      created_count:
+        example: 100
+        type: integer
+      error_message:
+        example: ""
+        type: string
+      failed_count:
+        example: 5
+        type: integer
+      finished_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      job_type:
+        example: batch
+        type: string
+      params:
+        $ref: '#/definitions/dto.ImportJobParams'
+      processed_count:
+        example: 120
+        type: integer
+      provider:
+        example: vndb
+        type: string
+      skipped_count:
+        example: 15
+        type: integer
+      started_at:
+        type: string
+      status:
+        example: 1
+        type: integer
+      status_label:
+        example: running
+        type: string
+      total_count:
+        example: 500
+        type: integer
+    type: object
+  dto.ImportJobDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ImportJobData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ImportJobListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ImportJobData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.ImportJobListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ImportJobListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ImportJobParams:
+    properties:
+      from_year:
+        example: 2010
+        type: integer
+      limit:
+        example: 500
+        type: integer
+      min_rating:
+        example: 7.5
+        type: number
+      min_vote_count:
+        example: 100
+        type: integer
+      original_language:
+        example: ja
+        type: string
+      to_year:
+        example: 2024
+        type: integer
+    type: object
+  dto.ImportPreviewData:
+    properties:
+      candidates:
+        items:
+          $ref: '#/definitions/dto.ImportDuplicateCandidate'
+        type: array
+      duplicate_status:
+        example: none
+        type: string
+      game:
+        $ref: '#/definitions/dto.ExternalGameDetail'
+    type: object
+  dto.ImportPreviewResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ImportPreviewData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ImportProvidersData:
+    properties:
+      providers:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.ImportProvidersResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ImportProvidersData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ImportResultData:
+    properties:
+      candidates:
+        items:
+          $ref: '#/definitions/dto.ImportDuplicateCandidate'
+        type: array
+      duplicate_status:
+        example: none
+        type: string
+      existing_galgame_id:
+        example: 123
+        type: integer
+      galgame_id:
+        example: 456
+        type: integer
+    type: object
+  dto.ImportSearchData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ImportSearchItem'
+        type: array
+      total:
+        example: 20
+        type: integer
+    type: object
+  dto.ImportSearchItem:
+    properties:
+      candidates:
+        items:
+          $ref: '#/definitions/dto.ImportDuplicateCandidate'
+        type: array
+      duplicate_status:
+        example: none
+        type: string
+      game:
+        $ref: '#/definitions/dto.ExternalGameSummary'
+    type: object
+  dto.ImportSearchResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ImportSearchData'
       msg:
         example: success
         type: string
@@ -4682,6 +5058,291 @@ paths:
       summary: 管理端查看图片
       tags:
       - admin
+  /api/v1/admin/import/batches:
+    get:
+      description: 分页返回批量导入任务列表
+      operationId: listImportBatches
+      parameters:
+      - description: 状态：0 待处理，1 运行中，2 成功，3 失败，4 已取消
+        in: query
+        name: status
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 导入任务列表
+          schema:
+            $ref: '#/definitions/dto.ImportJobListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询批量导入任务
+      tags:
+      - adminImport
+    post:
+      consumes:
+      - application/json
+      description: 按 VNDB 筛选条件创建异步批量导入任务
+      operationId: createImportBatch
+      parameters:
+      - description: 批量导入请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateImportBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 已创建的导入任务
+          schema:
+            $ref: '#/definitions/dto.ImportJobDataResponse'
+        "400":
+          description: 请求格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建批量导入任务
+      tags:
+      - adminImport
+  /api/v1/admin/import/batches/{id}:
+    get:
+      description: 返回单个导入任务的进度与统计
+      operationId: getImportBatch
+      parameters:
+      - description: 任务 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 导入任务详情
+          schema:
+            $ref: '#/definitions/dto.ImportJobDataResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 导入任务不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询批量导入任务详情
+      tags:
+      - adminImport
+  /api/v1/admin/import/games:
+    post:
+      consumes:
+      - application/json
+      description: 导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入
+      operationId: importGame
+      parameters:
+      - description: 导入请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ImportGameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 导入结果
+          schema:
+            $ref: '#/definitions/dto.ImportGameResponse'
+        "400":
+          description: 请求格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 外部作品或站内作品不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "502":
+          description: 外部数据源查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 导入外部视觉小说
+      tags:
+      - adminImport
+  /api/v1/admin/import/games/{provider}/{external_id}:
+    get:
+      description: 返回外部作品完整元数据以及站内重复检测结果
+      operationId: previewImportGame
+      parameters:
+      - description: 数据源，例如 vndb
+        example: vndb
+        in: path
+        name: provider
+        required: true
+        type: string
+      - description: 外部作品 ID
+        example: v17
+        in: path
+        name: external_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 外部作品详情与重复状态
+          schema:
+            $ref: '#/definitions/dto.ImportPreviewResponse'
+        "400":
+          description: 参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 外部作品不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "502":
+          description: 外部数据源查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 预览外部视觉小说详情
+      tags:
+      - adminImport
+  /api/v1/admin/import/games/search:
+    get:
+      description: 通过外部数据源搜索视觉小说，并附带站内重复状态
+      operationId: searchImportGames
+      parameters:
+      - description: 数据源，例如 vndb
+        example: vndb
+        in: query
+        name: provider
+        required: true
+        type: string
+      - description: 搜索关键词
+        example: Summer Pockets
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 20
+        description: 返回数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 外部作品搜索结果
+          schema:
+            $ref: '#/definitions/dto.ImportSearchResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "502":
+          description: 外部数据源查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 搜索外部视觉小说
+      tags:
+      - adminImport
+  /api/v1/admin/import/providers:
+    get:
+      description: 返回当前可用的外部视觉小说数据源列表
+      operationId: listImportProviders
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 外部数据源列表
+          schema:
+            $ref: '#/definitions/dto.ImportProvidersResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询外部数据源
+      tags:
+      - adminImport
   /api/v1/admin/posts:
     get:
       description: 按标题、内容、作者或 Galgame 标题搜索全部帖子；需要 post:moderate 权限

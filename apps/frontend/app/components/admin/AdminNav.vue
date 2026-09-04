@@ -17,6 +17,12 @@ const items: AdminNavItem[] = [
     permissions: ['galgame:review']
   },
   {
+    key: '/admin/import',
+    label: '外部数据导入',
+    icon: 'lucide:cloud-download',
+    permissions: ['galgame:import', 'galgame:import:batch']
+  },
+  {
     key: '/admin/reports',
     label: '资源举报',
     icon: 'lucide:flag',

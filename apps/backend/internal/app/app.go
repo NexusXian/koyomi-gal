@@ -3,7 +3,9 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	"backend/config"
 	articleHandler "backend/internal/article/handler"
@@ -29,6 +31,10 @@ import (
 	imageHandler "backend/internal/image/handler"
 	imageRepo "backend/internal/image/repository"
 	imageService "backend/internal/image/service"
+	importerHandler "backend/internal/importer/handler"
+	"backend/internal/importer/provider"
+	importerRepo "backend/internal/importer/repository"
+	importerService "backend/internal/importer/service"
 	"backend/internal/infrastructures/database"
 	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
@@ -64,7 +70,9 @@ type App struct {
 	Postgres            *gorm.DB
 	Redis               *redis.Client
 	Queue               *queue.VerificationClient
+	ImportQueue         *queue.ImportClient
 	MailWorker          *asynq.Server
+	ImportWorker        *asynq.Server
 	UserAuthHandler     *userHandler.UserAuthHandler
 	UserAuthRepository  *userRepo.UserAuthRepository
 	VerificationHandler *userHandler.VerificationHandler
@@ -75,6 +83,7 @@ type App struct {
 	PermissionHandler   *rbacHandler.PermissionHandler
 	AssignmentHandler   *rbacHandler.AssignmentHandler
 	CatalogHandler      *galgameHandler.CatalogHandler
+	ImporterHandler     *importerHandler.ImporterHandler
 	ContributionHandler *galgameHandler.ContributionHandler
 	UserRelationHandler *galgameHandler.UserRelationHandler
 	GalleryHandler      *galgameHandler.GalleryHandler
@@ -207,6 +216,18 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	galleryService := galgameService.NewGalleryService(galgameRepository, galleryRepository, imageSvc)
 	galleryService.SetContributionService(contributionSvc)
 
+	importerRepository := importerRepo.NewRepository(postgresDB)
+	vndbClient := &http.Client{Timeout: 15 * time.Second}
+	importerSvc := importerService.NewService(
+		importerRepository,
+		map[string]provider.Provider{
+			"vndb": provider.NewVNDBProvider(vndbClient),
+		},
+		contributionSvc,
+	)
+	importQueueClient := queue.NewImportClient(cfg.Redis)
+	importerSvc.SetBatchEnqueuer(importQueueClient.EnqueueVNDBBatch)
+
 	homeSvc := homeService.NewHomeService(
 		bannerRepository,
 		articleRepository,
@@ -270,6 +291,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		PermissionHandler:   rbacHandler.NewPermissionHandler(rbacSvc),
 		AssignmentHandler:   rbacHandler.NewAssignmentHandler(rbacSvc),
 		CatalogHandler:      galgameHandler.NewCatalogHandler(catalogService),
+		ImporterHandler:     importerHandler.NewImporterHandler(importerSvc),
 		ContributionHandler: galgameHandler.NewContributionHandler(contributionSvc),
 		UserRelationHandler: galgameHandler.NewUserRelationHandler(
 			ratingService,
@@ -314,6 +336,16 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	}
 	app.MailWorker = mailWorker
 
+	importWorker := queue.NewImportServer(workerCfg.Redis, 1)
+	importMux := asynq.NewServeMux()
+	queue.RegisterImportTasks(importMux, importerSvc)
+	if err := importWorker.Start(importMux); err != nil {
+		app.Close()
+		return nil, fmt.Errorf("start import worker: %w", err)
+	}
+	app.ImportWorker = importWorker
+	app.ImportQueue = importQueueClient
+
 	return app, nil
 }
 
@@ -321,11 +353,17 @@ func (app *App) Close() {
 	if app.stopImageCleanup != nil {
 		app.stopImageCleanup()
 	}
+	if app.ImportWorker != nil {
+		app.ImportWorker.Shutdown()
+	}
 	if app.MailWorker != nil {
 		app.MailWorker.Shutdown()
 	}
 	if app.Queue != nil {
 		_ = app.Queue.Close()
+	}
+	if app.ImportQueue != nil {
+		_ = app.ImportQueue.Close()
 	}
 	if app.Redis != nil {
 		_ = app.Redis.Close()

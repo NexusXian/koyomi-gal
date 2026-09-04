@@ -1773,6 +1773,444 @@
                 }
             }
         },
+        "/api/v1/admin/import/batches": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回批量导入任务列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "查询批量导入任务",
+                "operationId": "listImportBatches",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态：0 待处理，1 运行中，2 成功，3 失败，4 已取消",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导入任务列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportJobListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 VNDB 筛选条件创建异步批量导入任务",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "创建批量导入任务",
+                "operationId": "createImportBatch",
+                "parameters": [
+                    {
+                        "description": "批量导入请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateImportBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "已创建的导入任务",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportJobDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/batches/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回单个导入任务的进度与统计",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "查询批量导入任务详情",
+                "operationId": "getImportBatch",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "任务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导入任务详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportJobDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "导入任务不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/games": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "导入外部视觉小说",
+                "operationId": "importGame",
+                "parameters": [
+                    {
+                        "description": "导入请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportGameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导入结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportGameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "外部作品或站内作品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "外部数据源查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/games/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "通过外部数据源搜索视觉小说，并附带站内重复状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "搜索外部视觉小说",
+                "operationId": "searchImportGames",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "vndb",
+                        "description": "数据源，例如 vndb",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "Summer Pockets",
+                        "description": "搜索关键词",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "返回数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "外部作品搜索结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportSearchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "外部数据源查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/games/{provider}/{external_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回外部作品完整元数据以及站内重复检测结果",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "预览外部视觉小说详情",
+                "operationId": "previewImportGame",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "vndb",
+                        "description": "数据源，例如 vndb",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "v17",
+                        "description": "外部作品 ID",
+                        "name": "external_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "外部作品详情与重复状态",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportPreviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "外部作品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "外部数据源查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/import/providers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回当前可用的外部视觉小说数据源列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "adminImport"
+                ],
+                "summary": "查询外部数据源",
+                "operationId": "listImportProviders",
+                "responses": {
+                    "200": {
+                        "description": "外部数据源列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ImportProvidersResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/posts": {
             "get": {
                 "security": [
@@ -9322,6 +9760,54 @@
                 }
             }
         },
+        "dto.CreateImportBatchRequest": {
+            "type": "object",
+            "required": [
+                "limit",
+                "provider"
+            ],
+            "properties": {
+                "from_year": {
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1950,
+                    "example": 2010
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 5000,
+                    "minimum": 1,
+                    "example": 500
+                },
+                "min_rating": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0,
+                    "example": 7.5
+                },
+                "min_vote_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 100
+                },
+                "original_language": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "ja"
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "vndb"
+                },
+                "to_year": {
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 1950,
+                    "example": 2024
+                }
+            }
+        },
         "dto.CreatePermissionRequest": {
             "type": "object",
             "required": [
@@ -9605,6 +10091,128 @@
                 "name": {
                     "type": "string",
                     "example": "YUZUSOFT"
+                }
+            }
+        },
+        "dto.ExternalGameDetail": {
+            "type": "object",
+            "properties": {
+                "aliases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://t.vndb.org/cv/12/20424.jpg"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "作品简介"
+                },
+                "developer": {
+                    "type": "string",
+                    "example": "Key"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "v20424"
+                },
+                "length_minutes": {
+                    "type": "integer",
+                    "example": 1860
+                },
+                "original_language": {
+                    "type": "string",
+                    "example": "ja"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "サマーポケッツ"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 8.02
+                },
+                "rating_count": {
+                    "type": "integer",
+                    "example": 5698
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2018-06-29"
+                },
+                "romaji_title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "vndb"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://vndb.org/v20424"
+                }
+            }
+        },
+        "dto.ExternalGameSummary": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://t.vndb.org/cv/12/20424.jpg"
+                },
+                "developer": {
+                    "type": "string",
+                    "example": "Key"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "v20424"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "サマーポケッツ"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 8.02
+                },
+                "rating_count": {
+                    "type": "integer",
+                    "example": 5698
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2018-06-29"
+                },
+                "romaji_title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "vndb"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://vndb.org/v20424"
                 }
             }
         },
@@ -10245,6 +10853,361 @@
                 },
                 "data": {
                     "$ref": "#/definitions/dto.ImageData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ImportDuplicateCandidate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "サマーポケッツ"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2018-06-29T00:00:00Z"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "夏日口袋"
+                }
+            }
+        },
+        "dto.ImportGameRequest": {
+            "type": "object",
+            "required": [
+                "external_id",
+                "provider"
+            ],
+            "properties": {
+                "duplicate_action": {
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "create_new",
+                        "link_existing"
+                    ],
+                    "example": "error"
+                },
+                "existing_galgame_id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "external_id": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "v17"
+                },
+                "force_metadata_update": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "provider": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "vndb"
+                }
+            }
+        },
+        "dto.ImportGameResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ImportResultData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ImportJobData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "created_count": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "error_message": {
+                    "type": "string",
+                    "example": ""
+                },
+                "failed_count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "job_type": {
+                    "type": "string",
+                    "example": "batch"
+                },
+                "params": {
+                    "$ref": "#/definitions/dto.ImportJobParams"
+                },
+                "processed_count": {
+                    "type": "integer",
+                    "example": 120
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "vndb"
+                },
+                "skipped_count": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "status_label": {
+                    "type": "string",
+                    "example": "running"
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 500
+                }
+            }
+        },
+        "dto.ImportJobDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ImportJobData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ImportJobListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImportJobData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "dto.ImportJobListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ImportJobListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ImportJobParams": {
+            "type": "object",
+            "properties": {
+                "from_year": {
+                    "type": "integer",
+                    "example": 2010
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 500
+                },
+                "min_rating": {
+                    "type": "number",
+                    "example": 7.5
+                },
+                "min_vote_count": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "original_language": {
+                    "type": "string",
+                    "example": "ja"
+                },
+                "to_year": {
+                    "type": "integer",
+                    "example": 2024
+                }
+            }
+        },
+        "dto.ImportPreviewData": {
+            "type": "object",
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImportDuplicateCandidate"
+                    }
+                },
+                "duplicate_status": {
+                    "type": "string",
+                    "example": "none"
+                },
+                "game": {
+                    "$ref": "#/definitions/dto.ExternalGameDetail"
+                }
+            }
+        },
+        "dto.ImportPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ImportPreviewData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ImportProvidersData": {
+            "type": "object",
+            "properties": {
+                "providers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.ImportProvidersResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ImportProvidersData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ImportResultData": {
+            "type": "object",
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImportDuplicateCandidate"
+                    }
+                },
+                "duplicate_status": {
+                    "type": "string",
+                    "example": "none"
+                },
+                "existing_galgame_id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "galgame_id": {
+                    "type": "integer",
+                    "example": 456
+                }
+            }
+        },
+        "dto.ImportSearchData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImportSearchItem"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 20
+                }
+            }
+        },
+        "dto.ImportSearchItem": {
+            "type": "object",
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImportDuplicateCandidate"
+                    }
+                },
+                "duplicate_status": {
+                    "type": "string",
+                    "example": "none"
+                },
+                "game": {
+                    "$ref": "#/definitions/dto.ExternalGameSummary"
+                }
+            }
+        },
+        "dto.ImportSearchResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ImportSearchData"
                 },
                 "msg": {
                     "type": "string",

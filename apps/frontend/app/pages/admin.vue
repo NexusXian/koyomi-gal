@@ -24,6 +24,8 @@ onMounted(async () => {
   if (
     !hasAny([
       'galgame:review',
+      'galgame:import',
+      'galgame:import:batch',
       'resource_report:list',
       'image:read',
       'image:manage',

@@ -31,6 +31,8 @@ const navigationItems = computed(() => {
     isAuthenticated.value &&
     hasAny([
       'galgame:review',
+      'galgame:import',
+      'galgame:import:batch',
       'resource_report:list',
       'feedback:read',
       'image:read',
@@ -78,8 +80,10 @@ const navigationItems = computed(() => {
                   : has('background_preset:read')
                     ? '/admin/backgrounds'
                     : has('article:read')
-                    ? '/admin/articles'
-                    : hasAny([
+                      ? '/admin/articles'
+                      : hasAny(['galgame:import', 'galgame:import:batch'])
+                        ? '/admin/import'
+                        : hasAny([
                         'user:list',
                         'user:read',
                         'user:create',
