@@ -432,7 +432,7 @@ func (s *UserProfileService) listGalgames(ctx context.Context, username string, 
 	}
 	items := make([]dto.ProfileGalgameData, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, dto.ProfileGalgameData{ID: row.ID, Title: row.Title, Slug: row.Slug, CoverURL: row.CoverURL, Score: row.Score, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt})
+		items = append(items, dto.ProfileGalgameData{ID: row.ID, Title: row.Title, Slug: row.Slug, CoverURL: row.CoverURL, CoverSensitive: row.CoverSensitive, Score: row.Score, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt})
 	}
 	return items, total, page, limit, err
 }
@@ -532,6 +532,18 @@ func (s *UserProfileService) UpdatePreferences(
 		return nil, err
 	}
 
+	// sensitive_cover_mode is optional; keep the stored value when omitted.
+	sensitiveCoverMode := model.SensitiveCoverModeBlur
+	if previous != nil && model.ValidSensitiveCoverMode(previous.SensitiveCoverMode) {
+		sensitiveCoverMode = previous.SensitiveCoverMode
+	}
+	if req.SensitiveCoverMode != nil {
+		sensitiveCoverMode = *req.SensitiveCoverMode
+	}
+	if !model.ValidSensitiveCoverMode(sensitiveCoverMode) {
+		return nil, ErrInvalidPreferences
+	}
+
 	preference := &model.UserPreference{
 		UserID:             userID,
 		BackgroundSource:   req.BackgroundSource,
@@ -541,6 +553,7 @@ func (s *UserProfileService) UpdatePreferences(
 		BackgroundBlur:     req.BackgroundBlur,
 		BackgroundPosition: defaultString(req.BackgroundPosition, model.DefaultUserPreference(userID).BackgroundPosition),
 		BackgroundSize:     defaultString(req.BackgroundSize, model.BackgroundSizeCover),
+		SensitiveCoverMode: sensitiveCoverMode,
 	}
 
 	switch req.BackgroundSource {
@@ -597,6 +610,10 @@ func (s *UserProfileService) toPreferencesData(
 		BackgroundBlur:     preference.BackgroundBlur,
 		BackgroundPosition: preference.BackgroundPosition,
 		BackgroundSize:     preference.BackgroundSize,
+		SensitiveCoverMode: preference.SensitiveCoverMode,
+	}
+	if data.SensitiveCoverMode == "" {
+		data.SensitiveCoverMode = model.SensitiveCoverModeBlur
 	}
 	if preference.BackgroundAssetID != nil {
 		if asset, err := s.images.GetImage(ctx, *preference.BackgroundAssetID); err == nil && asset != nil {

@@ -337,9 +337,10 @@ onMounted(() => {
 
       <div class="detail-layout">
         <div class="detail-cover">
-          <img
+          <SensitiveImage
             :src="galgame?.cover_url"
             :alt="galgame?.title || '封面'"
+            :sensitive="galgame?.cover_sensitive"
           />
         </div>
 
@@ -775,15 +776,11 @@ onMounted(() => {
 
 .detail-cover {
   flex: 0 0 auto;
-}
-
-.detail-cover img {
-  display: block;
   width: 200px;
   max-width: 100%;
+  aspect-ratio: 3 / 4;
   border-radius: var(--radius-kun-lg);
   box-shadow: var(--shadow-kun-lg);
-  object-fit: cover;
 }
 
 .detail-info {

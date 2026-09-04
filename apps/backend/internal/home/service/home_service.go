@@ -16,7 +16,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const CacheKey = "koyomi:home:v1"
+const CacheKey = "koyomi:home:v2"
 
 const cacheTTL = 3 * time.Minute
 

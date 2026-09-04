@@ -7,35 +7,54 @@ import (
 )
 
 type CreateGalgameRequest struct {
-	Title         string   `json:"title" binding:"required,max=255" example:"千恋＊万花"`
-	OriginalTitle string   `json:"original_title" binding:"max=255" example:"千恋＊万花"`
-	RomajiTitle   string   `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
-	Slug          string   `json:"slug" binding:"required,max=255" example:"senren-banka"`
-	Description   string   `json:"description" example:"作品简介"`
-	CoverURL      string   `json:"cover_url" example:"https://example.com/cover.jpg"`
-	BannerURL     string   `json:"banner_url" example:"https://example.com/banner.jpg"`
-	DeveloperID   *uint    `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
-	ReleaseDate   string   `json:"release_date" example:"2016-07-29"`
-	AgeRating     int16    `json:"age_rating" binding:"oneof=0 1 2 3" example:"3"`
-	Status        int16    `json:"status" binding:"oneof=0 1 2 3" example:"1"`
-	Aliases       []string `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
-	TagIDs        []uint   `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
+	Title           string   `json:"title" binding:"required,max=255" example:"千恋＊万花"`
+	OriginalTitle   string   `json:"original_title" binding:"max=255" example:"千恋＊万花"`
+	RomajiTitle     string   `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
+	Slug            string   `json:"slug" binding:"required,max=255" example:"senren-banka"`
+	Description     string   `json:"description" example:"作品简介"`
+	CoverURL        string   `json:"cover_url" example:"https://example.com/cover.jpg"`
+	BannerURL       string   `json:"banner_url" example:"https://example.com/banner.jpg"`
+	DeveloperID     *uint    `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
+	ReleaseDate     string   `json:"release_date" example:"2016-07-29"`
+	AgeRating       int16    `json:"age_rating" binding:"oneof=0 1 2 3 4 5" example:"3"`
+	CoverSensitive  bool     `json:"cover_sensitive" example:"false"`
+	Status          int16    `json:"status" binding:"oneof=0 1 2 3" example:"1"`
+	Aliases         []string `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
+	TagIDs          []uint   `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
 }
 
 type UpdateGalgameRequest struct {
-	Title         string   `json:"title" binding:"required,max=255" example:"千恋＊万花"`
-	OriginalTitle string   `json:"original_title" binding:"max=255" example:"千恋＊万花"`
-	RomajiTitle   string   `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
-	Slug          string   `json:"slug" binding:"required,max=255" example:"senren-banka"`
-	Description   string   `json:"description" example:"作品简介"`
-	CoverURL      string   `json:"cover_url" example:"https://example.com/cover.jpg"`
-	BannerURL     string   `json:"banner_url" example:"https://example.com/banner.jpg"`
-	DeveloperID   *uint    `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
-	ReleaseDate   string   `json:"release_date" example:"2016-07-29"`
-	AgeRating     *int16   `json:"age_rating" binding:"required,oneof=0 1 2 3" example:"3"`
-	Status        *int16   `json:"status" binding:"required,oneof=0 1 2 3" example:"1"`
-	Aliases       []string `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
-	TagIDs        []uint   `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
+	Title           string   `json:"title" binding:"required,max=255" example:"千恋＊万花"`
+	OriginalTitle   string   `json:"original_title" binding:"max=255" example:"千恋＊万花"`
+	RomajiTitle     string   `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
+	Slug            string   `json:"slug" binding:"required,max=255" example:"senren-banka"`
+	Description     string   `json:"description" example:"作品简介"`
+	CoverURL        string   `json:"cover_url" example:"https://example.com/cover.jpg"`
+	BannerURL       string   `json:"banner_url" example:"https://example.com/banner.jpg"`
+	DeveloperID     *uint    `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
+	ReleaseDate     string   `json:"release_date" example:"2016-07-29"`
+	AgeRating       *int16   `json:"age_rating" binding:"required,oneof=0 1 2 3 4 5" example:"3"`
+	CoverSensitive  *bool    `json:"cover_sensitive" binding:"required" example:"false"`
+	Status          *int16   `json:"status" binding:"required,oneof=0 1 2 3" example:"1"`
+	Aliases         []string `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
+	TagIDs          []uint   `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
+}
+
+// BatchUpdateGalgameRequest only allows the whitelisted fields below.
+type BatchUpdateGalgameRequest struct {
+	IDs            []uint `json:"ids" binding:"required,min=1,max=500,dive,gt=0" example:"1,2,3"`
+	AgeRating      *int16 `json:"age_rating" binding:"omitempty,oneof=0 1 2 3 4 5" example:"3"`
+	CoverSensitive *bool  `json:"cover_sensitive" example:"true"`
+}
+
+type BatchUpdateGalgameData struct {
+	Updated int64 `json:"updated" example:"5"`
+}
+
+type BatchUpdateGalgameResponse struct {
+	Code int                      `json:"code" example:"0"`
+	Data BatchUpdateGalgameData   `json:"data"`
+	Msg  string                   `json:"msg" example:"success"`
 }
 
 type ReviewGalgameRequest struct {
@@ -48,7 +67,7 @@ type GalgameQuery struct {
 	TagIDs      []uint `form:"-"`
 	ReleaseFrom *int   `form:"release_from" binding:"omitempty,min=1,max=9999"`
 	ReleaseTo   *int   `form:"release_to" binding:"omitempty,min=1,max=9999"`
-	AgeRating   *int16 `form:"age_rating" binding:"omitempty,oneof=0 1 2 3"`
+	AgeRating   *int16 `form:"age_rating" binding:"omitempty,oneof=0 1 2 3 4 5"`
 	Sort        string `form:"sort"`
 	Page        int    `form:"page" binding:"omitempty,min=1,max=1000000"`
 	Limit       int    `form:"limit" binding:"omitempty,min=1,max=100"`
@@ -57,11 +76,13 @@ type GalgameQuery struct {
 // AdminGalgameQuery filters the galgame:review admin listing, which returns
 // every status instead of only published entries.
 type AdminGalgameQuery struct {
-	Status  *int16 `form:"status" binding:"omitempty,oneof=0 1 2 3" example:"0"`
-	Keyword string `form:"keyword" binding:"max=255"`
-	Sort    string `form:"sort"`
-	Page    int    `form:"page" binding:"omitempty,min=1,max=1000000"`
-	Limit   int    `form:"limit" binding:"omitempty,min=1,max=100"`
+	Status         *int16 `form:"status" binding:"omitempty,oneof=0 1 2 3" example:"0"`
+	AgeRating      *int16 `form:"age_rating" binding:"omitempty,oneof=0 1 2 3 4 5" example:"3"`
+	CoverSensitive *bool  `form:"cover_sensitive" example:"true"`
+	Keyword        string `form:"keyword" binding:"max=255"`
+	Sort           string `form:"sort"`
+	Page           int    `form:"page" binding:"omitempty,min=1,max=1000000"`
+	Limit          int    `form:"limit" binding:"omitempty,min=1,max=100"`
 }
 
 type MyGalgameQuery struct {
@@ -92,19 +113,20 @@ type GalgameStatistics struct {
 }
 
 type GalgameListItem struct {
-	ID            uint              `json:"id" example:"1"`
-	Title         string            `json:"title" example:"千恋＊万花"`
-	OriginalTitle string            `json:"original_title" example:"千恋＊万花"`
-	RomajiTitle   string            `json:"romaji_title" example:"Senren Banka"`
-	Slug          string            `json:"slug" example:"senren-banka"`
-	CoverURL      string            `json:"cover_url" example:"https://example.com/cover.jpg"`
-	ReleaseDate   *string           `json:"release_date" example:"2016-07-29"`
-	AgeRating     int16             `json:"age_rating" example:"3"`
-	Status        int16             `json:"status" example:"1"`
-	Developer     *DeveloperSummary `json:"developer"`
-	Tags          []TagSummary      `json:"tags"`
-	Rating        RatingSummary     `json:"rating"`
-	Statistics    GalgameStatistics `json:"statistics"`
+	ID             uint              `json:"id" example:"1"`
+	Title          string            `json:"title" example:"千恋＊万花"`
+	OriginalTitle  string            `json:"original_title" example:"千恋＊万花"`
+	RomajiTitle    string            `json:"romaji_title" example:"Senren Banka"`
+	Slug           string            `json:"slug" example:"senren-banka"`
+	CoverURL       string            `json:"cover_url" example:"https://example.com/cover.jpg"`
+	ReleaseDate    *string           `json:"release_date" example:"2016-07-29"`
+	AgeRating      int16             `json:"age_rating" example:"3"`
+	CoverSensitive bool              `json:"cover_sensitive" example:"false"`
+	Status         int16             `json:"status" example:"1"`
+	Developer      *DeveloperSummary `json:"developer"`
+	Tags           []TagSummary      `json:"tags"`
+	Rating         RatingSummary     `json:"rating"`
+	Statistics     GalgameStatistics `json:"statistics"`
 }
 
 type GalgameResponse struct {
@@ -118,6 +140,7 @@ type GalgameResponse struct {
 	BannerURL        string            `json:"banner_url" example:"https://example.com/banner.jpg"`
 	ReleaseDate      *string           `json:"release_date" example:"2016-07-29"`
 	AgeRating        int16             `json:"age_rating" example:"3"`
+	CoverSensitive   bool              `json:"cover_sensitive" example:"false"`
 	Status           int16             `json:"status" example:"1"`
 	Developer        *DeveloperSummary `json:"developer"`
 	Aliases          []string          `json:"aliases"`
@@ -154,15 +177,16 @@ func NewGalgameListItems(galgames []model.Galgame) []GalgameListItem {
 	for i := range galgames {
 		galgame := &galgames[i]
 		items = append(items, GalgameListItem{
-			ID:            galgame.ID,
-			Title:         galgame.Title,
-			OriginalTitle: galgame.OriginalTitle,
-			RomajiTitle:   galgame.RomajiTitle,
-			Slug:          galgame.Slug,
-			CoverURL:      galgame.CoverURL,
-			ReleaseDate:   formatDate(galgame.ReleaseDate),
-			AgeRating:     galgame.AgeRating,
-			Status:        galgame.Status,
+			ID:             galgame.ID,
+			Title:          galgame.Title,
+			OriginalTitle:  galgame.OriginalTitle,
+			RomajiTitle:    galgame.RomajiTitle,
+			Slug:           galgame.Slug,
+			CoverURL:       galgame.CoverURL,
+			ReleaseDate:    formatDate(galgame.ReleaseDate),
+			AgeRating:      galgame.AgeRating,
+			CoverSensitive: galgame.CoverSensitive,
+			Status:         galgame.Status,
 			Developer:     newDeveloperSummary(galgame.Developer),
 			Tags:          newTagSummaries(galgame.Tags),
 			Rating:        newRatingSummary(galgame),
@@ -188,6 +212,7 @@ func NewGalgameResponse(galgame *model.Galgame) GalgameResponse {
 		BannerURL:        galgame.BannerURL,
 		ReleaseDate:      formatDate(galgame.ReleaseDate),
 		AgeRating:        galgame.AgeRating,
+		CoverSensitive:   galgame.CoverSensitive,
 		Status:           galgame.Status,
 		Developer:        newDeveloperSummary(galgame.Developer),
 		Aliases:          aliases,

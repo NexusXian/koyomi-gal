@@ -16,6 +16,13 @@ const (
 	AgeRatingR18
 )
 
+// Extended levels are appended after the original four so existing stored
+// values stay stable.
+const (
+	AgeRatingR12 int16 = iota + 4
+	AgeRatingR17
+)
+
 const (
 	GalgameSourceManual int16 = iota
 	GalgameSourceVNDB
@@ -39,6 +46,7 @@ type Galgame struct {
 	SourceType        int16                `gorm:"not null" json:"source_type"`
 	MetadataUpdatedAt *time.Time           `json:"metadata_updated_at"`
 	AgeRating         int16                `gorm:"not null" json:"age_rating"`
+	CoverSensitive    bool                 `gorm:"not null;default:false;index" json:"cover_sensitive"`
 	Status            int16                `gorm:"not null" json:"status"`
 	RatingAverage     float64              `gorm:"type:numeric(4,2);not null" json:"rating_average"`
 	RatingCount       int64                `gorm:"not null" json:"rating_count"`

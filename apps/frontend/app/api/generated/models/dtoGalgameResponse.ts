@@ -17,6 +17,7 @@ export interface DtoGalgameResponse {
   banner_url?: string;
   contributor_count?: number;
   contributors?: DtoContributorData[];
+  cover_sensitive?: boolean;
   cover_url?: string;
   created_at?: string;
   description?: string;

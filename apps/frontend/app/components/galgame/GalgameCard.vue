@@ -41,10 +41,10 @@ const statusColor = computed(() => {
   >
     <NuxtLink :to="to || `/galgames/${galgame.id}`" class="galgame-link">
       <div class="galgame-cover">
-        <img
+        <SensitiveImage
           :src="galgame.cover_url || fallbackCover"
           :alt="galgame.title || 'Galgame 封面'"
-          loading="lazy"
+          :sensitive="galgame.cover_sensitive"
         />
         <KunChip
           v-if="showStatus"
@@ -137,14 +137,7 @@ const statusColor = computed(() => {
   background: var(--color-content2);
 }
 
-.galgame-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--kun-dur-base) var(--ease-kun-standard);
-}
-
-.galgame-card:hover .galgame-cover img {
+.galgame-card:hover .galgame-cover :deep(img) {
   transform: scale(1.05);
 }
 

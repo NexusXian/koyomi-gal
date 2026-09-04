@@ -34,14 +34,15 @@ type Developer struct {
 }
 
 type Galgame struct {
-	ID            uint       `json:"id" example:"1"`
-	Title         string     `json:"title" example:"千恋＊万花"`
-	CoverURL      string     `json:"cover_url" example:"https://example.com/cover.jpg"`
-	Developer     *Developer `json:"developer"`
-	RatingAverage float64    `json:"rating_average" example:"8.72"`
-	FavoriteCount int64      `json:"favorite_count" example:"300"`
-	ReleaseDate   *time.Time `json:"release_date"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	ID             uint       `json:"id" example:"1"`
+	Title          string     `json:"title" example:"千恋＊万花"`
+	CoverURL       string     `json:"cover_url" example:"https://example.com/cover.jpg"`
+	CoverSensitive bool       `json:"cover_sensitive" example:"false"`
+	Developer      *Developer `json:"developer"`
+	RatingAverage  float64    `json:"rating_average" example:"8.72"`
+	FavoriteCount  int64      `json:"favorite_count" example:"300"`
+	ReleaseDate    *time.Time `json:"release_date"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 type Author struct {
@@ -142,6 +143,7 @@ func newGalgames(values []galgameModel.Galgame) []Galgame {
 			developer = &Developer{ID: value.Developer.ID, Name: value.Developer.Name}
 		}
 		items = append(items, Galgame{ID: value.ID, Title: value.Title, CoverURL: value.CoverURL,
+			CoverSensitive: value.CoverSensitive,
 			Developer: developer, RatingAverage: value.RatingAverage, FavoriteCount: value.FavoriteCount,
 			ReleaseDate: value.ReleaseDate, UpdatedAt: value.UpdatedAt})
 	}

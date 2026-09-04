@@ -26,6 +26,7 @@ type UserPreferencesData struct {
 	BackgroundBlur     float64 `json:"background_blur" example:"0"`
 	BackgroundPosition string  `json:"background_position" example:"center center"`
 	BackgroundSize     string  `json:"background_size" example:"cover"`
+	SensitiveCoverMode string  `json:"sensitive_cover_mode" example:"blur"`
 	// BackgroundImageURL is the resolved CDN URL of the custom background.
 	BackgroundImageURL string `json:"background_image_url"`
 }
@@ -44,4 +45,5 @@ type UpdateUserPreferencesRequest struct {
 	BackgroundBlur     float64 `json:"background_blur" binding:"min=0,max=20" example:"0"`
 	BackgroundPosition string  `json:"background_position" binding:"omitempty,max=64" example:"center center"`
 	BackgroundSize     string  `json:"background_size" binding:"omitempty,oneof=cover contain" example:"cover"`
+	SensitiveCoverMode *string `json:"sensitive_cover_mode" binding:"omitempty,oneof=blur show" example:"blur"`
 }

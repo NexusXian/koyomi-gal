@@ -7,6 +7,7 @@
  */
 import type { DtoUpdateUserPreferencesRequestBackgroundSize } from './dtoUpdateUserPreferencesRequestBackgroundSize';
 import type { DtoUpdateUserPreferencesRequestBackgroundSource } from './dtoUpdateUserPreferencesRequestBackgroundSource';
+import type { DtoUpdateUserPreferencesRequestSensitiveCoverMode } from './dtoUpdateUserPreferencesRequestSensitiveCoverMode';
 
 export interface DtoUpdateUserPreferencesRequest {
   /** @minimum 1 */
@@ -27,4 +28,5 @@ export interface DtoUpdateUserPreferencesRequest {
   background_preset?: string;
   background_size?: DtoUpdateUserPreferencesRequestBackgroundSize;
   background_source: DtoUpdateUserPreferencesRequestBackgroundSource;
+  sensitive_cover_mode?: DtoUpdateUserPreferencesRequestSensitiveCoverMode;
 }

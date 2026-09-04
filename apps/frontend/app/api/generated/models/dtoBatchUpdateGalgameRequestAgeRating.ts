@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type DtoUpdateGalgameRequestAgeRating = typeof DtoUpdateGalgameRequestAgeRating[keyof typeof DtoUpdateGalgameRequestAgeRating];
+export type DtoBatchUpdateGalgameRequestAgeRating = typeof DtoBatchUpdateGalgameRequestAgeRating[keyof typeof DtoBatchUpdateGalgameRequestAgeRating];
 
 
-export const DtoUpdateGalgameRequestAgeRating = {
+export const DtoBatchUpdateGalgameRequestAgeRating = {
   NUMBER_0: 0,
   NUMBER_1: 1,
   NUMBER_2: 2,

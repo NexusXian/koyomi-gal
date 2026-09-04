@@ -16,4 +16,5 @@ export interface DtoUserPreferencesData {
   background_preset?: string;
   background_size?: string;
   background_source?: string;
+  sensitive_cover_mode?: string;
 }

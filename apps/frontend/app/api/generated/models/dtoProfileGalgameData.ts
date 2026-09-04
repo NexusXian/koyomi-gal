@@ -7,6 +7,7 @@
  */
 
 export interface DtoProfileGalgameData {
+  cover_sensitive?: boolean;
   cover_url?: string;
   created_at?: string;
   id?: number;

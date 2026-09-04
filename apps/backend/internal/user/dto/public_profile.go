@@ -138,13 +138,14 @@ type ProfileCommentData struct {
 }
 
 type ProfileGalgameData struct {
-	ID        uint      `json:"id"`
-	Title     string    `json:"title"`
-	Slug      string    `json:"slug"`
-	CoverURL  string    `json:"cover_url"`
-	Score     *int16    `json:"score,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID             uint      `json:"id"`
+	Title          string    `json:"title"`
+	Slug           string    `json:"slug"`
+	CoverURL       string    `json:"cover_url"`
+	CoverSensitive bool      `json:"cover_sensitive"`
+	Score          *int16    `json:"score,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 type UserActivityData struct {

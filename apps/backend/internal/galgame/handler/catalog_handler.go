@@ -35,7 +35,7 @@ func NewCatalogHandler(catalogService *service.CatalogService) *CatalogHandler {
 // @Param        tag_ids query string false "Tag ID，逗号分隔" example(1,2)
 // @Param        release_from query int false "最早发行年份"
 // @Param        release_to query int false "最晚发行年份"
-// @Param        age_rating query int false "年龄等级：0 未知，1 全年龄，2 R15，3 R18"
+// @Param        age_rating query int false "年龄等级：0 未分级，1 全年龄，4 12+，2 15+，5 17+，3 18+"
 // @Param        sort query string false "排序：latest、oldest、rating、favorite、popular" default(latest)
 // @Param        page query int false "页码" default(1)
 // @Param        limit query int false "每页数量，最大 100" default(20)
@@ -162,6 +162,8 @@ func (h *CatalogHandler) GetGalgame(c *gin.Context) {
 // @Tags         admin
 // @Produce      json
 // @Param        status query int false "状态过滤：0 待审，1 已发布，2 已拒绝，3 已隐藏"
+// @Param        age_rating query int false "年龄等级过滤：0 未分级，1 全年龄，4 12+，2 15+，5 17+，3 18+"
+// @Param        cover_sensitive query boolean false "敏感封面过滤：true 仅敏感，false 仅普通，不传为全部"
 // @Param        keyword query string false "标题或别名关键词"
 // @Param        sort query string false "排序：latest、oldest、rating、favorite、popular" default(latest)
 // @Param        page query int false "页码" default(1)
@@ -186,6 +188,8 @@ func (h *CatalogHandler) ListAdminGalgames(c *gin.Context) {
 			response.Error(c, appErrors.ErrValidation("sort 不受支持"))
 		case errors.Is(err, service.ErrInvalidStatus):
 			response.Error(c, appErrors.ErrValidation("Galgame 状态不正确"))
+		case errors.Is(err, service.ErrInvalidAgeRating):
+			response.Error(c, appErrors.ErrValidation("年龄等级不正确"))
 		default:
 			logger.Error("list admin galgames", zap.Error(err))
 			response.Error(c, appErrors.ErrInternal("查询 Galgame 失败"))
@@ -347,6 +351,43 @@ func (h *CatalogHandler) ReviewGalgame(c *gin.Context) {
 		return
 	}
 	response.Ok(c, dto.NewGalgameResponse(galgame))
+}
+
+// BatchUpdateGalgames godoc
+// @Summary      管理端批量更新 Galgame
+// @Description  批量修改选中 Galgame 的年龄等级和/或敏感封面标记；两个字段至少提供一个，单次最多 500 条；需要 galgame:update 权限
+// @ID           batchUpdateGalgames
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.BatchUpdateGalgameRequest true "批量更新 Galgame 请求"
+// @Success      200 {object} dto.BatchUpdateGalgameResponse "更新数量"
+// @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      500 {object} response.ErrorResponse "批量更新失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/galgames/batch [patch]
+func (h *CatalogHandler) BatchUpdateGalgames(c *gin.Context) {
+	var req dto.BatchUpdateGalgameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数不正确"))
+		return
+	}
+	updated, err := h.catalogService.BatchUpdateGalgame(c.Request.Context(), &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidAgeRating):
+			response.Error(c, appErrors.ErrValidation("年龄等级不正确"))
+		case errors.Is(err, service.ErrInvalidCatalogInput):
+			response.Error(c, appErrors.ErrValidation("至少提供 age_rating 或 cover_sensitive 之一"))
+		default:
+			logger.Error("batch update galgames", zap.Error(err))
+			response.Error(c, appErrors.ErrInternal("批量更新 Galgame 失败"))
+		}
+		return
+	}
+	response.Ok(c, dto.BatchUpdateGalgameData{Updated: updated})
 }
 
 // DeleteGalgame godoc

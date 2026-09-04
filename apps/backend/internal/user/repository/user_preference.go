@@ -39,7 +39,7 @@ func (r *UserPreferenceRepository) Upsert(ctx context.Context, preference *model
 		DoUpdates: clause.AssignmentColumns([]string{
 			"background_source", "background_asset_id", "background_preset",
 			"background_opacity", "background_blur", "background_position",
-			"background_size", "updated_at",
+			"background_size", "sensitive_cover_mode", "updated_at",
 		}),
 	}).Create(preference).Error
 	if err != nil {

@@ -12,6 +12,7 @@ import type { DtoTagSummary } from './dtoTagSummary';
 
 export interface DtoGalgameListItem {
   age_rating?: number;
+  cover_sensitive?: boolean;
   cover_url?: string;
   developer?: DtoDeveloperSummary;
   id?: number;

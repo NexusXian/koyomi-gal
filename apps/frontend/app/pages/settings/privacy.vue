@@ -12,6 +12,8 @@ useSeoMeta({ title: '隐私设置 - Koyomi' })
 const router = useRouter()
 const userStore = useUserStore()
 const { user, initialized, isAuthenticated } = storeToRefs(userStore)
+const { mode: sensitiveCoverMode, setMode: setSensitiveCoverMode } = useSensitiveCover()
+const sensitiveCoverSaving = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const loaded = ref(false)
@@ -78,6 +80,19 @@ watch(
   },
   { immediate: true }
 )
+
+async function changeSensitiveCoverMode(event: { target: { value: 'blur' | 'show' } }): Promise<void> {
+  const next = event.target.value
+  if (sensitiveCoverSaving.value || next === sensitiveCoverMode.value) return
+  sensitiveCoverSaving.value = true
+  const ok = await setSensitiveCoverMode(next)
+  if (ok) {
+    message.success(next === 'show' ? '敏感封面将始终显示' : '敏感封面已恢复默认模糊')
+  } else {
+    message.error('敏感封面设置保存失败')
+  }
+  sensitiveCoverSaving.value = false
+}
 </script>
 
 <template>
@@ -120,6 +135,34 @@ watch(
         </div>
       </a-spin>
     </KunCard>
+
+    <KunCard padding="lg" class-name="sensitive-card">
+      <KunHeader
+        name="敏感内容"
+        description="控制被标记为敏感的 Galgame 封面如何展示"
+        scale="h3"
+      />
+      <div class="sensitive-form">
+        <div class="privacy-row">
+          <div>
+            <strong>敏感封面显示方式</strong>
+            <p>选择「始终显示」后，敏感封面将不再模糊。</p>
+          </div>
+          <a-radio-group
+            :value="sensitiveCoverMode"
+            :disabled="sensitiveCoverSaving"
+            @change="changeSensitiveCoverMode"
+          >
+            <a-radio value="blur">默认模糊</a-radio>
+            <a-radio value="show">始终显示</a-radio>
+          </a-radio-group>
+        </div>
+        <p class="sensitive-hint">
+          未登录时敏感封面始终默认模糊；点击单张模糊封面可临时查看，刷新后恢复。
+        </p>
+        <span v-if="sensitiveCoverSaving" class="saving-hint">正在保存...</span>
+      </div>
+    </KunCard>
   </AppPageContainer>
 </template>
 
@@ -133,6 +176,9 @@ watch(
 .privacy-row strong { font-size: 15px; }
 .privacy-row p { margin: 4px 0 0; color: var(--color-default-500); font-size: 13px; }
 .saving-hint { margin-top: 8px; color: var(--color-default-400); font-size: 12px; text-align: right; }
+.sensitive-card { margin-top: 18px; }
+.sensitive-form { display: flex; flex-direction: column; }
+.sensitive-hint { margin: 12px 0 0; color: var(--color-default-400); font-size: 12px; }
 @media (max-width: 480px) {
   .visibility-row { align-items: flex-start; flex-direction: column; }
   .visibility-row :deep(.ant-select) { width: 100% !important; }

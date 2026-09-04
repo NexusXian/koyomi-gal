@@ -12,6 +12,14 @@ export type ListAdminGalgamesParams = {
  */
 status?: number;
 /**
+ * 年龄等级过滤：0 未分级，1 全年龄，4 12+，2 15+，5 17+，3 18+
+ */
+age_rating?: number;
+/**
+ * 敏感封面过滤：true 仅敏感，false 仅普通，不传为全部
+ */
+cover_sensitive?: boolean;
+/**
  * 标题或别名关键词
  */
 keyword?: string;

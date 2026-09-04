@@ -166,11 +166,12 @@ type ProfileComment struct {
 }
 
 type ProfileGalgameItem struct {
-	ID        uint
-	Title     string
-	Slug      string
-	CoverURL  string
-	Score     *int16
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID             uint
+	Title          string
+	Slug           string
+	CoverURL       string
+	CoverSensitive bool
+	Score          *int16
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }

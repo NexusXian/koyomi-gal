@@ -220,7 +220,12 @@ watch([activeTab, page, profile], () => void loadContent())
             <KunNull v-if="!contentLoading && galgames.length === 0" :message="activeTab === 'ratings' ? '暂无公开评分' : '暂无公开收藏'" />
             <NuxtLink v-for="game in galgames" :key="game.id" :to="`/galgames/${game.id}`" class="galgame-row">
               <div class="game-cover">
-                <img v-if="game.cover_url" :src="game.cover_url" :alt="game.title || 'Galgame 封面'">
+                <SensitiveImage
+                  v-if="game.cover_url"
+                  :src="game.cover_url"
+                  :alt="game.title || 'Galgame 封面'"
+                  :sensitive="game.cover_sensitive"
+                />
                 <KunIcon v-else name="lucide:image" />
               </div>
               <div>
@@ -260,7 +265,6 @@ watch([activeTab, page, profile], () => void loadContent())
 .galgame-row { display: flex; min-width: 0; gap: 14px; padding: 14px; border: 1px solid var(--app-glass-border); border-radius: var(--radius-kun-lg); background: var(--app-glass-background); transition: border-color var(--kun-dur-fast); }
 .galgame-row:hover { border-color: var(--color-primary); }
 .game-cover { display: grid; overflow: hidden; width: 72px; height: 96px; flex: 0 0 72px; place-items: center; border-radius: var(--radius-kun-md); background: var(--color-default-100); color: var(--color-default-400); }
-.game-cover img { width: 100%; height: 100%; object-fit: cover; }
 .game-score, .game-date { display: flex; align-items: center; gap: 4px; margin-top: 9px; color: var(--color-default-500); font-size: 13px; }
 .game-score { color: var(--color-warning-600, #d97706); font-weight: 600; }
 .pagination-row { display: flex; justify-content: center; }

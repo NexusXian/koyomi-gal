@@ -47,6 +47,8 @@ export const DEFAULT_BACKGROUND_SETTINGS: BackgroundSettings = {
   size: 'cover'
 }
 
+export type SensitiveCoverMode = 'blur' | 'show'
+
 export interface UserPreferences {
   background_source: BackgroundSource
   background_asset_id: number | null
@@ -55,6 +57,7 @@ export interface UserPreferences {
   background_blur: number
   background_position: string
   background_size: BackgroundSize
+  sensitive_cover_mode: SensitiveCoverMode
   background_image_url: string
 }
 
@@ -66,4 +69,5 @@ export interface UserPreferencesPayload {
   background_blur: number
   background_position: string
   background_size: BackgroundSize
+  sensitive_cover_mode?: SensitiveCoverMode
 }

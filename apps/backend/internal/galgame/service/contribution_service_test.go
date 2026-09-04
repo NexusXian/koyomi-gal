@@ -93,17 +93,19 @@ func TestContributionReviewLifecycleAndIdempotency(t *testing.T) {
 
 	direct := createTestGalgame(t, env.catalog, creator, "contribution-direct-publish", nil, nil, "", 0, model.GalgameStatusPending)
 	ageRating := direct.AgeRating
+	coverSensitive := direct.CoverSensitive
 	publishedStatus := model.GalgameStatusPublished
 	if _, err := env.catalog.UpdateGalgame(ctx, direct.ID, &dto.UpdateGalgameRequest{
-		Title:         direct.Title,
-		OriginalTitle: direct.OriginalTitle,
-		RomajiTitle:   direct.RomajiTitle,
-		Slug:          direct.Slug,
-		Description:   direct.Description,
-		CoverURL:      direct.CoverURL,
-		BannerURL:     direct.BannerURL,
-		AgeRating:     &ageRating,
-		Status:        &publishedStatus,
+		Title:           direct.Title,
+		OriginalTitle:   direct.OriginalTitle,
+		RomajiTitle:     direct.RomajiTitle,
+		Slug:            direct.Slug,
+		Description:     direct.Description,
+		CoverURL:        direct.CoverURL,
+		BannerURL:       direct.BannerURL,
+		AgeRating:       &ageRating,
+		CoverSensitive:  &coverSensitive,
+		Status:          &publishedStatus,
 	}, reviewer); err != nil {
 		t.Fatalf("publish galgame through update: %v", err)
 	}

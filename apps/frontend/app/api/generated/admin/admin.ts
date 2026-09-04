@@ -17,6 +17,8 @@ import type {
   DtoArticleDataResponse,
   DtoBackgroundPresetDataResponse,
   DtoBannerDataResponse,
+  DtoBatchUpdateGalgameRequest,
+  DtoBatchUpdateGalgameResponse,
   DtoCreateArticleRequest,
   DtoCreateBackgroundPresetRequest,
   DtoCreateBannerRequest,
@@ -570,6 +572,36 @@ export const listAdminGalgames = async (params?: ListAdminGalgamesParams, option
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getBatchUpdateGalgamesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/galgames/batch`
+}
+
+/**
+ * 批量修改选中 Galgame 的年龄等级和/或敏感封面标记；两个字段至少提供一个，单次最多 500 条；需要 galgame:update 权限
+ * @summary 管理端批量更新 Galgame
+ */
+export const batchUpdateGalgames = async (dtoBatchUpdateGalgameRequest: DtoBatchUpdateGalgameRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBatchUpdateGalgameResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoBatchUpdateGalgameResponse>(getBatchUpdateGalgamesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoBatchUpdateGalgameRequest)
   }
 );}
 

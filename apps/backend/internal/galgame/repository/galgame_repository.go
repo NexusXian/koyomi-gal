@@ -13,16 +13,17 @@ import (
 )
 
 type GalgameListOptions struct {
-	Keyword     string
-	DeveloperID *uint
-	TagIDs      []uint
-	ReleaseFrom *int
-	ReleaseTo   *int
-	AgeRating   *int16
-	Status      *int16
-	Sort        string
-	Page        int
-	Limit       int
+	Keyword        string
+	DeveloperID    *uint
+	TagIDs         []uint
+	ReleaseFrom    *int
+	ReleaseTo      *int
+	AgeRating      *int16
+	CoverSensitive *bool
+	Status         *int16
+	Sort           string
+	Page           int
+	Limit          int
 }
 
 type GalgameRepository struct {
@@ -61,8 +62,9 @@ func (r *GalgameRepository) Update(ctx context.Context, galgame *model.Galgame) 
 			"banner_url":     galgame.BannerURL,
 			"developer_id":   galgame.DeveloperID,
 			"release_date":   galgame.ReleaseDate,
-			"age_rating":     galgame.AgeRating,
-			"status":         galgame.Status,
+			"age_rating":      galgame.AgeRating,
+			"cover_sensitive": galgame.CoverSensitive,
+			"status":          galgame.Status,
 			"updated_at":     galgame.UpdatedAt,
 		}).Error
 	if err != nil {
@@ -79,6 +81,22 @@ func (r *GalgameRepository) UpdateStatus(ctx context.Context, id uint, status in
 		return fmt.Errorf("update galgame status: %w", err)
 	}
 	return nil
+}
+
+// BatchUpdate applies the whitelisted column updates to every matching id and
+// returns the number of affected rows.
+func (r *GalgameRepository) BatchUpdate(ctx context.Context, ids []uint, updates map[string]any) (int64, error) {
+	if len(ids) == 0 || len(updates) == 0 {
+		return 0, nil
+	}
+	result := r.db.WithContext(ctx).
+		Model(&model.Galgame{}).
+		Where("id IN ?", ids).
+		Updates(updates)
+	if result.Error != nil {
+		return 0, fmt.Errorf("batch update galgames: %w", result.Error)
+	}
+	return result.RowsAffected, nil
 }
 
 func (r *GalgameRepository) Delete(ctx context.Context, id uint) error {
@@ -334,6 +352,9 @@ func (r *GalgameRepository) applyListFilters(
 	}
 	if options.AgeRating != nil {
 		query = query.Where("g.age_rating = ?", *options.AgeRating)
+	}
+	if options.CoverSensitive != nil {
+		query = query.Where("g.cover_sensitive = ?", *options.CoverSensitive)
 	}
 	return query
 }

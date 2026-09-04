@@ -29,6 +29,7 @@ export interface HomeGalgame {
   id: number
   title: string
   cover_url?: string | null
+  cover_sensitive?: boolean
   developer?: HomeDeveloper
   rating_average?: number | null
   favorite_count: number

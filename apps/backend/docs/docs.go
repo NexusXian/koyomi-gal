@@ -990,6 +990,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "年龄等级过滤：0 未分级，1 全年龄，4 12+，2 15+，5 17+，3 18+",
+                        "name": "age_rating",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "敏感封面过滤：true 仅敏感，false 仅普通，不传为全部",
+                        "name": "cover_sensitive",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "标题或别名关键词",
                         "name": "keyword",
@@ -1044,6 +1056,70 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "查询 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/batch": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "批量修改选中 Galgame 的年龄等级和/或敏感封面标记；两个字段至少提供一个，单次最多 500 条；需要 galgame:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端批量更新 Galgame",
+                "operationId": "batchUpdateGalgames",
+                "parameters": [
+                    {
+                        "description": "批量更新 Galgame 请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchUpdateGalgameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新数量",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchUpdateGalgameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "批量更新失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -4635,7 +4711,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "年龄等级：0 未知，1 全年龄，2 R15，3 R18",
+                        "description": "年龄等级：0 未分级，1 全年龄，4 12+，2 15+，5 17+，3 18+",
                         "name": "age_rating",
                         "in": "query"
                     },
@@ -9714,6 +9790,68 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BatchUpdateGalgameData": {
+            "type": "object",
+            "properties": {
+                "updated": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "dto.BatchUpdateGalgameRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "example": 3
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "ids": {
+                    "type": "array",
+                    "maxItems": 500,
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            }
+        },
+        "dto.BatchUpdateGalgameResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BatchUpdateGalgameData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.CommentData": {
             "type": "object",
             "properties": {
@@ -10247,7 +10385,9 @@ const docTemplate = `{
                         0,
                         1,
                         2,
-                        3
+                        3,
+                        4,
+                        5
                     ],
                     "example": 3
                 },
@@ -10265,6 +10405,10 @@ const docTemplate = `{
                 "banner_url": {
                     "type": "string",
                     "example": "https://example.com/banner.jpg"
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "cover_url": {
                     "type": "string",
@@ -11133,6 +11277,10 @@ const docTemplate = `{
         "dto.Galgame": {
             "type": "object",
             "properties": {
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "cover_url": {
                     "type": "string",
                     "example": "https://example.com/cover.jpg"
@@ -11209,6 +11357,10 @@ const docTemplate = `{
                 "age_rating": {
                     "type": "integer",
                     "example": 3
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "cover_url": {
                     "type": "string",
@@ -11301,6 +11453,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.ContributorData"
                     }
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "cover_url": {
                     "type": "string",
@@ -12923,6 +13079,9 @@ const docTemplate = `{
         "dto.ProfileGalgameData": {
             "type": "object",
             "properties": {
+                "cover_sensitive": {
+                    "type": "boolean"
+                },
                 "cover_url": {
                     "type": "string"
                 },
@@ -13882,6 +14041,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "age_rating",
+                "cover_sensitive",
                 "slug",
                 "status",
                 "title"
@@ -13893,7 +14053,9 @@ const docTemplate = `{
                         0,
                         1,
                         2,
-                        3
+                        3,
+                        4,
+                        5
                     ],
                     "example": 3
                 },
@@ -13911,6 +14073,10 @@ const docTemplate = `{
                 "banner_url": {
                     "type": "string",
                     "example": "https://example.com/banner.jpg"
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "cover_url": {
                     "type": "string",
@@ -14300,6 +14466,14 @@ const docTemplate = `{
                         "custom"
                     ],
                     "example": "custom"
+                },
+                "sensitive_cover_mode": {
+                    "type": "string",
+                    "enum": [
+                        "blur",
+                        "show"
+                    ],
+                    "example": "blur"
                 }
             }
         },
@@ -14482,6 +14656,10 @@ const docTemplate = `{
                 "background_source": {
                     "type": "string",
                     "example": "preset"
+                },
+                "sensitive_cover_mode": {
+                    "type": "string",
+                    "example": "blur"
                 }
             }
         },

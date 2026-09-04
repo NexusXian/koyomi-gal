@@ -28,7 +28,7 @@ release_from?: number;
  */
 release_to?: number;
 /**
- * 年龄等级：0 未知，1 全年龄，2 R15，3 R18
+ * 年龄等级：0 未分级，1 全年龄，4 12+，2 15+，5 17+，3 18+
  */
 age_rating?: number;
 /**

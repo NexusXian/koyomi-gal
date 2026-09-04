@@ -294,6 +294,7 @@ func (s *CatalogService) CreateGalgame(
 		DeveloperID:   req.DeveloperID,
 		ReleaseDate:   releaseDate,
 		AgeRating:     req.AgeRating,
+		CoverSensitive: req.CoverSensitive,
 		Status:        req.Status,
 		CreatedBy:     &userID,
 	}
@@ -368,6 +369,9 @@ func (s *CatalogService) UpdateGalgame(
 	if req.AgeRating == nil || !validAgeRating(*req.AgeRating) {
 		return nil, ErrInvalidAgeRating
 	}
+	if req.CoverSensitive == nil {
+		return nil, ErrInvalidCatalogInput
+	}
 	if req.Status == nil || !validStatus(*req.Status) {
 		return nil, ErrInvalidStatus
 	}
@@ -396,6 +400,7 @@ func (s *CatalogService) UpdateGalgame(
 	galgame.DeveloperID = req.DeveloperID
 	galgame.ReleaseDate = releaseDate
 	galgame.AgeRating = *req.AgeRating
+	galgame.CoverSensitive = *req.CoverSensitive
 	galgame.Status = *req.Status
 	write := func(tx *repository.GalgameRepository, db *gorm.DB) error {
 		if err := tx.Update(ctx, galgame); err != nil {
@@ -524,6 +529,35 @@ func (s *CatalogService) ReviewGalgame(
 	return galgame, nil
 }
 
+// BatchUpdateGalgame applies the whitelisted age_rating / cover_sensitive
+// updates to all matched ids and returns the number of updated rows.
+func (s *CatalogService) BatchUpdateGalgame(
+	ctx context.Context,
+	req *dto.BatchUpdateGalgameRequest,
+) (int64, error) {
+	if req.AgeRating == nil && req.CoverSensitive == nil {
+		return 0, ErrInvalidCatalogInput
+	}
+	if req.AgeRating != nil && !validAgeRating(*req.AgeRating) {
+		return 0, ErrInvalidAgeRating
+	}
+
+	updates := map[string]any{"updated_at": time.Now()}
+	if req.AgeRating != nil {
+		updates["age_rating"] = *req.AgeRating
+	}
+	if req.CoverSensitive != nil {
+		updates["cover_sensitive"] = *req.CoverSensitive
+	}
+
+	updated, err := s.galgames.BatchUpdate(ctx, uniqueUint(req.IDs), updates)
+	if err != nil {
+		logger.Error("batch update galgames", zap.Int("id_count", len(req.IDs)), zap.Error(err))
+		return 0, err
+	}
+	return updated, nil
+}
+
 func (s *CatalogService) DeleteGalgame(ctx context.Context, id uint) error {
 	galgame, err := s.galgames.FindByID(ctx, id)
 	if err != nil {
@@ -574,13 +608,18 @@ func (s *CatalogService) ListAllGalgames(
 	if query.Status != nil && !validStatus(*query.Status) {
 		return nil, 0, page, limit, ErrInvalidStatus
 	}
+	if query.AgeRating != nil && !validAgeRating(*query.AgeRating) {
+		return nil, 0, page, limit, ErrInvalidAgeRating
+	}
 
 	galgames, total, err := s.galgames.ListAdmin(ctx, repository.GalgameListOptions{
-		Keyword: strings.TrimSpace(query.Keyword),
-		Status:  query.Status,
-		Sort:    sort,
-		Page:    page,
-		Limit:   limit,
+		Keyword:        strings.TrimSpace(query.Keyword),
+		Status:         query.Status,
+		AgeRating:      query.AgeRating,
+		CoverSensitive: query.CoverSensitive,
+		Sort:           sort,
+		Page:           page,
+		Limit:          limit,
 	})
 	if err != nil {
 		logger.Error("list all galgames", zap.Error(err))
@@ -748,6 +787,7 @@ func galgameUpdateChanges(
 		!equalUintPointers(galgame.DeveloperID, req.DeveloperID) ||
 		!equalTimePointers(galgame.ReleaseDate, releaseDate) ||
 		galgame.AgeRating != *req.AgeRating ||
+		galgame.CoverSensitive != *req.CoverSensitive ||
 		galgame.Status != *req.Status ||
 		!equalAliases(galgame.Aliases, aliases) ||
 		!equalTagIDs(galgame.Tags, tagIDs)
@@ -926,7 +966,17 @@ func parseReleaseDate(value string) (*time.Time, error) {
 }
 
 func validAgeRating(value int16) bool {
-	return value >= model.AgeRatingUnknown && value <= model.AgeRatingR18
+	switch value {
+	case model.AgeRatingUnknown,
+		model.AgeRatingAll,
+		model.AgeRatingR12,
+		model.AgeRatingR15,
+		model.AgeRatingR17,
+		model.AgeRatingR18:
+		return true
+	default:
+		return false
+	}
 }
 
 func validStatus(value int16) bool {

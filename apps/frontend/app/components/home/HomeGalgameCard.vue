@@ -20,10 +20,10 @@ const developerName = computed(() => {
 <template>
   <NuxtLink :to="`/galgames/${galgame.id}`" class="galgame-card">
     <div class="cover-wrap">
-      <img
+      <SensitiveImage
         :src="galgame.cover_url || fallbackCover"
         :alt="`${galgame.title} 封面`"
-        loading="lazy"
+        :sensitive="galgame.cover_sensitive"
       />
       <span v-if="galgame.rating_average != null" class="rating-badge">
         <KunIcon name="lucide:star" />
@@ -70,14 +70,7 @@ const developerName = computed(() => {
   background: var(--color-content2);
 }
 
-.cover-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--kun-dur-base) var(--ease-kun-standard);
-}
-
-.galgame-card:hover img {
+.galgame-card:hover .cover-wrap :deep(img) {
   transform: scale(1.04);
 }
 

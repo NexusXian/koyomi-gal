@@ -8,6 +8,7 @@
 import type { DtoDeveloper } from './dtoDeveloper';
 
 export interface DtoGalgame {
+  cover_sensitive?: boolean;
   cover_url?: string;
   developer?: DtoDeveloper;
   favorite_count?: number;

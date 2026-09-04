@@ -41,6 +41,7 @@ const formState = reactive({
   developer_id: undefined as number | undefined,
   release_date: '' as string,
   age_rating: 0,
+  cover_sensitive: false,
   status: 0,
   tag_ids: [] as number[],
   aliases: [] as string[],
@@ -139,6 +140,7 @@ async function loadGalgame(): Promise<void> {
       developer_id: data.developer?.id,
       release_date: data.release_date ? data.release_date.slice(0, 10) : '',
       age_rating: data.age_rating ?? 0,
+      cover_sensitive: data.cover_sensitive ?? false,
       status: data.status ?? 0,
       tag_ids: (data.tags ?? []).map((tag) => tag.id).filter(Boolean),
       aliases: data.aliases ?? [],
@@ -179,7 +181,8 @@ async function submit(): Promise<void> {
     original_title: formState.original_title.trim() || undefined,
     developer_id: formState.developer_id,
     release_date: formState.release_date || undefined,
-    age_rating: formState.age_rating as 0 | 1 | 2 | 3,
+    age_rating: formState.age_rating as 0 | 1 | 2 | 3 | 4 | 5,
+    cover_sensitive: formState.cover_sensitive,
     status: formState.status as 0 | 1 | 2 | 3,
     tag_ids: formState.tag_ids,
     aliases: formState.aliases,
@@ -279,6 +282,18 @@ async function submit(): Promise<void> {
                 }))
               "
             />
+          </a-form-item>
+
+          <a-form-item label="敏感封面">
+            <div class="cover-sensitive-field">
+              <a-switch v-model:checked="formState.cover_sensitive" />
+              <span class="cover-sensitive-text">
+                此封面可能不适合在公共环境展示
+              </span>
+            </div>
+            <span class="cover-sensitive-help">
+              此设置与游戏年龄等级无关。启用后，前台默认对该游戏封面进行模糊处理。
+            </span>
           </a-form-item>
 
           <a-form-item label="Tags">
@@ -399,6 +414,24 @@ async function submit(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.cover-sensitive-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cover-sensitive-text {
+  font-size: 14px;
+}
+
+.cover-sensitive-help {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-default-500);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .form-actions {

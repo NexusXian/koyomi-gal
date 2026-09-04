@@ -13,10 +13,12 @@ export const GALGAME_STATUS: DomainOption[] = [
 ]
 
 export const AGE_RATINGS: DomainOption[] = [
-  { value: 0, label: '未知' },
+  { value: 0, label: '未分级' },
   { value: 1, label: '全年龄' },
-  { value: 2, label: 'R15' },
-  { value: 3, label: 'R18' }
+  { value: 4, label: '12+' },
+  { value: 2, label: '15+' },
+  { value: 5, label: '17+' },
+  { value: 3, label: '18+' }
 ]
 
 export const USER_STATES: DomainOption[] = [

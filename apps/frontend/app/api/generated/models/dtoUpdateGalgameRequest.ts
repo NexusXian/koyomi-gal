@@ -13,6 +13,7 @@ export interface DtoUpdateGalgameRequest {
   /** @maxItems 100 */
   aliases?: string[];
   banner_url?: string;
+  cover_sensitive: boolean;
   cover_url?: string;
   description?: string;
   developer_id?: number;
