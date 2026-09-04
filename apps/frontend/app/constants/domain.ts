@@ -78,6 +78,17 @@ export const GALLERY_IMAGE_TYPES: DomainOption[] = [
   { value: 4, label: '宣传图' }
 ]
 
+export const GALLERY_IMAGE_STATUS: DomainOption[] = [
+  { value: 0, label: '待审核', color: 'processing' },
+  { value: 1, label: '已通过', color: 'success' },
+  { value: 2, label: '已拒绝', color: 'error' }
+]
+
+export const GALLERY_SOURCE_TYPES: DomainOption[] = [
+  { value: 0, label: '本站上传' },
+  { value: 1, label: '外部链接' }
+]
+
 export function domainLabel(
   options: DomainOption[],
   value: number | undefined | null

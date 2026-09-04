@@ -30,6 +30,7 @@ import {
   USER_STATES,
   domainLabel
 } from '~/constants/domain'
+import { stripMarkdownForExcerpt } from '~/utils/markdown'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,7 +59,9 @@ if (error.value || !galgame.value) {
 
 useSeoMeta({
   title: () => `${galgame.value?.title ?? 'Galgame'} - Koyomi`,
-  description: () => galgame.value?.description ?? 'Galgame 详情'
+  description: () =>
+    stripMarkdownForExcerpt(galgame.value?.description ?? '', 160) ||
+    'Galgame 详情'
 })
 
 const resources = ref<DtoResourceData[]>([])
@@ -447,9 +450,13 @@ onMounted(() => {
 
       <div class="detail-body">
         <KunHeader name="简介" scale="h3" class="section-heading" />
-        <p class="detail-description">
-          {{ galgame?.description || '暂无简介' }}
-        </p>
+        <PostContent
+          v-if="galgame?.description"
+          class="detail-description-markdown"
+          :content="galgame.description"
+          mode="markdown"
+        />
+        <p v-else class="detail-description">暂无简介</p>
         <p v-if="galgame?.aliases?.length" class="detail-aliases">
           别名：{{ galgame.aliases.join('、') }}
         </p>
@@ -858,6 +865,10 @@ onMounted(() => {
   font-size: 15px;
   line-height: 1.85;
   white-space: pre-wrap;
+}
+
+.detail-description-markdown {
+  margin-top: 8px;
 }
 
 .detail-aliases {

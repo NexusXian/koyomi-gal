@@ -284,19 +284,19 @@ func (s *CatalogService) CreateGalgame(
 	}
 
 	galgame := &model.Galgame{
-		Title:         title,
-		OriginalTitle: strings.TrimSpace(req.OriginalTitle),
-		RomajiTitle:   strings.TrimSpace(req.RomajiTitle),
-		Slug:          slug,
-		Description:   strings.TrimSpace(req.Description),
-		CoverURL:      strings.TrimSpace(req.CoverURL),
-		BannerURL:     strings.TrimSpace(req.BannerURL),
-		DeveloperID:   req.DeveloperID,
-		ReleaseDate:   releaseDate,
-		AgeRating:     req.AgeRating,
+		Title:          title,
+		OriginalTitle:  strings.TrimSpace(req.OriginalTitle),
+		RomajiTitle:    strings.TrimSpace(req.RomajiTitle),
+		Slug:           slug,
+		Description:    strings.TrimSpace(req.Description),
+		CoverURL:       strings.TrimSpace(req.CoverURL),
+		BannerURL:      strings.TrimSpace(req.BannerURL),
+		DeveloperID:    req.DeveloperID,
+		ReleaseDate:    releaseDate,
+		AgeRating:      req.AgeRating,
 		CoverSensitive: req.CoverSensitive,
-		Status:        req.Status,
-		CreatedBy:     &userID,
+		Status:         req.Status,
+		CreatedBy:      &userID,
 	}
 	aliases := uniqueNonEmptyStrings(req.Aliases)
 	write := func(tx *repository.GalgameRepository, db *gorm.DB) error {
@@ -752,6 +752,11 @@ func (s *CatalogService) recordInitialGalleryContributions(ctx context.Context, 
 		return err
 	}
 	for _, image := range galleryImages {
+		// Pending/rejected images are credited when (and only if) their own
+		// review approves them, so skip them here to avoid double credit.
+		if image.Status != model.GalleryImageStatusPublished {
+			continue
+		}
 		if image.CreatedBy == nil {
 			continue
 		}

@@ -6,19 +6,21 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface DtoGalleryImageData {
-  asset_id?: number;
-  description?: string;
+export interface DtoGalleryReviewItemData {
+  created_at?: string;
+  created_by_username?: string;
   external_url?: string;
-  height?: number;
+  galgame_id?: number;
+  galgame_slug?: string;
+  galgame_title?: string;
   id?: number;
   image_type?: number;
   is_spoiler?: boolean;
   reject_reason?: string;
-  sort_order?: number;
+  reviewed_at?: string;
+  reviewed_by_username?: string;
   source_type?: number;
   status?: number;
   title?: string;
   url?: string;
-  width?: number;
 }

@@ -53,19 +53,19 @@ func (r *GalgameRepository) Update(ctx context.Context, galgame *model.Galgame) 
 		Model(&model.Galgame{}).
 		Where("id = ?", galgame.ID).
 		Updates(map[string]any{
-			"title":          galgame.Title,
-			"original_title": galgame.OriginalTitle,
-			"romaji_title":   galgame.RomajiTitle,
-			"slug":           galgame.Slug,
-			"description":    galgame.Description,
-			"cover_url":      galgame.CoverURL,
-			"banner_url":     galgame.BannerURL,
-			"developer_id":   galgame.DeveloperID,
-			"release_date":   galgame.ReleaseDate,
+			"title":           galgame.Title,
+			"original_title":  galgame.OriginalTitle,
+			"romaji_title":    galgame.RomajiTitle,
+			"slug":            galgame.Slug,
+			"description":     galgame.Description,
+			"cover_url":       galgame.CoverURL,
+			"banner_url":      galgame.BannerURL,
+			"developer_id":    galgame.DeveloperID,
+			"release_date":    galgame.ReleaseDate,
 			"age_rating":      galgame.AgeRating,
 			"cover_sensitive": galgame.CoverSensitive,
 			"status":          galgame.Status,
-			"updated_at":     galgame.UpdatedAt,
+			"updated_at":      galgame.UpdatedAt,
 		}).Error
 	if err != nil {
 		return fmt.Errorf("update galgame: %w", err)

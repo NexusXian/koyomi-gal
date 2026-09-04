@@ -255,7 +255,7 @@ export const getListGalgameGalleryUrl = (id: number,) => {
 }
 
 /**
- * 返回已发布 Galgame 的游戏截图 / CG 画廊，按 sort_order 排序，不分页
+ * 返回已发布 Galgame 的已通过（published）游戏截图 / CG 画廊，按 sort_order 排序，不分页
  * @summary 查询 Galgame 游戏画面
  */
 export const listGalgameGallery = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryListResponse> => {

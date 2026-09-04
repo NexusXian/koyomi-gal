@@ -85,6 +85,7 @@ function handleItemClick(item: DtoGalleryImageData, index: number): void {
           :style="{ aspectRatio: aspectRatio(item) }"
           :loading="index === 0 ? 'eager' : 'lazy'"
           decoding="async"
+          referrerpolicy="no-referrer"
         />
         <span v-if="item.is_spoiler && !isSpoilerHidden(item)" class="spoiler-badge">
           <KunIcon name="lucide:eye-off" />

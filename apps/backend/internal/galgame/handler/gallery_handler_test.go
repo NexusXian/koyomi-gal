@@ -12,9 +12,9 @@ import (
 	"backend/internal/galgame/dto"
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
-	"backend/internal/middleware"
 	imageRepo "backend/internal/image/repository"
 	imageService "backend/internal/image/service"
+	"backend/internal/middleware"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/testutil"
@@ -52,14 +52,24 @@ func newGalleryTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *galgameService.
 
 	admin := router.Group("/api/v1/admin",
 		middleware.Auth(testAuthSecret),
-		middleware.RequirePermission(rbacSvc)("galgame_gallery:manage"),
 	)
 	{
-		admin.GET("/galgames/:id/gallery", galleryHandler.ListAdminGalgameGallery)
-		admin.POST("/galgames/:id/gallery", galleryHandler.CreateGalgameGalleryImage)
-		admin.PUT("/galgames/:id/gallery/order", galleryHandler.ReorderGalgameGallery)
-		admin.PATCH("/galgames/:id/gallery/:galleryId", galleryHandler.UpdateGalgameGalleryImage)
-		admin.DELETE("/galgames/:id/gallery/:galleryId", galleryHandler.DeleteGalgameGalleryImage)
+		manage := admin.Group("", middleware.RequirePermission(rbacSvc)("galgame_gallery:manage"))
+		{
+			manage.GET("/galgames/:id/gallery", galleryHandler.ListAdminGalgameGallery)
+			manage.POST("/galgames/:id/gallery", galleryHandler.CreateGalgameGalleryImage)
+			manage.POST("/galgames/:id/gallery/batch", galleryHandler.BatchCreateGalgameGalleryImages)
+			manage.PUT("/galgames/:id/gallery/order", galleryHandler.ReorderGalgameGallery)
+			manage.PATCH("/galgames/:id/gallery/:galleryId", galleryHandler.UpdateGalgameGalleryImage)
+			manage.DELETE("/galgames/:id/gallery/:galleryId", galleryHandler.DeleteGalgameGalleryImage)
+		}
+		review := admin.Group("", middleware.RequirePermission(rbacSvc)("galgame_gallery:review"))
+		{
+			review.GET("/gallery-images", galleryHandler.ListGalleryReviews)
+			review.POST("/gallery-images/batch-review", galleryHandler.BatchReviewGalleryImages)
+			review.POST("/gallery-images/:id/approve", galleryHandler.ApproveGalleryImage)
+			review.POST("/gallery-images/:id/reject", galleryHandler.RejectGalleryImage)
+		}
 	}
 	return router, db, galleryService, rbacSvc
 }
@@ -134,7 +144,7 @@ RETURNING id
 		t.Fatalf("create: expected 200, got %d body=%s", res.Code, res.Body.String())
 	}
 	var created struct {
-		Code int                   `json:"code"`
+		Code int                  `json:"code"`
 		Data dto.GalleryImageData `json:"data"`
 	}
 	if err := json.Unmarshal(res.Body.Bytes(), &created); err != nil {
@@ -143,22 +153,189 @@ RETURNING id
 	if created.Data.ID == 0 || !created.Data.IsSpoiler || created.Data.URL == "" {
 		t.Fatalf("unexpected create payload: %+v", created.Data)
 	}
+	if created.Data.Status != 0 {
+		t.Fatalf("created image must be pending, got %d", created.Data.Status)
+	}
+
+	// External URL create + duplicate detection.
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, base+"/gallery", strings.NewReader(
+		`{"external_url":"https://source-a.com/endpoint.webp"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("create external: expected 200, got %d body=%s", res.Code, res.Body.String())
+	}
+	var external struct {
+		Code int                  `json:"code"`
+		Data dto.GalleryImageData `json:"data"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &external); err != nil {
+		t.Fatalf("decode external create response: %v", err)
+	}
 
 	res = httptest.NewRecorder()
-	router.ServeHTTP(res, httptest.NewRequest(http.MethodGet,
-		"/api/v1/galgames/"+strconv.FormatUint(uint64(published.ID), 10)+"/gallery", nil))
+	req = httptest.NewRequest(http.MethodPost, base+"/gallery", strings.NewReader(
+		`{"external_url":"https://source-a.com/endpoint.webp"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusConflict {
+		t.Fatalf("duplicate external: expected 409, got %d", res.Code)
+	}
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, base+"/gallery", strings.NewReader(
+		`{"external_url":"javascript:alert(1)"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("invalid scheme: expected 400, got %d", res.Code)
+	}
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, base+"/gallery", strings.NewReader(
+		`{"asset_id":`+strconv.FormatUint(uint64(assetID), 10)+`,"external_url":"https://source-a.com/both.webp"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("both sources: expected 400, got %d", res.Code)
+	}
+
+	// Batch import endpoint.
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, base+"/gallery/batch", strings.NewReader(
+		`{"items":[{"external_url":"https://source-a.com/b1.webp"},{"external_url":"https://source-a.com/b1.webp"},{"external_url":"nope"}]}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("batch create: expected 200, got %d body=%s", res.Code, res.Body.String())
+	}
+	var batch struct {
+		Code int                        `json:"code"`
+		Data dto.BatchGalleryResultData `json:"data"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &batch); err != nil {
+		t.Fatalf("decode batch response: %v", err)
+	}
+	if batch.Data.Created != 1 || batch.Data.Skipped != 1 || batch.Data.Failed != 1 {
+		t.Fatalf("unexpected batch result: %+v", batch.Data)
+	}
+
+	// Pending images stay invisible on the public gallery until approved.
+	publicListURL := "/api/v1/galgames/" + strconv.FormatUint(uint64(published.ID), 10) + "/gallery"
+	res = httptest.NewRecorder()
+	router.ServeHTTP(res, httptest.NewRequest(http.MethodGet, publicListURL, nil))
 	if res.Code != http.StatusOK {
 		t.Fatalf("public list: expected 200, got %d", res.Code)
 	}
 	var listed struct {
-		Code int                `json:"code"`
+		Code int                 `json:"code"`
 		Data dto.GalleryListData `json:"data"`
 	}
 	if err := json.Unmarshal(res.Body.Bytes(), &listed); err != nil {
 		t.Fatalf("decode list response: %v", err)
 	}
-	if listed.Data.Total != 1 || len(listed.Data.Items) != 1 || listed.Data.Items[0].IsSpoiler != true {
-		t.Fatalf("unexpected list payload: %+v", listed.Data)
+	if listed.Data.Total != 0 {
+		t.Fatalf("pending images must not be publicly listed, got %d", listed.Data.Total)
+	}
+
+	// Review queue lists the pending items.
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/admin/gallery-images?status=0", nil)
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("review queue: expected 200, got %d body=%s", res.Code, res.Body.String())
+	}
+	var queue struct {
+		Code int                       `json:"code"`
+		Data dto.GalleryReviewListData `json:"data"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &queue); err != nil {
+		t.Fatalf("decode review queue response: %v", err)
+	}
+	if queue.Data.Total != 3 {
+		t.Fatalf("expected 3 pending review items, got %d", queue.Data.Total)
+	}
+
+	// Approve the asset-backed image.
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost,
+		"/api/v1/admin/gallery-images/"+strconv.FormatUint(uint64(created.Data.ID), 10)+"/approve", nil)
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("approve: expected 200, got %d body=%s", res.Code, res.Body.String())
+	}
+
+	// Batch review: approve the external + batch import, reject none yet.
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/admin/gallery-images/batch-review", strings.NewReader(
+		`{"ids":[`+strconv.FormatUint(uint64(external.Data.ID), 10)+`],"action":"approve"}`,
+	))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("batch approve: expected 200, got %d body=%s", res.Code, res.Body.String())
+	}
+
+	res = httptest.NewRecorder()
+	router.ServeHTTP(res, httptest.NewRequest(http.MethodGet, publicListURL, nil))
+	if res.Code != http.StatusOK {
+		t.Fatalf("public list after approve: expected 200, got %d", res.Code)
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &listed); err != nil {
+		t.Fatalf("decode list response: %v", err)
+	}
+	if listed.Data.Total != 2 || len(listed.Data.Items) != 2 {
+		t.Fatalf("expected 2 published items, got %+v", listed.Data)
+	}
+	for _, item := range listed.Data.Items {
+		if item.Status != 1 {
+			t.Fatalf("public items must be published, got %+v", item)
+		}
+	}
+
+	// Reject one image with a reason.
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost,
+		"/api/v1/admin/gallery-images/"+strconv.FormatUint(uint64(external.Data.ID), 10)+"/reject",
+		strings.NewReader(`{"reason":"重复图片"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("reject: expected 200, got %d body=%s", res.Code, res.Body.String())
+	}
+	var rejected struct {
+		Code int                  `json:"code"`
+		Data dto.GalleryImageData `json:"data"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &rejected); err != nil {
+		t.Fatalf("decode reject response: %v", err)
+	}
+	if rejected.Data.Status != 2 || rejected.Data.RejectReason != "重复图片" {
+		t.Fatalf("unexpected reject payload: %+v", rejected.Data)
+	}
+
+	res = httptest.NewRecorder()
+	router.ServeHTTP(res, httptest.NewRequest(http.MethodGet, publicListURL, nil))
+	if err := json.Unmarshal(res.Body.Bytes(), &listed); err != nil {
+		t.Fatalf("decode list response: %v", err)
+	}
+	if listed.Data.Total != 1 {
+		t.Fatalf("expected 1 published item after reject, got %d", listed.Data.Total)
 	}
 
 	res = httptest.NewRecorder()
@@ -191,24 +368,29 @@ RETURNING id
 
 	res = httptest.NewRecorder()
 	req = httptest.NewRequest(http.MethodPut, base+"/gallery/order",
-		strings.NewReader(`{"ids":[`+strconv.FormatUint(uint64(created.Data.ID), 10)+`]}`),
-	)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
-	router.ServeHTTP(res, req)
-	if res.Code != http.StatusOK {
-		t.Fatalf("reorder: expected 200, got %d body=%s", res.Code, res.Body.String())
-	}
-
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodPut, base+"/gallery/order",
-		strings.NewReader(`{"ids":[999999]}`),
+		strings.NewReader(`{"ids":[`+
+			strconv.FormatUint(uint64(created.Data.ID), 10)+`,`+
+			strconv.FormatUint(uint64(external.Data.ID), 10)+`,`+
+			`999999]}`),
 	)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
 	router.ServeHTTP(res, req)
 	if res.Code != http.StatusBadRequest {
 		t.Fatalf("reorder with unknown id: expected 400, got %d", res.Code)
+	}
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPut, base+"/gallery/order",
+		strings.NewReader(`{"ids":[`+
+			strconv.FormatUint(uint64(created.Data.ID), 10)+`,`+
+			strconv.FormatUint(uint64(external.Data.ID), 10)+`]}`),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
+	router.ServeHTTP(res, req)
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("partial reorder set: expected 400, got %d", res.Code)
 	}
 
 	res = httptest.NewRecorder()
@@ -227,6 +409,6 @@ RETURNING id
 	req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, admin))
 	router.ServeHTTP(res, req)
 	if res.Code != http.StatusOK {
-		t.Fatalf("delete: expected 200, got %d body=%s", res.Code, res.Body.String())
+		t.Fatalf("delete: expected 200, got %d", res.Code)
 	}
 }

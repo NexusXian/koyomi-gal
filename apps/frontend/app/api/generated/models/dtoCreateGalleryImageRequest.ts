@@ -8,8 +8,10 @@
 import type { DtoCreateGalleryImageRequestImageType } from './dtoCreateGalleryImageRequestImageType';
 
 export interface DtoCreateGalleryImageRequest {
-  asset_id: number;
+  asset_id?: number;
   description?: string;
+  /** @maxLength 2048 */
+  external_url?: string;
   image_type?: DtoCreateGalleryImageRequestImageType;
   is_spoiler?: boolean;
   /** @maxLength 255 */

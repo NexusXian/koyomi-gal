@@ -2,6 +2,7 @@
 import { message } from 'ant-design-vue'
 import type { Rule } from 'ant-design-vue/es/form'
 import {
+  batchCreateGalgameGalleryImages,
   createGalgameGalleryImage,
   deleteGalgameGalleryImage,
   listAdminGalgameGallery,
@@ -12,7 +13,12 @@ import type {
   DtoGalleryImageData,
   DtoUpdateGalleryImageRequest
 } from '~/api/generated/models'
-import { GALLERY_IMAGE_TYPES, domainLabel } from '~/constants/domain'
+import {
+  GALLERY_IMAGE_STATUS,
+  GALLERY_IMAGE_TYPES,
+  GALLERY_SOURCE_TYPES,
+  domainLabel
+} from '~/constants/domain'
 
 const MAX_GALLERY_IMAGES = 30
 const UPLOAD_CONCURRENCY = 3
@@ -48,13 +54,46 @@ const editRules: Record<string, Rule[]> = {
   title: [{ max: 255, message: '标题最多 255 个字符', trigger: 'blur' }]
 }
 
+const linkOpen = ref(false)
+const linkSaving = ref(false)
+const linkForm = reactive({
+  external_url: '',
+  title: '',
+  image_type: 0 as GalleryImageType,
+  is_spoiler: false
+})
+const linkRules: Record<string, Rule[]> = {
+  external_url: [
+    { required: true, message: '请输入图片地址', trigger: 'blur' },
+    {
+      pattern: /^https?:\/\/\S+$/i,
+      message: '仅支持 http / https 链接',
+      trigger: 'blur'
+    }
+  ],
+  title: [{ max: 255, message: '标题最多 255 个字符', trigger: 'blur' }]
+}
+
+const batchOpen = ref(false)
+const batchSaving = ref(false)
+const batchForm = reactive({
+  urls: '',
+  image_type: 0 as GalleryImageType,
+  is_spoiler: false
+})
+
 const deletingId = ref<number | null>(null)
 const orderSaving = ref(false)
 
 const dragIndex = ref<number | null>(null)
 const orderDirty = ref(false)
 
-const canAcceptMore = computed(() => items.value.length < MAX_GALLERY_IMAGES)
+// Rejected entries no longer consume gallery slots.
+const activeCount = computed(
+  () => items.value.filter((item) => item.status !== 2).length
+)
+
+const canAcceptMore = computed(() => activeCount.value < MAX_GALLERY_IMAGES)
 
 async function loadGallery(): Promise<void> {
   loading.value = true
@@ -81,7 +120,7 @@ function onFilesChange(event: Event): void {
     return
   }
 
-  const remaining = MAX_GALLERY_IMAGES - items.value.length - activeTaskCount()
+  const remaining = MAX_GALLERY_IMAGES - activeCount.value - activeTaskCount()
   if (remaining <= 0) {
     message.warning(`游戏画面最多 ${MAX_GALLERY_IMAGES} 张`)
     return
@@ -153,10 +192,97 @@ async function runUploadQueue(files: File[]): Promise<void> {
   }
 }
 
+function openLinkModal(): void {
+  linkForm.external_url = ''
+  linkForm.title = ''
+  linkForm.image_type = 0
+  linkForm.is_spoiler = false
+  linkOpen.value = true
+}
+
+async function submitLink(): Promise<void> {
+  linkSaving.value = true
+  try {
+    const created = unwrapApiData(
+      await createGalgameGalleryImage(props.galgameId, {
+        external_url: linkForm.external_url.trim(),
+        title: linkForm.title.trim() || undefined,
+        image_type: linkForm.image_type,
+        is_spoiler: linkForm.is_spoiler
+      })
+    )
+    message.success(
+      created.status === 0 ? '已提交，等待审核通过后展示' : '图片链接已添加'
+    )
+    linkOpen.value = false
+    await loadGallery()
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '添加图片链接失败'))
+  } finally {
+    linkSaving.value = false
+  }
+}
+
+const batchParsedUrls = computed(() =>
+  [
+    ...new Set(
+      batchForm.urls
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+    )
+  ].slice(0, 100)
+)
+
+const batchValidUrls = computed(() =>
+  batchParsedUrls.value.filter((url) => /^https?:\/\/\S+$/i.test(url))
+)
+
+function openBatchModal(): void {
+  batchForm.urls = ''
+  batchForm.image_type = 0
+  batchForm.is_spoiler = false
+  batchOpen.value = true
+}
+
+async function submitBatch(): Promise<void> {
+  if (batchValidUrls.value.length === 0) {
+    message.warning('未识别到有效的图片 URL')
+    return
+  }
+  batchSaving.value = true
+  try {
+    const result = unwrapApiData(
+      await batchCreateGalgameGalleryImages(props.galgameId, {
+        items: batchValidUrls.value.map((url) => ({
+          external_url: url,
+          image_type: batchForm.image_type,
+          is_spoiler: batchForm.is_spoiler
+        }))
+      })
+    )
+    const parts: string[] = [`新增 ${result.created ?? 0} 张`]
+    if (result.skipped) {
+      parts.push(`跳过 ${result.skipped} 张（重复或超出上限）`)
+    }
+    if (result.failed) {
+      parts.push(`无效 ${result.failed} 条`)
+    }
+    message.success(`${parts.join('，')}，等待审核后展示`)
+    batchOpen.value = false
+    await loadGallery()
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '批量导入失败'))
+  } finally {
+    batchSaving.value = false
+  }
+}
+
 function openEdit(item?: DtoGalleryImageData): void {
   if (!item?.id) {
     return
   }
+  editing.value = item
   editForm.title = item.title ?? ''
   editForm.description = item.description ?? ''
   editForm.image_type = (item.image_type ?? 0) as GalleryImageType
@@ -287,19 +413,41 @@ onMounted(() => {
     <div class="section-head-row">
       <KunHeader
         name="游戏画面"
-        :description="`共 ${items.length} / ${MAX_GALLERY_IMAGES} 张，拖动调整顺序`"
+        :description="`共 ${activeCount} / ${MAX_GALLERY_IMAGES} 张（已拒绝不占名额），拖动调整顺序`"
         scale="h3"
         class="section-heading"
       />
-      <KunButton
-        color="primary"
-        size="sm"
-        :disabled="!canAcceptMore || uploading"
-        @click="pickFiles"
-      >
-        <KunIcon name="lucide:upload" />
-        {{ uploading ? '上传中…' : '上传图片' }}
-      </KunButton>
+      <div class="section-head-actions">
+        <KunButton
+          color="primary"
+          size="sm"
+          :disabled="!canAcceptMore || uploading"
+          @click="pickFiles"
+        >
+          <KunIcon name="lucide:upload" />
+          {{ uploading ? '上传中…' : '上传图片' }}
+        </KunButton>
+        <KunButton
+          color="default"
+          variant="bordered"
+          size="sm"
+          :disabled="!canAcceptMore"
+          @click="openLinkModal"
+        >
+          <KunIcon name="lucide:link" />
+          添加图片链接
+        </KunButton>
+        <KunButton
+          color="default"
+          variant="bordered"
+          size="sm"
+          :disabled="!canAcceptMore"
+          @click="openBatchModal"
+        >
+          <KunIcon name="lucide:list-plus" />
+          批量导入链接
+        </KunButton>
+      </div>
       <input
         ref="fileInput"
         type="file"
@@ -328,7 +476,7 @@ onMounted(() => {
     <a-spin :spinning="loading">
       <KunNull
         v-if="items.length === 0"
-        message="暂无游戏画面，点击上传添加"
+        message="暂无游戏画面，可上传图片或添加外部链接"
       />
 
       <ul v-else class="manager-list">
@@ -371,13 +519,26 @@ onMounted(() => {
             :alt="item.title || `游戏画面 ${index + 1}`"
             loading="lazy"
             decoding="async"
+            referrerpolicy="no-referrer"
           />
 
           <div class="item-info">
-            <p class="item-title">{{ item.title || `画面 ${index + 1}` }}</p>
+            <p class="item-title">
+              {{ item.title || `画面 ${index + 1}` }}
+              <a-tooltip v-if="item.status === 2 && item.reject_reason" :title="item.reject_reason">
+                <KunIcon name="lucide:circle-help" class="reject-help" />
+              </a-tooltip>
+            </p>
             <div class="item-meta">
+              <a-tag :color="GALLERY_IMAGE_STATUS.find((s) => s.value === item.status)?.color">
+                {{ domainLabel(GALLERY_IMAGE_STATUS, item.status) }}
+              </a-tag>
               <a-tag color="default">
                 {{ domainLabel(GALLERY_IMAGE_TYPES, item.image_type) }}
+              </a-tag>
+              <a-tag v-if="item.source_type === 1" color="blue">
+                <KunIcon name="lucide:external-link" class="source-icon" />
+                {{ domainLabel(GALLERY_SOURCE_TYPES, item.source_type) }}
               </a-tag>
               <span class="item-dimension">
                 {{ item.width && item.height ? `${item.width}×${item.height}` : '' }}
@@ -454,6 +615,85 @@ onMounted(() => {
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <a-modal
+      v-model:open="linkOpen"
+      title="添加图片链接"
+      :confirm-loading="linkSaving"
+      ok-text="提交审核"
+      cancel-text="取消"
+      @ok="submitLink"
+    >
+      <a-form layout="vertical" class="edit-form" :model="linkForm" :rules="linkRules">
+        <a-form-item label="图片地址" name="external_url">
+          <a-input
+            v-model:value="linkForm.external_url"
+            placeholder="https://example.com/image.webp"
+          />
+        </a-form-item>
+        <a-form-item label="标题" name="title">
+          <a-input
+            v-model:value="linkForm.title"
+            :maxlength="255"
+            placeholder="可选"
+          />
+        </a-form-item>
+        <a-form-item label="类型" name="image_type">
+          <a-select
+            v-model:value="linkForm.image_type"
+            :options="
+              GALLERY_IMAGE_TYPES.map((type) => ({
+                value: type.value,
+                label: type.label
+              }))
+            "
+          />
+        </a-form-item>
+        <a-form-item label="剧透" name="is_spoiler">
+          <a-switch v-model:checked="linkForm.is_spoiler" />
+          <span class="spoiler-hint">勾选后普通用户需点击才会显示图片</span>
+        </a-form-item>
+      </a-form>
+      <p class="modal-hint">提交后进入待审核状态，审核通过才会公开展示。</p>
+    </a-modal>
+
+    <a-modal
+      v-model:open="batchOpen"
+      title="批量添加游戏画面"
+      :confirm-loading="batchSaving"
+      :ok-text="`导入并提交审核${batchValidUrls.length ? `（${batchValidUrls.length}）` : ''}`"
+      cancel-text="取消"
+      :ok-button-props="{ disabled: batchValidUrls.length === 0 }"
+      @ok="submitBatch"
+    >
+      <a-form layout="vertical" class="edit-form">
+        <a-form-item label="每行一个图片 URL：">
+          <a-textarea
+            v-model:value="batchForm.urls"
+            :rows="8"
+            placeholder="https://xxx.com/001.webp&#10;https://xxx.com/002.webp"
+          />
+        </a-form-item>
+        <a-form-item label="默认类型">
+          <a-select
+            v-model:value="batchForm.image_type"
+            :options="
+              GALLERY_IMAGE_TYPES.map((type) => ({
+                value: type.value,
+                label: type.label
+              }))
+            "
+          />
+        </a-form-item>
+        <a-form-item label="默认剧透">
+          <a-switch v-model:checked="batchForm.is_spoiler" />
+        </a-form-item>
+      </a-form>
+      <p class="modal-hint">
+        共识别到 {{ batchValidUrls.length }} 个有效 URL（自动去重，最多一次
+        100 条）。重复的链接会自动跳过，全部创建为待审核。
+      </p>
+    </a-modal>
   </KunCard>
 </template>
 
@@ -471,6 +711,14 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.section-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .hidden-file-input {
@@ -573,6 +821,9 @@ onMounted(() => {
 }
 
 .item-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin: 0;
   overflow: hidden;
   color: var(--color-foreground);
@@ -582,11 +833,22 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+.reject-help {
+  flex: none;
+  color: var(--color-default-400);
+}
+
 .item-meta {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.source-icon {
+  margin-right: 2px;
+  font-size: 11px;
 }
 
 .item-dimension {
@@ -618,6 +880,13 @@ onMounted(() => {
   margin-left: 10px;
   color: var(--color-default-400);
   font-size: 12px;
+}
+
+.modal-hint {
+  margin: 10px 0 0;
+  color: var(--color-default-400);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 @media (max-width: 767px) {

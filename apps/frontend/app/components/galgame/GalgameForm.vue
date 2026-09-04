@@ -20,6 +20,11 @@ import type {
 } from '~/api/generated/models'
 import type { ImageAsset } from '~/types/image'
 
+// Cherry Markdown is heavy; only pull its chunk when the form mounts.
+const MarkdownEditor = defineAsyncComponent(
+  () => import('~/components/post/MarkdownEditor.vue')
+)
+
 const props = defineProps<{
   galgameId?: number
 }>()
@@ -371,12 +376,25 @@ async function submit(): Promise<void> {
           />
         </a-form-item>
 
-        <a-form-item label="简介">
-          <a-textarea
-            v-model:value="formState.description"
-            :rows="6"
-            placeholder="填写 Galgame 简介"
-          />
+        <a-form-item label="简介（支持 Markdown）">
+          <ClientOnly>
+            <MarkdownEditor
+              v-model="formState.description"
+              upload-category="galgames"
+            />
+            <template #fallback>
+              <a-textarea
+                :value="formState.description"
+                :rows="8"
+                placeholder="填写 Galgame 简介，支持 Markdown"
+                @update:value="
+                  (value: string) => {
+                    formState.description = value
+                  }
+                "
+              />
+            </template>
+          </ClientOnly>
         </a-form-item>
 
         <a-form-item>

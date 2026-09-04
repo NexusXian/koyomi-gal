@@ -17,6 +17,8 @@ import type {
   DtoArticleDataResponse,
   DtoBackgroundPresetDataResponse,
   DtoBannerDataResponse,
+  DtoBatchCreateGalleryRequest,
+  DtoBatchReviewGalleryRequest,
   DtoBatchUpdateGalgameRequest,
   DtoBatchUpdateGalgameResponse,
   DtoCreateArticleRequest,
@@ -26,8 +28,11 @@ import type {
   DtoFeedbackDataResponse,
   DtoGalgameDataResponse,
   DtoGalgameListResponse,
+  DtoGalleryBatchResponse,
   DtoGalleryDataResponse,
   DtoGalleryListResponse,
+  DtoGalleryReviewBatchResponse,
+  DtoGalleryReviewListResponse,
   DtoHandleFeedbackRequest,
   DtoHandleResourceReportRequest,
   DtoImageDataResponse,
@@ -36,6 +41,7 @@ import type {
   DtoResourceReportDataResponse,
   DtoResourceReportListResponse,
   DtoReviewGalgameRequest,
+  DtoReviewGalleryImageRequest,
   DtoReviewResourceRequest,
   DtoUpdateArticleRequest,
   DtoUpdateBackgroundPresetRequest,
@@ -50,6 +56,7 @@ import type {
   ListAdminImagesParams,
   ListAdminPostsParams,
   ListAdminResourcesParams,
+  ListGalleryReviewsParams,
   ListResourceReportsParams,
   ResponseMessageResponse
 } from '../models';
@@ -639,7 +646,7 @@ export const getListAdminGalgameGalleryUrl = (id: number,) => {
 }
 
 /**
- * 返回任意状态 Galgame 的游戏画面；需要 galgame_gallery:manage 权限
+ * 返回任意状态 Galgame 的全部游戏画面（含待审核 / 已拒绝）；需要 galgame_gallery:manage 权限
  * @summary 管理端查询 Galgame 游戏画面
  */
 export const listAdminGalgameGallery = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryListResponse> => {
@@ -663,7 +670,7 @@ export const getCreateGalgameGalleryImageUrl = (id: number,) => {
 }
 
 /**
- * 把已有图片资源（image_assets）加入 Galgame 画廊，追加到末尾；需要 galgame_gallery:manage 权限
+ * 添加本站图片资源（asset_id）或外部图片链接（external_url），二选一；创建后进入待审核状态，需审核通过后才会公开展示；需要 galgame_gallery:manage 权限
  * @summary 添加游戏画面
  */
 export const createGalgameGalleryImage = async (id: number,
@@ -681,6 +688,37 @@ return apiMutator<DtoGalleryDataResponse>(getCreateGalgameGalleryImageUrl(id),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoCreateGalleryImageRequest)
+  }
+);}
+
+
+export const getBatchCreateGalgameGalleryImagesUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/gallery/batch`
+}
+
+/**
+ * 一次导入多个外部图片 URL，重复（本批次内或画廊中已存在）自动跳过，无效 URL 计入 failed；全部创建为待审核；需要 galgame_gallery:manage 权限
+ * @summary 批量导入外部图片链接
+ */
+export const batchCreateGalgameGalleryImages = async (id: number,
+    dtoBatchCreateGalleryRequest: DtoBatchCreateGalleryRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryBatchResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalleryBatchResponse>(getBatchCreateGalgameGalleryImagesUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoBatchCreateGalleryRequest)
   }
 );}
 
@@ -802,6 +840,122 @@ return apiMutator<DtoGalgameDataResponse>(getReviewGalgameUrl(id),
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoReviewGalgameRequest)
+  }
+);}
+
+
+export const getListGalleryReviewsUrl = (params?: ListGalleryReviewsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/gallery-images?${stringifiedParams}` : `/api/v1/admin/gallery-images`
+}
+
+/**
+ * 跨 Galgame 的游戏画面审核列表，可按状态 / 游戏 / 来源过滤；需要 galgame_gallery:review 权限
+ * @summary 插图审核队列
+ */
+export const listGalleryReviews = async (params?: ListGalleryReviewsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryReviewListResponse> => {
+
+  return apiMutator<DtoGalleryReviewListResponse>(getListGalleryReviewsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getBatchReviewGalleryImagesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/gallery-images/batch-review`
+}
+
+/**
+ * 一次通过或拒绝多个游戏画面，事务执行；action=approve 或 reject，reject 可附带理由；需要 galgame_gallery:review 权限
+ * @summary 批量审核游戏画面
+ */
+export const batchReviewGalleryImages = async (dtoBatchReviewGalleryRequest: DtoBatchReviewGalleryRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryReviewBatchResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalleryReviewBatchResponse>(getBatchReviewGalleryImagesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoBatchReviewGalleryRequest)
+  }
+);}
+
+
+export const getApproveGalleryImageUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/gallery-images/${id}/approve`
+}
+
+/**
+ * 将游戏画面标记为已通过（published），游戏已发布时会为提交者记录一次贡献；需要 galgame_gallery:review 权限
+ * @summary 通过游戏画面审核
+ */
+export const approveGalleryImage = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryDataResponse> => {
+
+  return apiMutator<DtoGalleryDataResponse>(getApproveGalleryImageUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export const getRejectGalleryImageUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/gallery-images/${id}/reject`
+}
+
+/**
+ * 将游戏画面标记为已拒绝（rejected），可附带拒绝理由；需要 galgame_gallery:review 权限
+ * @summary 拒绝游戏画面审核
+ */
+export const rejectGalleryImage = async (id: number,
+    dtoReviewGalleryImageRequest?: DtoReviewGalleryImageRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalleryDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalleryDataResponse>(getRejectGalleryImageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoReviewGalleryImageRequest)
   }
 );}
 

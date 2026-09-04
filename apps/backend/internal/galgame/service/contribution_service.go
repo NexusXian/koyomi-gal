@@ -40,6 +40,22 @@ func (s *ContributionService) Transaction(ctx context.Context, fn func(tx *gorm.
 	return s.repository.Transaction(ctx, fn)
 }
 
+// HasSourceContribution reports whether a contribution already exists for the
+// given source, so an entity credited once (e.g. a gallery image) is never
+// double-counted across review transitions.
+func (s *ContributionService) HasSourceContribution(
+	ctx context.Context,
+	sourceType string,
+	sourceID uint,
+	tx ...*gorm.DB,
+) (bool, error) {
+	repo := s.repository
+	if len(tx) > 0 && tx[0] != nil {
+		repo = repository.NewContributionRepository(tx[0], s.publicURL)
+	}
+	return repo.ExistsBySource(ctx, sourceType, sourceID)
+}
+
 func (s *ContributionService) RecordContribution(
 	ctx context.Context,
 	input RecordContributionInput,

@@ -1199,7 +1199,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "返回任意状态 Galgame 的游戏画面；需要 galgame_gallery:manage 权限",
+                "description": "返回任意状态 Galgame 的全部游戏画面（含待审核 / 已拒绝）；需要 galgame_gallery:manage 权限",
                 "produces": [
                     "application/json"
                 ],
@@ -1262,7 +1262,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "把已有图片资源（image_assets）加入 Galgame 画廊，追加到末尾；需要 galgame_gallery:manage 权限",
+                "description": "添加本站图片资源（asset_id）或外部图片链接（external_url），二选一；创建后进入待审核状态，需审核通过后才会公开展示；需要 galgame_gallery:manage 权限",
                 "consumes": [
                     "application/json"
                 ],
@@ -1294,7 +1294,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "添加成功",
+                        "description": "添加成功（status=0 待审核）",
                         "schema": {
                             "$ref": "#/definitions/dto.GalleryDataResponse"
                         }
@@ -1331,6 +1331,89 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "添加游戏画面失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/gallery/batch": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "一次导入多个外部图片 URL，重复（本批次内或画廊中已存在）自动跳过，无效 URL 计入 failed；全部创建为待审核；需要 galgame_gallery:manage 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "批量导入外部图片链接",
+                "operationId": "batchCreateGalgameGalleryImages",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "批量导入请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchCreateGalleryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导入结果统计",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryBatchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "数量已达上限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "批量导入失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -1645,6 +1728,289 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "审核 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/gallery-images": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "跨 Galgame 的游戏画面审核列表，可按状态 / 游戏 / 来源过滤；需要 galgame_gallery:review 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "插图审核队列",
+                "operationId": "listGalleryReviews",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "审核状态：0 待审核 / 1 已通过 / 2 已拒绝",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按 Galgame 过滤",
+                        "name": "galgame_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "来源：0 本站上传 / 1 外部链接",
+                        "name": "source_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量（1-100）",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryReviewListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询审核列表失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/gallery-images/batch-review": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "一次通过或拒绝多个游戏画面，事务执行；action=approve 或 reject，reject 可附带理由；需要 galgame_gallery:review 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "批量审核游戏画面",
+                "operationId": "batchReviewGalleryImages",
+                "parameters": [
+                    {
+                        "description": "批量审核请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchReviewGalleryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "实际审核数量",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryReviewBatchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "批量审核失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/gallery-images/{id}/approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将游戏画面标记为已通过（published），游戏已发布时会为提交者记录一次贡献；需要 galgame_gallery:review 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "通过游戏画面审核",
+                "operationId": "approveGalleryImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "画廊图片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核后的游戏画面",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "画廊图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "审核失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/gallery-images/{id}/reject": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将游戏画面标记为已拒绝（rejected），可附带拒绝理由；需要 galgame_gallery:review 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "拒绝游戏画面审核",
+                "operationId": "rejectGalleryImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "画廊图片 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "拒绝理由",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewGalleryImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核后的游戏画面",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalleryDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 或请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "画廊图片不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "审核失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -5205,7 +5571,7 @@ const docTemplate = `{
         },
         "/api/v1/galgames/{id}/gallery": {
             "get": {
-                "description": "返回已发布 Galgame 的游戏截图 / CG 画廊，按 sort_order 排序，不分页",
+                "description": "返回已发布 Galgame 的已通过（published）游戏截图 / CG 画廊，按 sort_order 排序，不分页",
                 "produces": [
                     "application/json"
                 ],
@@ -9790,6 +10156,107 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BatchCreateGalleryRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.BatchGalleryImageItem"
+                    }
+                }
+            }
+        },
+        "dto.BatchGalleryImageItem": {
+            "type": "object",
+            "required": [
+                "external_url"
+            ],
+            "properties": {
+                "external_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://source-a.com/images/123.jpg"
+                },
+                "image_type": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                    ],
+                    "example": 0
+                },
+                "is_spoiler": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "标题画面"
+                }
+            }
+        },
+        "dto.BatchGalleryResultData": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer",
+                    "example": 18
+                },
+                "failed": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "skipped": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "dto.BatchReviewGalleryRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "ids"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "approve",
+                        "reject"
+                    ],
+                    "example": "approve"
+                },
+                "ids": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "重复图片"
+                }
+            }
+        },
         "dto.BatchUpdateGalgameData": {
             "type": "object",
             "properties": {
@@ -10471,9 +10938,6 @@ const docTemplate = `{
         },
         "dto.CreateGalleryImageRequest": {
             "type": "object",
-            "required": [
-                "asset_id"
-            ],
             "properties": {
                 "asset_id": {
                     "type": "integer",
@@ -10482,6 +10946,11 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "游戏标题界面截图"
+                },
+                "external_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://source-a.com/images/123.jpg"
                 },
                 "image_type": {
                     "type": "integer",
@@ -11568,6 +12037,22 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.GalleryBatchResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BatchGalleryResultData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.GalleryDataResponse": {
             "type": "object",
             "properties": {
@@ -11595,6 +12080,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "游戏标题界面截图"
                 },
+                "external_url": {
+                    "type": "string",
+                    "example": "https://source-a.com/images/123.jpg"
+                },
                 "height": {
                     "type": "integer",
                     "example": 1080
@@ -11611,9 +12100,21 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "reject_reason": {
+                    "type": "string",
+                    "example": "图片与游戏无关"
+                },
                 "sort_order": {
                     "type": "integer",
                     "example": 0
+                },
+                "source_type": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
                 },
                 "title": {
                     "type": "string",
@@ -11653,6 +12154,129 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.GalleryListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.GalleryReviewBatchResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "type": "integer",
+                    "example": 18
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.GalleryReviewItemData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_username": {
+                    "type": "string",
+                    "example": "NexusXian"
+                },
+                "external_url": {
+                    "type": "string",
+                    "example": "https://source-a.com/images/123.jpg"
+                },
+                "galgame_id": {
+                    "type": "integer",
+                    "example": 101
+                },
+                "galgame_slug": {
+                    "type": "string",
+                    "example": "summer-pockets"
+                },
+                "galgame_title": {
+                    "type": "string",
+                    "example": "Summer Pockets"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "image_type": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "is_spoiler": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "reject_reason": {
+                    "type": "string",
+                    "example": "图片与游戏无关"
+                },
+                "reviewed_at": {
+                    "type": "string"
+                },
+                "reviewed_by_username": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "source_type": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "title": {
+                    "type": "string",
+                    "example": "标题画面"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://source-a.com/images/123.jpg"
+                }
+            }
+        },
+        "dto.GalleryReviewListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GalleryReviewItemData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 12
+                }
+            }
+        },
+        "dto.GalleryReviewListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GalleryReviewListData"
                 },
                 "msg": {
                     "type": "string",
@@ -13629,6 +14253,16 @@ const docTemplate = `{
                         2
                     ],
                     "example": 1
+                }
+            }
+        },
+        "dto.ReviewGalleryImageRequest": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "图片与游戏无关"
                 }
             }
         },

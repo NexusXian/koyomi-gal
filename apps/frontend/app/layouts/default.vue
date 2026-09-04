@@ -31,6 +31,7 @@ const navigationItems = computed(() => {
     isAuthenticated.value &&
     hasAny([
       'galgame:review',
+      'galgame_gallery:review',
       'galgame:import',
       'galgame:import:batch',
       'resource_report:list',
@@ -63,7 +64,9 @@ const navigationItems = computed(() => {
   ) {
     const target = has('galgame:review')
       ? '/admin/galgames'
-      : has('resource_report:list')
+      : has('galgame_gallery:review')
+        ? '/admin/gallery-reviews'
+        : has('resource_report:list')
         ? '/admin/reports'
         : has('feedback:read')
           ? '/admin/feedback'

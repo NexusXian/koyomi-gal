@@ -72,6 +72,8 @@ RETURNING id
 	return id
 }
 
+func assetPtr(id uint) *uint { return &id }
+
 func TestGalleryListScoping(t *testing.T) {
 	svc, db, actor := newGalleryTestService(t)
 	ctx := context.Background()
@@ -80,20 +82,42 @@ func TestGalleryListScoping(t *testing.T) {
 	pending := createGalleryGalgame(t, db, "gallery-pending", model.GalgameStatusPending)
 
 	asset := createGalleryAsset(t, db, "image/webp")
-	if _, err := svc.CreateGalleryImage(ctx, published, actor, &dto.CreateGalleryImageRequest{
-		AssetID: asset, Title: "截图一", ImageType: model.GalleryImageTypeScreenshot,
-	}); err != nil {
+	created, err := svc.CreateGalleryImage(ctx, published, actor, &dto.CreateGalleryImageRequest{
+		AssetID: assetPtr(asset), Title: "截图一", ImageType: model.GalleryImageTypeScreenshot,
+	})
+	if err != nil {
 		t.Fatalf("create gallery image: %v", err)
 	}
+	if created.Status != model.GalleryImageStatusPending {
+		t.Fatalf("new gallery image must start pending, got %d", created.Status)
+	}
 
+	// Pending images are invisible on the public gallery.
 	data, err := svc.ListPublishedGallery(ctx, published)
+	if err != nil || data.Total != 0 {
+		t.Fatalf("pending image must not be publicly listed, got total=%d err=%v", data.Total, err)
+	}
+
+	adminData, err := svc.ListAdminGallery(ctx, published)
+	if err != nil || adminData.Total != 1 || len(adminData.Items) != 1 {
+		t.Fatalf("admin listing must show pending image, got total=%d err=%v", adminData.Total, err)
+	}
+
+	if _, err := svc.ReviewGalleryImages(ctx, ReviewGalleryImagesInput{
+		IDs: []uint{created.ID}, Approve: true, AdminID: actor,
+	}); err != nil {
+		t.Fatalf("approve gallery image: %v", err)
+	}
+
+	data, err = svc.ListPublishedGallery(ctx, published)
 	if err != nil || data.Total != 1 || len(data.Items) != 1 {
 		t.Fatalf("expected 1 published gallery item, got total=%d items=%d err=%v", data.Total, len(data.Items), err)
 	}
 	if !strings.HasPrefix(data.Items[0].URL, "https://img.example.com/galgames/") {
 		t.Fatalf("unexpected url: %s", data.Items[0].URL)
 	}
-	if data.Items[0].AssetID != asset || data.Items[0].SortOrder != 1 || data.Items[0].Title != "截图一" {
+	if data.Items[0].AssetID == nil || *data.Items[0].AssetID != asset ||
+		data.Items[0].SortOrder != 1 || data.Items[0].Title != "截图一" {
 		t.Fatalf("unexpected item payload: %+v", data.Items[0])
 	}
 
@@ -104,9 +128,9 @@ func TestGalleryListScoping(t *testing.T) {
 		t.Fatalf("expected ErrGalleryGalgameNotFound, got %v", err)
 	}
 
-	adminData, err := svc.ListAdminGallery(ctx, pending)
-	if err != nil || adminData.Total != 0 {
-		t.Fatalf("admin listing must work for pending galgame, got %+v err=%v", adminData, err)
+	adminPending, err := svc.ListAdminGallery(ctx, pending)
+	if err != nil || adminPending.Total != 0 {
+		t.Fatalf("admin listing must work for pending galgame, got %+v err=%v", adminPending, err)
 	}
 	if _, err := svc.ListAdminGallery(ctx, 999999); !errors.Is(err, ErrGalleryGalgameNotFound) {
 		t.Fatalf("expected ErrGalleryGalgameNotFound for admin listing, got %v", err)
@@ -118,15 +142,23 @@ func TestGalleryCreateValidation(t *testing.T) {
 	ctx := context.Background()
 	galgameID := createGalleryGalgame(t, db, "gallery-create", model.GalgameStatusPublished)
 
-	if _, err := svc.CreateGalleryImage(ctx, 999999, actor, &dto.CreateGalleryImageRequest{AssetID: 1}); !errors.Is(err, ErrGalleryGalgameNotFound) {
+	if _, err := svc.CreateGalleryImage(ctx, 999999, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(1)}); !errors.Is(err, ErrGalleryGalgameNotFound) {
 		t.Fatalf("expected ErrGalleryGalgameNotFound, got %v", err)
 	}
-	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: 999999}); !errors.Is(err, ErrGalleryAssetNotFound) {
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{}); !errors.Is(err, ErrGalleryInvalidSource) {
+		t.Fatalf("expected ErrGalleryInvalidSource for empty source, got %v", err)
+	}
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		AssetID: assetPtr(1), ExternalURL: "https://example.com/a.jpg",
+	}); !errors.Is(err, ErrGalleryInvalidSource) {
+		t.Fatalf("expected ErrGalleryInvalidSource for both sources, got %v", err)
+	}
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(999999)}); !errors.Is(err, ErrGalleryAssetNotFound) {
 		t.Fatalf("expected ErrGalleryAssetNotFound, got %v", err)
 	}
 
 	pdfAsset := createGalleryAsset(t, db, "application/pdf")
-	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: pdfAsset}); !errors.Is(err, ErrGalleryAssetNotFound) {
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(pdfAsset)}); !errors.Is(err, ErrGalleryAssetNotFound) {
 		t.Fatalf("expected ErrGalleryAssetNotFound for non-image asset, got %v", err)
 	}
 
@@ -134,19 +166,54 @@ func TestGalleryCreateValidation(t *testing.T) {
 	if err := db.Exec("UPDATE image_assets SET status = ? WHERE id = ?", imageModel.ImageStatusPending, pendingAsset).Error; err != nil {
 		t.Fatalf("mark asset pending: %v", err)
 	}
-	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: pendingAsset}); !errors.Is(err, ErrGalleryAssetNotFound) {
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(pendingAsset)}); !errors.Is(err, ErrGalleryAssetNotFound) {
 		t.Fatalf("expected ErrGalleryAssetNotFound for inactive asset, got %v", err)
+	}
+
+	for _, invalid := range []string{
+		"javascript:alert(1)",
+		"data:image/png;base64,AAAA",
+		"ftp://example.com/a.jpg",
+		"example.com/a.jpg",
+		"http://user:pass@example.com/a.jpg",
+		"https://example.com/with space.jpg",
+		"http://",
+		"https://" + strings.Repeat("a", 2100),
+	} {
+		if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+			ExternalURL: invalid,
+		}); !errors.Is(err, ErrGalleryInvalidURL) {
+			t.Fatalf("expected ErrGalleryInvalidURL for %q, got %v", invalid, err)
+		}
+	}
+
+	external, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		ExternalURL: "https://source-a.com/images/123.jpg",
+	})
+	if err != nil || external.ID == 0 || external.Status != model.GalleryImageStatusPending {
+		t.Fatalf("unexpected external create result: %+v err=%v", external, err)
+	}
+	if external.URL != "https://source-a.com/images/123.jpg" || external.SourceType != model.GallerySourceExternal {
+		t.Fatalf("unexpected external payload: %+v", external)
+	}
+	if external.Width != nil || external.Height != nil {
+		t.Fatalf("external image must not carry dimensions: %+v", external)
+	}
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		ExternalURL: "https://source-a.com/images/123.jpg",
+	}); !errors.Is(err, ErrGalleryURLDuplicate) {
+		t.Fatalf("expected ErrGalleryURLDuplicate, got %v", err)
 	}
 
 	asset := createGalleryAsset(t, db, "image/webp")
 	created, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
-		AssetID: asset, Title: "第一张", ImageType: model.GalleryImageTypeCG, IsSpoiler: true,
+		AssetID: assetPtr(asset), Title: "第一张", ImageType: model.GalleryImageTypeCG, IsSpoiler: true,
 	})
-	if err != nil || created.ID == 0 || created.SortOrder != 1 || !created.IsSpoiler || created.ImageType != model.GalleryImageTypeCG {
+	if err != nil || created.ID == 0 || created.SortOrder != 2 || !created.IsSpoiler || created.ImageType != model.GalleryImageTypeCG {
 		t.Fatalf("unexpected create result: %+v err=%v", created, err)
 	}
 
-	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: asset}); !errors.Is(err, ErrGalleryAssetDuplicate) {
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(asset)}); !errors.Is(err, ErrGalleryAssetDuplicate) {
 		t.Fatalf("expected ErrGalleryAssetDuplicate, got %v", err)
 	}
 }
@@ -156,26 +223,194 @@ func TestGalleryLimitAndAppendOrder(t *testing.T) {
 	ctx := context.Background()
 	galgameID := createGalleryGalgame(t, db, "gallery-limit", model.GalgameStatusPublished)
 
+	var ids []uint
 	for i := 0; i < MaxGalleryImages; i++ {
-		asset := createGalleryAsset(t, db, "image/webp")
-		if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: asset}); err != nil {
+		created, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+			ExternalURL: fmt.Sprintf("https://example.com/limit/%d.jpg", i),
+		})
+		if err != nil {
 			t.Fatalf("create gallery image %d: %v", i, err)
 		}
+		ids = append(ids, created.ID)
 	}
 
 	extra := createGalleryAsset(t, db, "image/webp")
-	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: extra}); !errors.Is(err, ErrGalleryLimitExceeded) {
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(extra)}); !errors.Is(err, ErrGalleryLimitExceeded) {
 		t.Fatalf("expected ErrGalleryLimitExceeded, got %v", err)
+	}
+	if _, err := svc.BatchCreateGalleryImages(ctx, galgameID, actor, &dto.BatchCreateGalleryRequest{
+		Items: []dto.BatchGalleryImageItem{{ExternalURL: "https://example.com/over-limit.jpg"}},
+	}); !errors.Is(err, ErrGalleryLimitExceeded) {
+		t.Fatalf("expected ErrGalleryLimitExceeded for batch, got %v", err)
+	}
+
+	// Rejected images no longer consume slots.
+	if _, err := svc.ReviewGalleryImages(ctx, ReviewGalleryImagesInput{
+		IDs: ids, Approve: false, Reason: "重置名额", AdminID: actor,
+	}); err != nil {
+		t.Fatalf("reject gallery images: %v", err)
+	}
+	if _, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(extra)}); err != nil {
+		t.Fatalf("create after rejecting all images: %v", err)
 	}
 
 	data, err := svc.ListAdminGallery(ctx, galgameID)
-	if err != nil || data.Total != MaxGalleryImages {
-		t.Fatalf("expected %d images, got %d err=%v", MaxGalleryImages, data.Total, err)
+	if err != nil || data.Total != MaxGalleryImages+1 {
+		t.Fatalf("expected %d images, got %d err=%v", MaxGalleryImages+1, data.Total, err)
 	}
-	for i, item := range data.Items {
+	for i, item := range data.Items[:MaxGalleryImages] {
 		if item.SortOrder != i+1 {
 			t.Fatalf("expected append order %d at index %d, got %d", i+1, i, item.SortOrder)
 		}
+	}
+}
+
+func TestGalleryBatchCreate(t *testing.T) {
+	svc, db, actor := newGalleryTestService(t)
+	ctx := context.Background()
+	galgameID := createGalleryGalgame(t, db, "gallery-batch", model.GalgameStatusPublished)
+
+	existing, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		ExternalURL: "https://source-a.com/existing.webp",
+	})
+	if err != nil {
+		t.Fatalf("seed existing image: %v", err)
+	}
+
+	result, err := svc.BatchCreateGalleryImages(ctx, galgameID, actor, &dto.BatchCreateGalleryRequest{
+		Items: []dto.BatchGalleryImageItem{
+			{ExternalURL: "https://source-a.com/1.webp", ImageType: model.GalleryImageTypeScreenshot},
+			{ExternalURL: "https://source-a.com/2.webp", ImageType: model.GalleryImageTypeCG, IsSpoiler: true},
+			{ExternalURL: " https://source-a.com/1.webp "}, // trims to a duplicate
+			{ExternalURL: "https://source-a.com/existing.webp"},
+			{ExternalURL: "javascript:alert(1)"},
+			{ExternalURL: ""},
+		},
+	})
+	if err != nil {
+		t.Fatalf("batch create: %v", err)
+	}
+	if result.Created != 2 || result.Skipped != 2 || result.Failed != 2 {
+		t.Fatalf("unexpected batch result: %+v", result)
+	}
+
+	// Re-running the same import is idempotent.
+	result, err = svc.BatchCreateGalleryImages(ctx, galgameID, actor, &dto.BatchCreateGalleryRequest{
+		Items: []dto.BatchGalleryImageItem{
+			{ExternalURL: "https://source-a.com/1.webp"},
+			{ExternalURL: "https://source-a.com/2.webp"},
+		},
+	})
+	if err != nil || result.Created != 0 || result.Skipped != 2 {
+		t.Fatalf("expected idempotent rerun, got %+v err=%v", result, err)
+	}
+
+	data, err := svc.ListAdminGallery(ctx, galgameID)
+	if err != nil || data.Total != 3 {
+		t.Fatalf("expected 3 gallery images, got %d err=%v", data.Total, err)
+	}
+	for _, item := range data.Items {
+		if item.Status != model.GalleryImageStatusPending {
+			t.Fatalf("batch import must create pending images, got %+v", item)
+		}
+	}
+	if existing.ID == 0 {
+		t.Fatalf("existing image id missing")
+	}
+}
+
+func TestGalleryReviewFlow(t *testing.T) {
+	svc, db, actor := newGalleryTestService(t)
+	ctx := context.Background()
+	galgameID := createGalleryGalgame(t, db, "gallery-review", model.GalgameStatusPublished)
+	reviewer := testutil.CreateUser(t, db, "gallery-reviewer")
+
+	approveMe, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		ExternalURL: "https://source-a.com/approve.webp",
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	rejectMe, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		ExternalURL: "https://source-a.com/reject.webp",
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	batchOne, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		ExternalURL: "https://source-a.com/batch1.webp",
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	batchTwo, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+		ExternalURL: "https://source-a.com/batch2.webp",
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	reviewed, err := svc.ReviewGalleryImages(ctx, ReviewGalleryImagesInput{
+		IDs: []uint{approveMe.ID}, Approve: true, AdminID: reviewer,
+	})
+	if err != nil || reviewed != 1 {
+		t.Fatalf("approve: reviewed=%d err=%v", reviewed, err)
+	}
+
+	reviewed, err = svc.ReviewGalleryImages(ctx, ReviewGalleryImagesInput{
+		IDs: []uint{rejectMe.ID}, Approve: false, Reason: "图片与游戏无关", AdminID: reviewer,
+	})
+	if err != nil || reviewed != 1 {
+		t.Fatalf("reject: reviewed=%d err=%v", reviewed, err)
+	}
+
+	reviewed, err = svc.ReviewGalleryImages(ctx, ReviewGalleryImagesInput{
+		IDs: []uint{batchOne.ID, batchTwo.ID, 999999}, Approve: true, AdminID: reviewer,
+	})
+	if err != nil || reviewed != 2 {
+		t.Fatalf("batch approve: reviewed=%d err=%v", reviewed, err)
+	}
+
+	var row model.GalleryImage
+	if err := db.First(&row, rejectMe.ID).Error; err != nil {
+		t.Fatalf("load rejected image: %v", err)
+	}
+	if row.Status != model.GalleryImageStatusRejected || row.RejectReason != "图片与游戏无关" ||
+		row.ReviewedBy == nil || *row.ReviewedBy != reviewer || row.ReviewedAt == nil {
+		t.Fatalf("unexpected rejected row: %+v", row)
+	}
+
+	// Only published items reach the public gallery.
+	public, err := svc.ListPublishedGallery(ctx, galgameID)
+	if err != nil || public.Total != 3 {
+		t.Fatalf("expected 3 published images, got %d err=%v", public.Total, err)
+	}
+
+	// Review queue lists pending images with galgame + submitter context.
+	pending := model.GalleryImageStatusPending
+	queue, err := svc.ListGalleryReviews(ctx, GalleryReviewQuery{Status: &pending})
+	if err != nil || queue.Total != 0 {
+		t.Fatalf("expected empty pending queue after review, got %d err=%v", queue.Total, err)
+	}
+	rejectedStatus := model.GalleryImageStatusRejected
+	queue, err = svc.ListGalleryReviews(ctx, GalleryReviewQuery{Status: &rejectedStatus})
+	if err != nil || queue.Total != 1 {
+		t.Fatalf("expected 1 rejected in queue, got %d err=%v", queue.Total, err)
+	}
+	if len(queue.Items) != 1 || queue.Items[0].GalgameID != galgameID ||
+		queue.Items[0].GalgameTitle != "gallery-review" || queue.Items[0].CreatedByUsername == "" ||
+		queue.Items[0].ReviewedByUsername == "" || queue.Items[0].RejectReason != "图片与游戏无关" {
+		t.Fatalf("unexpected review item: %+v", queue.Items)
+	}
+
+	externalFilter := model.GallerySourceExternal
+	queue, err = svc.ListGalleryReviews(ctx, GalleryReviewQuery{SourceType: &externalFilter})
+	if err != nil || queue.Total != 4 {
+		t.Fatalf("expected 4 external images in queue, got %d err=%v", queue.Total, err)
+	}
+	queue, err = svc.ListGalleryReviews(ctx, GalleryReviewQuery{GalgameID: 999999})
+	if err != nil || queue.Total != 0 {
+		t.Fatalf("expected empty queue for unknown galgame, got %d err=%v", queue.Total, err)
 	}
 }
 
@@ -186,7 +421,7 @@ func TestGalleryUpdateDelete(t *testing.T) {
 	otherID := createGalleryGalgame(t, db, "gallery-update-other", model.GalgameStatusPublished)
 
 	asset := createGalleryAsset(t, db, "image/webp")
-	created, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: asset})
+	created, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: assetPtr(asset)})
 	if err != nil {
 		t.Fatalf("create gallery image: %v", err)
 	}
@@ -233,16 +468,18 @@ func TestGalleryReorder(t *testing.T) {
 
 	var ids []uint
 	for i := 0; i < 3; i++ {
-		asset := createGalleryAsset(t, db, "image/webp")
-		created, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{AssetID: asset})
+		created, err := svc.CreateGalleryImage(ctx, galgameID, actor, &dto.CreateGalleryImageRequest{
+			AssetID: assetPtr(createGalleryAsset(t, db, "image/webp")),
+		})
 		if err != nil {
 			t.Fatalf("create gallery image %d: %v", i, err)
 		}
 		ids = append(ids, created.ID)
 	}
 
-	otherAsset := createGalleryAsset(t, db, "image/webp")
-	otherCreated, err := svc.CreateGalleryImage(ctx, otherID, actor, &dto.CreateGalleryImageRequest{AssetID: otherAsset})
+	otherCreated, err := svc.CreateGalleryImage(ctx, otherID, actor, &dto.CreateGalleryImageRequest{
+		AssetID: assetPtr(createGalleryAsset(t, db, "image/webp")),
+	})
 	if err != nil {
 		t.Fatalf("create other gallery image: %v", err)
 	}
