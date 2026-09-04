@@ -2,6 +2,7 @@
 import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import {
+  batchDeleteGalgames,
   batchUpdateGalgames,
   getAdminGalgame,
   listAdminGalgames,
@@ -35,7 +36,13 @@ const batchAgeOpen = ref(false)
 const batchAgeValue = ref<number>(0)
 const batchCoverOpen = ref(false)
 const batchCoverMark = ref<'mark' | 'unmark'>('mark')
+const batchDeleteOpen = ref(false)
 const batchSubmitting = ref(false)
+const rowDeletingId = ref<number | null>(null)
+
+const fallbackCover = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="100%" height="100%" fill="#e9e5f5"/><text x="50%" y="50%" text-anchor="middle" font-size="64" fill="#9b8ec4">G</text></svg>'
+)}`
 
 const GALGAME_STATUS_OPTIONS = [
   { value: 0, label: '待审核' },
@@ -270,10 +277,57 @@ async function submitBatchCover(): Promise<void> {
   }
 }
 
+async function removeGalgame(item: DtoGalgameListItem): Promise<void> {
+  if (!item.id || rowDeletingId.value) {
+    return
+  }
+  rowDeletingId.value = item.id
+  try {
+    unwrapApiData(await batchDeleteGalgames({ ids: [item.id] }), '删除失败')
+    message.success(`「${item.title ?? item.id}」已删除`)
+    if (selectedKeys.value.length > 0) {
+      selectedKeys.value = selectedKeys.value.filter((key) => key !== item.id)
+    }
+    await load()
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '删除失败'))
+  } finally {
+    rowDeletingId.value = null
+  }
+}
+
+async function submitBatchDelete(): Promise<void> {
+  if (batchSubmitting.value || selectedKeys.value.length === 0) {
+    return
+  }
+  batchSubmitting.value = true
+  try {
+    const data = unwrapApiData(
+      await batchDeleteGalgames({ ids: selectedKeys.value }),
+      '批量删除失败'
+    )
+    message.success(`已删除 ${data.deleted ?? 0} 个 Galgame`)
+    batchDeleteOpen.value = false
+    clearSelection()
+    await load()
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '批量删除失败'))
+  } finally {
+    batchSubmitting.value = false
+  }
+}
+
 const canUpdate = computed(() => has('galgame:update'))
+const canDelete = computed(() => has('galgame:delete'))
+const canSelect = computed(() => canUpdate.value || canDelete.value)
 
 const columns = computed<TableColumnsType>(() => [
   { title: 'ID', dataIndex: 'id', width: 70 },
+  {
+    title: '封面',
+    key: 'cover',
+    width: 76
+  },
   {
     title: '标题',
     dataIndex: 'title',
@@ -310,13 +364,15 @@ const columns = computed<TableColumnsType>(() => [
     key: 'favorite',
     width: 70
   },
-  ...(canUpdate.value
-    ? [{ title: '操作', key: 'actions', width: 230, fixed: 'right' as const }]
-    : [])
+  ...(
+    canUpdate.value || canDelete.value
+      ? [{ title: '操作', key: 'actions', width: 260, fixed: 'right' as const }]
+      : []
+  )
 ])
 
 const rowSelection = computed(() =>
-  canUpdate.value
+  canSelect.value
     ? {
         selectedRowKeys: selectedKeys.value,
         onChange: onSelectionChange
@@ -375,11 +431,31 @@ const rowSelection = computed(() =>
       </div>
     </KunCard>
 
-    <div v-if="canUpdate && selectedKeys.length > 0" class="batch-bar">
+    <div v-if="canSelect && selectedKeys.length > 0" class="batch-bar">
       <span class="batch-count">已选择 {{ selectedKeys.length }} 项</span>
       <div class="batch-actions">
-        <a-button size="small" @click="openBatchAge">批量设置年龄等级</a-button>
-        <a-button size="small" @click="openBatchCover">批量设置敏感封面</a-button>
+        <a-button
+          v-if="canUpdate"
+          size="small"
+          @click="openBatchAge"
+        >
+          批量设置年龄等级
+        </a-button>
+        <a-button
+          v-if="canUpdate"
+          size="small"
+          @click="openBatchCover"
+        >
+          批量设置敏感封面
+        </a-button>
+        <a-button
+          v-if="canDelete"
+          size="small"
+          danger
+          @click="batchDeleteOpen = true"
+        >
+          批量删除
+        </a-button>
         <a-button size="small" type="text" @click="clearSelection">取消选择</a-button>
       </div>
     </div>
@@ -397,7 +473,7 @@ const rowSelection = computed(() =>
         showSizeChanger: false,
         showTotal: (count: number) => `共 ${count} 条`
       }"
-      :scroll="{ x: 1100 }"
+      :scroll="{ x: 1280 }"
       @change="
         (pagination: { current?: number }) => {
           query.page = pagination.current ?? 1
@@ -405,7 +481,27 @@ const rowSelection = computed(() =>
       "
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'rating'">
+        <template v-if="column.key === 'cover'">
+          <a
+            v-if="record.cover_url"
+            :href="record.cover_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            :title="record.cover_sensitive ? '敏感封面，点击查看原图' : '点击查看原图'"
+            class="cover-cell"
+          >
+            <SensitiveImage
+              :src="record.cover_url"
+              :alt="record.title || 'Galgame 封面'"
+              :sensitive="record.cover_sensitive"
+            />
+          </a>
+          <div v-else class="cover-cell cover-empty" title="未设置封面">
+            <img :src="fallbackCover" alt="未设置封面" loading="lazy" />
+          </div>
+        </template>
+
+        <template v-else-if="column.key === 'rating'">
           <template v-if="record.rating?.count">
             {{ record.rating.average?.toFixed(1) }}（{{ record.rating.count }}）
           </template>
@@ -486,7 +582,7 @@ const rowSelection = computed(() =>
         </template>
 
         <template v-else-if="column.key === 'actions'">
-          <div v-if="canUpdate" class="table-actions">
+          <div v-if="canUpdate || canDelete" class="table-actions">
             <a-button
               v-for="action in QUICK_ACTIONS[record.status as number] ?? []"
               :key="action.status"
@@ -497,9 +593,24 @@ const rowSelection = computed(() =>
             >
               {{ action.label }}
             </a-button>
-            <a-button size="small" @click="openEdit(record)">
+            <a-button v-if="canUpdate" size="small" @click="openEdit(record)">
               编辑
             </a-button>
+            <a-popconfirm
+              v-if="canDelete"
+              :title="`确定删除「${record.title ?? record.id}」吗？此操作无法撤销。`"
+              ok-text="删除"
+              cancel-text="取消"
+              @confirm="removeGalgame(record)"
+            >
+              <a-button
+                size="small"
+                danger
+                :loading="rowDeletingId === record.id"
+              >
+                删除
+              </a-button>
+            </a-popconfirm>
           </div>
         </template>
       </template>
@@ -547,6 +658,21 @@ const rowSelection = computed(() =>
       </a-radio-group>
       <p class="batch-modal-warning">
         敏感封面与游戏年龄等级无关，启用后前台默认对封面进行模糊处理。
+      </p>
+    </a-modal>
+
+    <a-modal
+      v-model:open="batchDeleteOpen"
+      title="批量删除 Galgame"
+      :confirm-loading="batchSubmitting"
+      ok-text="确认删除"
+      ok-type="danger"
+      cancel-text="取消"
+      @ok="submitBatchDelete"
+    >
+      <p class="batch-modal-text">已选择 {{ selectedKeys.length }} 个游戏</p>
+      <p class="batch-modal-warning batch-delete-warning">
+        删除为物理删除且不可恢复，游戏的收藏、评分、资源、帖子、图库等关联数据会一并删除；如只需暂时下架，请改用「隐藏」状态。
       </p>
     </a-modal>
   </div>
@@ -601,6 +727,21 @@ const rowSelection = computed(() =>
   width: 96px;
 }
 
+.cover-cell {
+  display: block;
+  width: 48px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: var(--radius-kun-sm);
+}
+
+.cover-cell img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .table-actions {
   display: flex;
   flex-wrap: wrap;
@@ -638,5 +779,9 @@ const rowSelection = computed(() =>
   margin: 14px 0 0;
   color: var(--color-default-500);
   font-size: 13px;
+}
+
+.batch-delete-warning {
+  color: var(--color-danger);
 }
 </style>

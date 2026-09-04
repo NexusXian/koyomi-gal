@@ -18,6 +18,8 @@ import type {
   DtoBackgroundPresetDataResponse,
   DtoBannerDataResponse,
   DtoBatchCreateGalleryRequest,
+  DtoBatchDeleteGalgameRequest,
+  DtoBatchDeleteGalgameResponse,
   DtoBatchReviewGalleryRequest,
   DtoBatchUpdateGalgameRequest,
   DtoBatchUpdateGalgameResponse,
@@ -579,6 +581,36 @@ export const listAdminGalgames = async (params?: ListAdminGalgamesParams, option
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getBatchDeleteGalgamesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/galgames/batch`
+}
+
+/**
+ * 批量永久删除 Galgame 及其关联数据（收藏、评分、资源、帖子、图库等级联删除，不可恢复，不同于隐藏下架）；单次最多 500 条；需要 galgame:delete 权限
+ * @summary 管理端批量删除 Galgame
+ */
+export const batchDeleteGalgames = async (dtoBatchDeleteGalgameRequest: DtoBatchDeleteGalgameRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBatchDeleteGalgameResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoBatchDeleteGalgameResponse>(getBatchDeleteGalgamesUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoBatchDeleteGalgameRequest)
   }
 );}
 

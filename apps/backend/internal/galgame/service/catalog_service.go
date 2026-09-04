@@ -574,6 +574,21 @@ func (s *CatalogService) DeleteGalgame(ctx context.Context, id uint) error {
 	return nil
 }
 
+// BatchDeleteGalgames hard-deletes the matched galgames and returns the number
+// of deleted rows. Cascades remove aliases, tags, favorites, ratings, states,
+// resources, posts, gallery and contribution rows.
+func (s *CatalogService) BatchDeleteGalgames(
+	ctx context.Context,
+	req *dto.BatchDeleteGalgameRequest,
+) (int64, error) {
+	deleted, err := s.galgames.BatchDelete(ctx, uniqueUint(req.IDs))
+	if err != nil {
+		logger.Error("batch delete galgames", zap.Int("id_count", len(req.IDs)), zap.Error(err))
+		return 0, err
+	}
+	return deleted, nil
+}
+
 func (s *CatalogService) GetPublishedGalgame(ctx context.Context, id uint) (*model.Galgame, error) {
 	return s.getGalgame(ctx, id, true)
 }

@@ -106,6 +106,18 @@ func (r *GalgameRepository) Delete(ctx context.Context, id uint) error {
 	return nil
 }
 
+// BatchDelete removes every matching id and returns the number of deleted rows.
+func (r *GalgameRepository) BatchDelete(ctx context.Context, ids []uint) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	result := r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.Galgame{})
+	if result.Error != nil {
+		return 0, fmt.Errorf("batch delete galgames: %w", result.Error)
+	}
+	return result.RowsAffected, nil
+}
+
 func (r *GalgameRepository) FindByID(ctx context.Context, id uint) (*model.Galgame, error) {
 	return r.findByID(ctx, id, false)
 }

@@ -47,6 +47,21 @@ type BatchUpdateGalgameRequest struct {
 	CoverSensitive *bool  `json:"cover_sensitive" example:"true"`
 }
 
+// BatchDeleteGalgameRequest hard-deletes the matched galgames.
+type BatchDeleteGalgameRequest struct {
+	IDs []uint `json:"ids" binding:"required,min=1,max=500,dive,gt=0" example:"1,2,3"`
+}
+
+type BatchDeleteGalgameData struct {
+	Deleted int64 `json:"deleted" example:"5"`
+}
+
+type BatchDeleteGalgameResponse struct {
+	Code int                    `json:"code" example:"0"`
+	Data BatchDeleteGalgameData `json:"data"`
+	Msg  string                 `json:"msg" example:"success"`
+}
+
 type BatchUpdateGalgameData struct {
 	Updated int64 `json:"updated" example:"5"`
 }

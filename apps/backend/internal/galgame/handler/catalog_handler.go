@@ -417,6 +417,36 @@ func (h *CatalogHandler) DeleteGalgame(c *gin.Context) {
 	response.OkWithMsg(c, "Galgame 已删除")
 }
 
+// BatchDeleteGalgames godoc
+// @Summary      管理端批量删除 Galgame
+// @Description  批量永久删除 Galgame 及其关联数据（收藏、评分、资源、帖子、图库等级联删除，不可恢复，不同于隐藏下架）；单次最多 500 条；需要 galgame:delete 权限
+// @ID           batchDeleteGalgames
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.BatchDeleteGalgameRequest true "批量删除 Galgame 请求"
+// @Success      200 {object} dto.BatchDeleteGalgameResponse "删除数量"
+// @Failure      400 {object} response.ErrorResponse "请求参数不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      500 {object} response.ErrorResponse "批量删除 Galgame 失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/galgames/batch [delete]
+func (h *CatalogHandler) BatchDeleteGalgames(c *gin.Context) {
+	var req dto.BatchDeleteGalgameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数不正确"))
+		return
+	}
+	deleted, err := h.catalogService.BatchDeleteGalgames(c.Request.Context(), &req)
+	if err != nil {
+		logger.Error("batch delete galgames", zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("批量删除 Galgame 失败"))
+		return
+	}
+	response.Ok(c, dto.BatchDeleteGalgameData{Deleted: deleted})
+}
+
 // ListDevelopers godoc
 // @Summary      查看开发商列表
 // @Description  返回全部开发商

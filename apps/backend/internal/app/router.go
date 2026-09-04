@@ -100,6 +100,7 @@ func (app *App) setupRoutes() {
 		admin.GET("/galgames/:id", requirePermission("galgame:review"), app.CatalogHandler.GetAdminGalgame)
 		admin.PUT("/galgames/:id/review", requirePermission("galgame:review"), app.CatalogHandler.ReviewGalgame)
 		admin.PATCH("/galgames/batch", requirePermission("galgame:update"), app.CatalogHandler.BatchUpdateGalgames)
+		admin.DELETE("/galgames/batch", requirePermission("galgame:delete"), app.CatalogHandler.BatchDeleteGalgames)
 		admin.GET("/import/providers", requirePermission("galgame:import"), app.ImporterHandler.ListImportProviders)
 		admin.GET("/import/games/search", requirePermission("galgame:import"), app.ImporterHandler.SearchImportGames)
 		admin.GET("/import/games/:provider/:external_id", requirePermission("galgame:import"), app.ImporterHandler.PreviewImportGame)

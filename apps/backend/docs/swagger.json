@@ -1058,6 +1058,68 @@
             }
         },
         "/api/v1/admin/galgames/batch": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "批量永久删除 Galgame 及其关联数据（收藏、评分、资源、帖子、图库等级联删除，不可恢复，不同于隐藏下架）；单次最多 500 条；需要 galgame:delete 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端批量删除 Galgame",
+                "operationId": "batchDeleteGalgames",
+                "parameters": [
+                    {
+                        "description": "批量删除 Galgame 请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchDeleteGalgameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除数量",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchDeleteGalgameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "批量删除 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -10163,6 +10225,52 @@
                     "items": {
                         "$ref": "#/definitions/dto.BatchGalleryImageItem"
                     }
+                }
+            }
+        },
+        "dto.BatchDeleteGalgameData": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "dto.BatchDeleteGalgameRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "maxItems": 500,
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            }
+        },
+        "dto.BatchDeleteGalgameResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BatchDeleteGalgameData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
