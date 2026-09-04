@@ -12,7 +12,9 @@ import (
 	importerModel "backend/internal/importer/model"
 	"backend/internal/importer/provider"
 	importerRepository "backend/internal/importer/repository"
+	"backend/pkg/logger"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -197,6 +199,17 @@ func (s *Service) importFetched(
 		}, nil
 	}
 
+	// When creating from VNDB, prefer the Bangumi Chinese summary if the
+	// subject matches confidently; merging into existing rows keeps priority.
+	description := game.Description
+	descriptionSource := game.Source
+	if input.DuplicateAction != DuplicateActionLinkExisting {
+		if resolved, ok := s.tryBangumiDescription(ctx, game); ok {
+			description = resolved
+			descriptionSource = galgameModel.DescriptionSourceBangumi
+		}
+	}
+
 	var galgameID uint
 	err = s.repository.Transaction(ctx, func(tx *gorm.DB) error {
 		if input.DuplicateAction == DuplicateActionLinkExisting {
@@ -225,7 +238,7 @@ func (s *Service) importFetched(
 				}
 			}
 		} else {
-			created, err := createGalgame(ctx, tx, game, input.CreatedBy)
+			created, err := createGalgame(ctx, tx, game, description, descriptionSource, input.CreatedBy)
 			if err != nil {
 				return err
 			}
@@ -348,6 +361,7 @@ func createGalgame(
 	ctx context.Context,
 	tx *gorm.DB,
 	game *provider.ExternalGame,
+	description, descriptionSource string,
 	createdBy *uint,
 ) (*galgameModel.Galgame, error) {
 	developerID, err := resolveDeveloper(ctx, tx, game.Developer)
@@ -359,14 +373,14 @@ func createGalgame(
 		return nil, err
 	}
 	now := time.Now()
-	description := normalizeDescription(game.Description)
+	description = normalizeDescription(description)
 	created := &galgameModel.Galgame{
 		Title:             strings.TrimSpace(game.Title),
 		OriginalTitle:     strings.TrimSpace(game.OriginalTitle),
 		RomajiTitle:       strings.TrimSpace(game.RomajiTitle),
 		Slug:              game.Source + "-" + game.ExternalID,
 		Description:       description,
-		DescriptionSource: descriptionSourceForImport(game.Source, description),
+		DescriptionSource: descriptionSourceForImport(descriptionSource, description),
 		CoverURL:          strings.TrimSpace(game.CoverURL),
 		DeveloperID:       developerID,
 		ReleaseDate:       game.ReleaseDate,
@@ -415,8 +429,6 @@ func updateGalgameMetadata(
 		"title":               strings.TrimSpace(game.Title),
 		"original_title":      strings.TrimSpace(game.OriginalTitle),
 		"romaji_title":        strings.TrimSpace(game.RomajiTitle),
-		"description":         description,
-		"description_source":  descriptionSourceForImport(game.Source, description),
 		"cover_url":           strings.TrimSpace(game.CoverURL),
 		"developer_id":        developerID,
 		"release_date":        game.ReleaseDate,
@@ -429,6 +441,18 @@ func updateGalgameMetadata(
 	if strings.TrimSpace(game.Title) == "" {
 		updates["title"] = existing.Title
 	}
+	// Forced metadata sync still respects description source priority so a
+	// merge never downgrades Bangumi or manually maintained content.
+	if shouldReplaceDescription(
+		existing.Description,
+		existing.DescriptionSource,
+		description,
+		game.Source,
+		false,
+	) {
+		updates["description"] = description
+		updates["description_source"] = descriptionSourceForImport(game.Source, description)
+	}
 	if err := tx.WithContext(ctx).Model(&galgameModel.Galgame{}).Where("id = ?", existing.ID).Updates(updates).Error; err != nil {
 		return fmt.Errorf("force update galgame metadata: %w", err)
 	}
@@ -436,6 +460,53 @@ func updateGalgameMetadata(
 		return err
 	}
 	return replaceTags(ctx, tx, existing.ID, tagIDs)
+}
+
+// tryBangumiDescription looks up the Bangumi counterpart of a VNDB game so
+// new imports can carry the Chinese summary. Only a high-confidence identity
+// match qualifies; failures fall back to the incoming description.
+func (s *Service) tryBangumiDescription(
+	ctx context.Context,
+	game *provider.ExternalGame,
+) (string, bool) {
+	if game == nil || game.Source != galgameModel.DescriptionSourceVNDB {
+		return "", false
+	}
+	bangumi := s.providers["bangumi"]
+	if bangumi == nil {
+		return "", false
+	}
+	input := MatchInput{
+		Title:         game.Title,
+		OriginalTitle: game.OriginalTitle,
+		RomajiTitle:   game.RomajiTitle,
+		ReleaseDate:   game.ReleaseDate,
+	}
+	input.Aliases = append(input.Aliases, game.Aliases...)
+	if game.Developer != nil {
+		input.Developer = game.Developer.Name
+	}
+	query := input.SearchQuery()
+	if query == "" {
+		return "", false
+	}
+	results, err := bangumi.Search(ctx, query, enrichSearchLimit)
+	if err != nil {
+		logger.Warn("Bangumi description lookup failed",
+			zap.String("vndb_id", game.ExternalID),
+			zap.String("query", query),
+			zap.Error(err))
+		return "", false
+	}
+	matches := MatchBangumiCandidates(input, results)
+	if len(matches) == 0 || matches[0].Confidence < autoMatchThreshold {
+		return "", false
+	}
+	description := normalizeDescription(matches[0].Game.Description)
+	if description == "" {
+		return "", false
+	}
+	return description, true
 }
 
 func resolveDeveloper(

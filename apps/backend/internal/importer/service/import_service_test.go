@@ -411,3 +411,125 @@ func TestImportLinkMissingGalgame(t *testing.T) {
 		t.Errorf("mappings = %d, want 0", got)
 	}
 }
+
+func TestImportVndbUsesBangumiChineseSummary(t *testing.T) {
+	release := time.Date(2018, time.June, 29, 0, 0, 0, 0, time.UTC)
+	vndbGame := testExternalGame("v20424", "Summer Pockets", &release)
+	vndbGame.OriginalTitle = "" // keep the search query on the latin title
+	vndbGame.Description = "English description from VNDB"
+	bangumiGame := testExternalGame("200763", "Summer Pockets", &release)
+	bangumiGame.Source = "bangumi"
+	bangumiGame.OriginalTitle = ""
+	bangumiGame.Description = "Bangumi 中文简介"
+
+	testutil.SkipWithoutPostgres(t)
+	db := testutil.NewPostgres(t)
+	svc := NewService(importerRepository.NewRepository(db), map[string]provider.Provider{
+		"vndb":    &stubProvider{games: []provider.ExternalGame{vndbGame}},
+		"bangumi": &stubProvider{games: []provider.ExternalGame{bangumiGame}},
+	}, nil)
+
+	result, err := svc.Import(context.Background(), ImportInput{
+		Provider:        "vndb",
+		ExternalID:      "v20424",
+		DuplicateAction: DuplicateActionCreateNew,
+	})
+	if err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	if result.GalgameID == nil {
+		t.Fatalf("no galgame id: %+v", result)
+	}
+	var game galgameModel.Galgame
+	if err := db.First(&game, *result.GalgameID).Error; err != nil {
+		t.Fatalf("load imported galgame: %v", err)
+	}
+	if game.Description != "Bangumi 中文简介" {
+		t.Errorf("description = %q, want the Bangumi Chinese summary", game.Description)
+	}
+	if game.DescriptionSource != galgameModel.DescriptionSourceBangumi {
+		t.Errorf("description source = %q, want bangumi", game.DescriptionSource)
+	}
+	if game.Slug != "vndb-v20424" || game.SourceType != galgameModel.GalgameSourceVNDB {
+		t.Errorf("identity must stay vndb, got slug %q / source type %d", game.Slug, game.SourceType)
+	}
+	source, err := svc.repository.FindExternalSource(context.Background(), "vndb", "v20424")
+	if err != nil || source == nil || source.GalgameID != game.ID {
+		t.Fatalf("vndb external source: %v %+v", err, source)
+	}
+}
+
+func TestImportVndbFallsBackWithoutBangumiMatch(t *testing.T) {
+	release := time.Date(2018, time.June, 29, 0, 0, 0, 0, time.UTC)
+	vndbGame := testExternalGame("v20424", "Summer Pockets", &release)
+	vndbGame.OriginalTitle = ""
+	vndbGame.Description = "English description from VNDB"
+
+	testutil.SkipWithoutPostgres(t)
+	db := testutil.NewPostgres(t)
+	svc := NewService(importerRepository.NewRepository(db), map[string]provider.Provider{
+		"vndb":    &stubProvider{games: []provider.ExternalGame{vndbGame}},
+		"bangumi": &stubProvider{games: []provider.ExternalGame{}},
+	}, nil)
+
+	result, err := svc.Import(context.Background(), ImportInput{
+		Provider:        "vndb",
+		ExternalID:      "v20424",
+		DuplicateAction: DuplicateActionCreateNew,
+	})
+	if err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	if result.GalgameID == nil {
+		t.Fatalf("no galgame id: %+v", result)
+	}
+	var game galgameModel.Galgame
+	if err := db.First(&game, *result.GalgameID).Error; err != nil {
+		t.Fatalf("load imported galgame: %v", err)
+	}
+	if game.Description != "English description from VNDB" {
+		t.Errorf("description = %q, want the VNDB fallback", game.Description)
+	}
+	if game.DescriptionSource != galgameModel.DescriptionSourceVNDB {
+		t.Errorf("description source = %q, want vndb", game.DescriptionSource)
+	}
+}
+
+func TestImportForceLinkKeepsHigherPriorityDescription(t *testing.T) {
+	release := time.Date(2018, time.June, 29, 0, 0, 0, 0, time.UTC)
+	svc, db := newTestService(t, []provider.ExternalGame{testExternalGame("v20424", "Summer Pockets", &release)})
+	seeded := seedGalgame(t, db, "Summer Pockets", &release)
+	if err := db.Model(&galgameModel.Galgame{}).Where("id = ?", seeded).
+		Updates(map[string]any{
+			"description":        "Bangumi 中文简介",
+			"description_source": galgameModel.DescriptionSourceBangumi,
+		}).Error; err != nil {
+		t.Fatalf("seed bangumi description: %v", err)
+	}
+
+	result, err := svc.Import(context.Background(), ImportInput{
+		Provider:            "vndb",
+		ExternalID:          "v20424",
+		DuplicateAction:     DuplicateActionLinkExisting,
+		ExistingGalgameID:   &seeded,
+		ForceMetadataUpdate: true,
+	})
+	if err != nil {
+		t.Fatalf("force link import: %v", err)
+	}
+	if result.DuplicateStatus != DuplicateStatusNone || result.GalgameID == nil || *result.GalgameID != seeded {
+		t.Fatalf("force link result = %+v, want seeded %d", result, seeded)
+	}
+	var game galgameModel.Galgame
+	if err := db.First(&game, seeded).Error; err != nil {
+		t.Fatalf("load seeded galgame: %v", err)
+	}
+	if game.Description != "Bangumi 中文简介" || game.DescriptionSource != galgameModel.DescriptionSourceBangumi {
+		t.Errorf("description = %q/%q, force sync must not downgrade the Bangumi summary",
+			game.Description, game.DescriptionSource)
+	}
+	source, err := svc.repository.FindExternalSource(context.Background(), "vndb", "v20424")
+	if err != nil || source == nil || source.GalgameID != seeded {
+		t.Fatalf("vndb external source after force link: %v %+v", err, source)
+	}
+}
