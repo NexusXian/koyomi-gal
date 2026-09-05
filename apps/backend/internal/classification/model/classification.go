@@ -32,6 +32,7 @@ const (
 	StatusApproved   ClassificationStatus = "approved"
 	StatusRejected   ClassificationStatus = "rejected"
 	StatusFailed     ClassificationStatus = "failed"
+	StatusCancelled  ClassificationStatus = "cancelled"
 )
 
 func (s ClassificationStatus) Active() bool {

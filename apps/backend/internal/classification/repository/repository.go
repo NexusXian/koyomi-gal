@@ -148,7 +148,8 @@ RETURNING id, game_id, classification, confidence, reason, conflict, status,
 }
 
 // SaveResult persists the agent verdict and its evidence atomically and moves
-// the row to pending_review.
+// the row to pending_review. The guarded update runs first so a row cancelled
+// or failed while the agent ran never receives the verdict or evidence.
 func (r *Repository) SaveResult(
 	ctx context.Context,
 	classificationID uint,
@@ -160,19 +161,6 @@ func (r *Repository) SaveResult(
 	evidences []model.GameClassificationEvidence,
 ) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("classification_id = ?", classificationID).
-			Delete(&model.GameClassificationEvidence{}).Error; err != nil {
-			return fmt.Errorf("clear stale evidences: %w", err)
-		}
-		for i := range evidences {
-			evidences[i].ClassificationID = classificationID
-			evidences[i].ID = 0
-		}
-		if len(evidences) > 0 {
-			if err := tx.Create(&evidences).Error; err != nil {
-				return fmt.Errorf("save evidences: %w", err)
-			}
-		}
 		result := tx.Model(&model.GameClassification{}).
 			Where("id = ? AND status IN ?", classificationID,
 				[]string{string(model.StatusQueued), string(model.StatusProcessing)}).
@@ -188,6 +176,22 @@ func (r *Repository) SaveResult(
 			})
 		if result.Error != nil {
 			return fmt.Errorf("save classification result: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return nil // the run is no longer active; drop its result
+		}
+		if err := tx.Where("classification_id = ?", classificationID).
+			Delete(&model.GameClassificationEvidence{}).Error; err != nil {
+			return fmt.Errorf("clear stale evidences: %w", err)
+		}
+		for i := range evidences {
+			evidences[i].ClassificationID = classificationID
+			evidences[i].ID = 0
+		}
+		if len(evidences) > 0 {
+			if err := tx.Create(&evidences).Error; err != nil {
+				return fmt.Errorf("save evidences: %w", err)
+			}
 		}
 		return nil
 	})
@@ -207,6 +211,24 @@ WHERE id = (
 		return fmt.Errorf("mark classification failed: %w", err)
 	}
 	return nil
+}
+
+// MarkCancelled stops the latest active (queued/processing) run of a game.
+// Returns false when no active run exists (already finished or cancelled).
+func (r *Repository) MarkCancelled(ctx context.Context, gameID uint) (bool, error) {
+	result := r.db.WithContext(ctx).Raw(`
+UPDATE game_classifications
+SET status = 'cancelled', error_message = '', updated_at = NOW()
+WHERE id = (
+    SELECT id FROM game_classifications
+    WHERE game_id = ? AND status IN ('queued', 'processing')
+    ORDER BY id DESC LIMIT 1
+)
+`, gameID)
+	if result.Error != nil {
+		return false, fmt.Errorf("mark classification cancelled: %w", result.Error)
+	}
+	return result.RowsAffected > 0, nil
 }
 
 // ResetQueued moves the latest failed row back to queued for a retry. Returns

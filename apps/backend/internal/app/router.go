@@ -125,6 +125,7 @@ func (app *App) setupRoutes() {
 		admin.POST("/galgames/:id/classification", requirePermission("galgame_classification:run"), app.ClassificationHandler.StartClassification)
 		admin.GET("/galgames/:id/classification", requirePermission("galgame_classification:read"), app.ClassificationHandler.GetClassification)
 		admin.POST("/galgames/:id/classification/retry", requirePermission("galgame_classification:run"), app.ClassificationHandler.RetryClassification)
+		admin.POST("/galgames/:id/classification/cancel", requirePermission("galgame_classification:run"), app.ClassificationHandler.CancelClassification)
 		admin.POST("/galgames/:id/classification/approve", requirePermission("galgame_classification:apply"), app.ClassificationHandler.ApproveClassification)
 		admin.POST("/galgames/:id/classification/reject", requirePermission("galgame_classification:apply"), app.ClassificationHandler.RejectClassification)
 		admin.POST("/galgames/:id/classification/override", requirePermission("galgame_classification:apply"), app.ClassificationHandler.OverrideClassification)

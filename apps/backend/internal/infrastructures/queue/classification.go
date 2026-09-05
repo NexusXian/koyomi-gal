@@ -26,11 +26,20 @@ type classificationPayload struct {
 // ClassificationClient enqueues classification tasks onto the dedicated
 // classification queue so large admin batches never starve mail/import work.
 type ClassificationClient struct {
-	client *asynq.Client
+	client    *asynq.Client
+	inspector *asynq.Inspector
 }
 
 func NewClassificationClient(cfg *config.Redis) *ClassificationClient {
-	return &ClassificationClient{client: asynq.NewClient(redisClientOpt(cfg))}
+	opt := redisClientOpt(cfg)
+	return &ClassificationClient{
+		client:    asynq.NewClient(opt),
+		inspector: asynq.NewInspector(opt),
+	}
+}
+
+func classificationTaskID(gameID uint) string {
+	return fmt.Sprintf("classification:game:%d", gameID)
 }
 
 // EnqueueClassification enqueues one task per game. The deterministic TaskID
@@ -47,7 +56,7 @@ func (c *ClassificationClient) EnqueueClassification(ctx context.Context, gameID
 	task := asynq.NewTask(ClassificationGameTaskType, payload)
 	_, err = c.client.EnqueueContext(ctx, task,
 		asynq.Queue(classificationQueueName),
-		asynq.TaskID(fmt.Sprintf("classification:game:%d", gameID)),
+		asynq.TaskID(classificationTaskID(gameID)),
 		asynq.MaxRetry(2),
 		asynq.Timeout(10*time.Minute),
 	)
@@ -57,8 +66,27 @@ func (c *ClassificationClient) EnqueueClassification(ctx context.Context, gameID
 	return nil
 }
 
+// CancelTask best-effort stops a game's classification task wherever it is: a
+// running task receives the Asynq cancelation signal, a pending task is
+// removed from the queue. It is safe to call on any task state; the database
+// row is the source of truth and a task that slips through wakes up to find
+// its row cancelled and exits as stale.
+func (c *ClassificationClient) CancelTask(gameID uint) error {
+	taskID := classificationTaskID(gameID)
+	if err := c.inspector.CancelProcessing(taskID); err != nil {
+		return fmt.Errorf("signal classification task cancelation: %w", err)
+	}
+	if err := c.inspector.DeleteTask(classificationQueueName, taskID); err != nil &&
+		!errors.Is(err, asynq.ErrTaskNotFound) {
+		return fmt.Errorf("delete pending classification task: %w", err)
+	}
+	return nil
+}
+
 func (c *ClassificationClient) Close() error {
-	return c.client.Close()
+	err := c.client.Close()
+	_ = c.inspector.Close()
+	return err
 }
 
 // ClassificationRunner is implemented by the classification service. It keeps
@@ -81,7 +109,9 @@ func NewClassificationServer(cfg *config.Redis, concurrency int) *asynq.Server {
 
 // RegisterClassificationTasks wires the classification task to the runner.
 // Transient failures are returned so Asynq retries them; once retries are
-// exhausted the runner is told to mark the row failed and the task ends.
+// exhausted the runner is told to mark the row failed and the task ends. A run
+// interrupted by cancelation (admin cancel, worker shutdown) is revoked
+// instead of retried because its row is already terminal.
 func RegisterClassificationTasks(mux *asynq.ServeMux, runner ClassificationRunner) {
 	mux.HandleFunc(ClassificationGameTaskType, func(ctx context.Context, task *asynq.Task) error {
 		var payload classificationPayload
@@ -89,6 +119,9 @@ func RegisterClassificationTasks(mux *asynq.ServeMux, runner ClassificationRunne
 			return asynq.RevokeTask
 		}
 		if err := runner.RunClassification(ctx, payload.GameID); err != nil {
+			if ctx.Err() != nil && !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return asynq.RevokeTask
+			}
 			if retryCount, ok := asynq.GetRetryCount(ctx); ok {
 				if maxRetry, ok := asynq.GetMaxRetry(ctx); ok && retryCount >= maxRetry {
 					runner.MarkClassificationFailed(ctx, payload.GameID, err.Error())

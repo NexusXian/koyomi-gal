@@ -136,6 +136,37 @@ func (s *Service) RetryClassification(ctx context.Context, gameID uint) (*model.
 	return row, nil
 }
 
+// CancelClassification stops a queued or processing run for one game. The row
+// is marked cancelled first; the Asynq task is then best-effort removed or
+// signalled, so any task that slips through wakes up to a cancelled row and
+// exits as stale. A finished run (pending_review or later) cannot be cancelled.
+func (s *Service) CancelClassification(ctx context.Context, gameID uint) error {
+	row, err := s.repository.FindLatest(ctx, gameID)
+	if err != nil {
+		return err
+	}
+	if row == nil {
+		return ErrNoClassification
+	}
+	if !model.ClassificationStatus(row.Status).Active() {
+		return fmt.Errorf("%w: 当前没有排队或进行中的 AI 判断任务", ErrInvalidState)
+	}
+	cancelled, err := s.repository.MarkCancelled(ctx, gameID)
+	if err != nil {
+		return err
+	}
+	if !cancelled {
+		return fmt.Errorf("%w: 任务已结束，无法取消", ErrInvalidState)
+	}
+	if err := s.enqueuer.CancelTask(gameID); err != nil {
+		logger.Warn("remove classification task from queue failed",
+			zap.Uint("game_id", gameID), zap.Error(err))
+	}
+	logger.Info("classification cancelled",
+		zap.Uint("game_id", gameID), zap.Uint("classification_id", row.ID))
+	return nil
+}
+
 // RunClassification executes the agent pass. It is invoked by the Asynq
 // handler; transient errors bubble up so Asynq retries them, while terminal
 // outcomes mark the row and return nil.

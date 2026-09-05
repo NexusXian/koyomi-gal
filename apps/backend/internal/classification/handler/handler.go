@@ -95,6 +95,32 @@ func (h *ClassificationHandler) GetClassification(c *gin.Context) {
 	h.respondDetail(c, gameID)
 }
 
+// CancelClassification godoc
+// @Summary      取消 AI 年龄分级
+// @Description  停止排队中或进行中的 AI 判断任务并标记为 cancelled；已完成的判断无法取消
+// @ID           cancelClassification
+// @Tags         galgame_classification
+// @Produce      json
+// @Param        id path int true "Galgame ID"
+// @Success      200 {object} dto.ClassificationDetailResponse "最新分级建议"
+// @Failure      400 {object} response.ErrorResponse "ID 格式不正确"
+// @Failure      404 {object} response.ErrorResponse "该游戏还没有 AI 判断记录"
+// @Failure      409 {object} response.ErrorResponse "当前没有排队或进行中的任务"
+// @Failure      500 {object} response.ErrorResponse "操作失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/galgames/{id}/classification/cancel [post]
+func (h *ClassificationHandler) CancelClassification(c *gin.Context) {
+	gameID, ok := parseClassificationID(c)
+	if !ok {
+		return
+	}
+	if err := h.service.CancelClassification(c.Request.Context(), gameID); err != nil {
+		h.respondServiceError(c, err)
+		return
+	}
+	h.respondDetail(c, gameID)
+}
+
 // ApproveClassification godoc
 // @Summary      采用 AI 年龄分级
 // @Description  只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，r17 → 5，r15 → 2，r12 → 4，non_r18 → 1；unknown 无法采用
