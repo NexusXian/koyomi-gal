@@ -89,7 +89,8 @@ type GalgameQuery struct {
 }
 
 // AdminGalgameQuery filters the galgame:review admin listing, which returns
-// every status instead of only published entries.
+// every status instead of only published entries. The ai_* filters apply to
+// each game's latest AI classification proposal.
 type AdminGalgameQuery struct {
 	Status         *int16 `form:"status" binding:"omitempty,oneof=0 1 2 3" example:"0"`
 	AgeRating      *int16 `form:"age_rating" binding:"omitempty,oneof=0 1 2 3 4 5" example:"3"`
@@ -98,6 +99,12 @@ type AdminGalgameQuery struct {
 	Sort           string `form:"sort"`
 	Page           int    `form:"page" binding:"omitempty,min=1,max=1000000"`
 	Limit          int    `form:"limit" binding:"omitempty,min=1,max=100"`
+
+	AIClassification string   `form:"ai_classification" binding:"omitempty,oneof=r18 non_r18 unknown" example:"r18"`
+	AIStatus         string   `form:"ai_status" binding:"omitempty,oneof=queued processing pending_review approved rejected failed" example:"failed"`
+	AIConflict       *bool    `form:"ai_conflict" example:"true"`
+	AIMinConfidence  *float64 `form:"ai_min_confidence" binding:"omitempty,gte=0,lte=1" example:"0.95"`
+	AIMaxConfidence  *float64 `form:"ai_max_confidence" binding:"omitempty,gte=0,lte=1" example:"0.7"`
 }
 
 type MyGalgameQuery struct {
@@ -142,6 +149,13 @@ type GalgameListItem struct {
 	Tags           []TagSummary      `json:"tags"`
 	Rating         RatingSummary     `json:"rating"`
 	Statistics     GalgameStatistics `json:"statistics"`
+
+	// Latest AI age-rating proposal (admin listing only; absent when the game
+	// was never classified).
+	AIClassification string  `json:"ai_classification,omitempty" example:"r18"`
+	AIConfidence     float64 `json:"ai_confidence,omitempty" example:"0.98"`
+	AIStatus         string  `json:"ai_status,omitempty" example:"pending_review"`
+	AIConflict       bool    `json:"ai_conflict,omitempty" example:"false"`
 }
 
 type GalgameResponse struct {
@@ -193,20 +207,24 @@ func NewGalgameListItems(galgames []model.Galgame) []GalgameListItem {
 	for i := range galgames {
 		galgame := &galgames[i]
 		items = append(items, GalgameListItem{
-			ID:             galgame.ID,
-			Title:          galgame.Title,
-			OriginalTitle:  galgame.OriginalTitle,
-			RomajiTitle:    galgame.RomajiTitle,
-			Slug:           galgame.Slug,
-			CoverURL:       galgame.CoverURL,
-			ReleaseDate:    formatDate(galgame.ReleaseDate),
-			AgeRating:      galgame.AgeRating,
-			CoverSensitive: galgame.CoverSensitive,
-			Status:         galgame.Status,
-			Developer:      newDeveloperSummary(galgame.Developer),
-			Tags:           newTagSummaries(galgame.Tags),
-			Rating:         newRatingSummary(galgame),
-			Statistics:     newStatistics(galgame),
+			ID:               galgame.ID,
+			Title:            galgame.Title,
+			OriginalTitle:    galgame.OriginalTitle,
+			RomajiTitle:      galgame.RomajiTitle,
+			Slug:             galgame.Slug,
+			CoverURL:         galgame.CoverURL,
+			ReleaseDate:      formatDate(galgame.ReleaseDate),
+			AgeRating:        galgame.AgeRating,
+			CoverSensitive:   galgame.CoverSensitive,
+			Status:           galgame.Status,
+			Developer:        newDeveloperSummary(galgame.Developer),
+			Tags:             newTagSummaries(galgame.Tags),
+			Rating:           newRatingSummary(galgame),
+			Statistics:       newStatistics(galgame),
+			AIClassification: galgame.AIClassification,
+			AIConfidence:     galgame.AIConfidence,
+			AIStatus:         galgame.AIStatus,
+			AIConflict:       galgame.AIConflict,
 		})
 	}
 	return items

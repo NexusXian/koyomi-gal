@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,6 +19,11 @@ import (
 	bannerHandler "backend/internal/banner/handler"
 	bannerRepo "backend/internal/banner/repository"
 	bannerService "backend/internal/banner/service"
+	classificationAgent "backend/internal/classification/agent"
+	classificationHandler "backend/internal/classification/handler"
+	classificationRepo "backend/internal/classification/repository"
+	classificationService "backend/internal/classification/service"
+	"backend/internal/classification/tools"
 	communityHandler "backend/internal/community/handler"
 	communityRepo "backend/internal/community/repository"
 	communityService "backend/internal/community/service"
@@ -66,42 +72,45 @@ import (
 )
 
 type App struct {
-	Config              *config.Config
-	Gin                 *gin.Engine
-	Postgres            *gorm.DB
-	Redis               *redis.Client
-	Queue               *queue.VerificationClient
-	ImportQueue         *queue.ImportClient
-	MailWorker          *asynq.Server
-	ImportWorker        *asynq.Server
-	UserAuthHandler     *userHandler.UserAuthHandler
-	UserAuthRepository  *userRepo.UserAuthRepository
-	VerificationHandler *userHandler.VerificationHandler
-	UserProfileHandler  *userHandler.UserProfileHandler
-	UserAdminHandler    *userHandler.UserAdminHandler
-	RBACService         *rbacService.RBACService
-	RoleHandler         *rbacHandler.RoleHandler
-	PermissionHandler   *rbacHandler.PermissionHandler
-	AssignmentHandler   *rbacHandler.AssignmentHandler
-	CatalogHandler      *galgameHandler.CatalogHandler
-	ImporterHandler     *importerHandler.ImporterHandler
-	ContributionHandler *galgameHandler.ContributionHandler
-	UserRelationHandler *galgameHandler.UserRelationHandler
-	GalleryHandler      *galgameHandler.GalleryHandler
-	ResourceHandler     *resourceHandler.ResourceHandler
-	ReportHandler       *resourceHandler.ReportHandler
-	FeedbackHandler     *feedbackHandler.FeedbackHandler
-	PostHandler         *communityHandler.PostHandler
-	CommentHandler      *communityHandler.CommentHandler
-	InteractionHandler  *communityHandler.InteractionHandler
-	BannerHandler       *bannerHandler.BannerHandler
-	BackgroundHandler   *backgroundHandler.BackgroundPresetHandler
-	ArticleHandler      *articleHandler.ArticleHandler
-	HomeHandler         *homeHandler.HomeHandler
-	HealthHandler       *healthHandler.HealthHandler
-	ImageHandler        *imageHandler.ImageHandler
-	NotificationHandler *notificationHandler.NotificationHandler
-	stopImageCleanup    func()
+	Config                *config.Config
+	Gin                   *gin.Engine
+	Postgres              *gorm.DB
+	Redis                 *redis.Client
+	Queue                 *queue.VerificationClient
+	ImportQueue           *queue.ImportClient
+	ClassificationQueue   *queue.ClassificationClient
+	MailWorker            *asynq.Server
+	ImportWorker          *asynq.Server
+	ClassificationWorker  *asynq.Server
+	UserAuthHandler       *userHandler.UserAuthHandler
+	UserAuthRepository    *userRepo.UserAuthRepository
+	VerificationHandler   *userHandler.VerificationHandler
+	UserProfileHandler    *userHandler.UserProfileHandler
+	UserAdminHandler      *userHandler.UserAdminHandler
+	RBACService           *rbacService.RBACService
+	RoleHandler           *rbacHandler.RoleHandler
+	PermissionHandler     *rbacHandler.PermissionHandler
+	AssignmentHandler     *rbacHandler.AssignmentHandler
+	CatalogHandler        *galgameHandler.CatalogHandler
+	ImporterHandler       *importerHandler.ImporterHandler
+	ContributionHandler   *galgameHandler.ContributionHandler
+	UserRelationHandler   *galgameHandler.UserRelationHandler
+	GalleryHandler        *galgameHandler.GalleryHandler
+	ResourceHandler       *resourceHandler.ResourceHandler
+	ReportHandler         *resourceHandler.ReportHandler
+	FeedbackHandler       *feedbackHandler.FeedbackHandler
+	ClassificationHandler *classificationHandler.ClassificationHandler
+	PostHandler           *communityHandler.PostHandler
+	CommentHandler        *communityHandler.CommentHandler
+	InteractionHandler    *communityHandler.InteractionHandler
+	BannerHandler         *bannerHandler.BannerHandler
+	BackgroundHandler     *backgroundHandler.BackgroundPresetHandler
+	ArticleHandler        *articleHandler.ArticleHandler
+	HomeHandler           *homeHandler.HomeHandler
+	HealthHandler         *healthHandler.HealthHandler
+	ImageHandler          *imageHandler.ImageHandler
+	NotificationHandler   *notificationHandler.NotificationHandler
+	stopImageCleanup      func()
 }
 
 func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
@@ -231,6 +240,31 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	importerSvc.SetBatchEnqueuer(importQueueClient.EnqueueVNDBBatch)
 	importerSvc.SetEnrichEnqueuer(importQueueClient.EnqueueBangumiEnrich)
 
+	// Age rating classification module: Eino agent + tools stay read-only; the
+	// worker runs inside this process because it needs PostgreSQL and the LLM
+	// configuration, mirroring the import worker.
+	classificationRepository := classificationRepo.NewRepository(postgresDB)
+	classificationQueueClient := queue.NewClassificationClient(cfg.Redis)
+	ratingAgent, agentErr := classificationAgent.New(
+		context.Background(),
+		cfg.Classification,
+		tools.NewCache(redisClient),
+		vndbClient,
+	)
+	if agentErr != nil && !errors.Is(agentErr, classificationAgent.ErrAgentDisabled) {
+		if sqlDB, dbErr := postgresDB.DB(); dbErr == nil {
+			_ = sqlDB.Close()
+		}
+		return nil, fmt.Errorf("init classification agent: %w", agentErr)
+	}
+	classificationSvc := classificationService.NewService(
+		classificationRepository,
+		galgameRepository,
+		ratingAgent,
+		classificationQueueClient,
+		cfg.Classification,
+	)
+
 	homeSvc := homeService.NewHomeService(
 		bannerRepository,
 		articleRepository,
@@ -302,21 +336,22 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 			userStateService,
 			userRelationService,
 		),
-		GalleryHandler:      galgameHandler.NewGalleryHandler(galleryService),
-		ResourceHandler:     resourceHandler.NewResourceHandler(resourceSvc),
-		ReportHandler:       resourceHandler.NewReportHandler(reportSvc),
-		FeedbackHandler:     feedbackHandler.NewFeedbackHandler(feedbackSvc),
-		PostHandler:         communityHandler.NewPostHandler(postService),
-		CommentHandler:      communityHandler.NewCommentHandler(commentService),
-		InteractionHandler:  communityHandler.NewInteractionHandler(interactionService),
-		BannerHandler:       bannerHandler.NewBannerHandler(bannerSvc),
-		BackgroundHandler:   backgroundHandler.NewBackgroundPresetHandler(backgroundPresetSvc),
-		ArticleHandler:      articleHandler.NewArticleHandler(articleSvc),
-		HomeHandler:         homeHandler.NewHomeHandler(homeSvc),
-		HealthHandler:       healthHandler.NewHealthHandler(healthService),
-		ImageHandler:        imageHandler.NewImageHandler(imageSvc),
-		NotificationHandler: notificationHandler.NewNotificationHandler(notificationSvc),
-		stopImageCleanup:    stopImageCleanup,
+		GalleryHandler:        galgameHandler.NewGalleryHandler(galleryService),
+		ResourceHandler:       resourceHandler.NewResourceHandler(resourceSvc),
+		ReportHandler:         resourceHandler.NewReportHandler(reportSvc),
+		FeedbackHandler:       feedbackHandler.NewFeedbackHandler(feedbackSvc),
+		ClassificationHandler: classificationHandler.NewClassificationHandler(classificationSvc),
+		PostHandler:           communityHandler.NewPostHandler(postService),
+		CommentHandler:        communityHandler.NewCommentHandler(commentService),
+		InteractionHandler:    communityHandler.NewInteractionHandler(interactionService),
+		BannerHandler:         bannerHandler.NewBannerHandler(bannerSvc),
+		BackgroundHandler:     backgroundHandler.NewBackgroundPresetHandler(backgroundPresetSvc),
+		ArticleHandler:        articleHandler.NewArticleHandler(articleSvc),
+		HomeHandler:           homeHandler.NewHomeHandler(homeSvc),
+		HealthHandler:         healthHandler.NewHealthHandler(healthService),
+		ImageHandler:          imageHandler.NewImageHandler(imageSvc),
+		NotificationHandler:   notificationHandler.NewNotificationHandler(notificationSvc),
+		stopImageCleanup:      stopImageCleanup,
 	}
 	ginApp := gin.Default()
 	if err := ginApp.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
@@ -348,6 +383,20 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	}
 	app.ImportWorker = importWorker
 	app.ImportQueue = importQueueClient
+	app.ClassificationQueue = classificationQueueClient
+
+	if cfg.Classification.Enabled && classificationSvc.Enabled() {
+		classificationWorker := queue.NewClassificationServer(
+			cfg.Redis, cfg.Classification.QueueConcurrency,
+		)
+		classificationMux := asynq.NewServeMux()
+		queue.RegisterClassificationTasks(classificationMux, classificationSvc)
+		if err := classificationWorker.Start(classificationMux); err != nil {
+			app.Close()
+			return nil, fmt.Errorf("start classification worker: %w", err)
+		}
+		app.ClassificationWorker = classificationWorker
+	}
 
 	return app, nil
 }
@@ -359,6 +408,9 @@ func (app *App) Close() {
 	if app.ImportWorker != nil {
 		app.ImportWorker.Shutdown()
 	}
+	if app.ClassificationWorker != nil {
+		app.ClassificationWorker.Shutdown()
+	}
 	if app.MailWorker != nil {
 		app.MailWorker.Shutdown()
 	}
@@ -367,6 +419,9 @@ func (app *App) Close() {
 	}
 	if app.ImportQueue != nil {
 		_ = app.ImportQueue.Close()
+	}
+	if app.ClassificationQueue != nil {
+		_ = app.ClassificationQueue.Close()
 	}
 	if app.Redis != nil {
 		_ = app.Redis.Close()

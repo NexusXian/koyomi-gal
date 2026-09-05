@@ -24,6 +24,14 @@ type GalgameListOptions struct {
 	Sort           string
 	Page           int
 	Limit          int
+
+	// AI classification filters, applied against each game's latest
+	// game_classifications row (admin listing only).
+	AIClassification string
+	AIStatus         string
+	AIConflict       *bool
+	AIMinConfidence  *float64
+	AIMaxConfidence  *float64
 }
 
 type GalgameRepository struct {
@@ -188,7 +196,8 @@ func (r *GalgameRepository) ListPublished(
 }
 
 // ListAdmin lists galgames of every status; an optional Status filter narrows
-// the result. Used by the galgame:review admin queries.
+// the result. Used by the galgame:review admin queries. Each row carries the
+// latest AI classification projection in its transient AI fields.
 func (r *GalgameRepository) ListAdmin(
 	ctx context.Context,
 	options GalgameListOptions,
@@ -204,7 +213,12 @@ func (r *GalgameRepository) ListAdmin(
 	}
 
 	query := r.applyListFilters(
-		r.db.WithContext(ctx).Model(&model.Galgame{}).Table("galgames AS g").Select("g.*"),
+		r.db.WithContext(ctx).Model(&model.Galgame{}).Table("galgames AS g").
+			Select("g.*, ai.classification AS ai_classification, ai.confidence AS ai_confidence, "+
+				"ai.status AS ai_status, ai.conflict AS ai_conflict").
+			Joins("LEFT JOIN LATERAL (SELECT classification, confidence, status, conflict "+
+				"FROM game_classifications WHERE game_id = g.id "+
+				"ORDER BY id DESC LIMIT 1) ai ON TRUE"),
 		options,
 		false,
 	)
@@ -369,7 +383,45 @@ func (r *GalgameRepository) applyListFilters(
 	if options.CoverSensitive != nil {
 		query = query.Where("g.cover_sensitive = ?", *options.CoverSensitive)
 	}
+	query = r.applyAIClassificationFilters(query, options)
 	return query
+}
+
+// applyAIClassificationFilters narrows the query to games whose latest
+// classification row matches the admin AI filters.
+func (r *GalgameRepository) applyAIClassificationFilters(query *gorm.DB, options GalgameListOptions) *gorm.DB {
+	if options.AIClassification == "" && options.AIStatus == "" &&
+		options.AIConflict == nil && options.AIMinConfidence == nil && options.AIMaxConfidence == nil {
+		return query
+	}
+	conditions := []string{`
+EXISTS (
+    SELECT 1 FROM game_classifications ai
+    WHERE ai.game_id = g.id
+      AND ai.id = (SELECT MAX(ai2.id) FROM game_classifications ai2 WHERE ai2.game_id = g.id)`}
+	args := []any{}
+	if options.AIClassification != "" {
+		conditions = append(conditions, "ai.classification = ?")
+		args = append(args, options.AIClassification)
+	}
+	if options.AIStatus != "" {
+		conditions = append(conditions, "ai.status = ?")
+		args = append(args, options.AIStatus)
+	}
+	if options.AIConflict != nil {
+		conditions = append(conditions, "ai.conflict = ?")
+		args = append(args, *options.AIConflict)
+	}
+	if options.AIMinConfidence != nil {
+		conditions = append(conditions, "ai.confidence >= ?")
+		args = append(args, *options.AIMinConfidence)
+	}
+	if options.AIMaxConfidence != nil {
+		conditions = append(conditions, "ai.confidence <= ?")
+		args = append(args, *options.AIMaxConfidence)
+	}
+	conditions = append(conditions, ")")
+	return query.Where(strings.Join(conditions, " AND "), args...)
 }
 
 func escapeLikePattern(value string) string {

@@ -634,21 +634,40 @@ func (s *CatalogService) ListAllGalgames(
 	if query.AgeRating != nil && !validAgeRating(*query.AgeRating) {
 		return nil, 0, page, limit, ErrInvalidAgeRating
 	}
+	if err := validateAIFilters(query); err != nil {
+		return nil, 0, page, limit, err
+	}
 
 	galgames, total, err := s.galgames.ListAdmin(ctx, repository.GalgameListOptions{
-		Keyword:        strings.TrimSpace(query.Keyword),
-		Status:         query.Status,
-		AgeRating:      query.AgeRating,
-		CoverSensitive: query.CoverSensitive,
-		Sort:           sort,
-		Page:           page,
-		Limit:          limit,
+		Keyword:          strings.TrimSpace(query.Keyword),
+		Status:           query.Status,
+		AgeRating:        query.AgeRating,
+		CoverSensitive:   query.CoverSensitive,
+		AIClassification: query.AIClassification,
+		AIStatus:         query.AIStatus,
+		AIConflict:       query.AIConflict,
+		AIMinConfidence:  query.AIMinConfidence,
+		AIMaxConfidence:  query.AIMaxConfidence,
+		Sort:             sort,
+		Page:             page,
+		Limit:            limit,
 	})
 	if err != nil {
 		logger.Error("list all galgames", zap.Error(err))
 		return nil, 0, page, limit, err
 	}
 	return galgames, total, page, limit, nil
+}
+
+// ErrInvalidAIFilter reports invalid admin AI classification filters.
+var ErrInvalidAIFilter = errors.New("ai filter is invalid")
+
+func validateAIFilters(query *dto.AdminGalgameQuery) error {
+	if query.AIMinConfidence != nil && query.AIMaxConfidence != nil &&
+		*query.AIMinConfidence > *query.AIMaxConfidence {
+		return ErrInvalidAIFilter
+	}
+	return nil
 }
 
 func (s *CatalogService) ListPublishedGalgames(

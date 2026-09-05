@@ -16,13 +16,28 @@ import (
 )
 
 type Config struct {
-	Postgres     *Postgres
-	Redis        *Redis
-	Server       *Server
-	Auth         *Auth
-	Verification *Verification
-	RBAC         *RBAC
-	R2           *R2
+	Postgres       *Postgres
+	Redis          *Redis
+	Server         *Server
+	Auth           *Auth
+	Verification   *Verification
+	RBAC           *RBAC
+	R2             *R2
+	Classification *Classification
+}
+
+// Classification configures the Eino-based game age rating agent. The agent is
+// opt-in: when Enabled is false every classification entrypoint reports the
+// agent as disabled and the classification worker never runs tasks.
+type Classification struct {
+	Enabled          bool
+	LLMBaseURL       string
+	LLMAPIKey        string
+	LLMModel         string
+	MaxIterations    int
+	SearchProvider   string
+	SearchAPIKey     string
+	QueueConcurrency int
 }
 
 type R2 struct {
@@ -187,6 +202,11 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	classificationConfig, err := loadClassification()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
 		Postgres: &Postgres{
 			Host:     postgresHost,
@@ -218,7 +238,8 @@ func Load() (*Config, error) {
 		RBAC: &RBAC{
 			SuperAdminAccount: strings.TrimSpace(os.Getenv("RBAC_SUPER_ADMIN_ACCOUNT")),
 		},
-		R2: r2Config,
+		R2:             r2Config,
+		Classification: classificationConfig,
 	}, nil
 }
 
@@ -347,6 +368,79 @@ func LoadWorker() (*WorkerConfig, error) {
 		Concurrency:        concurrency,
 		R2PublicURL:        r2PublicURL,
 	}, nil
+}
+
+func loadClassification() (*Classification, error) {
+	enabled, err := strconv.ParseBool(strings.TrimSpace(os.Getenv("CLASSIFICATION_AGENT_ENABLED")))
+	if err != nil {
+		return nil, errors.New("CLASSIFICATION_AGENT_ENABLED must be a boolean")
+	}
+	if !enabled {
+		return &Classification{
+			Enabled:          false,
+			MaxIterations:    8,
+			QueueConcurrency: 2,
+		}, nil
+	}
+
+	apiKey, err := requiredEnv("LLM_API_KEY")
+	if err != nil {
+		return nil, err
+	}
+	modelName, err := requiredEnv("LLM_MODEL")
+	if err != nil {
+		return nil, err
+	}
+	baseURL := strings.TrimSpace(os.Getenv("LLM_BASE_URL"))
+	if baseURL == "" {
+		baseURL = "https://api.openai.com/v1"
+	}
+
+	maxIterations, err := parsePositiveInt("CLASSIFICATION_AGENT_MAX_ITERATIONS")
+	if err != nil {
+		return nil, err
+	}
+	if maxIterations > 50 {
+		return nil, errors.New("CLASSIFICATION_AGENT_MAX_ITERATIONS must not exceed 50")
+	}
+
+	searchProvider := strings.ToLower(strings.TrimSpace(os.Getenv("SEARCH_PROVIDER")))
+	searchAPIKey := os.Getenv("SEARCH_API_KEY")
+	switch searchProvider {
+	case "", "tavily", "none":
+		if searchProvider == "tavily" && searchAPIKey == "" {
+			return nil, errors.New("SEARCH_API_KEY is required when SEARCH_PROVIDER is tavily")
+		}
+	default:
+		return nil, errors.New("SEARCH_PROVIDER must be one of: tavily (empty disables web search)")
+	}
+
+	queueConcurrency, err := parsePositiveIntWithDefault("CLASSIFICATION_QUEUE_CONCURRENCY", 2)
+	if err != nil {
+		return nil, err
+	}
+	if queueConcurrency > 10 {
+		return nil, errors.New("CLASSIFICATION_QUEUE_CONCURRENCY must not exceed 10")
+	}
+
+	return &Classification{
+		Enabled:          true,
+		LLMBaseURL:       baseURL,
+		LLMAPIKey:        apiKey,
+		LLMModel:         modelName,
+		MaxIterations:    maxIterations,
+		SearchProvider:   searchProvider,
+		SearchAPIKey:     searchAPIKey,
+		QueueConcurrency: queueConcurrency,
+	}, nil
+}
+
+func parsePositiveIntWithDefault(name string, fallback int) (int, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback, nil
+	}
+	return parsePositiveInt(name)
 }
 
 func loadRedis() (*Redis, error) {

@@ -166,6 +166,11 @@ func (h *CatalogHandler) GetGalgame(c *gin.Context) {
 // @Param        cover_sensitive query boolean false "敏感封面过滤：true 仅敏感，false 仅普通，不传为全部"
 // @Param        keyword query string false "标题或别名关键词"
 // @Param        sort query string false "排序：latest、oldest、rating、favorite、popular" default(latest)
+// @Param        ai_classification query string false "AI 分级建议过滤：r18、non_r18、unknown"
+// @Param        ai_status query string false "AI 判断状态过滤：queued、processing、pending_review、approved、rejected、failed"
+// @Param        ai_conflict query boolean false "AI 证据冲突过滤"
+// @Param        ai_min_confidence query number false "AI 置信度下限，0-1"
+// @Param        ai_max_confidence query number false "AI 置信度上限，0-1"
 // @Param        page query int false "页码" default(1)
 // @Param        limit query int false "每页数量，最大 100" default(20)
 // @Success      200 {object} dto.GalgameListResponse "Galgame 列表"
@@ -190,6 +195,8 @@ func (h *CatalogHandler) ListAdminGalgames(c *gin.Context) {
 			response.Error(c, appErrors.ErrValidation("Galgame 状态不正确"))
 		case errors.Is(err, service.ErrInvalidAgeRating):
 			response.Error(c, appErrors.ErrValidation("年龄等级不正确"))
+		case errors.Is(err, service.ErrInvalidAIFilter):
+			response.Error(c, appErrors.ErrValidation("AI 筛选参数不正确"))
 		default:
 			logger.Error("list admin galgames", zap.Error(err))
 			response.Error(c, appErrors.ErrInternal("查询 Galgame 失败"))

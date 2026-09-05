@@ -80,7 +80,7 @@ func NewPostgres(t *testing.T) *gorm.DB {
 func TruncateTables(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	err := db.Exec(
-		"TRUNCATE TABLE external_match_candidates, import_jobs, galgame_external_sources, notifications, user_activities, user_privacy_settings, user_profiles, user_preferences, image_assets, articles, banners, background_presets, feedback, resource_reports, post_favorites, comment_likes, post_likes, comments, posts, resource_links, resources, user_galgames, galgame_favorites, galgame_ratings, galgame_gallery_images, galgame_contributions, galgame_tags, galgame_aliases, galgames, tags, developers, user_roles, role_permissions, permissions, roles, users RESTART IDENTITY",
+		"TRUNCATE TABLE game_classification_evidences, game_classifications, external_match_candidates, import_jobs, galgame_external_sources, notifications, user_activities, user_privacy_settings, user_profiles, user_preferences, image_assets, articles, banners, background_presets, feedback, resource_reports, post_favorites, comment_likes, post_likes, comments, posts, resource_links, resources, user_galgames, galgame_favorites, galgame_ratings, galgame_gallery_images, galgame_contributions, galgame_tags, galgame_aliases, galgames, tags, developers, user_roles, role_permissions, permissions, roles, users RESTART IDENTITY",
 	).Error
 	if err != nil {
 		t.Fatalf("truncate tables: %v", err)

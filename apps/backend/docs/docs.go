@@ -1015,6 +1015,36 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "AI 分级建议过滤：r18、non_r18、unknown",
+                        "name": "ai_classification",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "AI 判断状态过滤：queued、processing、pending_review、approved、rejected、failed",
+                        "name": "ai_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "AI 证据冲突过滤",
+                        "name": "ai_conflict",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "AI 置信度下限，0-1",
+                        "name": "ai_min_confidence",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "AI 置信度上限，0-1",
+                        "name": "ai_max_confidence",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "页码",
@@ -1189,6 +1219,104 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/galgames/classification/batch": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "一次最多 500 款游戏，每款独立入队",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "批量启动 AI 年龄分级",
+                "operationId": "batchClassification",
+                "parameters": [
+                    {
+                        "description": "游戏 ID 列表",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchClassificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "批量入队结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数不正确 / 功能未启用",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "操作失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/classification/batch-approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "仅采用 confidence \u003e= 0.95 且无证据冲突且结论明确的待审核建议；其余保持待审核",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "批量采用 AI 高置信度结果",
+                "operationId": "batchApproveClassification",
+                "parameters": [
+                    {
+                        "description": "游戏 ID 列表",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchClassificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "批量采用结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BatchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "操作失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/galgames/{id}": {
             "get": {
                 "security": [
@@ -1247,6 +1375,349 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "查询 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/classification": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回游戏最新一条 AI 分级建议与全部证据；从未判断过时 classification 为 null",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "查看 AI 年龄分级",
+                "operationId": "getClassification",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "最新分级建议",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClassificationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "游戏不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "异步运行 Eino Agent 研究并产出 R18 / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "启动 AI 年龄分级",
+                "operationId": "startClassification",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "最新分级建议",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClassificationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确 / 功能未启用 / 正在进行中",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "游戏不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "启动失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/classification/approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，non_r18 → age_rating 1；unknown 无法采用",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "采用 AI 年龄分级",
+                "operationId": "approveClassification",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "最新分级建议",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClassificationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "没有可采用的 AI 结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "结果不是待审核状态或为 unknown",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "操作失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/classification/override": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用人工结论替换最新建议并回到待审核状态，仍需 Approve 才会写入正式数据",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "人工覆盖 AI 年龄分级",
+                "operationId": "overrideClassification",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "人工分级结论",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.OverrideClassificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "最新分级建议",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClassificationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "游戏还没有 AI 判断记录",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "已通过或进行中的结果无法覆盖",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "操作失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/classification/reject": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将待审核建议标记为 rejected，不改动游戏正式数据",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "拒绝 AI 年龄分级",
+                "operationId": "rejectClassification",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "最新分级建议",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClassificationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "没有可拒绝的 AI 结果",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "结果不是待审核状态",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "操作失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/classification/retry": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将最新一条 failed 记录重新入队",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgame_classification"
+                ],
+                "summary": "重试 AI 年龄分级",
+                "operationId": "retryClassification",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "最新分级建议",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClassificationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确 / 功能未启用",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "没有可重试的失败记录",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "重试失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -10218,6 +10689,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BatchClassificationRequest": {
+            "type": "object",
+            "required": [
+                "game_ids"
+            ],
+            "properties": {
+                "game_ids": {
+                    "type": "array",
+                    "maxItems": 500,
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1350,
+                        1305
+                    ]
+                }
+            }
+        },
         "dto.BatchCreateGalleryRequest": {
             "type": "object",
             "required": [
@@ -10230,6 +10721,45 @@ const docTemplate = `{
                     "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/dto.BatchGalleryImageItem"
+                    }
+                }
+            }
+        },
+        "dto.BatchData": {
+            "type": "object",
+            "properties": {
+                "already_running": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1305
+                    ]
+                },
+                "approved": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1350
+                    ]
+                },
+                "enqueued": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "failed": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BatchItem"
+                    }
+                },
+                "skipped": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BatchItem"
                     }
                 }
             }
@@ -10330,6 +10860,35 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BatchItem": {
+            "type": "object",
+            "properties": {
+                "game_id": {
+                    "type": "integer",
+                    "example": 1350
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "置信度低于 95%"
+                }
+            }
+        },
+        "dto.BatchResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.BatchData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.BatchReviewGalleryRequest": {
             "type": "object",
             "required": [
@@ -10424,6 +10983,92 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.ClassificationDetailData": {
+            "type": "object",
+            "properties": {
+                "classification": {
+                    "$ref": "#/definitions/dto.ClassificationResponse"
+                },
+                "game": {
+                    "$ref": "#/definitions/dto.GameSummary"
+                }
+            }
+        },
+        "dto.ClassificationDetailResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ClassificationDetailData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ClassificationResponse": {
+            "type": "object",
+            "properties": {
+                "classification": {
+                    "type": "string",
+                    "example": "r18"
+                },
+                "confidence": {
+                    "type": "number",
+                    "example": 0.98
+                },
+                "conflict": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "error_message": {
+                    "type": "string",
+                    "example": ""
+                },
+                "evidences": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EvidenceResponse"
+                    }
+                },
+                "game_id": {
+                    "type": "integer",
+                    "example": 1350
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "model": {
+                    "type": "string",
+                    "example": "deepseek-chat"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "游戏官网明确标注该作品为18岁以上对象作品。"
+                },
+                "reviewed_at": {
+                    "type": "string"
+                },
+                "reviewer_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending_review"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -11531,6 +12176,38 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.EvidenceResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "evidence": {
+                    "type": "string",
+                    "example": "18歳以上対象"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "source_type": {
+                    "type": "string",
+                    "example": "official"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "サクラノ刻 公式サイト"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com"
+                },
+                "weight": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
         "dto.ExternalCandidateItem": {
             "type": "object",
             "properties": {
@@ -11935,6 +12612,23 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3
                 },
+                "ai_classification": {
+                    "description": "Latest AI age-rating proposal (admin listing only; absent when the game\nwas never classified).",
+                    "type": "string",
+                    "example": "r18"
+                },
+                "ai_confidence": {
+                    "type": "number",
+                    "example": 0.98
+                },
+                "ai_conflict": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "ai_status": {
+                    "type": "string",
+                    "example": "pending_review"
+                },
                 "cover_sensitive": {
                     "type": "boolean",
                     "example": false
@@ -12045,6 +12739,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "作品简介"
+                },
+                "description_source": {
+                    "type": "string",
+                    "example": "bangumi"
                 },
                 "developer": {
                     "$ref": "#/definitions/dto.DeveloperSummary"
@@ -12389,6 +13087,35 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.GameSummary": {
+            "type": "object",
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://img.example.com/cover.jpg"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1350
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "サクラノ刻"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Sakura no Toki"
                 }
             }
         },
@@ -13308,6 +14035,28 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.OverrideClassificationRequest": {
+            "type": "object",
+            "required": [
+                "classification"
+            ],
+            "properties": {
+                "classification": {
+                    "type": "string",
+                    "enum": [
+                        "r18",
+                        "non_r18",
+                        "unknown"
+                    ],
+                    "example": "r18"
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "example": "管理员人工指定"
                 }
             }
         },

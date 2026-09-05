@@ -28,6 +28,26 @@ keyword?: string;
  */
 sort?: string;
 /**
+ * AI 分级建议过滤：r18、non_r18、unknown
+ */
+ai_classification?: string;
+/**
+ * AI 判断状态过滤：queued、processing、pending_review、approved、rejected、failed
+ */
+ai_status?: string;
+/**
+ * AI 证据冲突过滤
+ */
+ai_conflict?: boolean;
+/**
+ * AI 置信度下限，0-1
+ */
+ai_min_confidence?: number;
+/**
+ * AI 置信度上限，0-1
+ */
+ai_max_confidence?: number;
+/**
  * 页码
  */
 page?: number;

@@ -21,6 +21,7 @@ export interface DtoGalgameResponse {
   cover_url?: string;
   created_at?: string;
   description?: string;
+  description_source?: string;
   developer?: DtoDeveloperSummary;
   id?: number;
   original_title?: string;

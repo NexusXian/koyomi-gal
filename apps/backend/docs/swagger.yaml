@@ -672,6 +672,20 @@ definitions:
         example: success
         type: string
     type: object
+  dto.BatchClassificationRequest:
+    properties:
+      game_ids:
+        example:
+        - 1350
+        - 1305
+        items:
+          type: integer
+        maxItems: 500
+        minItems: 1
+        type: array
+    required:
+    - game_ids
+    type: object
   dto.BatchCreateGalleryRequest:
     properties:
       items:
@@ -682,6 +696,32 @@ definitions:
         type: array
     required:
     - items
+    type: object
+  dto.BatchData:
+    properties:
+      already_running:
+        example:
+        - 1305
+        items:
+          type: integer
+        type: array
+      approved:
+        example:
+        - 1350
+        items:
+          type: integer
+        type: array
+      enqueued:
+        example: 2
+        type: integer
+      failed:
+        items:
+          $ref: '#/definitions/dto.BatchItem'
+        type: array
+      skipped:
+        items:
+          $ref: '#/definitions/dto.BatchItem'
+        type: array
     type: object
   dto.BatchDeleteGalgameData:
     properties:
@@ -752,6 +792,26 @@ definitions:
         example: 2
         type: integer
     type: object
+  dto.BatchItem:
+    properties:
+      game_id:
+        example: 1350
+        type: integer
+      reason:
+        example: 置信度低于 95%
+        type: string
+    type: object
+  dto.BatchResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.BatchData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.BatchReviewGalleryRequest:
     properties:
       action:
@@ -821,6 +881,66 @@ definitions:
         $ref: '#/definitions/dto.BatchUpdateGalgameData'
       msg:
         example: success
+        type: string
+    type: object
+  dto.ClassificationDetailData:
+    properties:
+      classification:
+        $ref: '#/definitions/dto.ClassificationResponse'
+      game:
+        $ref: '#/definitions/dto.GameSummary'
+    type: object
+  dto.ClassificationDetailResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ClassificationDetailData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ClassificationResponse:
+    properties:
+      classification:
+        example: r18
+        type: string
+      confidence:
+        example: 0.98
+        type: number
+      conflict:
+        example: false
+        type: boolean
+      created_at:
+        type: string
+      error_message:
+        example: ""
+        type: string
+      evidences:
+        items:
+          $ref: '#/definitions/dto.EvidenceResponse'
+        type: array
+      game_id:
+        example: 1350
+        type: integer
+      id:
+        example: 1
+        type: integer
+      model:
+        example: deepseek-chat
+        type: string
+      reason:
+        example: 游戏官网明确标注该作品为18岁以上对象作品。
+        type: string
+      reviewed_at:
+        type: string
+      reviewer_id:
+        type: integer
+      status:
+        example: pending_review
+        type: string
+      updated_at:
         type: string
     type: object
   dto.CommentData:
@@ -1635,6 +1755,29 @@ definitions:
         example: success
         type: string
     type: object
+  dto.EvidenceResponse:
+    properties:
+      created_at:
+        type: string
+      evidence:
+        example: 18歳以上対象
+        type: string
+      id:
+        example: 1
+        type: integer
+      source_type:
+        example: official
+        type: string
+      title:
+        example: サクラノ刻 公式サイト
+        type: string
+      url:
+        example: https://example.com
+        type: string
+      weight:
+        example: 10
+        type: integer
+    type: object
   dto.ExternalCandidateItem:
     properties:
       confidence:
@@ -1922,6 +2065,21 @@ definitions:
       age_rating:
         example: 3
         type: integer
+      ai_classification:
+        description: |-
+          Latest AI age-rating proposal (admin listing only; absent when the game
+          was never classified).
+        example: r18
+        type: string
+      ai_confidence:
+        example: 0.98
+        type: number
+      ai_conflict:
+        example: false
+        type: boolean
+      ai_status:
+        example: pending_review
+        type: string
       cover_sensitive:
         example: false
         type: boolean
@@ -2000,6 +2158,9 @@ definitions:
         type: string
       description:
         example: 作品简介
+        type: string
+      description_source:
+        example: bangumi
         type: string
       developer:
         $ref: '#/definitions/dto.DeveloperSummary'
@@ -2244,6 +2405,27 @@ definitions:
         $ref: '#/definitions/dto.GalleryReviewListData'
       msg:
         example: success
+        type: string
+    type: object
+  dto.GameSummary:
+    properties:
+      age_rating:
+        example: 0
+        type: integer
+      cover_sensitive:
+        example: false
+        type: boolean
+      cover_url:
+        example: https://img.example.com/cover.jpg
+        type: string
+      id:
+        example: 1350
+        type: integer
+      original_title:
+        example: サクラノ刻
+        type: string
+      title:
+        example: Sakura no Toki
         type: string
     type: object
   dto.HandleFeedbackRequest:
@@ -2885,6 +3067,22 @@ definitions:
       msg:
         example: success
         type: string
+    type: object
+  dto.OverrideClassificationRequest:
+    properties:
+      classification:
+        enum:
+        - r18
+        - non_r18
+        - unknown
+        example: r18
+        type: string
+      reason:
+        example: 管理员人工指定
+        maxLength: 4000
+        type: string
+    required:
+    - classification
     type: object
   dto.PermissionListResponse:
     properties:
@@ -5171,6 +5369,26 @@ paths:
         in: query
         name: sort
         type: string
+      - description: AI 分级建议过滤：r18、non_r18、unknown
+        in: query
+        name: ai_classification
+        type: string
+      - description: AI 判断状态过滤：queued、processing、pending_review、approved、rejected、failed
+        in: query
+        name: ai_status
+        type: string
+      - description: AI 证据冲突过滤
+        in: query
+        name: ai_conflict
+        type: boolean
+      - description: AI 置信度下限，0-1
+        in: query
+        name: ai_min_confidence
+        type: number
+      - description: AI 置信度上限，0-1
+        in: query
+        name: ai_max_confidence
+        type: number
       - default: 1
         description: 页码
         in: query
@@ -5251,6 +5469,228 @@ paths:
       summary: 管理端查看 Galgame 详情
       tags:
       - admin
+  /api/v1/admin/galgames/{id}/classification:
+    get:
+      description: 返回游戏最新一条 AI 分级建议与全部证据；从未判断过时 classification 为 null
+      operationId: getClassification
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 最新分级建议
+          schema:
+            $ref: '#/definitions/dto.ClassificationDetailResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 游戏不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看 AI 年龄分级
+      tags:
+      - galgame_classification
+    post:
+      description: 异步运行 Eino Agent 研究并产出 R18 / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队
+      operationId: startClassification
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 最新分级建议
+          schema:
+            $ref: '#/definitions/dto.ClassificationDetailResponse'
+        "400":
+          description: ID 格式不正确 / 功能未启用 / 正在进行中
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 游戏不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 启动失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 启动 AI 年龄分级
+      tags:
+      - galgame_classification
+  /api/v1/admin/galgames/{id}/classification/approve:
+    post:
+      description: 只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，non_r18 → age_rating 1；unknown
+        无法采用
+      operationId: approveClassification
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 最新分级建议
+          schema:
+            $ref: '#/definitions/dto.ClassificationDetailResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 没有可采用的 AI 结果
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 结果不是待审核状态或为 unknown
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 操作失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 采用 AI 年龄分级
+      tags:
+      - galgame_classification
+  /api/v1/admin/galgames/{id}/classification/override:
+    post:
+      description: 用人工结论替换最新建议并回到待审核状态，仍需 Approve 才会写入正式数据
+      operationId: overrideClassification
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 人工分级结论
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.OverrideClassificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 最新分级建议
+          schema:
+            $ref: '#/definitions/dto.ClassificationDetailResponse'
+        "400":
+          description: 参数不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 游戏还没有 AI 判断记录
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 已通过或进行中的结果无法覆盖
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 操作失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 人工覆盖 AI 年龄分级
+      tags:
+      - galgame_classification
+  /api/v1/admin/galgames/{id}/classification/reject:
+    post:
+      description: 将待审核建议标记为 rejected，不改动游戏正式数据
+      operationId: rejectClassification
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 最新分级建议
+          schema:
+            $ref: '#/definitions/dto.ClassificationDetailResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 没有可拒绝的 AI 结果
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 结果不是待审核状态
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 操作失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 拒绝 AI 年龄分级
+      tags:
+      - galgame_classification
+  /api/v1/admin/galgames/{id}/classification/retry:
+    post:
+      description: 将最新一条 failed 记录重新入队
+      operationId: retryClassification
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 最新分级建议
+          schema:
+            $ref: '#/definitions/dto.ClassificationDetailResponse'
+        "400":
+          description: ID 格式不正确 / 功能未启用
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 没有可重试的失败记录
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 重试失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 重试 AI 年龄分级
+      tags:
+      - galgame_classification
   /api/v1/admin/galgames/{id}/gallery:
     get:
       description: 返回任意状态 Galgame 的全部游戏画面（含待审核 / 已拒绝）；需要 galgame_gallery:manage 权限
@@ -5691,6 +6131,68 @@ paths:
       summary: 管理端批量更新 Galgame
       tags:
       - admin
+  /api/v1/admin/galgames/classification/batch:
+    post:
+      description: 一次最多 500 款游戏，每款独立入队
+      operationId: batchClassification
+      parameters:
+      - description: 游戏 ID 列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BatchClassificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 批量入队结果
+          schema:
+            $ref: '#/definitions/dto.BatchResponse'
+        "400":
+          description: 参数不正确 / 功能未启用
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 操作失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 批量启动 AI 年龄分级
+      tags:
+      - galgame_classification
+  /api/v1/admin/galgames/classification/batch-approve:
+    post:
+      description: 仅采用 confidence >= 0.95 且无证据冲突且结论明确的待审核建议；其余保持待审核
+      operationId: batchApproveClassification
+      parameters:
+      - description: 游戏 ID 列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BatchClassificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 批量采用结果
+          schema:
+            $ref: '#/definitions/dto.BatchResponse'
+        "400":
+          description: 参数不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 操作失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 批量采用 AI 高置信度结果
+      tags:
+      - galgame_classification
   /api/v1/admin/gallery-images:
     get:
       description: 跨 Galgame 的游戏画面审核列表，可按状态 / 游戏 / 来源过滤；需要 galgame_gallery:review

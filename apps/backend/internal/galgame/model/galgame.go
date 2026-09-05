@@ -72,4 +72,11 @@ type Galgame struct {
 	Tags              []Tag                `gorm:"many2many:galgame_tags" json:"tags,omitempty"`
 	Contributors      []GalgameContributor `gorm:"-" json:"-"`
 	ContributorCount  int64                `gorm:"-" json:"-"`
+
+	// Transient read-only projection of the game's latest AI classification
+	// row, populated only by the admin listing query.
+	AIClassification string  `gorm:"->;-:migration" json:"-"`
+	AIConfidence     float64 `gorm:"->;-:migration" json:"-"`
+	AIStatus         string  `gorm:"->;-:migration" json:"-"`
+	AIConflict       bool    `gorm:"->;-:migration" json:"-"`
 }

@@ -12,6 +12,14 @@ import type { DtoTagSummary } from './dtoTagSummary';
 
 export interface DtoGalgameListItem {
   age_rating?: number;
+  /**
+     * Latest AI age-rating proposal (admin listing only; absent when the game
+     * was never classified).
+     */
+  ai_classification?: string;
+  ai_confidence?: number;
+  ai_conflict?: boolean;
+  ai_status?: string;
   cover_sensitive?: boolean;
   cover_url?: string;
   developer?: DtoDeveloperSummary;
