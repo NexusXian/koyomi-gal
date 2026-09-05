@@ -213,6 +213,54 @@ WHERE id = (
 	return nil
 }
 
+// ListLatest returns one row per game — its newest classification run — joined
+// with catalog identity. Keyword matches the game title or original title;
+// a non-empty status filters on the latest row's status. Ordered newest first.
+func (r *Repository) ListLatest(
+	ctx context.Context,
+	status, keyword string,
+	page, limit int,
+) ([]model.ClassificationTask, int64, error) {
+	where := `WHERE gc.id = (
+    SELECT MAX(id) FROM game_classifications
+    WHERE game_id = gc.game_id
+)`
+	args := make([]any, 0, 4)
+	if status != "" {
+		where += ` AND gc.status = ?`
+		args = append(args, status)
+	}
+	if keyword != "" {
+		where += ` AND (g.title ILIKE ? OR g.original_title ILIKE ?)`
+		pattern := "%" + keyword + "%"
+		args = append(args, pattern, pattern)
+	}
+
+	var total int64
+	if err := r.db.WithContext(ctx).Raw(`
+SELECT COUNT(*)
+FROM game_classifications gc
+JOIN galgames g ON g.id = gc.game_id
+`+where, args...).Scan(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count classification queue: %w", err)
+	}
+
+	tasks := make([]model.ClassificationTask, 0, limit)
+	listQuery := `
+SELECT gc.id, gc.game_id, gc.classification, gc.confidence, gc.reason,
+       gc.conflict, gc.status, gc.model, gc.error_message, gc.reviewer_id,
+       gc.reviewed_at, gc.created_at, gc.updated_at,
+       g.title AS game_title, g.original_title AS original_title
+FROM game_classifications gc
+JOIN galgames g ON g.id = gc.game_id
+` + where + ` ORDER BY gc.id DESC LIMIT ? OFFSET ?`
+	args = append(args, limit, (page-1)*limit)
+	if err := r.db.WithContext(ctx).Raw(listQuery, args...).Scan(&tasks).Error; err != nil {
+		return nil, 0, fmt.Errorf("list classification queue: %w", err)
+	}
+	return tasks, total, nil
+}
+
 // MarkCancelled stops the latest active (queued/processing) run of a game.
 // Returns false when no active run exists (already finished or cancelled).
 func (r *Repository) MarkCancelled(ctx context.Context, gameID uint) (bool, error) {

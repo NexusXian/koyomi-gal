@@ -72,3 +72,11 @@ func (c *GameClassification) AsClassificationValue() ClassificationValue {
 func (c *GameClassification) EvidenceCount() int {
 	return len(c.Evidences)
 }
+
+// ClassificationTask is the latest classification run of one game joined with
+// its catalog identity. Used by the admin queue listing.
+type ClassificationTask struct {
+	GameClassification
+	GameTitle     string `json:"game_title"`
+	OriginalTitle string `json:"original_title"`
+}

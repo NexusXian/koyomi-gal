@@ -968,6 +968,73 @@ definitions:
         example: success
         type: string
     type: object
+  dto.ClassificationListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ClassificationListItem'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  dto.ClassificationListItem:
+    properties:
+      classification:
+        example: r18
+        type: string
+      confidence:
+        example: 0.98
+        type: number
+      conflict:
+        example: false
+        type: boolean
+      created_at:
+        type: string
+      error_message:
+        example: ""
+        type: string
+      game_id:
+        example: 1350
+        type: integer
+      game_title:
+        example: Sakura no Toki
+        type: string
+      id:
+        example: 42
+        type: integer
+      model:
+        example: deepseek-chat
+        type: string
+      original_title:
+        example: サクラノ刻
+        type: string
+      reason:
+        example: 游戏官网明确标注该作品为18岁以上对象作品。
+        type: string
+      status:
+        example: queued
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ClassificationListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ClassificationListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.ClassificationResponse:
     properties:
       classification:
@@ -7058,6 +7125,66 @@ paths:
       summary: 管理端批量更新 Galgame
       tags:
       - admin
+  /api/v1/admin/galgames/classification:
+    get:
+      description: 分页返回每个游戏最新一条 AI 判断任务，可按状态与游戏名/原名关键字过滤
+      operationId: listClassifications
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      - description: 状态
+        enum:
+        - queued
+        - processing
+        - pending_review
+        - approved
+        - rejected
+        - failed
+        - cancelled
+        in: query
+        name: status
+        type: string
+      - description: 游戏标题 / 原名关键字
+        in: query
+        maxLength: 255
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 队列列表
+          schema:
+            $ref: '#/definitions/dto.ClassificationListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看 AI 分级任务队列
+      tags:
+      - galgame_classification
   /api/v1/admin/galgames/classification/batch:
     post:
       description: 一次最多 500 款游戏，每款独立入队

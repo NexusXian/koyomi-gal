@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"backend/config"
@@ -165,6 +166,20 @@ func (s *Service) CancelClassification(ctx context.Context, gameID uint) error {
 	logger.Info("classification cancelled",
 		zap.Uint("game_id", gameID), zap.Uint("classification_id", row.ID))
 	return nil
+}
+
+// ListQueue returns the paginated queue of latest runs, one per game, with
+// catalog titles. Status and keyword are optional filters.
+func (s *Service) ListQueue(
+	ctx context.Context,
+	page, limit int,
+	status, keyword string,
+) ([]model.ClassificationTask, int64, int, int, error) {
+	page, limit = pagination(page, limit)
+	tasks, total, err := s.repository.ListLatest(
+		ctx, strings.TrimSpace(status), strings.TrimSpace(keyword), page, limit,
+	)
+	return tasks, total, page, limit, err
 }
 
 // RunClassification executes the agent pass. It is invoked by the Asynq
@@ -481,6 +496,16 @@ func classificationToAgeRating(value model.ClassificationValue) *int16 {
 		return nil
 	}
 	return &result
+}
+
+func pagination(page, limit int) (int, int) {
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 20
+	}
+	return page, limit
 }
 
 type BatchFailure struct {

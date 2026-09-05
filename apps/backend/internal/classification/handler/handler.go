@@ -74,6 +74,44 @@ func (h *ClassificationHandler) RetryClassification(c *gin.Context) {
 	h.respondDetail(c, gameID)
 }
 
+// ListClassifications godoc
+// @Summary      查看 AI 分级任务队列
+// @Description  分页返回每个游戏最新一条 AI 判断任务，可按状态与游戏名/原名关键字过滤
+// @ID           listClassifications
+// @Tags         galgame_classification
+// @Produce      json
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
+// @Param        status query string false "状态" Enums(queued,processing,pending_review,approved,rejected,failed,cancelled)
+// @Param        keyword query string false "游戏标题 / 原名关键字" maxlength(255)
+// @Success      200 {object} dto.ClassificationListResponse "队列列表"
+// @Failure      400 {object} response.ErrorResponse "查询参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      500 {object} response.ErrorResponse "查询失败"
+// @Security     BearerAuth
+// @Router       /api/v1/admin/galgames/classification [get]
+func (h *ClassificationHandler) ListClassifications(c *gin.Context) {
+	var query dto.ClassificationListQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	tasks, total, page, limit, err := h.service.ListQueue(
+		c.Request.Context(), query.Page, query.Limit, query.Status, query.Keyword,
+	)
+	if err != nil {
+		logger.Error("list classification queue failed", zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("查询失败"))
+		return
+	}
+	items := make([]dto.ClassificationListItem, 0, len(tasks))
+	for i := range tasks {
+		items = append(items, dto.NewClassificationListItem(&tasks[i]))
+	}
+	response.Ok(c, dto.ClassificationListData{Items: items, Total: total, Page: page, Limit: limit})
+}
+
 // GetClassification godoc
 // @Summary      查看 AI 年龄分级
 // @Description  返回游戏最新一条 AI 分级建议与全部证据；从未判断过时 classification 为 null

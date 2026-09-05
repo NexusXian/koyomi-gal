@@ -61,7 +61,10 @@ const navigationItems = computed(() => {
       'user:delete',
       'banner:read',
       'background_preset:read',
-      'article:read'
+      'article:read',
+      'galgame_classification:read',
+      'galgame_classification:run',
+      'galgame_classification:apply'
     ])
   ) {
     const target = has('galgame:review')
@@ -88,7 +91,9 @@ const navigationItems = computed(() => {
                           ? '/admin/backgrounds'
                           : has('article:read')
                             ? '/admin/articles'
-                            : hasAny(['galgame:import', 'galgame:import:batch'])
+                            : has('galgame_classification:read')
+                              ? '/admin/classification'
+                              : hasAny(['galgame:import', 'galgame:import:batch'])
                               ? '/admin/import'
                               : hasAny([
                                 'user:list',

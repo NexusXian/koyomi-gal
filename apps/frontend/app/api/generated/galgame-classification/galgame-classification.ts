@@ -9,10 +9,43 @@ import type {
   DtoBatchClassificationRequest,
   DtoBatchResponse,
   DtoClassificationDetailResponse,
-  DtoOverrideClassificationRequest
+  DtoClassificationListResponse,
+  DtoOverrideClassificationRequest,
+  ListClassificationsParams
 } from '../models';
 
 import { apiMutator } from '../../mutator';
+
+export const getListClassificationsUrl = (params?: ListClassificationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/galgames/classification?${stringifiedParams}` : `/api/v1/admin/galgames/classification`
+}
+
+/**
+ * 分页返回每个游戏最新一条 AI 判断任务，可按状态与游戏名/原名关键字过滤
+ * @summary 查看 AI 分级任务队列
+ */
+export const listClassifications = async (params?: ListClassificationsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoClassificationListResponse> => {
+
+  return apiMutator<DtoClassificationListResponse>(getListClassificationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
 
 export const getBatchClassificationUrl = () => {
 
@@ -137,6 +170,30 @@ export const getApproveClassificationUrl = (id: number,) => {
 export const approveClassification = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoClassificationDetailResponse> => {
 
   return apiMutator<DtoClassificationDetailResponse>(getApproveClassificationUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export const getCancelClassificationUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/classification/cancel`
+}
+
+/**
+ * 停止排队中或进行中的 AI 判断任务并标记为 cancelled；已完成的判断无法取消
+ * @summary 取消 AI 年龄分级
+ */
+export const cancelClassification = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoClassificationDetailResponse> => {
+
+  return apiMutator<DtoClassificationDetailResponse>(getCancelClassificationUrl(id),
   {
     ...options,
     method: 'POST'

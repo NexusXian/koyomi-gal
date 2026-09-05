@@ -116,6 +116,7 @@ func (app *App) setupRoutes() {
 	admin := protected.Group("/admin")
 	{
 		admin.GET("/galgames", requirePermission("galgame:review"), app.CatalogHandler.ListAdminGalgames)
+		admin.GET("/galgames/classification", requirePermission("galgame_classification:read"), app.ClassificationHandler.ListClassifications)
 		admin.GET("/galgames/:id", requirePermission("galgame:review"), app.CatalogHandler.GetAdminGalgame)
 		admin.PUT("/galgames/:id/review", requirePermission("galgame:review"), app.CatalogHandler.ReviewGalgame)
 		admin.PATCH("/galgames/batch", requirePermission("galgame:update"), app.CatalogHandler.BatchUpdateGalgames)
