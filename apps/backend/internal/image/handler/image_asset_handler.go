@@ -159,7 +159,7 @@ func (h *ImageHandler) DeleteImage(c *gin.Context) {
 // @Produce      json
 // @Param        page query int false "页码" default(1)
 // @Param        limit query int false "每页数量，最大 100" default(20)
-// @Param        category query string false "分类" Enums(avatars,posts,comments,galgames,backgrounds,banners,admin)
+// @Param        category query string false "分类" Enums(avatars,posts,comments,galgames,novels,backgrounds,banners,admin)
 // @Param        user_id query int false "上传用户 ID"
 // @Param        status query int false "状态" Enums(0,1,2,3)
 // @Success      200 {object} dto.AdminImageListResponse "图片列表"
