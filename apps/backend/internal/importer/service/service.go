@@ -7,11 +7,13 @@ import (
 	"strings"
 	"time"
 
+	contributionModel "backend/internal/contribution/model"
+	contributionService "backend/internal/contribution/service"
 	galgameModel "backend/internal/galgame/model"
-	galgameService "backend/internal/galgame/service"
 	importerModel "backend/internal/importer/model"
 	"backend/internal/importer/provider"
 	importerRepository "backend/internal/importer/repository"
+	relationModel "backend/internal/relation/model"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -71,7 +73,7 @@ type ImportResult struct {
 type Service struct {
 	repository     *importerRepository.Repository
 	providers      map[string]provider.Provider
-	contributions  *galgameService.ContributionService
+	contributions  *contributionService.ContributionService
 	batchEnqueuer  func(ctx context.Context, jobID int64) error
 	enrichEnqueuer func(ctx context.Context, jobID int64) error
 }
@@ -79,7 +81,7 @@ type Service struct {
 func NewService(
 	repository *importerRepository.Repository,
 	providers map[string]provider.Provider,
-	contributions *galgameService.ContributionService,
+	contributions *contributionService.ContributionService,
 ) *Service {
 	registered := make(map[string]provider.Provider, len(providers))
 	for name, item := range providers {
@@ -244,12 +246,13 @@ func (s *Service) importFetched(
 			}
 			galgameID = created.ID
 			if input.RecordContribution && input.CreatedBy != nil && *input.CreatedBy != 0 && s.contributions != nil {
-				sourceType := string(galgameModel.ContributionSourceGalgameCreate)
+				sourceType := contributionModel.ContributionSourceGalgameCreate
 				sourceID := created.ID
-				if err := s.contributions.RecordContribution(ctx, galgameService.RecordContributionInput{
-					GalgameID:  created.ID,
+				if err := s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+					TargetType: relationModel.WorkTypeGalgame,
+					TargetID:   created.ID,
 					UserID:     *input.CreatedBy,
-					Action:     galgameModel.ContributionActionCreate,
+					Action:     contributionModel.ContributionActionCreate,
 					SourceType: &sourceType,
 					SourceID:   &sourceID,
 				}, tx); err != nil {

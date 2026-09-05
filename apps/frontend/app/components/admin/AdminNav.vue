@@ -17,6 +17,12 @@ const items: AdminNavItem[] = [
     permissions: ['galgame:review']
   },
   {
+    key: '/admin/novels',
+    label: '小说管理',
+    icon: 'lucide:book-open',
+    permissions: ['novel:review']
+  },
+  {
     key: '/admin/gallery-reviews',
     label: '插图审核',
     icon: 'lucide:image-plus',

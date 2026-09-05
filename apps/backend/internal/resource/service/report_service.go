@@ -10,8 +10,9 @@ import (
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
+	relationModel "backend/internal/relation/model"
 	"backend/internal/resource/dto"
-	"backend/internal/resource/model"
+	resourceModel "backend/internal/resource/model"
 	"backend/internal/resource/repository"
 	"backend/pkg/logger"
 
@@ -59,7 +60,7 @@ func (s *ReportService) Create(
 	ctx context.Context,
 	userID, resourceID uint,
 	req *dto.CreateResourceReportRequest,
-) (*model.ResourceReport, error) {
+) (*resourceModel.ResourceReport, error) {
 	if !validReportReason(req.Reason) {
 		return nil, ErrInvalidReportReason
 	}
@@ -72,7 +73,7 @@ func (s *ReportService) Create(
 		return nil, ErrResourceNotFound
 	}
 
-	report := &model.ResourceReport{
+	report := &resourceModel.ResourceReport{
 		ResourceID:  resourceID,
 		UserID:      userID,
 		Reason:      req.Reason,
@@ -100,7 +101,7 @@ func (s *ReportService) List(
 	ctx context.Context,
 	status *int16,
 	page, limit int,
-) ([]model.ResourceReport, int64, int, int, error) {
+) ([]resourceModel.ResourceReport, int64, int, int, error) {
 	if status != nil && !validReportStatus(*status) {
 		return nil, 0, page, limit, ErrInvalidReportStatus
 	}
@@ -127,8 +128,8 @@ func (s *ReportService) Handle(
 	ctx context.Context,
 	adminID, id uint,
 	req *dto.HandleResourceReportRequest,
-) (*model.ResourceReport, error) {
-	if req.Status != model.ReportStatusResolved && req.Status != model.ReportStatusRejected {
+) (*resourceModel.ResourceReport, error) {
+	if req.Status != resourceModel.ReportStatusResolved && req.Status != resourceModel.ReportStatusRejected {
 		return nil, ErrInvalidReportHandle
 	}
 	report, err := s.reports.FindByID(ctx, id)
@@ -162,7 +163,7 @@ func (s *ReportService) Handle(
 func (s *ReportService) notifyResourceReported(
 	ctx context.Context,
 	actorID uint,
-	report *model.ResourceReport,
+	report *resourceModel.ResourceReport,
 ) {
 	if s.rbac == nil || s.notifications == nil || report.Resource == nil {
 		return
@@ -186,7 +187,8 @@ func (s *ReportService) notifyResourceReported(
 			TargetURL:   "/admin/reports",
 			Metadata: map[string]any{
 				"description": report.Description,
-				"galgame_id":  report.Resource.GalgameID,
+				"target_type": report.Resource.TargetType,
+				"target_id":   report.Resource.TargetID,
 				"reason":      report.Reason,
 				"resource_id": report.ResourceID,
 			},
@@ -197,14 +199,14 @@ func (s *ReportService) notifyResourceReported(
 	}
 }
 
-func (s *ReportService) notifyReportHandled(ctx context.Context, actorID uint, report *model.ResourceReport) {
+func (s *ReportService) notifyReportHandled(ctx context.Context, actorID uint, report *resourceModel.ResourceReport) {
 	if s.notifications == nil || report.Resource == nil {
 		return
 	}
 	notificationType := notificationModel.TypeReportResolved
 	title := "资源举报已处理"
 	content := "你提交的资源举报已处理"
-	if report.Status == model.ReportStatusRejected {
+	if report.Status == resourceModel.ReportStatusRejected {
 		notificationType = notificationModel.TypeReportRejected
 		title = "资源举报未被采纳"
 		content = "你提交的资源举报未被采纳"
@@ -218,10 +220,11 @@ func (s *ReportService) notifyReportHandled(ctx context.Context, actorID uint, r
 		EntityID:    report.ID,
 		Title:       title,
 		Content:     content,
-		TargetURL:   fmt.Sprintf("/galgames/%d", report.Resource.GalgameID),
+		TargetURL:   resourceReportTargetURL(report.Resource),
 		Metadata: map[string]any{
 			"description": report.Description,
-			"galgame_id":  report.Resource.GalgameID,
+			"target_type": report.Resource.TargetType,
+			"target_id":   report.Resource.TargetID,
 			"reason":      report.Reason,
 			"resource_id": report.ResourceID,
 			"status":      report.Status,
@@ -231,12 +234,19 @@ func (s *ReportService) notifyReportHandled(ctx context.Context, actorID uint, r
 	}
 }
 
+func resourceReportTargetURL(resource *resourceModel.Resource) string {
+	if resource.TargetType == relationModel.WorkTypeNovel {
+		return fmt.Sprintf("/novels/%d", resource.TargetID)
+	}
+	return fmt.Sprintf("/galgames/%d", resource.TargetID)
+}
+
 func validReportReason(value int16) bool {
-	return value >= model.ReportReasonInvalidLink && value <= model.ReportReasonOther
+	return value >= resourceModel.ReportReasonInvalidLink && value <= resourceModel.ReportReasonOther
 }
 
 func validReportStatus(value int16) bool {
-	return value >= model.ReportStatusPending && value <= model.ReportStatusRejected
+	return value >= resourceModel.ReportStatusPending && value <= resourceModel.ReportStatusRejected
 }
 
 func hasConstraint(err error, constraint string) bool {

@@ -10,6 +10,7 @@ import (
 	galgameDTO "backend/internal/galgame/dto"
 	galgameRepo "backend/internal/galgame/repository"
 	"backend/internal/middleware"
+	novelRepo "backend/internal/novel/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/resource/dto"
 	resourceRepo "backend/internal/resource/repository"
@@ -63,13 +64,15 @@ func TestReportEndpointsFlow(t *testing.T) {
 	resource, err := resourceService.NewResourceService(
 		resourceRepo.NewResourceRepository(env.db),
 		galgameRepo.NewGalgameRepository(env.db),
+		novelRepo.NewNovelRepository(env.db),
 		env.rbac,
 	).CreateResource(ctx, uploader, &dto.CreateResourceRequest{
-		GalgameID: galgame.ID,
-		Title:     "report-http-resource",
-		Type:      1,
-		Status:    func() *int16 { published := int16(1); return &published }(),
-		Links:     []string{"https://example.com/report"},
+		TargetType: "galgame",
+		TargetID:   galgame.ID,
+		Title:      "report-http-resource",
+		Type:       1,
+		Status:     func() *int16 { published := int16(1); return &published }(),
+		Links:      []string{"https://example.com/report"},
 	})
 	if err != nil {
 		t.Fatalf("create resource: %v", err)

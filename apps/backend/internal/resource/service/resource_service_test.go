@@ -5,12 +5,15 @@ import (
 	"errors"
 	"testing"
 
+	contributionRepo "backend/internal/contribution/repository"
+	contributionService "backend/internal/contribution/service"
 	galgameDTO "backend/internal/galgame/dto"
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
 	notificationModel "backend/internal/notification/model"
 	notificationRepo "backend/internal/notification/repository"
 	notificationService "backend/internal/notification/service"
+	novelRepo "backend/internal/novel/repository"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/resource/dto"
@@ -34,9 +37,8 @@ func newResourceTestEnv(t *testing.T) *resourceTestEnv {
 	testutil.SkipWithoutPostgres(t)
 	db := testutil.NewPostgres(t)
 	galgameRepository := galgameRepo.NewGalgameRepository(db)
-	contributionRepository := galgameRepo.NewContributionRepository(db, "https://img.example.com")
-	contributionSvc := galgameService.NewContributionService(
-		contributionRepository,
+	contributionSvc := contributionService.NewContributionService(
+		contributionRepo.NewContributionRepository(db, "https://img.example.com"),
 		galgameRepository,
 		"https://img.example.com",
 	)
@@ -56,6 +58,7 @@ func newResourceTestEnv(t *testing.T) *resourceTestEnv {
 	env.resources = NewResourceService(
 		resourceRepo.NewResourceRepository(db),
 		galgameRepository,
+		novelRepo.NewNovelRepository(db),
 		rbacSvc,
 	)
 	env.catalog.SetContributionService(contributionSvc)
@@ -105,7 +108,7 @@ func TestResourceContributionReviewLifecycle(t *testing.T) {
 func countResourceContributions(t *testing.T, db *gorm.DB, resourceID uint) int64 {
 	t.Helper()
 	var count int64
-	if err := db.Table("galgame_contributions").
+	if err := db.Table("work_contributions").
 		Where("source_type = ? AND source_id = ?", "resource", resourceID).
 		Count(&count).Error; err != nil {
 		t.Fatalf("count resource contributions: %v", err)
@@ -136,11 +139,12 @@ func (e *resourceTestEnv) createResource(
 	t.Helper()
 	requestStatus := status
 	resource, err := e.resources.CreateResource(context.Background(), uploaderID, &dto.CreateResourceRequest{
-		GalgameID: galgameID,
-		Title:     title,
-		Type:      model.ResourceTypeGame,
-		Status:    &requestStatus,
-		Links:     links,
+		TargetType: "galgame",
+		TargetID:   galgameID,
+		Title:      title,
+		Type:       model.ResourceTypeGame,
+		Status:     &requestStatus,
+		Links:      links,
 	})
 	if err != nil {
 		t.Fatalf("create resource %s: %v", title, err)
@@ -231,7 +235,7 @@ func TestResourceCreateIncrementsCount(t *testing.T) {
 
 	first := env.createResource(t, uploader, galgameID, "patch", model.ResourceStatusPublished,
 		"https://example.com/a", "https://example.com/b")
-	if first.GalgameID != galgameID || first.UploaderID == nil || *first.UploaderID != uploader {
+	if first.TargetType != "galgame" || first.TargetID != galgameID || first.UploaderID == nil || *first.UploaderID != uploader {
 		t.Fatalf("unexpected created resource: %+v", first)
 	}
 	if len(first.Links) != 2 || first.Links[0].URL != "https://example.com/a" {
@@ -248,41 +252,46 @@ func TestResourceCreateIncrementsCount(t *testing.T) {
 	}
 
 	if _, err := env.resources.CreateResource(ctx, uploader, &dto.CreateResourceRequest{
-		GalgameID: galgameID,
-		Title:     " ",
-		Links:     []string{"https://example.com/x"},
+		TargetType: "galgame",
+		TargetID:   galgameID,
+		Title:      " ",
+		Links:      []string{"https://example.com/x"},
 	}); !errors.Is(err, ErrInvalidResourceInput) {
 		t.Fatalf("expected ErrInvalidResourceInput, got %v", err)
 	}
 	if _, err := env.resources.CreateResource(ctx, uploader, &dto.CreateResourceRequest{
-		GalgameID: galgameID,
-		Title:     "bad type",
-		Type:      7,
-		Links:     []string{"https://example.com/x"},
+		TargetType: "galgame",
+		TargetID:   galgameID,
+		Title:      "bad type",
+		Type:       99,
+		Links:      []string{"https://example.com/x"},
 	}); !errors.Is(err, ErrInvalidResourceType) {
 		t.Fatalf("expected ErrInvalidResourceType, got %v", err)
 	}
 	if _, err := env.resources.CreateResource(ctx, uploader, &dto.CreateResourceRequest{
-		GalgameID: galgameID,
-		Title:     "bad status",
-		Status:    statusPtr(4),
-		Links:     []string{"https://example.com/x"},
+		TargetType: "galgame",
+		TargetID:   galgameID,
+		Title:      "bad status",
+		Status:     statusPtr(4),
+		Links:      []string{"https://example.com/x"},
 	}); !errors.Is(err, ErrInvalidResourceStatus) {
 		t.Fatalf("expected ErrInvalidResourceStatus, got %v", err)
 	}
 	if _, err := env.resources.CreateResource(ctx, uploader, &dto.CreateResourceRequest{
-		GalgameID: galgameID,
-		Title:     "no links",
-		Links:     []string{"  "},
+		TargetType: "galgame",
+		TargetID:   galgameID,
+		Title:      "no links",
+		Links:      []string{"  "},
 	}); !errors.Is(err, ErrEmptyResourceLinks) {
 		t.Fatalf("expected ErrEmptyResourceLinks, got %v", err)
 	}
 	if _, err := env.resources.CreateResource(ctx, uploader, &dto.CreateResourceRequest{
-		GalgameID: 999999,
-		Title:     "unknown galgame",
-		Links:     []string{"https://example.com/x"},
-	}); !errors.Is(err, ErrGalgameNotFound) {
-		t.Fatalf("expected ErrGalgameNotFound, got %v", err)
+		TargetType: "galgame",
+		TargetID:   999999,
+		Title:      "unknown galgame",
+		Links:      []string{"https://example.com/x"},
+	}); !errors.Is(err, ErrTargetNotFound) {
+		t.Fatalf("expected ErrTargetNotFound, got %v", err)
 	}
 	if count := env.resourceCount(t, galgameID); count != 2 {
 		t.Fatalf("failed creates must not change count, got %d", count)
@@ -302,7 +311,7 @@ func TestResourcePublicQueriesOnlyPublished(t *testing.T) {
 	env.createResource(t, uploader, galgameID, "hidden", model.ResourceStatusHidden,
 		"https://example.com/r")
 
-	items, total, page, limit, err := env.resources.ListPublishedByGalgame(ctx, galgameID, 0, 0)
+	items, total, page, limit, err := env.resources.ListPublishedByTarget(ctx, "galgame", galgameID, 0, 0)
 	if err != nil {
 		t.Fatalf("list published resources: %v", err)
 	}
@@ -326,8 +335,8 @@ func TestResourcePublicQueriesOnlyPublished(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create pending galgame: %v", err)
 	}
-	if _, _, _, _, err := env.resources.ListPublishedByGalgame(ctx, pendingGalgame.ID, 1, 20); !errors.Is(err, ErrGalgameNotFound) {
-		t.Fatalf("expected ErrGalgameNotFound for pending galgame, got %v", err)
+	if _, _, _, _, err := env.resources.ListPublishedByTarget(ctx, "galgame", pendingGalgame.ID, 1, 20); !errors.Is(err, ErrTargetNotFound) {
+		t.Fatalf("expected ErrTargetNotFound for pending galgame, got %v", err)
 	}
 }
 
@@ -411,7 +420,8 @@ func TestResourceWritesRollbackOnError(t *testing.T) {
 	err := env.db.Transaction(func(tx *gorm.DB) error {
 		resources := resourceRepo.NewResourceRepository(tx)
 		resource := &model.Resource{
-			GalgameID:  galgameID,
+			TargetType: "galgame",
+			TargetID:   galgameID,
 			UploaderID: &uploader,
 			Title:      "rollback",
 			Type:       model.ResourceTypeGame,
@@ -423,7 +433,7 @@ func TestResourceWritesRollbackOnError(t *testing.T) {
 		if err := resources.CreateLinks(ctx, resource.ID, []string{"https://example.com/r"}); err != nil {
 			return err
 		}
-		if err := resources.IncrementResourceCount(ctx, galgameID); err != nil {
+		if err := resources.IncrementResourceCount(ctx, "galgame", galgameID); err != nil {
 			return err
 		}
 		return injected
@@ -435,7 +445,7 @@ func TestResourceWritesRollbackOnError(t *testing.T) {
 		t.Fatalf("expected count rolled back to 0, got %d", count)
 	}
 	var resourceCount int64
-	if err := env.db.Raw("SELECT COUNT(*) FROM resources WHERE galgame_id = ?", galgameID).
+	if err := env.db.Raw("SELECT COUNT(*) FROM resources WHERE target_type = 'galgame' AND target_id = ?", galgameID).
 		Scan(&resourceCount).Error; err != nil || resourceCount != 0 {
 		t.Fatalf("expected resource rolled back, got %d err=%v", resourceCount, err)
 	}

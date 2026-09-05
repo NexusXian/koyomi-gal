@@ -28,7 +28,7 @@ keyword?: string;
  */
 sort?: string;
 /**
- * AI 分级建议过滤：r18、non_r18、unknown
+ * AI 分级建议过滤：r18、r17、r15、r12、non_r18、unknown
  */
 ai_classification?: string;
 /**

@@ -11,6 +11,9 @@ export type DtoOverrideClassificationRequestClassification = typeof DtoOverrideC
 
 export const DtoOverrideClassificationRequestClassification = {
   r18: 'r18',
+  r17: 'r17',
+  r15: 'r15',
+  r12: 'r12',
   non_r18: 'non_r18',
   unknown: 'unknown',
 } as const;

@@ -7,10 +7,13 @@ import (
 	"strings"
 	"time"
 
+	contributionModel "backend/internal/contribution/model"
+	contributionService "backend/internal/contribution/service"
 	"backend/internal/galgame/dto"
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
 	imageService "backend/internal/image/service"
+	relationModel "backend/internal/relation/model"
 	"backend/pkg/logger"
 
 	"go.uber.org/zap"
@@ -45,10 +48,10 @@ type GalleryService struct {
 	galgames      *repository.GalgameRepository
 	gallery       *repository.GalleryRepository
 	images        *imageService.ImageAssetService
-	contributions *ContributionService
+	contributions *contributionService.ContributionService
 }
 
-func (s *GalleryService) SetContributionService(contributions *ContributionService) {
+func (s *GalleryService) SetContributionService(contributions *contributionService.ContributionService) {
 	s.contributions = contributions
 }
 
@@ -450,18 +453,19 @@ func (s *GalleryService) ReviewGalleryImages(ctx context.Context, input ReviewGa
 				continue
 			}
 			exists, err := s.contributions.HasSourceContribution(
-				ctx, model.ContributionSourceGalleryImage, image.ID, db)
+				ctx, contributionModel.ContributionSourceGalleryImage, image.ID, db)
 			if err != nil {
 				return err
 			}
 			if exists {
 				continue
 			}
-			sourceType, sourceID := contributionSource(model.ContributionSourceGalleryImage, image.ID)
-			if err := s.contributions.RecordContribution(ctx, RecordContributionInput{
-				GalgameID:  galgameID,
+			sourceType, sourceID := contributionSource(contributionModel.ContributionSourceGalleryImage, image.ID)
+			if err := s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: relationModel.WorkTypeGalgame,
+				TargetID:   galgameID,
 				UserID:     *image.CreatedBy,
-				Action:     model.ContributionActionGallery,
+				Action:     contributionModel.ContributionActionGallery,
 				SourceType: sourceType,
 				SourceID:   sourceID,
 			}, db); err != nil {
@@ -540,10 +544,11 @@ func (s *GalleryService) UpdateGalleryImage(
 			return err
 		}
 		if changed && galgame != nil && galgame.Status == model.GalgameStatusPublished && len(actorIDs) > 0 && s.contributions != nil {
-			return s.contributions.RecordContribution(ctx, RecordContributionInput{
-				GalgameID: galgameID,
-				UserID:    actorIDs[0],
-				Action:    model.ContributionActionGallery,
+			return s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: relationModel.WorkTypeGalgame,
+				TargetID:   galgameID,
+				UserID:     actorIDs[0],
+				Action:     contributionModel.ContributionActionGallery,
 			}, db)
 		}
 		return nil
@@ -579,10 +584,11 @@ func (s *GalleryService) DeleteGalleryImage(ctx context.Context, galgameID, gall
 			return err
 		}
 		if galgame != nil && galgame.Status == model.GalgameStatusPublished && len(actorIDs) > 0 && s.contributions != nil {
-			return s.contributions.RecordContribution(ctx, RecordContributionInput{
-				GalgameID: galgameID,
-				UserID:    actorIDs[0],
-				Action:    model.ContributionActionGallery,
+			return s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: relationModel.WorkTypeGalgame,
+				TargetID:   galgameID,
+				UserID:     actorIDs[0],
+				Action:     contributionModel.ContributionActionGallery,
 			}, db)
 		}
 		return nil
@@ -649,10 +655,11 @@ func (s *GalleryService) ReorderGallery(ctx context.Context, galgameID uint, req
 			return err
 		}
 		if changed && galgame.Status == model.GalgameStatusPublished && len(actorIDs) > 0 && s.contributions != nil {
-			return s.contributions.RecordContribution(ctx, RecordContributionInput{
-				GalgameID: galgameID,
-				UserID:    actorIDs[0],
-				Action:    model.ContributionActionGallery,
+			return s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: relationModel.WorkTypeGalgame,
+				TargetID:   galgameID,
+				UserID:     actorIDs[0],
+				Action:     contributionModel.ContributionActionGallery,
 			}, db)
 		}
 		return nil

@@ -14,9 +14,10 @@ type ResourceUserSummary struct {
 }
 
 type CreateResourceRequest struct {
-	GalgameID   uint     `json:"galgame_id" binding:"required,gt=0" example:"1"`
+	TargetType  string   `json:"target_type" binding:"omitempty,oneof=galgame novel" example:"galgame"`
+	TargetID    uint     `json:"target_id" binding:"required,gt=0" example:"1"`
 	Title       string   `json:"title" binding:"required,max=255" example:"千恋＊万花 官方整合包"`
-	Type        int16    `json:"type" binding:"oneof=0 1 2 3 4 5 6" example:"1"`
+	Type        int16    `json:"type" binding:"oneof=0 1 2 3 4 5 6 7 8 9 10 11 12" example:"1"`
 	Description string   `json:"description" example:"官方汉化整合包"`
 	Status      *int16   `json:"status" binding:"omitempty,oneof=0 1 2 3" example:"1"`
 	Links       []string `json:"links" binding:"required,min=1,max=50,dive,required,min=1,max=2048" example:"https://example.com/dl,https://example.com/dl2"`
@@ -24,7 +25,7 @@ type CreateResourceRequest struct {
 
 type UpdateResourceRequest struct {
 	Title       string   `json:"title" binding:"required,max=255" example:"千恋＊万花 官方整合包"`
-	Type        int16    `json:"type" binding:"oneof=0 1 2 3 4 5 6" example:"1"`
+	Type        int16    `json:"type" binding:"oneof=0 1 2 3 4 5 6 7 8 9 10 11 12" example:"1"`
 	Description string   `json:"description" example:"官方汉化整合包"`
 	Status      *int16   `json:"status" binding:"required,oneof=0 1 2 3" example:"1"`
 	Links       []string `json:"links" binding:"required,min=1,max=50,dive,required,min=1,max=2048" example:"https://example.com/dl"`
@@ -47,7 +48,8 @@ type ResourceLinkData struct {
 
 type ResourceData struct {
 	ID          uint                 `json:"id" example:"1"`
-	GalgameID   uint                 `json:"galgame_id" example:"1"`
+	TargetType  string               `json:"target_type" example:"galgame"`
+	TargetID    uint                 `json:"target_id" example:"1"`
 	UploaderID  *uint                `json:"uploader_id" example:"1"`
 	Uploader    *ResourceUserSummary `json:"uploader"`
 	Title       string               `json:"title" example:"千恋＊万花 官方整合包"`
@@ -102,7 +104,8 @@ func NewResourceData(resource *model.Resource) ResourceData {
 	}
 	data := ResourceData{
 		ID:          resource.ID,
-		GalgameID:   resource.GalgameID,
+		TargetType:  resource.TargetType,
+		TargetID:    resource.TargetID,
 		UploaderID:  resource.UploaderID,
 		Title:       resource.Title,
 		Type:        resource.Type,

@@ -2,9 +2,10 @@ package handler
 
 import (
 	"errors"
+	"strconv"
 
+	"backend/internal/contribution/service"
 	"backend/internal/galgame/dto"
-	"backend/internal/galgame/service"
 	appErrors "backend/pkg/errors"
 	"backend/pkg/logger"
 	"backend/pkg/response"
@@ -36,8 +37,9 @@ func NewContributionHandler(service *service.ContributionService) *ContributionH
 // @Failure      500 {object} response.ErrorResponse "查询贡献者失败"
 // @Router       /api/v1/galgames/{id}/contributors [get]
 func (h *ContributionHandler) ListGalgameContributors(c *gin.Context) {
-	id, ok := parseID(c, "Galgame")
-	if !ok {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 0)
+	if err != nil || id == 0 {
+		response.Error(c, appErrors.ErrValidation("Galgame ID 格式不正确"))
 		return
 	}
 	var query dto.ContributorQuery
@@ -45,15 +47,28 @@ func (h *ContributionHandler) ListGalgameContributors(c *gin.Context) {
 		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
 		return
 	}
-	data, err := h.service.ListContributorsByGalgameID(c.Request.Context(), id, query.Page, query.PageSize)
+	page := query.Page
+	if page == 0 {
+		page = 1
+	}
+	pageSize := query.PageSize
+	if pageSize == 0 {
+		pageSize = 20
+	}
+	contributors, total, err := h.service.ListGalgameContributorRows(c.Request.Context(), uint(id), page, pageSize)
 	if err != nil {
 		if errors.Is(err, service.ErrGalgameNotFound) {
 			response.Error(c, appErrors.ErrNotFound("Galgame 不存在"))
 			return
 		}
-		logger.Error("list galgame contributors", zap.Uint("galgame_id", id), zap.Error(err))
+		logger.Error("list galgame contributors", zap.Uint64("galgame_id", id), zap.Error(err))
 		response.Error(c, appErrors.ErrInternal("查询贡献者失败"))
 		return
 	}
-	response.Ok(c, data)
+	response.Ok(c, dto.ContributorListData{
+		Items:    dto.NewContributorData(contributors),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	})
 }

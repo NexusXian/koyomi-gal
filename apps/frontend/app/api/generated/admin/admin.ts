@@ -14,6 +14,7 @@ import type {
   DtoAdminImageListResponse,
   DtoAdminPostListResponse,
   DtoAdminResourceListResponse,
+  DtoAdminVolumeListResponse,
   DtoArticleDataResponse,
   DtoBackgroundPresetDataResponse,
   DtoBannerDataResponse,
@@ -38,17 +39,22 @@ import type {
   DtoHandleFeedbackRequest,
   DtoHandleResourceReportRequest,
   DtoImageDataResponse,
+  DtoNovelDataResponse,
+  DtoNovelListResponse,
   DtoReorderGalleryRequest,
   DtoResourceDataResponse,
   DtoResourceReportDataResponse,
   DtoResourceReportListResponse,
   DtoReviewGalgameRequest,
   DtoReviewGalleryImageRequest,
+  DtoReviewNovelRequest,
   DtoReviewResourceRequest,
+  DtoReviewVolumeRequest,
   DtoUpdateArticleRequest,
   DtoUpdateBackgroundPresetRequest,
   DtoUpdateBannerRequest,
   DtoUpdateGalleryImageRequest,
+  DtoVolumeDataResponse,
   ListAdminArticlesParams,
   ListAdminBackgroundPresetsParams,
   ListAdminBannersParams,
@@ -56,6 +62,8 @@ import type {
   ListAdminFeedbackParams,
   ListAdminGalgamesParams,
   ListAdminImagesParams,
+  ListAdminNovelVolumesParams,
+  ListAdminNovelsParams,
   ListAdminPostsParams,
   ListAdminResourcesParams,
   ListGalleryReviewsParams,
@@ -1067,6 +1075,154 @@ export const deleteAdminImage = async (id: number, options?: Parameters<typeof a
     method: 'DELETE'
 
 
+  }
+);}
+
+
+export const getListAdminNovelVolumesUrl = (params?: ListAdminNovelVolumesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/novel-volumes?${stringifiedParams}` : `/api/v1/admin/novel-volumes`
+}
+
+/**
+ * 返回全部状态的卷册并附带所属小说标题；需要 novel:review 权限
+ * @summary 管理端查询小说卷册列表
+ */
+export const listAdminNovelVolumes = async (params?: ListAdminNovelVolumesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminVolumeListResponse> => {
+
+  return apiMutator<DtoAdminVolumeListResponse>(getListAdminNovelVolumesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getReviewNovelVolumeUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/novel-volumes/${id}/review`
+}
+
+/**
+ * 将卷册标记为已发布 (1) 或已拒绝 (2)，拒绝时可附原因；需要 novel:review 权限
+ * @summary 管理端审核小说卷册
+ */
+export const reviewNovelVolume = async (id: number,
+    dtoReviewVolumeRequest: DtoReviewVolumeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoVolumeDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoVolumeDataResponse>(getReviewNovelVolumeUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoReviewVolumeRequest)
+  }
+);}
+
+
+export const getListAdminNovelsUrl = (params?: ListAdminNovelsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/novels?${stringifiedParams}` : `/api/v1/admin/novels`
+}
+
+/**
+ * 返回全部状态的小说；需要 novel:review 权限
+ * @summary 管理端查询小说列表
+ */
+export const listAdminNovels = async (params?: ListAdminNovelsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoNovelListResponse> => {
+
+  return apiMutator<DtoNovelListResponse>(getListAdminNovelsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getGetAdminNovelUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/novels/${id}`
+}
+
+/**
+ * 按 ID 返回任意状态的小说详情；需要 novel:review 权限
+ * @summary 管理端查看小说详情
+ */
+export const getAdminNovel = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoNovelDataResponse> => {
+
+  return apiMutator<DtoNovelDataResponse>(getGetAdminNovelUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getReviewNovelUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/novels/${id}/review`
+}
+
+/**
+ * 将小说标记为已发布 (1) 或已拒绝 (2)，拒绝时可附原因；需要 novel:review 权限
+ * @summary 管理端审核小说
+ */
+export const reviewNovel = async (id: number,
+    dtoReviewNovelRequest: DtoReviewNovelRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoNovelDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoNovelDataResponse>(getReviewNovelUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoReviewNovelRequest)
   }
 );}
 

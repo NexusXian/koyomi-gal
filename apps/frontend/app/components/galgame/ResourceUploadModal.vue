@@ -3,15 +3,30 @@ import { message } from 'ant-design-vue'
 import { RESOURCE_TYPES } from '~/constants/domain'
 import { createResource } from '~/api/generated/resources/resources'
 
-const props = defineProps<{
-  open: boolean
-  galgameId: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    galgameId?: number
+    targetType?: 'galgame' | 'novel'
+    targetId?: number
+  }>(),
+  { galgameId: undefined, targetType: 'galgame', targetId: undefined }
+)
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
   created: []
 }>()
+
+const effectiveTargetId = computed(() => props.targetId ?? props.galgameId ?? 0)
+
+const defaultType = computed(() => (props.targetType === 'novel' ? 9 : 1))
+
+const typeOptions = computed(() =>
+  RESOURCE_TYPES.filter((item) =>
+    props.targetType === 'novel' ? item.value === 0 || item.value >= 7 : item.value <= 6
+  )
+)
 
 const formState = reactive({
   title: '',
@@ -20,6 +35,10 @@ const formState = reactive({
   links: ''
 })
 const submitting = ref(false)
+
+watch(defaultType, (value) => {
+  formState.type = value
+})
 
 function close(): void {
   emit('update:open', false)
@@ -44,14 +63,20 @@ async function submit(): Promise<void> {
   submitting.value = true
   try {
     await createResource({
-      galgame_id: props.galgameId,
+      target_type: props.targetType,
+      target_id: effectiveTargetId.value,
       title: formState.title.trim(),
-      type: formState.type as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      type: formState.type as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12,
       description: formState.description.trim() || undefined,
       links
     })
     message.success('资源已提交，等待审核')
-    Object.assign(formState, { title: '', type: 1, description: '', links: '' })
+    Object.assign(formState, {
+      title: '',
+      type: defaultType.value,
+      description: '',
+      links: ''
+    })
     emit('created')
     close()
   } catch (error) {
@@ -60,6 +85,10 @@ async function submit(): Promise<void> {
     submitting.value = false
   }
 }
+
+onMounted(() => {
+  formState.type = defaultType.value
+})
 </script>
 
 <template>
@@ -81,7 +110,7 @@ async function submit(): Promise<void> {
         <a-select
           v-model:value="formState.type"
           :options="
-            RESOURCE_TYPES.map((item) => ({
+            typeOptions.map((item) => ({
               value: item.value,
               label: item.label
             }))

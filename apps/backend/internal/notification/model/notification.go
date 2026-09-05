@@ -11,23 +11,29 @@ import (
 type NotificationType string
 
 const (
-	TypePostCommented     NotificationType = "post_commented"
-	TypeCommentReplied    NotificationType = "comment_replied"
-	TypePostLiked         NotificationType = "post_liked"
-	TypeCommentLiked      NotificationType = "comment_liked"
-	TypeGalgameSubmitted  NotificationType = "galgame_submitted"
-	TypeGalgameApproved   NotificationType = "galgame_approved"
-	TypeGalgameRejected   NotificationType = "galgame_rejected"
-	TypeResourceSubmitted NotificationType = "resource_submitted"
-	TypeResourceApproved  NotificationType = "resource_approved"
-	TypeResourceRejected  NotificationType = "resource_rejected"
-	TypeResourceHidden    NotificationType = "resource_hidden"
-	TypeResourceReported  NotificationType = "resource_reported"
-	TypeReportResolved    NotificationType = "report_resolved"
-	TypeReportRejected    NotificationType = "report_rejected"
-	TypePostModerated     NotificationType = "post_moderated"
-	TypeCommentModerated  NotificationType = "comment_moderated"
-	TypeSystem            NotificationType = "system"
+	TypePostCommented        NotificationType = "post_commented"
+	TypeCommentReplied       NotificationType = "comment_replied"
+	TypePostLiked            NotificationType = "post_liked"
+	TypeCommentLiked         NotificationType = "comment_liked"
+	TypeGalgameSubmitted     NotificationType = "galgame_submitted"
+	TypeGalgameApproved      NotificationType = "galgame_approved"
+	TypeGalgameRejected      NotificationType = "galgame_rejected"
+	TypeNovelSubmitted       NotificationType = "novel_submitted"
+	TypeNovelApproved        NotificationType = "novel_approved"
+	TypeNovelRejected        NotificationType = "novel_rejected"
+	TypeNovelVolumeSubmitted NotificationType = "novel_volume_submitted"
+	TypeNovelVolumeApproved  NotificationType = "novel_volume_approved"
+	TypeNovelVolumeRejected  NotificationType = "novel_volume_rejected"
+	TypeResourceSubmitted    NotificationType = "resource_submitted"
+	TypeResourceApproved     NotificationType = "resource_approved"
+	TypeResourceRejected     NotificationType = "resource_rejected"
+	TypeResourceHidden       NotificationType = "resource_hidden"
+	TypeResourceReported     NotificationType = "resource_reported"
+	TypeReportResolved       NotificationType = "report_resolved"
+	TypeReportRejected       NotificationType = "report_rejected"
+	TypePostModerated        NotificationType = "post_moderated"
+	TypeCommentModerated     NotificationType = "comment_moderated"
+	TypeSystem               NotificationType = "system"
 )
 
 type NotificationCategory string
@@ -117,6 +123,12 @@ func IsValidType(notificationType NotificationType) bool {
 		TypeGalgameSubmitted,
 		TypeGalgameApproved,
 		TypeGalgameRejected,
+		TypeNovelSubmitted,
+		TypeNovelApproved,
+		TypeNovelRejected,
+		TypeNovelVolumeSubmitted,
+		TypeNovelVolumeApproved,
+		TypeNovelVolumeRejected,
 		TypeResourceSubmitted,
 		TypeResourceApproved,
 		TypeResourceRejected,

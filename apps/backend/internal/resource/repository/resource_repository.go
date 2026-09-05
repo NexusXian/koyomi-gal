@@ -90,15 +90,19 @@ func (r *ResourceRepository) findByID(ctx context.Context, id uint, publishedOnl
 	return &resource, nil
 }
 
-func (r *ResourceRepository) ListPublishedByGalgame(
+// ListPublishedByTarget returns one page of the target work's published
+// resources with links.
+func (r *ResourceRepository) ListPublishedByTarget(
 	ctx context.Context,
-	galgameID uint,
+	targetType string,
+	targetID uint,
 	page, limit int,
 ) ([]model.Resource, int64, error) {
 	base := func() *gorm.DB {
 		return r.db.WithContext(ctx).
 			Model(&model.Resource{}).
-			Where("resources.galgame_id = ? AND resources.status = ?", galgameID, model.ResourceStatusPublished)
+			Where("resources.target_type = ? AND resources.target_id = ? AND resources.status = ?",
+				targetType, targetID, model.ResourceStatusPublished)
 	}
 	var total int64
 	if err := base().Count(&total).Error; err != nil {
@@ -176,10 +180,16 @@ func (r *ResourceRepository) ReplaceLinks(ctx context.Context, resourceID uint, 
 	return r.CreateLinks(ctx, resourceID, urls)
 }
 
-func (r *ResourceRepository) IncrementResourceCount(ctx context.Context, galgameID uint) error {
-	err := r.db.WithContext(ctx).Exec(
-		"UPDATE galgames SET resource_count = resource_count + 1 WHERE id = ?",
-		galgameID,
+// IncrementResourceCount bumps the denormalized counter on the target work's
+// table.
+func (r *ResourceRepository) IncrementResourceCount(ctx context.Context, targetType string, targetID uint) error {
+	table, err := targetCountTable(targetType)
+	if err != nil {
+		return err
+	}
+	err = r.db.WithContext(ctx).Exec(
+		fmt.Sprintf("UPDATE %s SET resource_count = resource_count + 1 WHERE id = ?", table),
+		targetID,
 	).Error
 	if err != nil {
 		return fmt.Errorf("increment resource count: %w", err)
@@ -187,15 +197,30 @@ func (r *ResourceRepository) IncrementResourceCount(ctx context.Context, galgame
 	return nil
 }
 
-func (r *ResourceRepository) DecrementResourceCount(ctx context.Context, galgameID uint) error {
-	err := r.db.WithContext(ctx).Exec(
-		"UPDATE galgames SET resource_count = GREATEST(resource_count - 1, 0) WHERE id = ?",
-		galgameID,
+func (r *ResourceRepository) DecrementResourceCount(ctx context.Context, targetType string, targetID uint) error {
+	table, err := targetCountTable(targetType)
+	if err != nil {
+		return err
+	}
+	err = r.db.WithContext(ctx).Exec(
+		fmt.Sprintf("UPDATE %s SET resource_count = GREATEST(resource_count - 1, 0) WHERE id = ?", table),
+		targetID,
 	).Error
 	if err != nil {
 		return fmt.Errorf("decrement resource count: %w", err)
 	}
 	return nil
+}
+
+func targetCountTable(targetType string) (string, error) {
+	switch targetType {
+	case "galgame":
+		return "galgames", nil
+	case "novel":
+		return "novels", nil
+	default:
+		return "", fmt.Errorf("unknown resource target type: %s", targetType)
+	}
 }
 
 func (r *ResourceRepository) withLinks(query *gorm.DB) *gorm.DB {

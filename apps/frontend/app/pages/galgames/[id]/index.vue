@@ -92,6 +92,20 @@ const postsLink = computed(
   () => `/posts?galgame_id=${galgameId.value}`
 )
 
+const relationTypeLabels: Record<string, string> = {
+  adaptation: '改编',
+  original: '原作',
+  spin_off: '衍生',
+  sequel: '续作',
+  prequel: '前作',
+  same_series: '同系列',
+  related: '相关'
+}
+
+function relationTypeLabel(relationType?: string): string {
+  return relationTypeLabels[relationType ?? ''] ?? '相关'
+}
+
 const resourceTotalPage = computed(() =>
   Math.max(1, Math.ceil(resourceTotal.value / resourceLimit))
 )
@@ -601,6 +615,40 @@ onMounted(() => {
       </KunCard>
     </div>
 
+    <KunCard
+      v-if="galgame?.related_novels?.length"
+      padding="lg"
+      class-name="related-novels-card"
+    >
+      <div class="section-head-row">
+        <KunHeader name="关联小说" scale="h3" class="section-heading" />
+      </div>
+
+      <div class="related-novel-grid">
+        <NuxtLink
+          v-for="work in galgame.related_novels"
+          :key="work.relation_id"
+          :to="`/novels/${work.work_id}`"
+          class="related-novel-item"
+        >
+          <div class="related-novel-cover">
+            <SensitiveImage
+              :src="work.cover_url"
+              :alt="work.title"
+              :sensitive="work.cover_sensitive"
+            />
+            <span v-if="work.age_rating === 3" class="related-novel-age">R18</span>
+          </div>
+          <div class="related-novel-info">
+            <h4 class="related-novel-title">{{ work.title }}</h4>
+            <KunChip size="sm" variant="flat">
+              {{ relationTypeLabel(work.relation_type) }}
+            </KunChip>
+          </div>
+        </NuxtLink>
+      </div>
+    </KunCard>
+
     <KunCard padding="lg" class-name="resource-card">
       <div class="section-head-row">
         <KunHeader
@@ -1097,4 +1145,66 @@ onMounted(() => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.related-novels-card {
+  margin-top: 16px;
+}
+
+.related-novel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.related-novel-item {
+  overflow: hidden;
+  border: 1px solid var(--color-content3);
+  border-radius: var(--radius-kun-md);
+  color: var(--color-foreground);
+  transition: box-shadow var(--kun-dur-fast) var(--ease-kun-standard);
+}
+
+.related-novel-item:hover {
+  box-shadow: var(--shadow-kun-md);
+}
+
+.related-novel-cover {
+  position: relative;
+  aspect-ratio: 3 / 4;
+}
+
+.related-novel-cover :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.related-novel-age {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 1px 6px;
+  border-radius: var(--radius-kun-sm);
+  background: color-mix(in srgb, var(--color-danger) 88%, transparent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.related-novel-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.related-novel-title {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  font-size: 13px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 </style>

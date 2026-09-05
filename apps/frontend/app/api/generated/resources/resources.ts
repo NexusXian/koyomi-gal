@@ -13,6 +13,7 @@ import type {
   DtoResourceReportDataResponse,
   DtoUpdateResourceRequest,
   ListGalgameResourcesParams,
+  ListNovelResourcesParams,
   ResponseMessageResponse
 } from '../models';
 
@@ -27,7 +28,7 @@ export const getCreateResourceUrl = () => {
 }
 
 /**
- * 登录用户为已发布 Galgame 上传资源及下载链接
+ * 登录用户为已发布 Galgame 或小说上传资源及下载链接
  * @summary 创建资源
  */
 export const createResource = async (dtoCreateResourceRequest: DtoCreateResourceRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoResourceDataResponse> => {
@@ -182,6 +183,39 @@ export const listGalgameResources = async (id: number,
     params?: ListGalgameResourcesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoResourceListResponse> => {
 
   return apiMutator<DtoResourceListResponse>(getListGalgameResourcesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListNovelResourcesUrl = (id: number,
+    params?: ListNovelResourcesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v2/novels/${id}/resources?${stringifiedParams}` : `/api/v2/novels/${id}/resources`
+}
+
+/**
+ * 分页返回小说下已发布资源及其链接
+ * @summary 查看小说资源列表
+ */
+export const listNovelResources = async (id: number,
+    params?: ListNovelResourcesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoResourceListResponse> => {
+
+  return apiMutator<DtoResourceListResponse>(getListNovelResourcesUrl(id,params),
   {
     ...options,
     method: 'GET'

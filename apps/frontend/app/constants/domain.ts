@@ -36,7 +36,13 @@ export const RESOURCE_TYPES: DomainOption[] = [
   { value: 3, label: '存档' },
   { value: 4, label: '原声集' },
   { value: 5, label: 'CG' },
-  { value: 6, label: '攻略' }
+  { value: 6, label: '攻略' },
+  { value: 7, label: '官方网站' },
+  { value: 8, label: '购买页面' },
+  { value: 9, label: '电子书' },
+  { value: 10, label: '实体书' },
+  { value: 11, label: '翻译版本' },
+  { value: 12, label: '资料合集' }
 ]
 
 export const RESOURCE_STATUS: DomainOption[] = [
@@ -88,6 +94,42 @@ export const GALLERY_SOURCE_TYPES: DomainOption[] = [
   { value: 0, label: '本站上传' },
   { value: 1, label: '外部链接' }
 ]
+
+export const NOVEL_STATUS: DomainOption[] = [
+  { value: 0, label: '待审核', color: 'default' },
+  { value: 1, label: '已发布', color: 'success' },
+  { value: 2, label: '已拒绝', color: 'error' },
+  { value: 3, label: '已隐藏', color: 'warning' }
+]
+
+export const NOVEL_RELEASE_STATUS: DomainOption[] = [
+  { value: 0, label: '连载中', slug: 'ongoing' },
+  { value: 1, label: '已完结', slug: 'completed' },
+  { value: 2, label: '休刊中', slug: 'hiatus' },
+  { value: 3, label: '已放弃', slug: 'cancelled' },
+  { value: 4, label: '未知', slug: 'unknown' }
+]
+
+export const NOVEL_SORTS: DomainOption[] = [
+  { value: 0, label: '最近更新', slug: 'updated' },
+  { value: 1, label: '最新收录', slug: 'latest' },
+  { value: 2, label: '最早出版', slug: 'release_asc' },
+  { value: 3, label: '最新出版', slug: 'release' }
+]
+
+export const NOVEL_RELATION_TYPES: DomainOption[] = [
+  { value: 0, label: '改编作品', slug: 'adaptation' },
+  { value: 1, label: '原作', slug: 'original' },
+  { value: 2, label: '衍生作品', slug: 'spin_off' },
+  { value: 3, label: '续作', slug: 'sequel' },
+  { value: 4, label: '前作', slug: 'prequel' },
+  { value: 5, label: '同系列', slug: 'same_series' },
+  { value: 6, label: '相关作品', slug: 'related' }
+]
+
+export function domainSlug(options: DomainOption[], slug: string): DomainOption | undefined {
+  return options.find((option) => option.slug === slug)
+}
 
 export function domainLabel(
   options: DomainOption[],

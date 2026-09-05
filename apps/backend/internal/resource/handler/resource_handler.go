@@ -47,11 +47,50 @@ func (h *ResourceHandler) ListGalgameResources(c *gin.Context) {
 		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
 		return
 	}
-	resources, total, page, limit, err := h.resourceService.ListPublishedByGalgame(
-		c.Request.Context(), galgameID, query.Page, query.Limit,
+	resources, total, page, limit, err := h.resourceService.ListPublishedByTarget(
+		c.Request.Context(), "galgame", galgameID, query.Page, query.Limit,
 	)
 	if err != nil {
 		h.respondResourceError(c, err, "list galgame resources")
+		return
+	}
+	response.Ok(c, dto.ResourceListData{
+		Items: dto.NewResourceListData(resources),
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	})
+}
+
+// ListNovelResources godoc
+// @Summary      查看小说资源列表
+// @Description  分页返回小说下已发布资源及其链接
+// @ID           listNovelResources
+// @Tags         resources
+// @Produce      json
+// @Param        id path int true "Novel ID"
+// @Param        page query int false "页码" default(1)
+// @Param        limit query int false "每页数量，最大 100" default(20)
+// @Success      200 {object} dto.ResourceListResponse "资源列表"
+// @Failure      400 {object} response.ErrorResponse "参数格式不正确"
+// @Failure      404 {object} response.ErrorResponse "小说不存在"
+// @Failure      500 {object} response.ErrorResponse "查询资源失败"
+// @Router       /api/v2/novels/{id}/resources [get]
+func (h *ResourceHandler) ListNovelResources(c *gin.Context) {
+	novelID, ok := parseResourceID(c, "Novel")
+	if !ok {
+		return
+	}
+	var query dto.ResourceQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	resources, total, page, limit, err := h.resourceService.ListPublishedByTarget(
+		c.Request.Context(), "novel", novelID, query.Page, query.Limit,
+	)
+	if err != nil {
+		h.respondResourceError(c, err, "list novel resources")
 		return
 	}
 	response.Ok(c, dto.ResourceListData{
@@ -89,7 +128,7 @@ func (h *ResourceHandler) GetResource(c *gin.Context) {
 
 // CreateResource godoc
 // @Summary      创建资源
-// @Description  登录用户为已发布 Galgame 上传资源及下载链接
+// @Description  登录用户为已发布 Galgame 或小说上传资源及下载链接
 // @ID           createResource
 // @Tags         resources
 // @Accept       json
@@ -98,7 +137,7 @@ func (h *ResourceHandler) GetResource(c *gin.Context) {
 // @Success      200 {object} dto.ResourceDataResponse "创建成功"
 // @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
-// @Failure      404 {object} response.ErrorResponse "Galgame 不存在"
+// @Failure      404 {object} response.ErrorResponse "关联作品不存在"
 // @Failure      500 {object} response.ErrorResponse "创建资源失败"
 // @Security     BearerAuth
 // @Router       /api/v1/resources [post]
@@ -276,8 +315,8 @@ func (h *ResourceHandler) ReviewResource(c *gin.Context) {
 
 func (h *ResourceHandler) respondResourceError(c *gin.Context, err error, operation string) {
 	switch {
-	case errors.Is(err, service.ErrGalgameNotFound):
-		response.Error(c, appErrors.ErrNotFound("Galgame 不存在"))
+	case errors.Is(err, service.ErrTargetNotFound):
+		response.Error(c, appErrors.ErrNotFound("关联作品不存在"))
 	case errors.Is(err, service.ErrResourceNotFound):
 		response.Error(c, appErrors.ErrNotFound("资源不存在"))
 	case errors.Is(err, service.ErrForbiddenResource):
@@ -286,6 +325,8 @@ func (h *ResourceHandler) respondResourceError(c *gin.Context, err error, operat
 		response.Error(c, appErrors.ErrValidation("资源标题不能为空"))
 	case errors.Is(err, service.ErrInvalidResourceType):
 		response.Error(c, appErrors.ErrValidation("资源类型不正确"))
+	case errors.Is(err, service.ErrInvalidTargetType):
+		response.Error(c, appErrors.ErrValidation("资源关联类型不正确"))
 	case errors.Is(err, service.ErrInvalidResourceStatus):
 		response.Error(c, appErrors.ErrValidation("资源状态不正确"))
 	case errors.Is(err, service.ErrEmptyResourceLinks):

@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"strings"
 
-	galgameModel "backend/internal/galgame/model"
+	contributionModel "backend/internal/contribution/model"
+	contributionService "backend/internal/contribution/service"
 	galgameRepository "backend/internal/galgame/repository"
-	galgameService "backend/internal/galgame/service"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
+	novelRepository "backend/internal/novel/repository"
 	rbacService "backend/internal/rbac/service"
+	relationModel "backend/internal/relation/model"
 	"backend/internal/resource/dto"
 	"backend/internal/resource/model"
 	"backend/internal/resource/repository"
@@ -24,11 +26,12 @@ import (
 )
 
 var (
-	ErrGalgameNotFound       = errors.New("galgame not found")
+	ErrTargetNotFound        = errors.New("resource target not found")
 	ErrResourceNotFound      = errors.New("resource not found")
 	ErrForbiddenResource     = errors.New("not allowed to manage this resource")
 	ErrInvalidResourceInput  = errors.New("invalid resource input")
 	ErrInvalidResourceType   = errors.New("invalid resource type")
+	ErrInvalidTargetType     = errors.New("invalid resource target type")
 	ErrInvalidResourceStatus = errors.New("invalid resource status")
 	ErrEmptyResourceLinks    = errors.New("resource links must not be empty")
 )
@@ -42,17 +45,18 @@ const (
 type ResourceService struct {
 	resources     *repository.ResourceRepository
 	galgames      *galgameRepository.GalgameRepository
+	novels        *novelRepository.NovelRepository
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
-	contributions *galgameService.ContributionService
+	contributions *contributionService.ContributionService
 }
 
 func (s *ResourceService) SetActivityRecorder(recorder userService.ActivityRecorder) {
 	s.activities = recorder
 }
 
-func (s *ResourceService) SetContributionService(contributions *galgameService.ContributionService) {
+func (s *ResourceService) SetContributionService(contributions *contributionService.ContributionService) {
 	s.contributions = contributions
 }
 
@@ -67,18 +71,26 @@ func (s *ResourceService) SetNotificationDependencies(
 func NewResourceService(
 	resources *repository.ResourceRepository,
 	galgames *galgameRepository.GalgameRepository,
+	novels *novelRepository.NovelRepository,
 	rbac *rbacService.RBACService,
 ) *ResourceService {
-	return &ResourceService{resources: resources, galgames: galgames, rbac: rbac}
+	return &ResourceService{
+		resources: resources,
+		galgames:  galgames,
+		novels:    novels,
+		rbac:      rbac,
+	}
 }
 
-// ListPublishedByGalgame returns one page of the galgame's published resources with links.
-func (s *ResourceService) ListPublishedByGalgame(
+// ListPublishedByTarget returns one page of the target work's published
+// resources with links.
+func (s *ResourceService) ListPublishedByTarget(
 	ctx context.Context,
-	galgameID uint,
+	targetType string,
+	targetID uint,
 	page, limit int,
 ) ([]model.Resource, int64, int, int, error) {
-	if err := s.ensurePublishedGalgame(ctx, galgameID); err != nil {
+	if err := s.ensurePublishedTarget(ctx, targetType, targetID); err != nil {
 		return nil, 0, page, limit, err
 	}
 	if page == 0 {
@@ -87,9 +99,10 @@ func (s *ResourceService) ListPublishedByGalgame(
 	if limit == 0 {
 		limit = 20
 	}
-	resources, total, err := s.resources.ListPublishedByGalgame(ctx, galgameID, page, limit)
+	resources, total, err := s.resources.ListPublishedByTarget(ctx, targetType, targetID, page, limit)
 	if err != nil {
-		logger.Error("list published resources", zap.Uint("galgame_id", galgameID), zap.Error(err))
+		logger.Error("list published resources",
+			zap.String("target_type", targetType), zap.Uint("target_id", targetID), zap.Error(err))
 		return nil, 0, page, limit, err
 	}
 	return resources, total, page, limit, nil
@@ -108,8 +121,8 @@ func (s *ResourceService) GetPublishedResource(ctx context.Context, id uint) (*m
 	return resource, nil
 }
 
-// CreateResource creates the resource, its links, and increments the
-// galgame's resource_count in one transaction. Any authenticated user may
+// CreateResource creates the resource, its links, and increments the target
+// work's resource_count in one transaction. Any authenticated user may
 // upload; uploader_id always comes from the login state.
 func (s *ResourceService) CreateResource(
 	ctx context.Context,
@@ -123,6 +136,13 @@ func (s *ResourceService) CreateResource(
 	if !validResourceType(req.Type) {
 		return nil, ErrInvalidResourceType
 	}
+	targetType := strings.TrimSpace(req.TargetType)
+	if targetType == "" {
+		targetType = relationModel.WorkTypeGalgame
+	}
+	if !relationModel.ValidWorkType(targetType) {
+		return nil, ErrInvalidTargetType
+	}
 	status := model.ResourceStatusPending
 	if req.Status != nil {
 		if !validResourceStatus(*req.Status) {
@@ -134,12 +154,13 @@ func (s *ResourceService) CreateResource(
 	if len(links) == 0 {
 		return nil, ErrEmptyResourceLinks
 	}
-	if err := s.ensurePublishedGalgame(ctx, req.GalgameID); err != nil {
+	if err := s.ensurePublishedTarget(ctx, targetType, req.TargetID); err != nil {
 		return nil, err
 	}
 
 	resource := &model.Resource{
-		GalgameID:   req.GalgameID,
+		TargetType:  targetType,
+		TargetID:    req.TargetID,
 		UploaderID:  &uploaderID,
 		Title:       title,
 		Type:        req.Type,
@@ -153,16 +174,17 @@ func (s *ResourceService) CreateResource(
 		if err := tx.CreateLinks(ctx, resource.ID, links); err != nil {
 			return err
 		}
-		if err := tx.IncrementResourceCount(ctx, req.GalgameID); err != nil {
+		if err := tx.IncrementResourceCount(ctx, targetType, req.TargetID); err != nil {
 			return err
 		}
 		if status == model.ResourceStatusPublished && s.contributions != nil {
-			sourceType := galgameModel.ContributionSourceResource
+			sourceType := contributionModel.ContributionSourceResource
 			sourceID := resource.ID
-			return s.contributions.RecordContribution(ctx, galgameService.RecordContributionInput{
-				GalgameID:  req.GalgameID,
+			return s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: targetType,
+				TargetID:   req.TargetID,
 				UserID:     uploaderID,
-				Action:     galgameModel.ContributionActionResource,
+				Action:     contributionModel.ContributionActionResource,
 				SourceType: &sourceType,
 				SourceID:   &sourceID,
 			}, db)
@@ -181,7 +203,8 @@ func (s *ResourceService) CreateResource(
 	}
 	if err != nil {
 		logger.Error("create resource",
-			zap.Uint("galgame_id", req.GalgameID), zap.Uint("uploader_id", uploaderID), zap.Error(err))
+			zap.String("target_type", targetType), zap.Uint("target_id", req.TargetID),
+			zap.Uint("uploader_id", uploaderID), zap.Error(err))
 		return nil, err
 	}
 	created, err := s.resources.FindByID(ctx, resource.ID)
@@ -192,7 +215,11 @@ func (s *ResourceService) CreateResource(
 		s.notifyResourceSubmitted(ctx, uploaderID, created)
 	}
 	if s.activities != nil {
-		metadata := map[string]any{"title": created.Title, "galgame_id": created.GalgameID}
+		metadata := map[string]any{
+			"title":       created.Title,
+			"target_type": created.TargetType,
+			"target_id":   created.TargetID,
+		}
 		if recordErr := s.activities.Record(ctx, uploaderID, userModel.ActivityResourceSubmitted, &created.ID, metadata); recordErr != nil {
 			logger.Error("record resource activity", zap.Uint("resource_id", created.ID), zap.Error(recordErr))
 		}
@@ -250,13 +277,14 @@ func (s *ResourceService) UpdateResource(
 			return err
 		}
 		if changed && resource.Status == model.ResourceStatusPublished && s.contributions != nil {
-			input := galgameService.RecordContributionInput{
-				GalgameID: resource.GalgameID,
-				UserID:    actorID,
-				Action:    galgameModel.ContributionActionResource,
+			input := contributionService.RecordContributionInput{
+				TargetType: resource.TargetType,
+				TargetID:   resource.TargetID,
+				UserID:     actorID,
+				Action:     contributionModel.ContributionActionResource,
 			}
 			if oldStatus != model.ResourceStatusPublished {
-				sourceType := galgameModel.ContributionSourceResource
+				sourceType := contributionModel.ContributionSourceResource
 				sourceID := resource.ID
 				input.SourceType = &sourceType
 				input.SourceID = &sourceID
@@ -306,7 +334,7 @@ func (s *ResourceService) DeleteResource(ctx context.Context, actorID, id uint) 
 		if !removed {
 			return ErrResourceNotFound
 		}
-		return tx.DecrementResourceCount(ctx, resource.GalgameID)
+		return tx.DecrementResourceCount(ctx, resource.TargetType, resource.TargetID)
 	})
 	if err != nil {
 		logger.Error("delete resource",
@@ -374,12 +402,13 @@ func (s *ResourceService) ReviewResource(
 			if err := repository.NewResourceRepository(db).Update(ctx, resource); err != nil {
 				return err
 			}
-			sourceType := galgameModel.ContributionSourceResource
+			sourceType := contributionModel.ContributionSourceResource
 			sourceID := resource.ID
-			return s.contributions.RecordContribution(ctx, galgameService.RecordContributionInput{
-				GalgameID:  resource.GalgameID,
+			return s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: resource.TargetType,
+				TargetID:   resource.TargetID,
 				UserID:     *resource.UploaderID,
-				Action:     galgameModel.ContributionActionResource,
+				Action:     contributionModel.ContributionActionResource,
 				SourceType: &sourceType,
 				SourceID:   &sourceID,
 			}, db)
@@ -425,8 +454,9 @@ func (s *ResourceService) notifyResourceSubmitted(ctx context.Context, actorID u
 			Content:     fmt.Sprintf("提交了资源「%s」，等待审核", resource.Title),
 			TargetURL:   "/admin/resources",
 			Metadata: map[string]any{
-				"galgame_id": resource.GalgameID,
-				"title":      resource.Title,
+				"target_type": resource.TargetType,
+				"target_id":   resource.TargetID,
+				"title":       resource.Title,
 			},
 		})
 	}
@@ -465,15 +495,23 @@ func (s *ResourceService) notifyResourceReviewResult(
 		EntityID:    resource.ID,
 		Title:       title,
 		Content:     content,
-		TargetURL:   fmt.Sprintf("/galgames/%d", resource.GalgameID),
+		TargetURL:   resourceTargetURL(resource),
 		Metadata: map[string]any{
-			"galgame_id": resource.GalgameID,
-			"status":     resource.Status,
-			"title":      resource.Title,
+			"target_type": resource.TargetType,
+			"target_id":   resource.TargetID,
+			"status":      resource.Status,
+			"title":       resource.Title,
 		},
 	}); err != nil {
 		logger.Error("create resource review notification", zap.Uint("resource_id", resource.ID), zap.Error(err))
 	}
+}
+
+func resourceTargetURL(resource *model.Resource) string {
+	if resource.TargetType == relationModel.WorkTypeNovel {
+		return fmt.Sprintf("/novels/%d", resource.TargetID)
+	}
+	return fmt.Sprintf("/galgames/%d", resource.TargetID)
 }
 
 // ensureCanManage allows the uploader to manage their own resource and falls
@@ -499,20 +537,36 @@ func (s *ResourceService) ensureCanManage(
 	return nil
 }
 
-func (s *ResourceService) ensurePublishedGalgame(ctx context.Context, id uint) error {
-	galgame, err := s.galgames.FindPublishedByID(ctx, id)
-	if err != nil {
-		logger.Error("find galgame by id", zap.Uint("galgame_id", id), zap.Error(err))
-		return err
+// ensurePublishedTarget verifies the bound work exists and is published.
+func (s *ResourceService) ensurePublishedTarget(ctx context.Context, targetType string, targetID uint) error {
+	switch targetType {
+	case relationModel.WorkTypeGalgame:
+		galgame, err := s.galgames.FindPublishedByID(ctx, targetID)
+		if err != nil {
+			logger.Error("find galgame by id", zap.Uint("galgame_id", targetID), zap.Error(err))
+			return err
+		}
+		if galgame == nil {
+			return ErrTargetNotFound
+		}
+		return nil
+	case relationModel.WorkTypeNovel:
+		novel, err := s.novels.FindPublishedByID(ctx, targetID)
+		if err != nil {
+			logger.Error("find novel by id", zap.Uint("novel_id", targetID), zap.Error(err))
+			return err
+		}
+		if novel == nil {
+			return ErrTargetNotFound
+		}
+		return nil
+	default:
+		return ErrInvalidTargetType
 	}
-	if galgame == nil {
-		return ErrGalgameNotFound
-	}
-	return nil
 }
 
 func validResourceType(value int16) bool {
-	return value >= model.ResourceTypeOther && value <= model.ResourceTypeGuide
+	return value >= model.ResourceTypeOther && value <= model.ResourceTypeArchive
 }
 
 func validResourceStatus(value int16) bool {

@@ -10,6 +10,14 @@ const (
 	ResourceTypeSoundtrack
 	ResourceTypeCG
 	ResourceTypeGuide
+	// Novel-oriented resource categories share the same enum so the review
+	// flow and admin tooling stay unified.
+	ResourceTypeOfficial
+	ResourceTypeStore
+	ResourceTypeEBook
+	ResourceTypePhysical
+	ResourceTypeTranslation
+	ResourceTypeArchive
 )
 
 const (
@@ -21,7 +29,8 @@ const (
 
 type Resource struct {
 	ID                  uint           `gorm:"primaryKey" json:"id"`
-	GalgameID           uint           `gorm:"not null" json:"galgame_id"`
+	TargetType          string         `gorm:"size:32;not null;default:galgame" json:"target_type"`
+	TargetID            uint           `gorm:"not null" json:"target_id"`
 	UploaderID          *uint          `json:"uploader_id"`
 	Title               string         `gorm:"size:255;not null" json:"title"`
 	Type                int16          `gorm:"column:resource_type;not null" json:"type"`

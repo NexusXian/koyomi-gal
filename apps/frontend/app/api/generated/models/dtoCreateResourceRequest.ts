@@ -6,17 +6,19 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DtoCreateResourceRequestStatus } from './dtoCreateResourceRequestStatus';
+import type { DtoCreateResourceRequestTargetType } from './dtoCreateResourceRequestTargetType';
 import type { DtoCreateResourceRequestType } from './dtoCreateResourceRequestType';
 
 export interface DtoCreateResourceRequest {
   description?: string;
-  galgame_id: number;
   /**
      * @minItems 1
      * @maxItems 50
      */
   links: string[];
   status?: DtoCreateResourceRequestStatus;
+  target_id: number;
+  target_type?: DtoCreateResourceRequestTargetType;
   /** @maxLength 255 */
   title: string;
   type?: DtoCreateResourceRequestType;

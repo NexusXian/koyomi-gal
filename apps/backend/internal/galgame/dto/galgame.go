@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"backend/internal/galgame/model"
+	relationModel "backend/internal/relation/model"
 )
 
 type CreateGalgameRequest struct {
@@ -158,29 +159,42 @@ type GalgameListItem struct {
 	AIConflict       bool    `json:"ai_conflict,omitempty" example:"false"`
 }
 
+type RelatedNovelData struct {
+	RelationID     uint   `json:"relation_id" example:"1"`
+	RelationType   string `json:"relation_type" example:"adaptation"`
+	WorkID         uint   `json:"work_id" example:"3"`
+	Title          string `json:"title" example:"青春猪头少年不会梦到兔女郎学姐"`
+	OriginalTitle  string `json:"original_title" example:"青春ブタ野郎はバニーガール先輩の夢を見ない"`
+	Slug           string `json:"slug" example:"seishun-buta-yarou"`
+	CoverURL       string `json:"cover_url" example:"https://example.com/cover.jpg"`
+	CoverSensitive bool   `json:"cover_sensitive" example:"false"`
+	AgeRating      int16  `json:"age_rating" example:"1"`
+}
+
 type GalgameResponse struct {
-	ID                uint              `json:"id" example:"1"`
-	Title             string            `json:"title" example:"千恋＊万花"`
-	OriginalTitle     string            `json:"original_title" example:"千恋＊万花"`
-	RomajiTitle       string            `json:"romaji_title" example:"Senren Banka"`
-	Slug              string            `json:"slug" example:"senren-banka"`
-	Description       string            `json:"description" example:"作品简介"`
-	DescriptionSource string            `json:"description_source" example:"bangumi"`
-	CoverURL          string            `json:"cover_url" example:"https://example.com/cover.jpg"`
-	BannerURL         string            `json:"banner_url" example:"https://example.com/banner.jpg"`
-	ReleaseDate       *string           `json:"release_date" example:"2016-07-29"`
-	AgeRating         int16             `json:"age_rating" example:"3"`
-	CoverSensitive    bool              `json:"cover_sensitive" example:"false"`
-	Status            int16             `json:"status" example:"1"`
-	Developer         *DeveloperSummary `json:"developer"`
-	Aliases           []string          `json:"aliases"`
-	Tags              []TagSummary      `json:"tags"`
-	Rating            RatingSummary     `json:"rating"`
-	Statistics        GalgameStatistics `json:"statistics"`
-	Contributors      []ContributorData `json:"contributors"`
-	ContributorCount  int64             `json:"contributor_count" example:"12"`
-	CreatedAt         time.Time         `json:"created_at"`
-	UpdatedAt         time.Time         `json:"updated_at"`
+	ID                uint               `json:"id" example:"1"`
+	Title             string             `json:"title" example:"千恋＊万花"`
+	OriginalTitle     string             `json:"original_title" example:"千恋＊万花"`
+	RomajiTitle       string             `json:"romaji_title" example:"Senren Banka"`
+	Slug              string             `json:"slug" example:"senren-banka"`
+	Description       string             `json:"description" example:"作品简介"`
+	DescriptionSource string             `json:"description_source" example:"bangumi"`
+	CoverURL          string             `json:"cover_url" example:"https://example.com/cover.jpg"`
+	BannerURL         string             `json:"banner_url" example:"https://example.com/banner.jpg"`
+	ReleaseDate       *string            `json:"release_date" example:"2016-07-29"`
+	AgeRating         int16              `json:"age_rating" example:"3"`
+	CoverSensitive    bool               `json:"cover_sensitive" example:"false"`
+	Status            int16              `json:"status" example:"1"`
+	Developer         *DeveloperSummary  `json:"developer"`
+	Aliases           []string           `json:"aliases"`
+	Tags              []TagSummary       `json:"tags"`
+	Rating            RatingSummary      `json:"rating"`
+	Statistics        GalgameStatistics  `json:"statistics"`
+	Contributors      []ContributorData  `json:"contributors"`
+	ContributorCount  int64              `json:"contributor_count" example:"12"`
+	RelatedNovels     []RelatedNovelData `json:"related_novels"`
+	CreatedAt         time.Time          `json:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at"`
 }
 
 type GalgameListData struct {
@@ -256,9 +270,28 @@ func NewGalgameResponse(galgame *model.Galgame) GalgameResponse {
 		Statistics:        newStatistics(galgame),
 		Contributors:      NewContributorData(galgame.Contributors),
 		ContributorCount:  galgame.ContributorCount,
+		RelatedNovels:     newRelatedNovelData(galgame.RelatedNovels),
 		CreatedAt:         galgame.CreatedAt,
 		UpdatedAt:         galgame.UpdatedAt,
 	}
+}
+
+func newRelatedNovelData(novels []relationModel.RelatedWork) []RelatedNovelData {
+	items := make([]RelatedNovelData, 0, len(novels))
+	for _, novel := range novels {
+		items = append(items, RelatedNovelData{
+			RelationID:     novel.RelationID,
+			RelationType:   novel.RelationType,
+			WorkID:         novel.WorkID,
+			Title:          novel.Title,
+			OriginalTitle:  novel.OriginalTitle,
+			Slug:           novel.Slug,
+			CoverURL:       novel.CoverURL,
+			CoverSensitive: novel.CoverSensitive,
+			AgeRating:      novel.AgeRating,
+		})
+	}
+	return items
 }
 
 func formatDate(value *time.Time) *string {

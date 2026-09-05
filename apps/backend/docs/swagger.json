@@ -3761,6 +3761,419 @@
                 }
             }
         },
+        "/api/v1/admin/novel-volumes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部状态的卷册并附带所属小说标题；需要 novel:review 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询小说卷册列表",
+                "operationId": "listAdminNovelVolumes",
+                "parameters": [
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "description": "状态筛选",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "小说 ID 筛选",
+                        "name": "novel_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "卷册列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminVolumeListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/novel-volumes/{id}/review": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将卷册标记为已发布 (1) 或已拒绝 (2)，拒绝时可附原因；需要 novel:review 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端审核小说卷册",
+                "operationId": "reviewNovelVolume",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Volume ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核卷册请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewVolumeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VolumeDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "卷册不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "审核卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/novels": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部状态的小说；需要 novel:review 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询小说列表",
+                "operationId": "listAdminNovels",
+                "parameters": [
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "description": "状态筛选",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "标题 / 原文标题 / 作者关键字",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ongoing",
+                            "completed",
+                            "hiatus",
+                            "cancelled",
+                            "unknown"
+                        ],
+                        "type": "string",
+                        "description": "连载状态",
+                        "name": "release_status",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "latest",
+                            "oldest",
+                            "updated",
+                            "release",
+                            "release_asc"
+                        ],
+                        "type": "string",
+                        "description": "排序",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "小说列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NovelListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/novels/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 返回任意状态的小说详情；需要 novel:review 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查看小说详情",
+                "operationId": "getAdminNovel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "小说详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NovelDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Novel ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/novels/{id}/review": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将小说标记为已发布 (1) 或已拒绝 (2)，拒绝时可附原因；需要 novel:review 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端审核小说",
+                "operationId": "reviewNovel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核小说请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewNovelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核结果",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NovelDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "审核小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/posts": {
             "get": {
                 "security": [
@@ -7201,6 +7614,1010 @@
                 }
             }
         },
+        "/api/v1/novels": {
+            "get": {
+                "description": "分页返回已发布的小说，支持关键字、标签、作者、出版社、文库、语言和连载状态筛选",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "查询小说列表",
+                "operationId": "listNovels",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "标题 / 原文标题 / 作者关键字",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tag ID 列表（逗号分隔，AND 语义）",
+                        "name": "tag_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "作者",
+                        "name": "author",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "出版社",
+                        "name": "publisher",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "文库 / Label",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ongoing",
+                            "completed",
+                            "hiatus",
+                            "cancelled",
+                            "unknown"
+                        ],
+                        "type": "string",
+                        "description": "连载状态",
+                        "name": "release_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "语言，如 ja、zh-CN",
+                        "name": "language",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "latest",
+                            "oldest",
+                            "updated",
+                            "release",
+                            "release_asc"
+                        ],
+                        "type": "string",
+                        "description": "排序",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "小说列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NovelListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建小说条目；需要 novel:create 权限，默认进入待审核状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "创建小说",
+                "operationId": "createNovel",
+                "parameters": [
+                    {
+                        "description": "创建小说请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateNovelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建的小说",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NovelDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "slug 已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "创建小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/novels/{id}": {
+            "get": {
+                "description": "按 ID 返回已发布小说详情，包含标签、卷册、关联视觉小说、资源和贡献者概要",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "查看小说详情",
+                "operationId": "getNovel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "小说详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NovelDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Novel ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "全量更新小说资料；需要 novel:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "更新小说",
+                "operationId": "updateNovel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新小说请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateNovelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新后的小说",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NovelDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "slug 已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除小说及其卷册并清理关联数据；需要 novel:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "删除小说",
+                "operationId": "deleteNovel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Novel ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除小说失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/novels/{id}/relations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回小说的原始关联关系列表（双向）；需要 novel:update 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "查看小说关联作品",
+                "operationId": "listNovelRelations",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "关联关系列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RelationListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Novel ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询关联作品失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将小说关联到视觉小说或其他小说；需要 novel:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "新增小说关联",
+                "operationId": "createNovelRelation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "新增关联请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateRelationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建的关联关系",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RelationDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "关联对象不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "关联关系已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "创建关联失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/novels/{id}/relations/{relationId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除小说（任一侧）的关联关系；需要 novel:update 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "删除小说关联",
+                "operationId": "deleteNovelRelation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Relation ID",
+                        "name": "relationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "关联关系不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除关联失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/novels/{id}/volumes": {
+            "get": {
+                "description": "分页返回已发布小说的已发布卷册",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "查询小说卷册列表",
+                "operationId": "listNovelVolumes",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "卷册列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VolumeListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "为小说添加卷册；需要 novel:update 权限，默认进入待审核状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "新增小说卷册",
+                "operationId": "createNovelVolume",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "新增卷册请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateVolumeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建的卷册",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VolumeDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "新增卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/novels/{id}/volumes/order": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按传入 ID 顺序重写卷册 sort_order；ID 集合必须与小说卷册完全一致，需要 novel:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "排序小说卷册",
+                "operationId": "reorderNovelVolumes",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "卷册排序请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReorderVolumesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "排序成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "排序卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/novels/{id}/volumes/{volumeId}": {
+            "get": {
+                "description": "返回已发布小说的单个已发布卷册",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "查看小说卷册详情",
+                "operationId": "getNovelVolume",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Volume ID",
+                        "name": "volumeId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "卷册详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VolumeDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "卷册不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "全量更新卷册资料；卷册必须属于该小说，需要 novel:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "更新小说卷册",
+                "operationId": "updateNovelVolume",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Volume ID",
+                        "name": "volumeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新卷册请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateVolumeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新后的卷册",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VolumeDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "卷册不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "更新卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除卷册；卷册必须属于该小说，需要 novel:update 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "novels"
+                ],
+                "summary": "删除小说卷册",
+                "operationId": "deleteNovelVolume",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Volume ID",
+                        "name": "volumeId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "卷册不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除卷册失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/permissions": {
             "get": {
                 "security": [
@@ -8072,7 +9489,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "登录用户为已发布 Galgame 上传资源及下载链接",
+                "description": "登录用户为已发布 Galgame 或小说上传资源及下载链接",
                 "consumes": [
                     "application/json"
                 ],
@@ -8115,7 +9532,7 @@
                         }
                     },
                     "404": {
-                        "description": "Galgame 不存在",
+                        "description": "关联作品不存在",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -9639,6 +11056,68 @@
                 }
             }
         },
+        "/api/v2/novels/{id}/resources": {
+            "get": {
+                "description": "分页返回小说下已发布资源及其链接",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "查看小说资源列表",
+                "operationId": "listNovelResources",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Novel ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "资源列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ResourceListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小说不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询资源失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/posts/{id}/comments": {
             "get": {
                 "description": "分页返回帖子的一级评论及回复数量",
@@ -10200,6 +11679,100 @@
                 "name": {
                     "type": "string",
                     "example": "普通用户"
+                }
+            }
+        },
+        "dto.AdminVolumeListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AdminVolumeListItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 13
+                }
+            }
+        },
+        "dto.AdminVolumeListItem": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/vol1.jpg"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "isbn": {
+                    "type": "string",
+                    "example": "978-4-04-865091-8"
+                },
+                "novel_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "novel_title": {
+                    "type": "string",
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "reject_reason": {
+                    "type": "string",
+                    "example": "卷号信息有误"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "title": {
+                    "type": "string",
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "volume_number": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.AdminVolumeListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.AdminVolumeListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -11241,40 +12814,13 @@
                 }
             }
         },
-        "dto.ContributorData": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string",
-                    "example": "https://example.com/avatar.jpg"
-                },
-                "contribution_count": {
-                    "type": "integer",
-                    "example": 12
-                },
-                "first_contributed_at": {
-                    "type": "string"
-                },
-                "last_contributed_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer",
-                    "example": 1001
-                },
-                "username": {
-                    "type": "string",
-                    "example": "NexusXian"
-                }
-            }
-        },
         "dto.ContributorListData": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ContributorData"
+                        "$ref": "#/definitions/internal_galgame_dto.ContributorData"
                     }
                 },
                 "page": {
@@ -11769,6 +13315,124 @@
                 }
             }
         },
+        "dto.CreateNovelRequest": {
+            "type": "object",
+            "required": [
+                "slug",
+                "title"
+            ],
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "example": 1
+                },
+                "author": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "鸭志田一"
+                },
+                "cover_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/cover.jpg"
+                },
+                "first_release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "illustrator": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "沟口凯吉"
+                },
+                "is_cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "电击文库"
+                },
+                "language": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "ja"
+                },
+                "official_website": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://dengeki.com/"
+                },
+                "original_title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "publisher": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "KADOKAWA"
+                },
+                "region": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "JP"
+                },
+                "release_status": {
+                    "type": "string",
+                    "enum": [
+                        "ongoing",
+                        "completed",
+                        "hiatus",
+                        "cancelled",
+                        "unknown"
+                    ],
+                    "example": "ongoing"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "seishun-buta-yarou"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "example": 0
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "小说简介（Markdown）"
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                }
+            }
+        },
         "dto.CreatePermissionRequest": {
             "type": "object",
             "required": [
@@ -11827,6 +13491,41 @@
                 }
             }
         },
+        "dto.CreateRelationRequest": {
+            "type": "object",
+            "required": [
+                "relation_type",
+                "target_id",
+                "target_type"
+            ],
+            "properties": {
+                "relation_type": {
+                    "type": "string",
+                    "enum": [
+                        "adaptation",
+                        "original",
+                        "spin_off",
+                        "sequel",
+                        "prequel",
+                        "same_series",
+                        "related"
+                    ],
+                    "example": "adaptation"
+                },
+                "target_id": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "target_type": {
+                    "type": "string",
+                    "enum": [
+                        "galgame",
+                        "novel"
+                    ],
+                    "example": "galgame"
+                }
+            }
+        },
         "dto.CreateResourceReportRequest": {
             "type": "object",
             "properties": {
@@ -11853,18 +13552,14 @@
         "dto.CreateResourceRequest": {
             "type": "object",
             "required": [
-                "galgame_id",
                 "links",
+                "target_id",
                 "title"
             ],
             "properties": {
                 "description": {
                     "type": "string",
                     "example": "官方汉化整合包"
-                },
-                "galgame_id": {
-                    "type": "integer",
-                    "example": 1
                 },
                 "links": {
                     "type": "array",
@@ -11888,6 +13583,18 @@
                     ],
                     "example": 1
                 },
+                "target_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "target_type": {
+                    "type": "string",
+                    "enum": [
+                        "galgame",
+                        "novel"
+                    ],
+                    "example": "galgame"
+                },
                 "title": {
                     "type": "string",
                     "maxLength": 255,
@@ -11902,7 +13609,13 @@
                         3,
                         4,
                         5,
-                        6
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12
                     ],
                     "example": 1
                 }
@@ -11952,6 +13665,53 @@
                     "type": "string",
                     "maxLength": 100,
                     "example": "pure-love"
+                }
+            }
+        },
+        "dto.CreateVolumeRequest": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/vol1.jpg"
+                },
+                "isbn": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "example": "978-4-04-865091-8"
+                },
+                "original_title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "example": 0
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "第一卷简介"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "volume_number": {
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 0,
+                    "example": 1
                 }
             }
         },
@@ -12667,7 +14427,7 @@
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TagSummary"
+                        "$ref": "#/definitions/internal_galgame_dto.TagSummary"
                     }
                 },
                 "title": {
@@ -12716,7 +14476,7 @@
                 "contributors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ContributorData"
+                        "$ref": "#/definitions/internal_galgame_dto.ContributorData"
                     }
                 },
                 "cover_sensitive": {
@@ -12752,6 +14512,12 @@
                 "rating": {
                     "$ref": "#/definitions/dto.RatingSummary"
                 },
+                "related_novels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RelatedNovelData"
+                    }
+                },
                 "release_date": {
                     "type": "string",
                     "example": "2016-07-29"
@@ -12774,7 +14540,7 @@
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TagSummary"
+                        "$ref": "#/definitions/internal_galgame_dto.TagSummary"
                     }
                 },
                 "title": {
@@ -14032,6 +15798,271 @@
                 }
             }
         },
+        "dto.NovelDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.NovelResponse"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.NovelListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NovelListItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "dto.NovelListItem": {
+            "type": "object",
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "author": {
+                    "type": "string",
+                    "example": "鸭志田一"
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "first_release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "label": {
+                    "type": "string",
+                    "example": "电击文库"
+                },
+                "language": {
+                    "type": "string",
+                    "example": "ja"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "publisher": {
+                    "type": "string",
+                    "example": "KADOKAWA"
+                },
+                "release_status": {
+                    "type": "string",
+                    "example": "ongoing"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "seishun-buta-yarou"
+                },
+                "statistics": {
+                    "$ref": "#/definitions/dto.NovelStatistics"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_novel_dto.TagSummary"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NovelListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.NovelListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.NovelResponse": {
+            "type": "object",
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "author": {
+                    "type": "string",
+                    "example": "鸭志田一"
+                },
+                "contributor_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_novel_dto.ContributorData"
+                    }
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "first_release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "illustrator": {
+                    "type": "string",
+                    "example": "沟口凯吉"
+                },
+                "is_cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "label": {
+                    "type": "string",
+                    "example": "电击文库"
+                },
+                "language": {
+                    "type": "string",
+                    "example": "ja"
+                },
+                "official_website": {
+                    "type": "string",
+                    "example": "https://dengeki.com/"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "publisher": {
+                    "type": "string",
+                    "example": "KADOKAWA"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "JP"
+                },
+                "reject_reason": {
+                    "type": "string",
+                    "example": "资料不完整"
+                },
+                "related_galgames": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RelatedWorkData"
+                    }
+                },
+                "release_status": {
+                    "type": "string",
+                    "example": "ongoing"
+                },
+                "reviewed_at": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "seishun-buta-yarou"
+                },
+                "statistics": {
+                    "$ref": "#/definitions/dto.NovelStatistics"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "小说简介（Markdown）"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_novel_dto.TagSummary"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.VolumeSummary"
+                    }
+                }
+            }
+        },
+        "dto.NovelStatistics": {
+            "type": "object",
+            "properties": {
+                "resource_count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "volume_count": {
+                    "type": "integer",
+                    "example": 13
+                }
+            }
+        },
         "dto.OverrideClassificationRequest": {
             "type": "object",
             "required": [
@@ -14816,6 +16847,171 @@
                 }
             }
         },
+        "dto.RelatedNovelData": {
+            "type": "object",
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "relation_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "relation_type": {
+                    "type": "string",
+                    "example": "adaptation"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "seishun-buta-yarou"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "work_id": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "dto.RelatedWorkData": {
+            "type": "object",
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/cover.jpg"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "千恋＊万花"
+                },
+                "relation_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "relation_type": {
+                    "type": "string",
+                    "example": "adaptation"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "senren-banka"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "千恋＊万花"
+                },
+                "work_id": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "dto.RelationData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "relation_type": {
+                    "type": "string",
+                    "example": "adaptation"
+                },
+                "source_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "source_type": {
+                    "type": "string",
+                    "example": "novel"
+                },
+                "target_id": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "target_type": {
+                    "type": "string",
+                    "example": "galgame"
+                }
+            }
+        },
+        "dto.RelationDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.RelationData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.RelationListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RelationData"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "dto.RelationListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.RelationListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.ReorderGalleryRequest": {
             "type": "object",
             "required": [
@@ -14833,6 +17029,26 @@
                         101,
                         105,
                         102
+                    ]
+                }
+            }
+        },
+        "dto.ReorderVolumesRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        3,
+                        1,
+                        2
                     ]
                 }
             }
@@ -14868,10 +17084,6 @@
                     "type": "string",
                     "example": "官方汉化整合包"
                 },
-                "galgame_id": {
-                    "type": "integer",
-                    "example": 1
-                },
                 "id": {
                     "type": "integer",
                     "example": 1
@@ -14885,6 +17097,14 @@
                 "status": {
                     "type": "integer",
                     "example": 1
+                },
+                "target_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "target_type": {
+                    "type": "string",
+                    "example": "galgame"
                 },
                 "title": {
                     "type": "string",
@@ -15120,6 +17340,27 @@
                 }
             }
         },
+        "dto.ReviewNovelRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "资料不完整"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ],
+                    "example": 1
+                }
+            }
+        },
         "dto.ReviewResourceRequest": {
             "type": "object",
             "required": [
@@ -15132,6 +17373,27 @@
                         1,
                         2,
                         3
+                    ],
+                    "example": 1
+                }
+            }
+        },
+        "dto.ReviewVolumeRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "卷号信息有误"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
                     ],
                     "example": 1
                 }
@@ -15264,19 +17526,6 @@
                 },
                 "updated_at": {
                     "type": "string"
-                }
-            }
-        },
-        "dto.TagSummary": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "name": {
-                    "type": "string",
-                    "example": "纯爱"
                 }
             }
         },
@@ -15665,6 +17914,130 @@
                 }
             }
         },
+        "dto.UpdateNovelRequest": {
+            "type": "object",
+            "required": [
+                "age_rating",
+                "is_cover_sensitive",
+                "release_status",
+                "slug",
+                "status",
+                "title"
+            ],
+            "properties": {
+                "age_rating": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "example": 1
+                },
+                "author": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "鸭志田一"
+                },
+                "cover_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/cover.jpg"
+                },
+                "first_release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "illustrator": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "沟口凯吉"
+                },
+                "is_cover_sensitive": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "电击文库"
+                },
+                "language": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "ja"
+                },
+                "official_website": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://dengeki.com/"
+                },
+                "original_title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "publisher": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "KADOKAWA"
+                },
+                "region": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "example": "JP"
+                },
+                "release_status": {
+                    "type": "string",
+                    "enum": [
+                        "ongoing",
+                        "completed",
+                        "hiatus",
+                        "cancelled",
+                        "unknown"
+                    ],
+                    "example": "ongoing"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "seishun-buta-yarou"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                    ],
+                    "example": 1
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "小说简介（Markdown）"
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                }
+            }
+        },
         "dto.UpdatePermissionRequest": {
             "type": "object",
             "required": [
@@ -15839,7 +18212,13 @@
                         3,
                         4,
                         5,
-                        6
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12
                     ],
                     "example": 1
                 }
@@ -15980,6 +18359,58 @@
                         1,
                         2
                     ]
+                }
+            }
+        },
+        "dto.UpdateVolumeRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": "https://example.com/vol1.jpg"
+                },
+                "isbn": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "example": "978-4-04-865091-8"
+                },
+                "original_title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                    ],
+                    "example": 1
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "第一卷简介"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "volume_number": {
+                    "type": "integer",
+                    "maximum": 9999,
+                    "minimum": 0,
+                    "example": 1
                 }
             }
         },
@@ -16240,12 +18671,246 @@
                 }
             }
         },
+        "dto.VolumeData": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/vol1.jpg"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "isbn": {
+                    "type": "string",
+                    "example": "978-4-04-865091-8"
+                },
+                "novel_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "reject_reason": {
+                    "type": "string",
+                    "example": "卷号信息有误"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "reviewed_at": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "第一卷简介"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "volume_number": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.VolumeDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.VolumeData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.VolumeListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.VolumeData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 13
+                }
+            }
+        },
+        "dto.VolumeListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.VolumeListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.VolumeSummary": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/vol1.jpg"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "isbn": {
+                    "type": "string",
+                    "example": "978-4-04-865091-8"
+                },
+                "original_title": {
+                    "type": "string",
+                    "example": "青春ブタ野郎はバニーガール先輩の夢を見ない"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2014-04-10"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "title": {
+                    "type": "string",
+                    "example": "青春猪头少年不会梦到兔女郎学姐"
+                },
+                "volume_number": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "handler.HealthResponse": {
             "type": "object",
             "properties": {
                 "status": {
                     "type": "string",
                     "example": "ok"
+                }
+            }
+        },
+        "internal_galgame_dto.ContributorData": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "contribution_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "first_contributed_at": {
+                    "type": "string"
+                },
+                "last_contributed_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "username": {
+                    "type": "string",
+                    "example": "NexusXian"
+                }
+            }
+        },
+        "internal_galgame_dto.TagSummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "纯爱"
+                }
+            }
+        },
+        "internal_novel_dto.ContributorData": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "contribution_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "first_contributed_at": {
+                    "type": "string"
+                },
+                "last_contributed_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "username": {
+                    "type": "string",
+                    "example": "NexusXian"
+                }
+            }
+        },
+        "internal_novel_dto.TagSummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "恋爱"
                 }
             }
         },
@@ -16285,6 +18950,12 @@
                 "galgame_submitted",
                 "galgame_approved",
                 "galgame_rejected",
+                "novel_submitted",
+                "novel_approved",
+                "novel_rejected",
+                "novel_volume_submitted",
+                "novel_volume_approved",
+                "novel_volume_rejected",
                 "resource_submitted",
                 "resource_approved",
                 "resource_rejected",
@@ -16304,6 +18975,12 @@
                 "TypeGalgameSubmitted",
                 "TypeGalgameApproved",
                 "TypeGalgameRejected",
+                "TypeNovelSubmitted",
+                "TypeNovelApproved",
+                "TypeNovelRejected",
+                "TypeNovelVolumeSubmitted",
+                "TypeNovelVolumeApproved",
+                "TypeNovelVolumeRejected",
                 "TypeResourceSubmitted",
                 "TypeResourceApproved",
                 "TypeResourceRejected",

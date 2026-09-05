@@ -5,18 +5,19 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
-import type { DtoContributorData } from './dtoContributorData';
 import type { DtoDeveloperSummary } from './dtoDeveloperSummary';
 import type { DtoGalgameStatistics } from './dtoGalgameStatistics';
 import type { DtoRatingSummary } from './dtoRatingSummary';
-import type { DtoTagSummary } from './dtoTagSummary';
+import type { DtoRelatedNovelData } from './dtoRelatedNovelData';
+import type { InternalGalgameDtoContributorData } from './internalGalgameDtoContributorData';
+import type { InternalGalgameDtoTagSummary } from './internalGalgameDtoTagSummary';
 
 export interface DtoGalgameResponse {
   age_rating?: number;
   aliases?: string[];
   banner_url?: string;
   contributor_count?: number;
-  contributors?: DtoContributorData[];
+  contributors?: InternalGalgameDtoContributorData[];
   cover_sensitive?: boolean;
   cover_url?: string;
   created_at?: string;
@@ -26,12 +27,13 @@ export interface DtoGalgameResponse {
   id?: number;
   original_title?: string;
   rating?: DtoRatingSummary;
+  related_novels?: DtoRelatedNovelData[];
   release_date?: string;
   romaji_title?: string;
   slug?: string;
   statistics?: DtoGalgameStatistics;
   status?: number;
-  tags?: DtoTagSummary[];
+  tags?: InternalGalgameDtoTagSummary[];
   title?: string;
   updated_at?: string;
 }

@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"backend/internal/galgame/model"
+	contributionModel "backend/internal/contribution/model"
 )
 
 type ContributorQuery struct {
@@ -33,7 +33,7 @@ type ContributorListResponse struct {
 	Msg  string              `json:"msg" example:"success"`
 }
 
-func NewContributorData(contributors []model.GalgameContributor) []ContributorData {
+func NewContributorData(contributors []contributionModel.WorkContributor) []ContributorData {
 	items := make([]ContributorData, 0, len(contributors))
 	for _, contributor := range contributors {
 		items = append(items, ContributorData{

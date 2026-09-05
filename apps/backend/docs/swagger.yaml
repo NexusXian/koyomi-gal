@@ -334,6 +334,73 @@ definitions:
         example: 普通用户
         type: string
     type: object
+  dto.AdminVolumeListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.AdminVolumeListItem'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 13
+        type: integer
+    type: object
+  dto.AdminVolumeListItem:
+    properties:
+      cover_url:
+        example: https://example.com/vol1.jpg
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      isbn:
+        example: 978-4-04-865091-8
+        type: string
+      novel_id:
+        example: 1
+        type: integer
+      novel_title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        type: string
+      reject_reason:
+        example: 卷号信息有误
+        type: string
+      release_date:
+        example: "2014-04-10"
+        type: string
+      sort_order:
+        example: 0
+        type: integer
+      status:
+        example: 0
+        type: integer
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        type: string
+      updated_at:
+        type: string
+      volume_number:
+        example: 1
+        type: integer
+    type: object
+  dto.AdminVolumeListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AdminVolumeListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.Announcement:
     properties:
       cover_url:
@@ -1066,30 +1133,11 @@ definitions:
         minimum: 1
         type: integer
     type: object
-  dto.ContributorData:
-    properties:
-      avatar_url:
-        example: https://example.com/avatar.jpg
-        type: string
-      contribution_count:
-        example: 12
-        type: integer
-      first_contributed_at:
-        type: string
-      last_contributed_at:
-        type: string
-      user_id:
-        example: 1001
-        type: integer
-      username:
-        example: NexusXian
-        type: string
-    type: object
   dto.ContributorListData:
     properties:
       items:
         items:
-          $ref: '#/definitions/dto.ContributorData'
+          $ref: '#/definitions/internal_galgame_dto.ContributorData'
         type: array
       page:
         example: 1
@@ -1464,6 +1512,98 @@ definitions:
     - limit
     - provider
     type: object
+  dto.CreateNovelRequest:
+    properties:
+      age_rating:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        example: 1
+        type: integer
+      author:
+        example: 鸭志田一
+        maxLength: 255
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        maxLength: 2048
+        type: string
+      first_release_date:
+        example: "2014-04-10"
+        type: string
+      illustrator:
+        example: 沟口凯吉
+        maxLength: 255
+        type: string
+      is_cover_sensitive:
+        example: false
+        type: boolean
+      label:
+        example: 电击文库
+        maxLength: 255
+        type: string
+      language:
+        example: ja
+        maxLength: 16
+        type: string
+      official_website:
+        example: https://dengeki.com/
+        maxLength: 2048
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        maxLength: 255
+        type: string
+      publisher:
+        example: KADOKAWA
+        maxLength: 255
+        type: string
+      region:
+        example: JP
+        maxLength: 16
+        type: string
+      release_status:
+        enum:
+        - ongoing
+        - completed
+        - hiatus
+        - cancelled
+        - unknown
+        example: ongoing
+        type: string
+      slug:
+        example: seishun-buta-yarou
+        maxLength: 255
+        type: string
+      status:
+        enum:
+        - 0
+        - 1
+        example: 0
+        type: integer
+      summary:
+        example: 小说简介（Markdown）
+        type: string
+      tag_ids:
+        example:
+        - 1
+        - 2
+        items:
+          type: integer
+        maxItems: 100
+        type: array
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        maxLength: 255
+        type: string
+    required:
+    - slug
+    - title
+    type: object
   dto.CreatePermissionRequest:
     properties:
       code:
@@ -1505,6 +1645,33 @@ definitions:
     - content
     - title
     type: object
+  dto.CreateRelationRequest:
+    properties:
+      relation_type:
+        enum:
+        - adaptation
+        - original
+        - spin_off
+        - sequel
+        - prequel
+        - same_series
+        - related
+        example: adaptation
+        type: string
+      target_id:
+        example: 3
+        type: integer
+      target_type:
+        enum:
+        - galgame
+        - novel
+        example: galgame
+        type: string
+    required:
+    - relation_type
+    - target_id
+    - target_type
+    type: object
   dto.CreateResourceReportRequest:
     properties:
       description:
@@ -1528,9 +1695,6 @@ definitions:
       description:
         example: 官方汉化整合包
         type: string
-      galgame_id:
-        example: 1
-        type: integer
       links:
         example:
         - https://example.com/dl
@@ -1548,6 +1712,15 @@ definitions:
         - 3
         example: 1
         type: integer
+      target_id:
+        example: 1
+        type: integer
+      target_type:
+        enum:
+        - galgame
+        - novel
+        example: galgame
+        type: string
       title:
         example: 千恋＊万花 官方整合包
         maxLength: 255
@@ -1561,11 +1734,17 @@ definitions:
         - 4
         - 5
         - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
         example: 1
         type: integer
     required:
-    - galgame_id
     - links
+    - target_id
     - title
     type: object
   dto.CreateRoleRequest:
@@ -1602,6 +1781,42 @@ definitions:
     required:
     - name
     - slug
+    type: object
+  dto.CreateVolumeRequest:
+    properties:
+      cover_url:
+        example: https://example.com/vol1.jpg
+        maxLength: 2048
+        type: string
+      isbn:
+        example: 978-4-04-865091-8
+        maxLength: 20
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        maxLength: 255
+        type: string
+      release_date:
+        example: "2014-04-10"
+        type: string
+      status:
+        enum:
+        - 0
+        - 1
+        example: 0
+        type: integer
+      summary:
+        example: 第一卷简介
+        type: string
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        maxLength: 255
+        type: string
+      volume_number:
+        example: 1
+        maximum: 9999
+        minimum: 0
+        type: integer
     type: object
   dto.Developer:
     properties:
@@ -2112,7 +2327,7 @@ definitions:
         type: integer
       tags:
         items:
-          $ref: '#/definitions/dto.TagSummary'
+          $ref: '#/definitions/internal_galgame_dto.TagSummary'
         type: array
       title:
         example: 千恋＊万花
@@ -2146,7 +2361,7 @@ definitions:
         type: integer
       contributors:
         items:
-          $ref: '#/definitions/dto.ContributorData'
+          $ref: '#/definitions/internal_galgame_dto.ContributorData'
         type: array
       cover_sensitive:
         example: false
@@ -2172,6 +2387,10 @@ definitions:
         type: string
       rating:
         $ref: '#/definitions/dto.RatingSummary'
+      related_novels:
+        items:
+          $ref: '#/definitions/dto.RelatedNovelData'
+        type: array
       release_date:
         example: "2016-07-29"
         type: string
@@ -2188,7 +2407,7 @@ definitions:
         type: integer
       tags:
         items:
-          $ref: '#/definitions/dto.TagSummary'
+          $ref: '#/definitions/internal_galgame_dto.TagSummary'
         type: array
       title:
         example: 千恋＊万花
@@ -3068,6 +3287,195 @@ definitions:
         example: success
         type: string
     type: object
+  dto.NovelDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.NovelResponse'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.NovelListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.NovelListItem'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  dto.NovelListItem:
+    properties:
+      age_rating:
+        example: 1
+        type: integer
+      author:
+        example: 鸭志田一
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      created_at:
+        type: string
+      first_release_date:
+        example: "2014-04-10"
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_cover_sensitive:
+        example: false
+        type: boolean
+      label:
+        example: 电击文库
+        type: string
+      language:
+        example: ja
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        type: string
+      publisher:
+        example: KADOKAWA
+        type: string
+      release_status:
+        example: ongoing
+        type: string
+      slug:
+        example: seishun-buta-yarou
+        type: string
+      statistics:
+        $ref: '#/definitions/dto.NovelStatistics'
+      status:
+        example: 1
+        type: integer
+      tags:
+        items:
+          $ref: '#/definitions/internal_novel_dto.TagSummary'
+        type: array
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.NovelListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.NovelListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.NovelResponse:
+    properties:
+      age_rating:
+        example: 1
+        type: integer
+      author:
+        example: 鸭志田一
+        type: string
+      contributor_count:
+        example: 12
+        type: integer
+      contributors:
+        items:
+          $ref: '#/definitions/internal_novel_dto.ContributorData'
+        type: array
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      created_at:
+        type: string
+      first_release_date:
+        example: "2014-04-10"
+        type: string
+      id:
+        example: 1
+        type: integer
+      illustrator:
+        example: 沟口凯吉
+        type: string
+      is_cover_sensitive:
+        example: false
+        type: boolean
+      label:
+        example: 电击文库
+        type: string
+      language:
+        example: ja
+        type: string
+      official_website:
+        example: https://dengeki.com/
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        type: string
+      publisher:
+        example: KADOKAWA
+        type: string
+      region:
+        example: JP
+        type: string
+      reject_reason:
+        example: 资料不完整
+        type: string
+      related_galgames:
+        items:
+          $ref: '#/definitions/dto.RelatedWorkData'
+        type: array
+      release_status:
+        example: ongoing
+        type: string
+      reviewed_at:
+        type: string
+      slug:
+        example: seishun-buta-yarou
+        type: string
+      statistics:
+        $ref: '#/definitions/dto.NovelStatistics'
+      status:
+        example: 1
+        type: integer
+      summary:
+        example: 小说简介（Markdown）
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/internal_novel_dto.TagSummary'
+        type: array
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        type: string
+      updated_at:
+        type: string
+      volumes:
+        items:
+          $ref: '#/definitions/dto.VolumeSummary'
+        type: array
+    type: object
+  dto.NovelStatistics:
+    properties:
+      resource_count:
+        example: 5
+        type: integer
+      volume_count:
+        example: 13
+        type: integer
+    type: object
   dto.OverrideClassificationRequest:
     properties:
       classification:
@@ -3607,6 +4015,124 @@ definitions:
         example: 120
         type: integer
     type: object
+  dto.RelatedNovelData:
+    properties:
+      age_rating:
+        example: 1
+        type: integer
+      cover_sensitive:
+        example: false
+        type: boolean
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        type: string
+      relation_id:
+        example: 1
+        type: integer
+      relation_type:
+        example: adaptation
+        type: string
+      slug:
+        example: seishun-buta-yarou
+        type: string
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        type: string
+      work_id:
+        example: 3
+        type: integer
+    type: object
+  dto.RelatedWorkData:
+    properties:
+      age_rating:
+        example: 3
+        type: integer
+      cover_sensitive:
+        example: false
+        type: boolean
+      cover_url:
+        example: https://example.com/cover.jpg
+        type: string
+      original_title:
+        example: 千恋＊万花
+        type: string
+      relation_id:
+        example: 1
+        type: integer
+      relation_type:
+        example: adaptation
+        type: string
+      slug:
+        example: senren-banka
+        type: string
+      title:
+        example: 千恋＊万花
+        type: string
+      work_id:
+        example: 3
+        type: integer
+    type: object
+  dto.RelationData:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        example: 1001
+        type: integer
+      id:
+        example: 1
+        type: integer
+      relation_type:
+        example: adaptation
+        type: string
+      source_id:
+        example: 1
+        type: integer
+      source_type:
+        example: novel
+        type: string
+      target_id:
+        example: 3
+        type: integer
+      target_type:
+        example: galgame
+        type: string
+    type: object
+  dto.RelationDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.RelationData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.RelationListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.RelationData'
+        type: array
+      total:
+        example: 2
+        type: integer
+    type: object
+  dto.RelationListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.RelationListData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.ReorderGalleryRequest:
     properties:
       ids:
@@ -3615,6 +4141,20 @@ definitions:
         - 101
         - 105
         - 102
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - ids
+    type: object
+  dto.ReorderVolumesRequest:
+    properties:
+      ids:
+        example:
+        - 3
+        - 1
+        - 2
         items:
           type: integer
         minItems: 1
@@ -3644,9 +4184,6 @@ definitions:
       description:
         example: 官方汉化整合包
         type: string
-      galgame_id:
-        example: 1
-        type: integer
       id:
         example: 1
         type: integer
@@ -3657,6 +4194,12 @@ definitions:
       status:
         example: 1
         type: integer
+      target_id:
+        example: 1
+        type: integer
+      target_type:
+        example: galgame
+        type: string
       title:
         example: 千恋＊万花 官方整合包
         type: string
@@ -3819,6 +4362,21 @@ definitions:
         maxLength: 500
         type: string
     type: object
+  dto.ReviewNovelRequest:
+    properties:
+      reason:
+        example: 资料不完整
+        maxLength: 1000
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        example: 1
+        type: integer
+    required:
+    - status
+    type: object
   dto.ReviewResourceRequest:
     properties:
       status:
@@ -3826,6 +4384,21 @@ definitions:
         - 1
         - 2
         - 3
+        example: 1
+        type: integer
+    required:
+    - status
+    type: object
+  dto.ReviewVolumeRequest:
+    properties:
+      reason:
+        example: 卷号信息有误
+        maxLength: 1000
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
         example: 1
         type: integer
     required:
@@ -3920,15 +4493,6 @@ definitions:
         example: pure-love
         type: string
       updated_at:
-        type: string
-    type: object
-  dto.TagSummary:
-    properties:
-      id:
-        example: 1
-        type: integer
-      name:
-        example: 纯爱
         type: string
     type: object
   dto.UnreadCountData:
@@ -4223,6 +4787,104 @@ definitions:
         minimum: 1
         type: integer
     type: object
+  dto.UpdateNovelRequest:
+    properties:
+      age_rating:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        example: 1
+        type: integer
+      author:
+        example: 鸭志田一
+        maxLength: 255
+        type: string
+      cover_url:
+        example: https://example.com/cover.jpg
+        maxLength: 2048
+        type: string
+      first_release_date:
+        example: "2014-04-10"
+        type: string
+      illustrator:
+        example: 沟口凯吉
+        maxLength: 255
+        type: string
+      is_cover_sensitive:
+        example: false
+        type: boolean
+      label:
+        example: 电击文库
+        maxLength: 255
+        type: string
+      language:
+        example: ja
+        maxLength: 16
+        type: string
+      official_website:
+        example: https://dengeki.com/
+        maxLength: 2048
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        maxLength: 255
+        type: string
+      publisher:
+        example: KADOKAWA
+        maxLength: 255
+        type: string
+      region:
+        example: JP
+        maxLength: 16
+        type: string
+      release_status:
+        enum:
+        - ongoing
+        - completed
+        - hiatus
+        - cancelled
+        - unknown
+        example: ongoing
+        type: string
+      slug:
+        example: seishun-buta-yarou
+        maxLength: 255
+        type: string
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 1
+        type: integer
+      summary:
+        example: 小说简介（Markdown）
+        type: string
+      tag_ids:
+        example:
+        - 1
+        - 2
+        items:
+          type: integer
+        maxItems: 100
+        type: array
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        maxLength: 255
+        type: string
+    required:
+    - age_rating
+    - is_cover_sensitive
+    - release_status
+    - slug
+    - status
+    - title
+    type: object
   dto.UpdatePermissionRequest:
     properties:
       description:
@@ -4347,6 +5009,12 @@ definitions:
         - 4
         - 5
         - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
         example: 1
         type: integer
     required:
@@ -4454,6 +5122,46 @@ definitions:
         type: array
     required:
     - role_ids
+    type: object
+  dto.UpdateVolumeRequest:
+    properties:
+      cover_url:
+        example: https://example.com/vol1.jpg
+        maxLength: 2048
+        type: string
+      isbn:
+        example: 978-4-04-865091-8
+        maxLength: 20
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        maxLength: 255
+        type: string
+      release_date:
+        example: "2014-04-10"
+        type: string
+      status:
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        example: 1
+        type: integer
+      summary:
+        example: 第一卷简介
+        type: string
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        maxLength: 255
+        type: string
+      volume_number:
+        example: 1
+        maximum: 9999
+        minimum: 0
+        type: integer
+    required:
+    - status
     type: object
   dto.UpsertRatingRequest:
     properties:
@@ -4641,10 +5349,176 @@ definitions:
         example: success
         type: string
     type: object
+  dto.VolumeData:
+    properties:
+      cover_url:
+        example: https://example.com/vol1.jpg
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      isbn:
+        example: 978-4-04-865091-8
+        type: string
+      novel_id:
+        example: 1
+        type: integer
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        type: string
+      reject_reason:
+        example: 卷号信息有误
+        type: string
+      release_date:
+        example: "2014-04-10"
+        type: string
+      reviewed_at:
+        type: string
+      sort_order:
+        example: 0
+        type: integer
+      status:
+        example: 1
+        type: integer
+      summary:
+        example: 第一卷简介
+        type: string
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        type: string
+      updated_at:
+        type: string
+      volume_number:
+        example: 1
+        type: integer
+    type: object
+  dto.VolumeDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.VolumeData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.VolumeListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.VolumeData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 13
+        type: integer
+    type: object
+  dto.VolumeListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.VolumeListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.VolumeSummary:
+    properties:
+      cover_url:
+        example: https://example.com/vol1.jpg
+        type: string
+      id:
+        example: 1
+        type: integer
+      isbn:
+        example: 978-4-04-865091-8
+        type: string
+      original_title:
+        example: 青春ブタ野郎はバニーガール先輩の夢を見ない
+        type: string
+      release_date:
+        example: "2014-04-10"
+        type: string
+      sort_order:
+        example: 0
+        type: integer
+      title:
+        example: 青春猪头少年不会梦到兔女郎学姐
+        type: string
+      volume_number:
+        example: 1
+        type: integer
+    type: object
   handler.HealthResponse:
     properties:
       status:
         example: ok
+        type: string
+    type: object
+  internal_galgame_dto.ContributorData:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      contribution_count:
+        example: 12
+        type: integer
+      first_contributed_at:
+        type: string
+      last_contributed_at:
+        type: string
+      user_id:
+        example: 1001
+        type: integer
+      username:
+        example: NexusXian
+        type: string
+    type: object
+  internal_galgame_dto.TagSummary:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 纯爱
+        type: string
+    type: object
+  internal_novel_dto.ContributorData:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      contribution_count:
+        example: 12
+        type: integer
+      first_contributed_at:
+        type: string
+      last_contributed_at:
+        type: string
+      user_id:
+        example: 1001
+        type: integer
+      username:
+        example: NexusXian
+        type: string
+    type: object
+  internal_novel_dto.TagSummary:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 恋爱
         type: string
     type: object
   model.EditorMode:
@@ -4676,6 +5550,12 @@ definitions:
     - galgame_submitted
     - galgame_approved
     - galgame_rejected
+    - novel_submitted
+    - novel_approved
+    - novel_rejected
+    - novel_volume_submitted
+    - novel_volume_approved
+    - novel_volume_rejected
     - resource_submitted
     - resource_approved
     - resource_rejected
@@ -4695,6 +5575,12 @@ definitions:
     - TypeGalgameSubmitted
     - TypeGalgameApproved
     - TypeGalgameRejected
+    - TypeNovelSubmitted
+    - TypeNovelApproved
+    - TypeNovelRejected
+    - TypeNovelVolumeSubmitted
+    - TypeNovelVolumeApproved
+    - TypeNovelVolumeRejected
     - TypeResourceSubmitted
     - TypeResourceApproved
     - TypeResourceRejected
@@ -7174,6 +8060,280 @@ paths:
       summary: 查询外部数据源
       tags:
       - adminImport
+  /api/v1/admin/novel-volumes:
+    get:
+      description: 返回全部状态的卷册并附带所属小说标题；需要 novel:review 权限
+      operationId: listAdminNovelVolumes
+      parameters:
+      - description: 状态筛选
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        in: query
+        name: status
+        type: integer
+      - description: 小说 ID 筛选
+        in: query
+        name: novel_id
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 卷册列表
+          schema:
+            $ref: '#/definitions/dto.AdminVolumeListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询小说卷册列表
+      tags:
+      - admin
+  /api/v1/admin/novel-volumes/{id}/review:
+    put:
+      consumes:
+      - application/json
+      description: 将卷册标记为已发布 (1) 或已拒绝 (2)，拒绝时可附原因；需要 novel:review 权限
+      operationId: reviewNovelVolume
+      parameters:
+      - description: Volume ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 审核卷册请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReviewVolumeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 审核结果
+          schema:
+            $ref: '#/definitions/dto.VolumeDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 卷册不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 审核卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端审核小说卷册
+      tags:
+      - admin
+  /api/v1/admin/novels:
+    get:
+      description: 返回全部状态的小说；需要 novel:review 权限
+      operationId: listAdminNovels
+      parameters:
+      - description: 状态筛选
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        in: query
+        name: status
+        type: integer
+      - description: 标题 / 原文标题 / 作者关键字
+        in: query
+        name: keyword
+        type: string
+      - description: 连载状态
+        enum:
+        - ongoing
+        - completed
+        - hiatus
+        - cancelled
+        - unknown
+        in: query
+        name: release_status
+        type: string
+      - description: 排序
+        enum:
+        - latest
+        - oldest
+        - updated
+        - release
+        - release_asc
+        in: query
+        name: sort
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 小说列表
+          schema:
+            $ref: '#/definitions/dto.NovelListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询小说列表
+      tags:
+      - admin
+  /api/v1/admin/novels/{id}:
+    get:
+      description: 按 ID 返回任意状态的小说详情；需要 novel:review 权限
+      operationId: getAdminNovel
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 小说详情
+          schema:
+            $ref: '#/definitions/dto.NovelDataResponse'
+        "400":
+          description: Novel ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查看小说详情
+      tags:
+      - admin
+  /api/v1/admin/novels/{id}/review:
+    put:
+      consumes:
+      - application/json
+      description: 将小说标记为已发布 (1) 或已拒绝 (2)，拒绝时可附原因；需要 novel:review 权限
+      operationId: reviewNovel
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 审核小说请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReviewNovelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 审核结果
+          schema:
+            $ref: '#/definitions/dto.NovelDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 审核小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端审核小说
+      tags:
+      - admin
   /api/v1/admin/posts:
     get:
       description: 按标题、内容、作者或 Galgame 标题搜索全部帖子；需要 post:moderate 权限
@@ -9424,6 +10584,669 @@ paths:
       summary: 查询未读通知数
       tags:
       - notifications
+  /api/v1/novels:
+    get:
+      description: 分页返回已发布的小说，支持关键字、标签、作者、出版社、文库、语言和连载状态筛选
+      operationId: listNovels
+      parameters:
+      - description: 标题 / 原文标题 / 作者关键字
+        in: query
+        name: keyword
+        type: string
+      - description: Tag ID 列表（逗号分隔，AND 语义）
+        in: query
+        name: tag_ids
+        type: string
+      - description: 作者
+        in: query
+        name: author
+        type: string
+      - description: 出版社
+        in: query
+        name: publisher
+        type: string
+      - description: 文库 / Label
+        in: query
+        name: label
+        type: string
+      - description: 连载状态
+        enum:
+        - ongoing
+        - completed
+        - hiatus
+        - cancelled
+        - unknown
+        in: query
+        name: release_status
+        type: string
+      - description: 语言，如 ja、zh-CN
+        in: query
+        name: language
+        type: string
+      - description: 排序
+        enum:
+        - latest
+        - oldest
+        - updated
+        - release
+        - release_asc
+        in: query
+        name: sort
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 小说列表
+          schema:
+            $ref: '#/definitions/dto.NovelListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查询小说列表
+      tags:
+      - novels
+    post:
+      consumes:
+      - application/json
+      description: 创建小说条目；需要 novel:create 权限，默认进入待审核状态
+      operationId: createNovel
+      parameters:
+      - description: 创建小说请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateNovelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建的小说
+          schema:
+            $ref: '#/definitions/dto.NovelDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建小说
+      tags:
+      - novels
+  /api/v1/novels/{id}:
+    delete:
+      description: 软删除小说及其卷册并清理关联数据；需要 novel:delete 权限
+      operationId: deleteNovel
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Novel ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除小说
+      tags:
+      - novels
+    get:
+      description: 按 ID 返回已发布小说详情，包含标签、卷册、关联视觉小说、资源和贡献者概要
+      operationId: getNovel
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 小说详情
+          schema:
+            $ref: '#/definitions/dto.NovelDataResponse'
+        "400":
+          description: Novel ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看小说详情
+      tags:
+      - novels
+    put:
+      consumes:
+      - application/json
+      description: 全量更新小说资料；需要 novel:update 权限
+      operationId: updateNovel
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新小说请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateNovelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新后的小说
+          schema:
+            $ref: '#/definitions/dto.NovelDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: slug 已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新小说失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新小说
+      tags:
+      - novels
+  /api/v1/novels/{id}/relations:
+    get:
+      description: 返回小说的原始关联关系列表（双向）；需要 novel:update 权限
+      operationId: listNovelRelations
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 关联关系列表
+          schema:
+            $ref: '#/definitions/dto.RelationListResponse'
+        "400":
+          description: Novel ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询关联作品失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看小说关联作品
+      tags:
+      - novels
+    post:
+      consumes:
+      - application/json
+      description: 将小说关联到视觉小说或其他小说；需要 novel:update 权限
+      operationId: createNovelRelation
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 新增关联请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRelationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建的关联关系
+          schema:
+            $ref: '#/definitions/dto.RelationDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 关联对象不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 关联关系已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 创建关联失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 新增小说关联
+      tags:
+      - novels
+  /api/v1/novels/{id}/relations/{relationId}:
+    delete:
+      description: 删除小说（任一侧）的关联关系；需要 novel:update 权限
+      operationId: deleteNovelRelation
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Relation ID
+        in: path
+        name: relationId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 关联关系不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除关联失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除小说关联
+      tags:
+      - novels
+  /api/v1/novels/{id}/volumes:
+    get:
+      description: 分页返回已发布小说的已发布卷册
+      operationId: listNovelVolumes
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 卷册列表
+          schema:
+            $ref: '#/definitions/dto.VolumeListResponse'
+        "400":
+          description: 参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查询小说卷册列表
+      tags:
+      - novels
+    post:
+      consumes:
+      - application/json
+      description: 为小说添加卷册；需要 novel:update 权限，默认进入待审核状态
+      operationId: createNovelVolume
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 新增卷册请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateVolumeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建的卷册
+          schema:
+            $ref: '#/definitions/dto.VolumeDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 新增卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 新增小说卷册
+      tags:
+      - novels
+  /api/v1/novels/{id}/volumes/{volumeId}:
+    delete:
+      description: 软删除卷册；卷册必须属于该小说，需要 novel:update 权限
+      operationId: deleteNovelVolume
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 卷册不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除小说卷册
+      tags:
+      - novels
+    get:
+      description: 返回已发布小说的单个已发布卷册
+      operationId: getNovelVolume
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 卷册详情
+          schema:
+            $ref: '#/definitions/dto.VolumeDataResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 卷册不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看小说卷册详情
+      tags:
+      - novels
+    put:
+      consumes:
+      - application/json
+      description: 全量更新卷册资料；卷册必须属于该小说，需要 novel:update 权限
+      operationId: updateNovelVolume
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Volume ID
+        in: path
+        name: volumeId
+        required: true
+        type: integer
+      - description: 更新卷册请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateVolumeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新后的卷册
+          schema:
+            $ref: '#/definitions/dto.VolumeDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 卷册不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 更新卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新小说卷册
+      tags:
+      - novels
+  /api/v1/novels/{id}/volumes/order:
+    put:
+      consumes:
+      - application/json
+      description: 按传入 ID 顺序重写卷册 sort_order；ID 集合必须与小说卷册完全一致，需要 novel:update 权限
+      operationId: reorderNovelVolumes
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 卷册排序请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReorderVolumesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 排序卷册失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 排序小说卷册
+      tags:
+      - novels
   /api/v1/permissions:
     get:
       description: 返回全部权限
@@ -9990,7 +11813,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 登录用户为已发布 Galgame 上传资源及下载链接
+      description: 登录用户为已发布 Galgame 或小说上传资源及下载链接
       operationId: createResource
       parameters:
       - description: 创建资源请求
@@ -10015,7 +11838,7 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
         "404":
-          description: Galgame 不存在
+          description: 关联作品不存在
           schema:
             $ref: '#/definitions/response.ErrorResponse'
         "500":
@@ -11011,6 +12834,48 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: 查看 Galgame 资源列表
+      tags:
+      - resources
+  /api/v2/novels/{id}/resources:
+    get:
+      description: 分页返回小说下已发布资源及其链接
+      operationId: listNovelResources
+      parameters:
+      - description: Novel ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 资源列表
+          schema:
+            $ref: '#/definitions/dto.ResourceListResponse'
+        "400":
+          description: 参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 小说不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询资源失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看小说资源列表
       tags:
       - resources
   /api/v2/posts/{id}/comments:

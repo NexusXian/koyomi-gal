@@ -53,7 +53,7 @@ export const getBatchApproveClassificationUrl = () => {
 }
 
 /**
- * 仅采用 confidence >= 0.95 且无证据冲突且结论明确的待审核建议；其余保持待审核
+ * 仅采用 confidence >= 0.7 且无证据冲突且结论明确的待审核建议；其余保持待审核
  * @summary 批量采用 AI 高置信度结果
  */
 export const batchApproveClassification = async (dtoBatchClassificationRequest: DtoBatchClassificationRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoBatchResponse> => {
@@ -107,7 +107,7 @@ export const getStartClassificationUrl = (id: number,) => {
 }
 
 /**
- * 异步运行 Eino Agent 研究并产出 R18 / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队
+ * 异步运行 Eino Agent 研究并产出 R18 / 17+ / 15+ / 12+ / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队
  * @summary 启动 AI 年龄分级
  */
 export const startClassification = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoClassificationDetailResponse> => {
@@ -131,7 +131,7 @@ export const getApproveClassificationUrl = (id: number,) => {
 }
 
 /**
- * 只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，non_r18 → age_rating 1；unknown 无法采用
+ * 只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，r17 → 5，r15 → 2，r12 → 4，non_r18 → 1；unknown 无法采用
  * @summary 采用 AI 年龄分级
  */
 export const approveClassification = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoClassificationDetailResponse> => {

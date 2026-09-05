@@ -5,32 +5,37 @@ import (
 	"errors"
 	"strings"
 
-	"backend/internal/galgame/dto"
-	"backend/internal/galgame/model"
-	"backend/internal/galgame/repository"
+	contributionModel "backend/internal/contribution/model"
+	"backend/internal/contribution/repository"
+	galgameRepository "backend/internal/galgame/repository"
+	relationModel "backend/internal/relation/model"
 
 	"gorm.io/gorm"
 )
 
-var ErrInvalidContribution = errors.New("invalid contribution")
+var (
+	ErrInvalidContribution = errors.New("invalid contribution")
+	ErrGalgameNotFound     = errors.New("galgame not found")
+)
 
 type RecordContributionInput struct {
-	GalgameID  uint
+	TargetType string
+	TargetID   uint
 	UserID     uint
-	Action     model.ContributionAction
+	Action     contributionModel.ContributionAction
 	SourceType *string
 	SourceID   *uint
 }
 
 type ContributionService struct {
 	repository *repository.ContributionRepository
-	galgames   *repository.GalgameRepository
+	galgames   *galgameRepository.GalgameRepository
 	publicURL  string
 }
 
 func NewContributionService(
 	repository *repository.ContributionRepository,
-	galgames *repository.GalgameRepository,
+	galgames *galgameRepository.GalgameRepository,
 	publicURL string,
 ) *ContributionService {
 	return &ContributionService{repository: repository, galgames: galgames, publicURL: publicURL}
@@ -61,7 +66,8 @@ func (s *ContributionService) RecordContribution(
 	input RecordContributionInput,
 	tx ...*gorm.DB,
 ) error {
-	if input.GalgameID == 0 || input.UserID == 0 || !validContributionAction(input.Action) {
+	if !relationModel.ValidWorkType(input.TargetType) || input.TargetID == 0 ||
+		input.UserID == 0 || !contributionModel.ValidContributionAction(input.Action) {
 		return ErrInvalidContribution
 	}
 	if (input.SourceType == nil) != (input.SourceID == nil) {
@@ -78,8 +84,9 @@ func (s *ContributionService) RecordContribution(
 	if len(tx) > 0 && tx[0] != nil {
 		repo = repository.NewContributionRepository(tx[0], s.publicURL)
 	}
-	return repo.CreateContribution(ctx, &model.GalgameContribution{
-		GalgameID:  input.GalgameID,
+	return repo.CreateContribution(ctx, &contributionModel.WorkContribution{
+		TargetType: input.TargetType,
+		TargetID:   input.TargetID,
 		UserID:     input.UserID,
 		Action:     input.Action,
 		SourceType: input.SourceType,
@@ -87,45 +94,36 @@ func (s *ContributionService) RecordContribution(
 	})
 }
 
-func (s *ContributionService) ListContributorsByGalgameID(
+// ListGalgameContributorRows backs the public galgame contributors endpoint
+// and only exposes published galgames.
+func (s *ContributionService) ListGalgameContributorRows(
 	ctx context.Context,
 	galgameID uint,
 	page, pageSize int,
-) (dto.ContributorListData, error) {
+) ([]contributionModel.WorkContributor, int64, error) {
 	galgame, err := s.galgames.FindPublishedByID(ctx, galgameID)
 	if err != nil {
-		return dto.ContributorListData{}, err
+		return nil, 0, err
 	}
 	if galgame == nil {
-		return dto.ContributorListData{}, ErrGalgameNotFound
+		return nil, 0, ErrGalgameNotFound
 	}
+	return s.ListContributorRows(ctx, relationModel.WorkTypeGalgame, galgameID, page, pageSize)
+}
+
+// ListContributorRows returns the raw aggregated contributor rows so domain
+// services can embed them into their detail responses.
+func (s *ContributionService) ListContributorRows(
+	ctx context.Context,
+	targetType string,
+	targetID uint,
+	page, pageSize int,
+) ([]contributionModel.WorkContributor, int64, error) {
 	if page == 0 {
 		page = 1
 	}
 	if pageSize == 0 {
 		pageSize = 20
 	}
-	contributors, total, err := s.repository.ListContributorsByGalgameID(ctx, galgameID, page, pageSize)
-	if err != nil {
-		return dto.ContributorListData{}, err
-	}
-	return dto.ContributorListData{
-		Items:    dto.NewContributorData(contributors),
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
-}
-
-func validContributionAction(action model.ContributionAction) bool {
-	switch action {
-	case model.ContributionActionCreate,
-		model.ContributionActionEdit,
-		model.ContributionActionCover,
-		model.ContributionActionGallery,
-		model.ContributionActionResource:
-		return true
-	default:
-		return false
-	}
+	return s.repository.ListContributors(ctx, targetType, targetID, page, pageSize)
 }

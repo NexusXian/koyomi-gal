@@ -7,12 +7,16 @@ import (
 	"strings"
 	"time"
 
+	contributionModel "backend/internal/contribution/model"
+	contributionService "backend/internal/contribution/service"
 	"backend/internal/galgame/dto"
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
+	relationModel "backend/internal/relation/model"
+	relationRepository "backend/internal/relation/repository"
 	userModel "backend/internal/user/model"
 	userService "backend/internal/user/service"
 	"backend/pkg/logger"
@@ -44,14 +48,19 @@ type CatalogService struct {
 	galgames      *repository.GalgameRepository
 	developers    *repository.DeveloperRepository
 	tags          *repository.TagRepository
-	contributions *ContributionService
+	relations     *relationRepository.RelationRepository
+	contributions *contributionService.ContributionService
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
 }
 
-func (s *CatalogService) SetContributionService(contributions *ContributionService) {
+func (s *CatalogService) SetContributionService(contributions *contributionService.ContributionService) {
 	s.contributions = contributions
+}
+
+func (s *CatalogService) SetRelationRepository(relations *relationRepository.RelationRepository) {
+	s.relations = relations
 }
 
 func (s *CatalogService) SetActivityRecorder(recorder userService.ActivityRecorder) {
@@ -312,11 +321,12 @@ func (s *CatalogService) CreateGalgame(
 			return err
 		}
 		if galgame.Status == model.GalgameStatusPublished && s.contributions != nil {
-			sourceType, sourceID := contributionSource(model.ContributionSourceGalgameCreate, galgame.ID)
-			return s.contributions.RecordContribution(ctx, RecordContributionInput{
-				GalgameID:  galgame.ID,
+			sourceType, sourceID := contributionSource(contributionModel.ContributionSourceGalgameCreate, galgame.ID)
+			return s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: relationModel.WorkTypeGalgame,
+				TargetID:   galgame.ID,
 				UserID:     userID,
-				Action:     model.ContributionActionCreate,
+				Action:     contributionModel.ContributionActionCreate,
 				SourceType: sourceType,
 				SourceID:   sourceID,
 			}, db)
@@ -431,11 +441,12 @@ func (s *CatalogService) UpdateGalgame(
 				if contributorID == 0 {
 					return s.recordInitialGalleryContributions(ctx, db, id)
 				}
-				sourceType, sourceID := contributionSource(model.ContributionSourceGalgameCreate, id)
-				if err := s.contributions.RecordContribution(ctx, RecordContributionInput{
-					GalgameID:  id,
+				sourceType, sourceID := contributionSource(contributionModel.ContributionSourceGalgameCreate, id)
+				if err := s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+					TargetType: relationModel.WorkTypeGalgame,
+					TargetID:   id,
 					UserID:     contributorID,
-					Action:     model.ContributionActionCreate,
+					Action:     contributionModel.ContributionActionCreate,
 					SourceType: sourceType,
 					SourceID:   sourceID,
 				}, db); err != nil {
@@ -446,14 +457,15 @@ func (s *CatalogService) UpdateGalgame(
 			if len(actorIDs) == 0 {
 				return nil
 			}
-			action := model.ContributionActionEdit
+			action := contributionModel.ContributionActionEdit
 			if coverOnly {
-				action = model.ContributionActionCover
+				action = contributionModel.ContributionActionCover
 			}
-			return s.contributions.RecordContribution(ctx, RecordContributionInput{
-				GalgameID: id,
-				UserID:    actorIDs[0],
-				Action:    action,
+			return s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+				TargetType: relationModel.WorkTypeGalgame,
+				TargetID:   id,
+				UserID:     actorIDs[0],
+				Action:     action,
 			}, db)
 		}
 		return nil
@@ -503,11 +515,12 @@ func (s *CatalogService) ReviewGalgame(
 				return err
 			}
 			if galgame.CreatedBy != nil {
-				sourceType, sourceID := contributionSource(model.ContributionSourceGalgameCreate, id)
-				if err := s.contributions.RecordContribution(ctx, RecordContributionInput{
-					GalgameID:  id,
+				sourceType, sourceID := contributionSource(contributionModel.ContributionSourceGalgameCreate, id)
+				if err := s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+					TargetType: relationModel.WorkTypeGalgame,
+					TargetID:   id,
 					UserID:     *galgame.CreatedBy,
-					Action:     model.ContributionActionCreate,
+					Action:     contributionModel.ContributionActionCreate,
 					SourceType: sourceType,
 					SourceID:   sourceID,
 				}, db); err != nil {
@@ -575,6 +588,12 @@ func (s *CatalogService) DeleteGalgame(ctx context.Context, id uint) error {
 	if galgame == nil {
 		return ErrGalgameNotFound
 	}
+	if s.relations != nil {
+		if err := s.relations.DeleteByWork(ctx, relationModel.WorkTypeGalgame, id); err != nil {
+			logger.Error("delete galgame work relations", zap.Uint("galgame_id", id), zap.Error(err))
+			return err
+		}
+	}
 	if err := s.galgames.Delete(ctx, id); err != nil {
 		logger.Error("delete galgame", zap.Uint("galgame_id", id), zap.Error(err))
 		return err
@@ -584,11 +603,20 @@ func (s *CatalogService) DeleteGalgame(ctx context.Context, id uint) error {
 
 // BatchDeleteGalgames hard-deletes the matched galgames and returns the number
 // of deleted rows. Cascades remove aliases, tags, favorites, ratings, states,
-// resources, posts, gallery and contribution rows.
+// resources, posts, gallery and contribution rows; work relations are removed
+// explicitly beforehand.
 func (s *CatalogService) BatchDeleteGalgames(
 	ctx context.Context,
 	req *dto.BatchDeleteGalgameRequest,
 ) (int64, error) {
+	if s.relations != nil {
+		for _, id := range uniqueUint(req.IDs) {
+			if err := s.relations.DeleteByWork(ctx, relationModel.WorkTypeGalgame, id); err != nil {
+				logger.Error("delete galgame work relations", zap.Uint("galgame_id", id), zap.Error(err))
+				return 0, err
+			}
+		}
+	}
 	deleted, err := s.galgames.BatchDelete(ctx, uniqueUint(req.IDs))
 	if err != nil {
 		logger.Error("batch delete galgames", zap.Int("id_count", len(req.IDs)), zap.Error(err))
@@ -774,12 +802,20 @@ func (s *CatalogService) getGalgame(
 		return nil, ErrGalgameNotFound
 	}
 	if s.contributions != nil {
-		contributors, total, err := s.contributions.repository.ListContributorsByGalgameID(ctx, id, 1, 10)
+		contributors, total, err := s.contributions.ListContributorRows(ctx, relationModel.WorkTypeGalgame, id, 1, 10)
 		if err != nil {
 			return nil, err
 		}
 		galgame.Contributors = contributors
 		galgame.ContributorCount = total
+	}
+	if s.relations != nil {
+		related, err := s.relations.ListRelatedNovelsForGalgame(ctx, id)
+		if err != nil {
+			logger.Error("list related novels for galgame", zap.Uint("galgame_id", id), zap.Error(err))
+			return nil, err
+		}
+		galgame.RelatedNovels = related
 	}
 	return galgame, nil
 }
@@ -802,11 +838,12 @@ func (s *CatalogService) recordInitialGalleryContributions(ctx context.Context, 
 		if image.CreatedBy == nil {
 			continue
 		}
-		sourceType, sourceID := contributionSource(model.ContributionSourceGalleryImage, image.ID)
-		if err := s.contributions.RecordContribution(ctx, RecordContributionInput{
-			GalgameID:  galgameID,
+		sourceType, sourceID := contributionSource(contributionModel.ContributionSourceGalleryImage, image.ID)
+		if err := s.contributions.RecordContribution(ctx, contributionService.RecordContributionInput{
+			TargetType: relationModel.WorkTypeGalgame,
+			TargetID:   galgameID,
 			UserID:     *image.CreatedBy,
-			Action:     model.ContributionActionGallery,
+			Action:     contributionModel.ContributionActionGallery,
 			SourceType: sourceType,
 			SourceID:   sourceID,
 		}, db); err != nil {

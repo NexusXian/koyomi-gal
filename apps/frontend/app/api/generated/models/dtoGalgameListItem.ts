@@ -8,7 +8,7 @@
 import type { DtoDeveloperSummary } from './dtoDeveloperSummary';
 import type { DtoGalgameStatistics } from './dtoGalgameStatistics';
 import type { DtoRatingSummary } from './dtoRatingSummary';
-import type { DtoTagSummary } from './dtoTagSummary';
+import type { InternalGalgameDtoTagSummary } from './internalGalgameDtoTagSummary';
 
 export interface DtoGalgameListItem {
   age_rating?: number;
@@ -31,6 +31,6 @@ export interface DtoGalgameListItem {
   slug?: string;
   statistics?: DtoGalgameStatistics;
   status?: number;
-  tags?: DtoTagSummary[];
+  tags?: InternalGalgameDtoTagSummary[];
   title?: string;
 }

@@ -14,6 +14,7 @@ import (
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
 	"backend/internal/middleware"
+	novelRepo "backend/internal/novel/repository"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/resource/dto"
@@ -67,7 +68,7 @@ func newResourceHandlerEnv(t *testing.T) *resourceHandlerEnv {
 		t.Fatalf("seed rbac defaults: %v", err)
 	}
 	resources := resourceRepo.NewResourceRepository(db)
-	resourceSvc := resourceService.NewResourceService(resources, galgameRepository, rbacSvc)
+	resourceSvc := resourceService.NewResourceService(resources, galgameRepository, novelRepo.NewNovelRepository(db), rbacSvc)
 	handler := NewResourceHandler(resourceSvc)
 
 	gin.SetMode(gin.TestMode)
@@ -123,9 +124,10 @@ func TestResourceEndpointsAuthBoundaries(t *testing.T) {
 	}
 
 	res := doResourceRequest(env.router, http.MethodPost, "/api/v1/resources", "", map[string]any{
-		"galgame_id": galgame.ID,
-		"title":      "no auth",
-		"links":      []string{"https://example.com/a"},
+		"target_type": "galgame",
+		"target_id":   galgame.ID,
+		"title":       "no auth",
+		"links":       []string{"https://example.com/a"},
 	})
 	if res.Code != http.StatusUnauthorized {
 		t.Fatalf("create without token: expected 401, got %d", res.Code)
@@ -173,11 +175,12 @@ func TestResourceEndpointsOwnerFlow(t *testing.T) {
 	galgamePath := "/api/v2/galgames/" + strconv.FormatUint(uint64(galgame.ID), 10)
 
 	res := doResourceRequest(env.router, http.MethodPost, "/api/v1/resources", ownerToken, map[string]any{
-		"galgame_id": galgame.ID,
-		"title":      "http resource",
-		"type":       2,
-		"status":     1,
-		"links":      []string{"https://example.com/a", "https://example.com/b"},
+		"target_type": "galgame",
+		"target_id":   galgame.ID,
+		"title":       "http resource",
+		"type":        2,
+		"status":      1,
+		"links":       []string{"https://example.com/a", "https://example.com/b"},
 	})
 	if res.Code != http.StatusOK {
 		t.Fatalf("create: expected 200, got %d body=%s", res.Code, res.Body.String())

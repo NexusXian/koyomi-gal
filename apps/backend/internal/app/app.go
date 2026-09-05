@@ -27,6 +27,8 @@ import (
 	communityHandler "backend/internal/community/handler"
 	communityRepo "backend/internal/community/repository"
 	communityService "backend/internal/community/service"
+	contributionRepo "backend/internal/contribution/repository"
+	contributionService "backend/internal/contribution/service"
 	feedbackHandler "backend/internal/feedback/handler"
 	feedbackRepo "backend/internal/feedback/repository"
 	feedbackService "backend/internal/feedback/service"
@@ -50,9 +52,13 @@ import (
 	notificationHandler "backend/internal/notification/handler"
 	notificationRepo "backend/internal/notification/repository"
 	notificationService "backend/internal/notification/service"
+	novelHandler "backend/internal/novel/handler"
+	novelRepo "backend/internal/novel/repository"
+	novelService "backend/internal/novel/service"
 	rbacHandler "backend/internal/rbac/handler"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
+	relationRepo "backend/internal/relation/repository"
 	resourceHandler "backend/internal/resource/handler"
 	resourceRepo "backend/internal/resource/repository"
 	resourceService "backend/internal/resource/service"
@@ -94,6 +100,9 @@ type App struct {
 	CatalogHandler        *galgameHandler.CatalogHandler
 	ImporterHandler       *importerHandler.ImporterHandler
 	ContributionHandler   *galgameHandler.ContributionHandler
+	NovelHandler          *novelHandler.NovelHandler
+	NovelVolumeHandler    *novelHandler.VolumeHandler
+	NovelAdminHandler     *novelHandler.AdminHandler
 	UserRelationHandler   *galgameHandler.UserRelationHandler
 	GalleryHandler        *galgameHandler.GalleryHandler
 	ResourceHandler       *resourceHandler.ResourceHandler
@@ -160,12 +169,13 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	notificationSvc := notificationService.NewNotificationService(notificationRepository)
 
 	galgameRepository := galgameRepo.NewGalgameRepository(postgresDB)
-	contributionRepository := galgameRepo.NewContributionRepository(postgresDB, cfg.R2.PublicURL)
-	contributionSvc := galgameService.NewContributionService(
+	contributionRepository := contributionRepo.NewContributionRepository(postgresDB, cfg.R2.PublicURL)
+	contributionSvc := contributionService.NewContributionService(
 		contributionRepository,
 		galgameRepository,
 		cfg.R2.PublicURL,
 	)
+	relationRepository := relationRepo.NewRelationRepository(postgresDB)
 	developerRepository := galgameRepo.NewDeveloperRepository(postgresDB)
 	tagRepository := galgameRepo.NewTagRepository(postgresDB)
 	catalogService := galgameService.NewCatalogService(
@@ -175,6 +185,24 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	)
 	catalogService.SetContributionService(contributionSvc)
 	catalogService.SetNotificationDependencies(rbacSvc, notificationSvc)
+	catalogService.SetRelationRepository(relationRepository)
+
+	novelRepository := novelRepo.NewNovelRepository(postgresDB)
+	volumeRepository := novelRepo.NewVolumeRepository(postgresDB)
+	novelSvc := novelService.NewNovelService(
+		novelRepository,
+		volumeRepository,
+		tagRepository,
+		galgameRepository,
+		relationRepository,
+	)
+	novelSvc.SetContributionService(contributionSvc)
+	novelSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
+	novelVolumeSvc := novelService.NewVolumeService(volumeRepository, novelRepository)
+	novelVolumeSvc.SetContributionService(contributionSvc)
+	novelVolumeSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
+	novelRelationSvc := novelService.NewRelationService(relationRepository, novelRepository, galgameRepository)
+	novelRelationSvc.SetContributionService(contributionSvc)
 
 	userRelationRepository := galgameRepo.NewUserRelationRepository(postgresDB)
 	ratingService := galgameService.NewRatingService(galgameRepository, userRelationRepository)
@@ -184,7 +212,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	galleryRepository := galgameRepo.NewGalleryRepository(postgresDB)
 
 	resourceRepository := resourceRepo.NewResourceRepository(postgresDB, cfg.R2.PublicURL)
-	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, rbacSvc)
+	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, novelRepository, rbacSvc)
 	resourceSvc.SetContributionService(contributionSvc)
 	resourceSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
 	reportRepository := resourceRepo.NewReportRepository(postgresDB)
@@ -330,6 +358,9 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		CatalogHandler:      galgameHandler.NewCatalogHandler(catalogService),
 		ImporterHandler:     importerHandler.NewImporterHandler(importerSvc),
 		ContributionHandler: galgameHandler.NewContributionHandler(contributionSvc),
+		NovelHandler:        novelHandler.NewNovelHandler(novelSvc, novelRelationSvc),
+		NovelVolumeHandler:  novelHandler.NewVolumeHandler(novelVolumeSvc),
+		NovelAdminHandler:   novelHandler.NewAdminHandler(novelSvc, novelVolumeSvc),
 		UserRelationHandler: galgameHandler.NewUserRelationHandler(
 			ratingService,
 			favoriteService,

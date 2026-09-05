@@ -14,6 +14,7 @@ export const IMAGE_CATEGORY_MAX_SIZES: Record<ImageCategory, number> = {
   posts: 15 * 1024 * 1024,
   comments: 10 * 1024 * 1024,
   galgames: 20 * 1024 * 1024,
+  novels: 20 * 1024 * 1024,
   backgrounds: 20 * 1024 * 1024,
   'profile-banners': 20 * 1024 * 1024,
   banners: 20 * 1024 * 1024,

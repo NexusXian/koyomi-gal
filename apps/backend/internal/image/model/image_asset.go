@@ -14,6 +14,7 @@ const (
 	CategoryPost          = "posts"
 	CategoryComment       = "comments"
 	CategoryGalgame       = "galgames"
+	CategoryNovel         = "novels"
 	CategoryBackground    = "backgrounds"
 	CategoryBanner        = "banners"
 	CategoryProfileBanner = "profile-banners"

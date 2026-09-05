@@ -68,6 +68,7 @@ var categorySizeLimits = map[string]int64{
 	model.CategoryPost:          15 << 20,
 	model.CategoryComment:       10 << 20,
 	model.CategoryGalgame:       maxImageSize,
+	model.CategoryNovel:         maxImageSize,
 	model.CategoryBackground:    maxImageSize,
 	model.CategoryBanner:        maxImageSize,
 	model.CategoryProfileBanner: maxImageSize,
@@ -77,6 +78,7 @@ var categorySizeLimits = map[string]int64{
 // adminCategories require an RBAC permission on top of login.
 var adminCategories = map[string]bool{
 	model.CategoryGalgame: true,
+	model.CategoryNovel:   true,
 	model.CategoryBanner:  true,
 	model.CategoryAdmin:   true,
 }

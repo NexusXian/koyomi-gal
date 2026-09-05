@@ -136,9 +136,9 @@ const columns: TableColumnsType = [
     ellipsis: true
   },
   {
-    title: 'Galgame',
-    dataIndex: 'galgame_id',
-    width: 100
+    title: '关联作品',
+    dataIndex: 'target_type',
+    width: 130
   },
   {
     title: '上传者',
@@ -204,10 +204,17 @@ const columns: TableColumnsType = [
           </a-tag>
         </template>
 
-        <template v-else-if="column.dataIndex === 'galgame_id'">
-          <NuxtLink :to="`/galgames/${record.galgame_id}`">
-            #{{ record.galgame_id }}
-          </NuxtLink>
+        <template v-else-if="column.dataIndex === 'target_type'">
+          <template v-if="record.target_type === 'novel'">
+            <NuxtLink :to="`/novels/${record.target_id}`">
+              小说 #{{ record.target_id }}
+            </NuxtLink>
+          </template>
+          <template v-else>
+            <NuxtLink :to="`/galgames/${record.target_id}`">
+              Galgame #{{ record.target_id }}
+            </NuxtLink>
+          </template>
         </template>
 
         <template v-else-if="column.dataIndex === 'uploader_id'">

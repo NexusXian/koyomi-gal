@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"backend/internal/galgame/model"
+	contributionModel "backend/internal/contribution/model"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -24,37 +24,38 @@ func (r *ContributionRepository) Transaction(ctx context.Context, fn func(tx *go
 	return r.db.WithContext(ctx).Transaction(fn)
 }
 
-func (r *ContributionRepository) CreateContribution(ctx context.Context, contribution *model.GalgameContribution) error {
+func (r *ContributionRepository) CreateContribution(ctx context.Context, contribution *contributionModel.WorkContribution) error {
 	if err := r.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(contribution).Error; err != nil {
-		return fmt.Errorf("create galgame contribution: %w", err)
+		return fmt.Errorf("create work contribution: %w", err)
 	}
 	return nil
 }
 
-func (r *ContributionRepository) ListContributorsByGalgameID(
+func (r *ContributionRepository) ListContributors(
 	ctx context.Context,
-	galgameID uint,
+	targetType string,
+	targetID uint,
 	page, pageSize int,
-) ([]model.GalgameContributor, int64, error) {
+) ([]contributionModel.WorkContributor, int64, error) {
 	var total int64
 	if err := r.db.WithContext(ctx).
-		Table("galgame_contributions").
-		Where("galgame_id = ?", galgameID).
+		Table("work_contributions").
+		Where("target_type = ? AND target_id = ?", targetType, targetID).
 		Distinct("user_id").
 		Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("count galgame contributors: %w", err)
+		return nil, 0, fmt.Errorf("count work contributors: %w", err)
 	}
 
 	aggregated := r.db.WithContext(ctx).
-		Table("galgame_contributions").
+		Table("work_contributions").
 		Select(`user_id,
 COUNT(*) AS contribution_count,
 MIN(created_at) AS first_contributed_at,
 MAX(created_at) AS last_contributed_at`).
-		Where("galgame_id = ?", galgameID).
+		Where("target_type = ? AND target_id = ?", targetType, targetID).
 		Group("user_id")
 
-	contributors := make([]model.GalgameContributor, 0)
+	contributors := make([]contributionModel.WorkContributor, 0)
 	err := r.db.WithContext(ctx).
 		Table("(?) AS contributions", aggregated).
 		Select(`contributions.user_id,
@@ -73,7 +74,7 @@ contributions.last_contributed_at`, r.publicURL).
 		Limit(pageSize).
 		Scan(&contributors).Error
 	if err != nil {
-		return nil, 0, fmt.Errorf("list galgame contributors: %w", err)
+		return nil, 0, fmt.Errorf("list work contributors: %w", err)
 	}
 	return contributors, total, nil
 }
@@ -82,13 +83,13 @@ func (r *ContributionRepository) ListContributionsByUserID(
 	ctx context.Context,
 	userID uint,
 	page, pageSize int,
-) ([]model.GalgameContribution, int64, error) {
-	query := r.db.WithContext(ctx).Model(&model.GalgameContribution{}).Where("user_id = ?", userID)
+) ([]contributionModel.WorkContribution, int64, error) {
+	query := r.db.WithContext(ctx).Model(&contributionModel.WorkContribution{}).Where("user_id = ?", userID)
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("count user contributions: %w", err)
 	}
-	items := make([]model.GalgameContribution, 0)
+	items := make([]contributionModel.WorkContribution, 0)
 	if err := query.Order("created_at DESC").Order("id DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&items).Error; err != nil {
 		return nil, 0, fmt.Errorf("list user contributions: %w", err)
 	}
@@ -98,7 +99,7 @@ func (r *ContributionRepository) ListContributionsByUserID(
 func (r *ContributionRepository) ExistsBySource(ctx context.Context, sourceType string, sourceID uint) (bool, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).
-		Model(&model.GalgameContribution{}).
+		Model(&contributionModel.WorkContribution{}).
 		Where("source_type = ? AND source_id = ?", sourceType, sourceID).
 		Limit(1).
 		Count(&count).Error; err != nil {

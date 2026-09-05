@@ -11,10 +11,11 @@ import type { DtoResourceUserSummary } from './dtoResourceUserSummary';
 export interface DtoResourceData {
   created_at?: string;
   description?: string;
-  galgame_id?: number;
   id?: number;
   links?: DtoResourceLinkData[];
   status?: number;
+  target_id?: number;
+  target_type?: string;
   title?: string;
   type?: number;
   updated_at?: string;

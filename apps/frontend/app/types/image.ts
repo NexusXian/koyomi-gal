@@ -3,6 +3,7 @@ export type ImageCategory =
   | 'posts'
   | 'comments'
   | 'galgames'
+  | 'novels'
   | 'backgrounds'
   | 'profile-banners'
   | 'banners'

@@ -26,6 +26,7 @@ onMounted(async () => {
       'galgame:review',
       'galgame:import',
       'galgame:import:batch',
+      'novel:review',
       'resource_report:list',
       'image:read',
       'image:manage',
