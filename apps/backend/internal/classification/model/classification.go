@@ -6,13 +6,17 @@ type ClassificationValue string
 
 const (
 	ClassificationR18     ClassificationValue = "r18"
+	ClassificationR17     ClassificationValue = "r17"
+	ClassificationR15     ClassificationValue = "r15"
+	ClassificationR12     ClassificationValue = "r12"
 	ClassificationNonR18  ClassificationValue = "non_r18"
 	ClassificationUnknown ClassificationValue = "unknown"
 )
 
 func (v ClassificationValue) Valid() bool {
 	switch v {
-	case ClassificationR18, ClassificationNonR18, ClassificationUnknown:
+	case ClassificationR18, ClassificationR17, ClassificationR15, ClassificationR12,
+		ClassificationNonR18, ClassificationUnknown:
 		return true
 	default:
 		return false

@@ -22,7 +22,8 @@ import { updateGalgame } from '~/api/generated/galgames/galgames'
 import type {
   DtoBatchData,
   DtoClassificationDetailData,
-  DtoGalgameListItem
+  DtoGalgameListItem,
+  DtoOverrideClassificationRequest
 } from '~/api/generated/models'
 import { AGE_RATINGS, GALGAME_SORTS, domainLabel, domainSortSlug } from '~/constants/domain'
 
@@ -64,7 +65,7 @@ const aiDetailOpen = ref(false)
 const aiDetailLoading = ref(false)
 const aiDetail = ref<DtoClassificationDetailData | null>(null)
 const aiOverrideOpen = ref(false)
-const aiOverrideValue = ref<'r18' | 'non_r18' | 'unknown'>('r18')
+const aiOverrideValue = ref<'r18' | 'r17' | 'r15' | 'r12' | 'non_r18' | 'unknown'>('r18')
 const aiOverrideReason = ref('')
 
 const fallbackCover = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -85,6 +86,9 @@ const COVER_FILTER_OPTIONS = [
 
 const AI_CLASSIFICATION_OPTIONS = [
   { value: 'r18', label: 'AI = R18' },
+  { value: 'r17', label: 'AI = 17+' },
+  { value: 'r15', label: 'AI = 15+' },
+  { value: 'r12', label: 'AI = 12+' },
   { value: 'non_r18', label: 'AI = 非 R18' },
   { value: 'unknown', label: 'AI = 未知' }
 ]
@@ -129,12 +133,18 @@ const AI_STATUS_LABELS: Record<string, string> = {
 
 const AI_RESULT_LABELS: Record<string, string> = {
   r18: 'R18',
+  r17: '17+',
+  r15: '15+',
+  r12: '12+',
   non_r18: '非 R18',
   unknown: '未知'
 }
 
 const AI_RESULT_COLORS: Record<string, string> = {
   r18: 'error',
+  r17: 'orange',
+  r15: 'gold',
+  r12: 'blue',
   non_r18: 'success',
   unknown: 'warning',
   queued: 'processing',
@@ -463,7 +473,7 @@ async function submitOverride(): Promise<void> {
   try {
     unwrapApiData(
       await overrideClassification(targetId, {
-        classification: aiOverrideValue.value,
+        classification: aiOverrideValue.value as DtoOverrideClassificationRequest['classification'],
         reason: aiOverrideReason.value.trim() || undefined
       }),
       '操作失败'

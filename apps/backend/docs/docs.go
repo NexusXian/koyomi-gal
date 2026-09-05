@@ -1016,7 +1016,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "AI 分级建议过滤：r18、non_r18、unknown",
+                        "description": "AI 分级建议过滤：r18、r17、r15、r12、non_r18、unknown",
                         "name": "ai_classification",
                         "in": "query"
                     },
@@ -1275,7 +1275,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "仅采用 confidence \u003e= 0.95 且无证据冲突且结论明确的待审核建议；其余保持待审核",
+                "description": "仅采用 confidence \u003e= 0.7 且无证据冲突且结论明确的待审核建议；其余保持待审核",
                 "produces": [
                     "application/json"
                 ],
@@ -1440,7 +1440,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "异步运行 Eino Agent 研究并产出 R18 / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队",
+                "description": "异步运行 Eino Agent 研究并产出 R18 / 17+ / 15+ / 12+ / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队",
                 "produces": [
                     "application/json"
                 ],
@@ -1493,7 +1493,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，non_r18 → age_rating 1；unknown 无法采用",
+                "description": "只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，r17 → 5，r15 → 2，r12 → 4，non_r18 → 1；unknown 无法采用",
                 "produces": [
                     "application/json"
                 ],
@@ -10869,7 +10869,7 @@ const docTemplate = `{
                 },
                 "reason": {
                     "type": "string",
-                    "example": "置信度低于 95%"
+                    "example": "置信度低于 70%"
                 }
             }
         },
@@ -14048,6 +14048,9 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "r18",
+                        "r17",
+                        "r15",
+                        "r12",
                         "non_r18",
                         "unknown"
                     ],

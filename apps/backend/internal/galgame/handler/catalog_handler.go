@@ -166,7 +166,7 @@ func (h *CatalogHandler) GetGalgame(c *gin.Context) {
 // @Param        cover_sensitive query boolean false "敏感封面过滤：true 仅敏感，false 仅普通，不传为全部"
 // @Param        keyword query string false "标题或别名关键词"
 // @Param        sort query string false "排序：latest、oldest、rating、favorite、popular" default(latest)
-// @Param        ai_classification query string false "AI 分级建议过滤：r18、non_r18、unknown"
+// @Param        ai_classification query string false "AI 分级建议过滤：r18、r17、r15、r12、non_r18、unknown"
 // @Param        ai_status query string false "AI 判断状态过滤：queued、processing、pending_review、approved、rejected、failed"
 // @Param        ai_conflict query boolean false "AI 证据冲突过滤"
 // @Param        ai_min_confidence query number false "AI 置信度下限，0-1"

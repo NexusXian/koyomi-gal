@@ -100,7 +100,7 @@ type AdminGalgameQuery struct {
 	Page           int    `form:"page" binding:"omitempty,min=1,max=1000000"`
 	Limit          int    `form:"limit" binding:"omitempty,min=1,max=100"`
 
-	AIClassification string   `form:"ai_classification" binding:"omitempty,oneof=r18 non_r18 unknown" example:"r18"`
+	AIClassification string   `form:"ai_classification" binding:"omitempty,oneof=r18 r17 r15 r12 non_r18 unknown" example:"r18"`
 	AIStatus         string   `form:"ai_status" binding:"omitempty,oneof=queued processing pending_review approved rejected failed" example:"failed"`
 	AIConflict       *bool    `form:"ai_conflict" example:"true"`
 	AIMinConfidence  *float64 `form:"ai_min_confidence" binding:"omitempty,gte=0,lte=1" example:"0.95"`

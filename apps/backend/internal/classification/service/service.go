@@ -272,7 +272,7 @@ func (s *Service) GetDetail(ctx context.Context, gameID uint) (*DetailGame, *mod
 
 // Approve applies a pending_review verdict to the official galgame record.
 // Only this path may write the age rating: the agent itself never touches the
-// catalog. r18 maps to the R18 age level, non_r18 to all-ages.
+// catalog. r18/r17/r15/r12 map to their age levels, non_r18 to all-ages.
 func (s *Service) Approve(ctx context.Context, gameID uint, reviewerID uint) error {
 	row, err := s.repository.FindLatest(ctx, gameID)
 	if err != nil {
@@ -338,7 +338,7 @@ func (s *Service) Override(
 	reason string,
 ) error {
 	if !value.Valid() {
-		return fmt.Errorf("%w: classification 必须是 r18 / non_r18 / unknown", ErrInvalidState)
+		return fmt.Errorf("%w: classification 必须是 r18 / r17 / r15 / r12 / non_r18 / unknown", ErrInvalidState)
 	}
 	row, err := s.repository.FindLatest(ctx, gameID)
 	if err != nil {
@@ -380,7 +380,7 @@ func (s *Service) BatchStart(ctx context.Context, gameIDs []uint) (*BatchResult,
 }
 
 // BatchApprove adopts pending_review proposals that pass the strict bar:
-// confidence >= 0.95, no conflicts, and a decisive verdict.
+// confidence >= 0.7, no conflicts, and a decisive verdict.
 func (s *Service) BatchApprove(ctx context.Context, gameIDs []uint, reviewerID uint) (*BatchResult, error) {
 	result := &BatchResult{GameIDs: gameIDs}
 	rows, err := s.repository.ListReviewable(ctx, gameIDs)
@@ -390,12 +390,12 @@ func (s *Service) BatchApprove(ctx context.Context, gameIDs []uint, reviewerID u
 	for _, row := range rows {
 		value := row.AsClassificationValue()
 		switch {
-		case value != model.ClassificationR18 && value != model.ClassificationNonR18:
+		case classificationToAgeRating(value) == nil:
 			result.Skipped = append(result.Skipped, BatchFailure{GameID: row.GameID, Reason: "unknown 结果"})
 		case row.Conflict:
 			result.Skipped = append(result.Skipped, BatchFailure{GameID: row.GameID, Reason: "证据冲突"})
-		case row.Confidence < 0.95:
-			result.Skipped = append(result.Skipped, BatchFailure{GameID: row.GameID, Reason: "置信度低于 95%"})
+		case row.Confidence < 0.7:
+			result.Skipped = append(result.Skipped, BatchFailure{GameID: row.GameID, Reason: "置信度低于 70%"})
 		case s.applyApproved(ctx, &row, reviewerID) == nil:
 			result.Approved = append(result.Approved, row.GameID)
 		default:
@@ -434,16 +434,22 @@ func (s *Service) ensureGame(ctx context.Context, gameID uint) error {
 }
 
 func classificationToAgeRating(value model.ClassificationValue) *int16 {
+	var result int16
 	switch value {
 	case model.ClassificationR18:
-		result := int16(galgameModel.AgeRatingR18)
-		return &result
+		result = galgameModel.AgeRatingR18
+	case model.ClassificationR17:
+		result = galgameModel.AgeRatingR17
+	case model.ClassificationR15:
+		result = galgameModel.AgeRatingR15
+	case model.ClassificationR12:
+		result = galgameModel.AgeRatingR12
 	case model.ClassificationNonR18:
-		result := int16(galgameModel.AgeRatingAll)
-		return &result
+		result = galgameModel.AgeRatingAll
 	default:
 		return nil
 	}
+	return &result
 }
 
 type BatchFailure struct {

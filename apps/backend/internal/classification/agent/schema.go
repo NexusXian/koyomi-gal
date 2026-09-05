@@ -94,7 +94,7 @@ func ValidateResult(result *ClassificationResult) error {
 		return errors.New("agent returned an empty result")
 	}
 	if !result.Classification.Valid() {
-		return fmt.Errorf("classification %q is not one of r18/non_r18/unknown", result.Classification)
+		return fmt.Errorf("classification %q is not one of r18/r17/r15/r12/non_r18/unknown", result.Classification)
 	}
 	if result.Confidence < 0 || result.Confidence > 1 {
 		return fmt.Errorf("confidence %v is outside [0,1]", result.Confidence)

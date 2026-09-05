@@ -26,7 +26,7 @@ func NewClassificationHandler(service *classificationService.Service) *Classific
 
 // StartClassification godoc
 // @Summary      启动 AI 年龄分级
-// @Description  异步运行 Eino Agent 研究并产出 R18 / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队
+// @Description  异步运行 Eino Agent 研究并产出 R18 / 17+ / 15+ / 12+ / 非 R18 / unknown 建议；已在进行中的游戏不会重复入队
 // @ID           startClassification
 // @Tags         galgame_classification
 // @Produce      json
@@ -97,7 +97,7 @@ func (h *ClassificationHandler) GetClassification(c *gin.Context) {
 
 // ApproveClassification godoc
 // @Summary      采用 AI 年龄分级
-// @Description  只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，non_r18 → age_rating 1；unknown 无法采用
+// @Description  只有此接口会修改游戏正式年龄字段：r18 → age_rating 3，r17 → 5，r15 → 2，r12 → 4，non_r18 → 1；unknown 无法采用
 // @ID           approveClassification
 // @Tags         galgame_classification
 // @Produce      json
@@ -179,7 +179,7 @@ func (h *ClassificationHandler) OverrideClassification(c *gin.Context) {
 	}
 	var request dto.OverrideClassificationRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		response.Error(c, appErrors.ErrValidation("classification 必须是 r18 / non_r18 / unknown"))
+		response.Error(c, appErrors.ErrValidation("classification 必须是 r18 / r17 / r15 / r12 / non_r18 / unknown"))
 		return
 	}
 	reason := request.Reason
@@ -226,7 +226,7 @@ func (h *ClassificationHandler) BatchClassification(c *gin.Context) {
 
 // BatchApproveClassification godoc
 // @Summary      批量采用 AI 高置信度结果
-// @Description  仅采用 confidence >= 0.95 且无证据冲突且结论明确的待审核建议；其余保持待审核
+// @Description  仅采用 confidence >= 0.7 且无证据冲突且结论明确的待审核建议；其余保持待审核
 // @ID           batchApproveClassification
 // @Tags         galgame_classification
 // @Produce      json
