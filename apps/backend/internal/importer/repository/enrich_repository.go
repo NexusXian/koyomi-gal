@@ -40,6 +40,7 @@ func (r *Repository) ListGalgamesForEnrichment(
 	var games []galgameModel.Galgame
 	err := r.db.WithContext(ctx).
 		Model(&galgameModel.Galgame{}).
+		Select("galgames.*").
 		Joins("JOIN galgame_external_sources src_req ON src_req.galgame_id = galgames.id AND src_req.source = ?", requireSource).
 		Joins("LEFT JOIN galgame_external_sources src_miss ON src_miss.galgame_id = galgames.id AND src_miss.source = ?", missingSource).
 		Where("src_miss.id IS NULL AND galgames.id > ?", afterID).
