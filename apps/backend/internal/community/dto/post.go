@@ -4,13 +4,15 @@ import (
 	"time"
 
 	"backend/internal/community/model"
+	leveldto "backend/internal/level/dto"
 )
 
 type CommunityUserSummary struct {
-	ID          uint   `json:"id"`
-	Username    string `json:"username"`
-	DisplayName string `json:"display_name"`
-	AvatarURL   string `json:"avatar_url"`
+	ID          uint                       `json:"id"`
+	Username    string                     `json:"username"`
+	DisplayName string                     `json:"display_name"`
+	AvatarURL   string                     `json:"avatar_url"`
+	Level       *leveldto.UserLevelSummary `json:"level,omitempty"`
 }
 
 type CreatePostRequest struct {

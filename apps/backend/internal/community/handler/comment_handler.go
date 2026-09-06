@@ -16,10 +16,15 @@ import (
 
 type CommentHandler struct {
 	commentService *service.CommentService
+	levels         service.LevelSummarizer
 }
 
-func NewCommentHandler(commentService *service.CommentService) *CommentHandler {
-	return &CommentHandler{commentService: commentService}
+func NewCommentHandler(commentService *service.CommentService, levels ...service.LevelSummarizer) *CommentHandler {
+	handler := &CommentHandler{commentService: commentService}
+	if len(levels) > 0 {
+		handler.levels = levels[0]
+	}
+	return handler
 }
 
 // ListPostComments godoc
@@ -57,6 +62,7 @@ func (h *CommentHandler) ListPostComments(c *gin.Context) {
 	for i := range comments {
 		items = append(items, dto.NewCommentData(&comments[i], replyCounts[comments[i].ID]))
 	}
+	attachCommentLevels(c.Request.Context(), h.levels, items)
 	response.Ok(c, dto.CommentListData{Items: items, Total: total, Page: page, Limit: limit})
 }
 
@@ -95,6 +101,7 @@ func (h *CommentHandler) ListCommentReplies(c *gin.Context) {
 	for i := range replies {
 		items = append(items, dto.NewCommentData(&replies[i], 0))
 	}
+	attachCommentLevels(c.Request.Context(), h.levels, items)
 	response.Ok(c, dto.CommentListData{Items: items, Total: total, Page: page, Limit: limit})
 }
 
@@ -166,7 +173,9 @@ func (h *CommentHandler) CreateComment(c *gin.Context) {
 		h.respondCommentError(c, err, "create comment")
 		return
 	}
-	response.Ok(c, dto.NewCommentData(comment, 0))
+	data := dto.NewCommentData(comment, 0)
+	attachCommentLevels(c.Request.Context(), h.levels, []dto.CommentData{data})
+	response.Ok(c, data)
 }
 
 // UpdateComment godoc

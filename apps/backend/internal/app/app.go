@@ -48,6 +48,9 @@ import (
 	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
 	"backend/internal/infrastructures/storage"
+	levelHandler "backend/internal/level/handler"
+	levelRepo "backend/internal/level/repository"
+	levelService "backend/internal/level/service"
 	"backend/internal/migrations"
 	notificationHandler "backend/internal/notification/handler"
 	notificationRepo "backend/internal/notification/repository"
@@ -120,6 +123,8 @@ type App struct {
 	HealthHandler         *healthHandler.HealthHandler
 	ImageHandler          *imageHandler.ImageHandler
 	NotificationHandler   *notificationHandler.NotificationHandler
+	LevelHandler          *levelHandler.LevelHandler
+	AdminLevelHandler     *levelHandler.AdminLevelHandler
 	stopImageCleanup      func()
 }
 
@@ -169,6 +174,11 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	notificationRepository := notificationRepo.NewNotificationRepository(postgresDB, cfg.R2.PublicURL)
 	notificationSvc := notificationService.NewNotificationService(notificationRepository)
 
+	levelRepository := levelRepo.NewRepository(postgresDB)
+	levelConfigService := levelService.NewLevelConfigService(levelRepository, redisClient)
+	experienceService := levelService.NewExperienceService(levelRepository, redisClient, notificationSvc)
+	checkinService := levelService.NewCheckinService(levelRepository, experienceService)
+
 	galgameRepository := galgameRepo.NewGalgameRepository(postgresDB)
 	contributionRepository := contributionRepo.NewContributionRepository(postgresDB, cfg.R2.PublicURL)
 	contributionSvc := contributionService.NewContributionService(
@@ -187,6 +197,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	catalogService.SetContributionService(contributionSvc)
 	catalogService.SetNotificationDependencies(rbacSvc, notificationSvc)
 	catalogService.SetRelationRepository(relationRepository)
+	catalogService.SetExperienceService(experienceService)
 
 	novelRepository := novelRepo.NewNovelRepository(postgresDB)
 	volumeRepository := novelRepo.NewVolumeRepository(postgresDB)
@@ -218,6 +229,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, novelRepository, rbacSvc)
 	resourceSvc.SetContributionService(contributionSvc)
 	resourceSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
+	resourceSvc.SetExperienceService(experienceService)
 	reportRepository := resourceRepo.NewReportRepository(postgresDB)
 	reportSvc := resourceService.NewReportService(reportRepository, resourceRepository)
 	reportSvc.SetNotificationDependencies(rbacSvc, notificationSvc)
@@ -229,6 +241,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	postService := communityService.NewPostService(postRepository, galgameRepository, rbacSvc, notificationSvc)
 	commentService := communityService.NewCommentService(commentRepository, postRepository, rbacSvc, notificationSvc)
 	interactionService := communityService.NewInteractionService(postRepository, commentRepository, notificationSvc)
+	commentService.SetExperienceService(experienceService)
+	interactionService.SetExperienceService(experienceService)
 
 	bannerRepository := bannerRepo.NewBannerRepository(postgresDB)
 	articleRepository := articleRepo.NewArticleRepository(postgresDB)
@@ -256,6 +270,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 
 	galleryService := galgameService.NewGalleryService(galgameRepository, galleryRepository, imageSvc)
 	galleryService.SetContributionService(contributionSvc)
+	galleryService.SetExperienceService(experienceService)
 
 	importerRepository := importerRepo.NewRepository(postgresDB)
 	vndbClient := &http.Client{Timeout: 15 * time.Second}
@@ -324,6 +339,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		imageSvc,
 		userProfileRepository,
 	)
+	userProfileService.SetLevelProvider(experienceService)
 	postService.SetActivityRecorder(userActivityService)
 	commentService.SetActivityRecorder(userActivityService)
 	ratingService.SetActivityRecorder(userActivityService)
@@ -360,7 +376,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		AssignmentHandler:   rbacHandler.NewAssignmentHandler(rbacSvc),
 		CatalogHandler:      galgameHandler.NewCatalogHandler(catalogService),
 		ImporterHandler:     importerHandler.NewImporterHandler(importerSvc),
-		ContributionHandler: galgameHandler.NewContributionHandler(contributionSvc),
+		ContributionHandler: galgameHandler.NewContributionHandler(contributionSvc, experienceService),
 		NovelHandler:        novelHandler.NewNovelHandler(novelSvc, novelRelationSvc),
 		NovelVolumeHandler:  novelHandler.NewVolumeHandler(novelVolumeSvc),
 		NovelAdminHandler:   novelHandler.NewAdminHandler(novelSvc, novelVolumeSvc),
@@ -376,8 +392,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		ReportHandler:         resourceHandler.NewReportHandler(reportSvc),
 		FeedbackHandler:       feedbackHandler.NewFeedbackHandler(feedbackSvc),
 		ClassificationHandler: classificationHandler.NewClassificationHandler(classificationSvc),
-		PostHandler:           communityHandler.NewPostHandler(postService),
-		CommentHandler:        communityHandler.NewCommentHandler(commentService),
+		PostHandler:           communityHandler.NewPostHandler(postService, experienceService),
+		CommentHandler:        communityHandler.NewCommentHandler(commentService, experienceService),
 		InteractionHandler:    communityHandler.NewInteractionHandler(interactionService),
 		BannerHandler:         bannerHandler.NewBannerHandler(bannerSvc),
 		BackgroundHandler:     backgroundHandler.NewBackgroundPresetHandler(backgroundPresetSvc),
@@ -386,6 +402,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		HealthHandler:         healthHandler.NewHealthHandler(healthService),
 		ImageHandler:          imageHandler.NewImageHandler(imageSvc),
 		NotificationHandler:   notificationHandler.NewNotificationHandler(notificationSvc),
+		LevelHandler:          levelHandler.NewLevelHandler(experienceService, checkinService),
+		AdminLevelHandler:     levelHandler.NewAdminLevelHandler(levelConfigService, experienceService),
 		stopImageCleanup:      stopImageCleanup,
 	}
 	ginApp := gin.Default()

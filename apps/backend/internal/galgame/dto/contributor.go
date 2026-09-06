@@ -4,6 +4,7 @@ import (
 	"time"
 
 	contributionModel "backend/internal/contribution/model"
+	leveldto "backend/internal/level/dto"
 )
 
 type ContributorQuery struct {
@@ -12,12 +13,13 @@ type ContributorQuery struct {
 }
 
 type ContributorData struct {
-	UserID             uint      `json:"user_id" example:"1001"`
-	Username           string    `json:"username" example:"NexusXian"`
-	AvatarURL          string    `json:"avatar_url" example:"https://example.com/avatar.jpg"`
-	ContributionCount  int64     `json:"contribution_count" example:"12"`
-	FirstContributedAt time.Time `json:"first_contributed_at"`
-	LastContributedAt  time.Time `json:"last_contributed_at"`
+	UserID             uint                       `json:"user_id" example:"1001"`
+	Username           string                     `json:"username" example:"NexusXian"`
+	AvatarURL          string                     `json:"avatar_url" example:"https://example.com/avatar.jpg"`
+	ContributionCount  int64                      `json:"contribution_count" example:"12"`
+	FirstContributedAt time.Time                  `json:"first_contributed_at"`
+	LastContributedAt  time.Time                  `json:"last_contributed_at"`
+	Level              *leveldto.UserLevelSummary `json:"level,omitempty"`
 }
 
 type ContributorListData struct {

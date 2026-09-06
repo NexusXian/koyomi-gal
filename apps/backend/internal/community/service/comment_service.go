@@ -9,6 +9,9 @@ import (
 	"backend/internal/community/dto"
 	"backend/internal/community/model"
 	"backend/internal/community/repository"
+	leveldto "backend/internal/level/dto"
+	levelModel "backend/internal/level/model"
+	levelService "backend/internal/level/service"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
@@ -18,6 +21,12 @@ import (
 
 	"go.uber.org/zap"
 )
+
+// LevelSummarizer batches level badge data for user summaries; implemented by
+// the level module's ExperienceService and consumed by community handlers.
+type LevelSummarizer interface {
+	Summaries(ctx context.Context, userIDs []uint) (map[uint]leveldto.UserLevelSummary, error)
+}
 
 var (
 	ErrCommentNotFound       = errors.New("comment not found")
@@ -37,10 +46,15 @@ type CommentService struct {
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
+	experiences   *levelService.ExperienceService
 }
 
 func (s *CommentService) SetActivityRecorder(recorder userService.ActivityRecorder) {
 	s.activities = recorder
+}
+
+func (s *CommentService) SetExperienceService(experiences *levelService.ExperienceService) {
+	s.experiences = experiences
 }
 
 func NewCommentService(
@@ -138,6 +152,14 @@ func (s *CommentService) Create(
 		metadata := map[string]any{"post_id": post.ID, "post_title": post.Title}
 		if recordErr := s.activities.Record(ctx, authorID, userModel.ActivityCommentCreated, &created.ID, metadata); recordErr != nil {
 			logger.Error("record comment activity", zap.Uint("comment_id", created.ID), zap.Error(recordErr))
+		}
+	}
+	if created != nil && s.experiences != nil {
+		if _, err := s.experiences.Grant(
+			ctx, authorID, levelModel.EventCommentCreated,
+			levelModel.SourceComment, created.ID,
+		); err != nil {
+			logger.Error("grant comment experience", zap.Uint("comment_id", created.ID), zap.Error(err))
 		}
 	}
 	return created, nil

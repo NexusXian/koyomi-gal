@@ -34,6 +34,8 @@ const icon = computed(() => {
     case 'resource_approved':
     case 'report_resolved':
       return 'lucide:circle-check'
+    case 'level_up':
+      return 'lucide:trending-up'
     case 'galgame_rejected':
     case 'resource_rejected':
     case 'report_rejected':

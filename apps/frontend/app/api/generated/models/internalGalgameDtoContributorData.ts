@@ -5,12 +5,14 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { LeveldtoUserLevelSummary } from './leveldtoUserLevelSummary';
 
 export interface InternalGalgameDtoContributorData {
   avatar_url?: string;
   contribution_count?: number;
   first_contributed_at?: string;
   last_contributed_at?: string;
+  level?: LeveldtoUserLevelSummary;
   user_id?: number;
   username?: string;
 }

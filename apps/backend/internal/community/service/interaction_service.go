@@ -7,6 +7,8 @@ import (
 
 	"backend/internal/community/model"
 	"backend/internal/community/repository"
+	levelModel "backend/internal/level/model"
+	levelService "backend/internal/level/service"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	"backend/pkg/logger"
@@ -28,6 +30,11 @@ type InteractionService struct {
 	posts         *repository.PostRepository
 	comments      *repository.CommentRepository
 	notifications *notificationService.NotificationService
+	experiences   *levelService.ExperienceService
+}
+
+func (s *InteractionService) SetExperienceService(experiences *levelService.ExperienceService) {
+	s.experiences = experiences
 }
 
 func NewInteractionService(
@@ -71,6 +78,13 @@ func (s *InteractionService) LikePost(ctx context.Context, userID, postID uint) 
 			EntityType: "post", EntityID: postID, Title: "帖子收到点赞",
 			Content: fmt.Sprintf("点赞了你的帖子「%s」", post.Title), TargetURL: fmt.Sprintf("/posts/%d", postID),
 		})
+	}
+	if s.experiences != nil && (post.AuthorID == nil || *post.AuthorID != userID) {
+		if _, err := s.experiences.Grant(
+			ctx, userID, levelModel.EventLikeGiven, levelModel.SourcePost, postID,
+		); err != nil {
+			logger.Error("grant like experience", zap.Uint("post_id", postID), zap.Uint("user_id", userID), zap.Error(err))
+		}
 	}
 	return s.posts.FindByID(ctx, post.ID)
 }
@@ -178,6 +192,23 @@ func (s *InteractionService) LikeComment(ctx context.Context, userID, commentID 
 			Content: "点赞了你的评论", TargetURL: fmt.Sprintf("/posts/%d?comment=%d", comment.PostID, commentID),
 			Metadata: map[string]any{"preview": previewText(comment.Content), "post_id": comment.PostID},
 		})
+	}
+	if s.experiences != nil && (comment.AuthorID == nil || *comment.AuthorID != userID) {
+		if _, err := s.experiences.Grant(
+			ctx, userID, levelModel.EventLikeGiven, levelModel.SourceComment, commentID,
+		); err != nil {
+			logger.Error("grant like experience", zap.Uint("comment_id", commentID), zap.Uint("user_id", userID), zap.Error(err))
+		}
+		if comment.AuthorID != nil {
+			// Reward the comment author once per (comment, liker) pair; the
+			// actor-scoped idempotency key prevents unlike/like farming.
+			if _, err := s.experiences.Grant(
+				ctx, *comment.AuthorID, levelModel.EventCommentLiked,
+				levelModel.SourceComment, commentID, levelService.WithActor(userID),
+			); err != nil {
+				logger.Error("grant comment liked experience", zap.Uint("comment_id", commentID), zap.Error(err))
+			}
+		}
 	}
 	return s.comments.FindByID(ctx, comment.ID)
 }

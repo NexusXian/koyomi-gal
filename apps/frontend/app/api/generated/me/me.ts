@@ -16,6 +16,11 @@ import type {
   DtoUpdateProfileRequest,
   DtoUpdateUserPreferencesRequest,
   DtoUserPreferencesResponse,
+  LeveldtoCheckinResultResponse,
+  LeveldtoCheckinStatusResponse,
+  LeveldtoExperienceLogListResponse,
+  LeveldtoUserLevelResponse,
+  ListMyExperienceLogsParams,
   ListMyGalgamesParams
 } from '../models';
 
@@ -156,6 +161,109 @@ return apiMutator<DtoUserPreferencesResponse>(getUpdateMePreferencesUrl(),
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoUpdateUserPreferencesRequest)
+  }
+);}
+
+
+export const getGetCheckinStatusUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/checkin`
+}
+
+/**
+ * 返回今天是否已签到与连续签到天数
+ * @summary 查看签到状态
+ */
+export const getCheckinStatus = async ( options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoCheckinStatusResponse> => {
+
+  return apiMutator<LeveldtoCheckinStatusResponse>(getGetCheckinStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCheckinUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/checkin`
+}
+
+/**
+ * 记录今日签到并发放签到经验；同一天只能签到一次
+ * @summary 每日签到
+ */
+export const checkin = async ( options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoCheckinResultResponse> => {
+
+  return apiMutator<LeveldtoCheckinResultResponse>(getCheckinUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export const getGetMyExperienceUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/experience`
+}
+
+/**
+ * 返回当前登录用户的等级、总经验、等级进度与签到状态
+ * @summary 查看我的等级与经验
+ */
+export const getMyExperience = async ( options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoUserLevelResponse> => {
+
+  return apiMutator<LeveldtoUserLevelResponse>(getGetMyExperienceUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListMyExperienceLogsUrl = (params?: ListMyExperienceLogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/users/me/experience/logs?${stringifiedParams}` : `/api/v1/users/me/experience/logs`
+}
+
+/**
+ * 分页返回当前登录用户的经验变动记录
+ * @summary 查看我的经验流水
+ */
+export const listMyExperienceLogs = async (params?: ListMyExperienceLogsParams, options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoExperienceLogListResponse> => {
+
+  return apiMutator<LeveldtoExperienceLogListResponse>(getListMyExperienceLogsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 

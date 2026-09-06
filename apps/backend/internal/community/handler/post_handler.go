@@ -17,10 +17,15 @@ import (
 
 type PostHandler struct {
 	postService *service.PostService
+	levels      service.LevelSummarizer
 }
 
-func NewPostHandler(postService *service.PostService) *PostHandler {
-	return &PostHandler{postService: postService}
+func NewPostHandler(postService *service.PostService, levels ...service.LevelSummarizer) *PostHandler {
+	handler := &PostHandler{postService: postService}
+	if len(levels) > 0 {
+		handler.levels = levels[0]
+	}
+	return handler
 }
 
 // ListPosts godoc
@@ -47,8 +52,10 @@ func (h *PostHandler) ListPosts(c *gin.Context) {
 		response.Error(c, appErrors.ErrInternal("查询帖子失败"))
 		return
 	}
+	items := dto.NewPostListItems(posts)
+	attachPostLevels(c.Request.Context(), h.levels, items)
 	response.Ok(c, dto.PostListData{
-		Items: dto.NewPostListItems(posts),
+		Items: items,
 		Total: total,
 		Page:  page,
 		Limit: limit,
@@ -109,7 +116,9 @@ func (h *PostHandler) GetPost(c *gin.Context) {
 		h.respondPostError(c, err, "get post")
 		return
 	}
-	response.Ok(c, dto.NewPostData(post))
+	data := dto.NewPostData(post)
+	attachPostLevels(c.Request.Context(), h.levels, []dto.PostData{data})
+	response.Ok(c, data)
 }
 
 // CreatePost godoc
@@ -143,7 +152,9 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		h.respondPostError(c, err, "create post")
 		return
 	}
-	response.Ok(c, dto.NewPostData(post))
+	data := dto.NewPostData(post)
+	attachPostLevels(c.Request.Context(), h.levels, []dto.PostData{data})
+	response.Ok(c, data)
 }
 
 // UpdatePost godoc

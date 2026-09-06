@@ -46,7 +46,8 @@ const postAuthor = computed(() => ({
   id: post.value?.author?.id ?? post.value?.author_id,
   username: post.value?.author?.username,
   displayName: post.value?.author?.display_name ?? post.value?.author_name,
-  avatarUrl: post.value?.author?.avatar_url ?? post.value?.author_avatar
+  avatarUrl: post.value?.author?.avatar_url ?? post.value?.author_avatar,
+  level: post.value?.author?.level ?? null
 }))
 
 const postExcerpt = computed(() => {
@@ -251,6 +252,13 @@ onMounted(() => {
             />
             {{ postAuthor.displayName || postAuthor.username || (postAuthor.id ? `用户 #${postAuthor.id}` : '未知') }}
           </UserLink>
+          <UserLevelBadge
+            v-if="postAuthor.level"
+            :level="postAuthor.level.level ?? 1"
+            :name="postAuthor.level.name ?? ''"
+            :color="postAuthor.level.color"
+            :icon-url="postAuthor.level.icon_url"
+          />
           <span>
             <KunIcon name="lucide:calendar" />
             {{ formatDate(post?.created_at) }}

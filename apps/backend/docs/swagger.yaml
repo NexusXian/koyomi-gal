@@ -1287,6 +1287,8 @@ definitions:
         type: string
       id:
         type: integer
+      level:
+        $ref: '#/definitions/leveldto.UserLevelSummary'
       username:
         type: string
     type: object
@@ -4248,6 +4250,8 @@ definitions:
         type: boolean
       is_self:
         type: boolean
+      level:
+        $ref: '#/definitions/leveldto.UserLevelSummary'
       location:
         type: string
       post_count:
@@ -5794,6 +5798,8 @@ definitions:
         type: string
       last_contributed_at:
         type: string
+      level:
+        $ref: '#/definitions/leveldto.UserLevelSummary'
       user_id:
         example: 1001
         type: integer
@@ -5836,6 +5842,413 @@ definitions:
         type: integer
       name:
         example: 恋爱
+        type: string
+    type: object
+  leveldto.AdjustExperienceRequest:
+    properties:
+      exp:
+        example: 500
+        type: integer
+      reason:
+        example: 夏季资源贡献活动奖励
+        maxLength: 255
+        type: string
+    required:
+    - exp
+    - reason
+    type: object
+  leveldto.CheckinResultData:
+    properties:
+      consecutive_days:
+        example: 7
+        type: integer
+      exp_gained:
+        example: 10
+        type: integer
+      level:
+        example: 3
+        type: integer
+      level_name:
+        example: 爱好者
+        type: string
+      total_exp:
+        example: 1280
+        type: integer
+    type: object
+  leveldto.CheckinResultResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.CheckinResultData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.CheckinStatusData:
+    properties:
+      checked_in_today:
+        example: false
+        type: boolean
+      consecutive_days:
+        example: 3
+        type: integer
+    type: object
+  leveldto.CheckinStatusResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.CheckinStatusData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.CreateLevelConfigRequest:
+    properties:
+      color:
+        example: '#dc2626'
+        maxLength: 32
+        type: string
+      description:
+        example: 社区的传奇贡献者
+        maxLength: 255
+        type: string
+      icon_url:
+        example: ""
+        maxLength: 2048
+        type: string
+      is_enabled:
+        example: true
+        type: boolean
+      level:
+        example: 9
+        maximum: 1000
+        minimum: 1
+        type: integer
+      min_exp:
+        example: 150000
+        minimum: 0
+        type: integer
+      name:
+        example: 传奇
+        maxLength: 50
+        type: string
+    required:
+    - level
+    - min_exp
+    - name
+    type: object
+  leveldto.ExperienceLogData:
+    properties:
+      created_at:
+        type: string
+      description:
+        example: 每日签到
+        type: string
+      event_type:
+        example: daily_checkin
+        type: string
+      exp_delta:
+        example: 10
+        type: integer
+      id:
+        example: 1
+        type: integer
+      source_id:
+        example: 1
+        type: integer
+      source_type:
+        example: checkin
+        type: string
+    type: object
+  leveldto.ExperienceLogListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/leveldto.ExperienceLogData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 10
+        type: integer
+    type: object
+  leveldto.ExperienceLogListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.ExperienceLogListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.ExperienceRuleData:
+    properties:
+      cooldown_seconds:
+        example: 0
+        type: integer
+      created_at:
+        type: string
+      daily_exp_limit:
+        example: 0
+        type: integer
+      daily_limit:
+        example: 1
+        type: integer
+      description:
+        example: 每天首次签到获得经验
+        type: string
+      enabled:
+        example: true
+        type: boolean
+      event_type:
+        example: daily_checkin
+        type: string
+      exp:
+        example: 10
+        type: integer
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 每日签到
+        type: string
+      updated_at:
+        type: string
+    type: object
+  leveldto.ExperienceRuleDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.ExperienceRuleData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.ExperienceRuleListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/leveldto.ExperienceRuleData'
+        type: array
+      total:
+        example: 11
+        type: integer
+    type: object
+  leveldto.ExperienceRuleListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.ExperienceRuleListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.LevelConfigData:
+    properties:
+      color:
+        example: '#f59e0b'
+        type: string
+      created_at:
+        type: string
+      description:
+        example: 对 Galgame 有自己的见解
+        type: string
+      icon_url:
+        example: ""
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_enabled:
+        example: true
+        type: boolean
+      level:
+        example: 4
+        type: integer
+      min_exp:
+        example: 1500
+        type: integer
+      name:
+        example: 鉴赏家
+        type: string
+      updated_at:
+        type: string
+    type: object
+  leveldto.LevelConfigDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.LevelConfigData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.LevelConfigListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/leveldto.LevelConfigData'
+        type: array
+      total:
+        example: 8
+        type: integer
+    type: object
+  leveldto.LevelConfigListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.LevelConfigListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.UpdateExperienceRuleRequest:
+    properties:
+      cooldown_seconds:
+        example: 0
+        minimum: 0
+        type: integer
+      daily_exp_limit:
+        example: 0
+        minimum: 0
+        type: integer
+      daily_limit:
+        example: 1
+        minimum: 0
+        type: integer
+      description:
+        example: 每天首次签到获得经验
+        maxLength: 255
+        type: string
+      enabled:
+        example: true
+        type: boolean
+      exp:
+        example: 10
+        minimum: 0
+        type: integer
+      name:
+        example: 每日签到
+        maxLength: 100
+        type: string
+    type: object
+  leveldto.UpdateLevelConfigRequest:
+    properties:
+      color:
+        example: '#f59e0b'
+        maxLength: 32
+        type: string
+      description:
+        example: 对 Galgame 有自己的见解
+        maxLength: 255
+        type: string
+      icon_url:
+        example: ""
+        maxLength: 2048
+        type: string
+      is_enabled:
+        example: true
+        type: boolean
+      min_exp:
+        example: 1500
+        minimum: 0
+        type: integer
+      name:
+        example: 鉴赏家
+        maxLength: 50
+        type: string
+    required:
+    - is_enabled
+    - min_exp
+    - name
+    type: object
+  leveldto.UserLevelData:
+    properties:
+      checked_in_today:
+        example: true
+        type: boolean
+      color:
+        example: ""
+        type: string
+      consecutive_days:
+        example: 7
+        type: integer
+      current_level_exp:
+        example: 1500
+        type: integer
+      icon_url:
+        example: ""
+        type: string
+      is_max_level:
+        example: false
+        type: boolean
+      level:
+        example: 4
+        type: integer
+      level_name:
+        example: 鉴赏家
+        type: string
+      next_level:
+        example: 5
+        type: integer
+      next_level_exp:
+        example: 4000
+        type: integer
+      next_level_name:
+        example: 资深鉴赏家
+        type: string
+      progress:
+        example: 0.792
+        type: number
+      remaining_exp:
+        example: 520
+        type: integer
+      total_exp:
+        example: 3480
+        type: integer
+    type: object
+  leveldto.UserLevelResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/leveldto.UserLevelData'
+      msg:
+        example: success
+        type: string
+    type: object
+  leveldto.UserLevelSummary:
+    properties:
+      color:
+        example: '#f59e0b'
+        type: string
+      icon_url:
+        example: ""
+        type: string
+      level:
+        example: 5
+        type: integer
+      name:
+        example: 资深鉴赏家
         type: string
     type: object
   model.EditorMode:
@@ -5882,6 +6295,7 @@ definitions:
     - report_rejected
     - post_moderated
     - comment_moderated
+    - level_up
     - system
     type: string
     x-enum-varnames:
@@ -5907,6 +6321,7 @@ definitions:
     - TypeReportRejected
     - TypePostModerated
     - TypeCommentModerated
+    - TypeLevelUp
     - TypeSystem
   response.ErrorResponse:
     properties:
@@ -6657,6 +7072,80 @@ paths:
       security:
       - BearerAuth: []
       summary: 管理端查询评论列表
+      tags:
+      - admin
+  /api/v1/admin/experience-rules:
+    get:
+      description: 返回全部经验事件规则；需要 experience_rule:read 权限
+      operationId: listAdminExperienceRules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 经验规则列表
+          schema:
+            $ref: '#/definitions/leveldto.ExperienceRuleListResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询经验规则
+      tags:
+      - admin
+  /api/v1/admin/experience-rules/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 更新经验事件的名称、经验值、每日次数、每日经验上限、冷却与启用状态；需要 experience_rule:update 权限
+      operationId: updateAdminExperienceRule
+      parameters:
+      - description: 经验规则 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新经验规则请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/leveldto.UpdateExperienceRuleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/leveldto.ExperienceRuleDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 经验规则不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新经验规则
       tags:
       - admin
   /api/v1/admin/feedback:
@@ -8895,6 +9384,157 @@ paths:
       summary: 查询外部数据源
       tags:
       - adminImport
+  /api/v1/admin/levels:
+    get:
+      description: 返回全部等级定义；需要 level_config:read 权限
+      operationId: listAdminLevels
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 等级配置列表
+          schema:
+            $ref: '#/definitions/leveldto.LevelConfigListResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询等级配置
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: 新增一个等级定义；需要 level_config:create 权限
+      operationId: createAdminLevel
+      parameters:
+      - description: 创建等级请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/leveldto.CreateLevelConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/leveldto.LevelConfigDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 等级已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建等级配置
+      tags:
+      - admin
+  /api/v1/admin/levels/{id}:
+    delete:
+      description: 删除未被用户持有的等级；仍有用户处于该等级时仅禁用；需要 level_config:update 权限
+      operationId: deleteAdminLevel
+      parameters:
+      - description: 等级配置 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 等级已删除或已禁用
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 等级配置 ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 等级配置不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除等级配置
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 更新等级名称、所需经验、图标、颜色、描述与启用状态；需要 level_config:update 权限
+      operationId: updateAdminLevel
+      parameters:
+      - description: 等级配置 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新等级请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/leveldto.UpdateLevelConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/leveldto.LevelConfigDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 等级配置不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新等级配置
+      tags:
+      - admin
   /api/v1/admin/novel-volumes:
     get:
       description: 返回全部状态的卷册并附带所属小说标题；需要 novel:review 权限
@@ -9641,6 +10281,52 @@ paths:
       summary: 管理端更新用户
       tags:
       - users
+  /api/v1/admin/users/{id}/experience/adjust:
+    post:
+      consumes:
+      - application/json
+      description: 手动增加或扣减用户经验（扣减后不低于 0）并写入经验流水；需要 experience:adjust 权限
+      operationId: adjustUserExperience
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 调整经验请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/leveldto.AdjustExperienceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 调整后的等级概况
+          schema:
+            $ref: '#/definitions/leveldto.UserLevelResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理员调整用户经验
+      tags:
+      - admin
   /api/v1/admin/users/{id}/roles:
     get:
       description: 返回指定用户拥有的全部角色
@@ -13470,6 +14156,38 @@ paths:
       summary: 查看用户收藏
       tags:
       - users
+  /api/v1/users/{username}/level:
+    get:
+      description: 按用户名返回公开等级信息与进度
+      operationId: getUserLevel
+      parameters:
+      - description: 用户名
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 等级概况
+          schema:
+            $ref: '#/definitions/leveldto.UserLevelResponse'
+        "400":
+          description: 用户名格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查看用户等级
+      tags:
+      - users
   /api/v1/users/{username}/posts:
     get:
       operationId: listUserPosts
@@ -13532,6 +14250,116 @@ paths:
       summary: 查看用户评分
       tags:
       - users
+  /api/v1/users/me/checkin:
+    get:
+      description: 返回今天是否已签到与连续签到天数
+      operationId: getCheckinStatus
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 签到状态
+          schema:
+            $ref: '#/definitions/leveldto.CheckinStatusResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看签到状态
+      tags:
+      - me
+    post:
+      description: 记录今日签到并发放签到经验；同一天只能签到一次
+      operationId: checkin
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 签到结果
+          schema:
+            $ref: '#/definitions/leveldto.CheckinResultResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 今天已经签到过了
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 签到失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 每日签到
+      tags:
+      - me
+  /api/v1/users/me/experience:
+    get:
+      description: 返回当前登录用户的等级、总经验、等级进度与签到状态
+      operationId: getMyExperience
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 等级概况
+          schema:
+            $ref: '#/definitions/leveldto.UserLevelResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看我的等级与经验
+      tags:
+      - me
+  /api/v1/users/me/experience/logs:
+    get:
+      description: 分页返回当前登录用户的经验变动记录
+      operationId: listMyExperienceLogs
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量，最大 100
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 经验记录列表
+          schema:
+            $ref: '#/definitions/leveldto.ExperienceLogListResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查看我的经验流水
+      tags:
+      - me
   /api/v1/users/me/privacy:
     get:
       operationId: getMyPrivacy

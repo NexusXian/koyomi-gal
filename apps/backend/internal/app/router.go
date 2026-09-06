@@ -65,6 +65,7 @@ func (app *App) setupRoutes() {
 		publicUsers.GET("/:username/ratings", app.UserProfileHandler.ListUserRatings)
 		publicUsers.GET("/:username/favorites", app.UserProfileHandler.ListUserFavorites)
 		publicUsers.GET("/:username/activities", app.UserProfileHandler.ListUserActivities)
+		publicUsers.GET("/:username/level", app.LevelHandler.GetUserLevel)
 	}
 
 	protected := v1.Group("", middleware.AuthWithUserChecker(
@@ -202,6 +203,13 @@ func (app *App) setupRoutes() {
 		admin.DELETE("/users/:id", requirePermission("user:delete"), app.UserAdminHandler.Delete)
 		admin.GET("/users/:id/roles", requirePermission("role:list"), app.AssignmentHandler.ListUserRoles)
 		admin.PUT("/users/:id/roles", requirePermission("role:assign"), app.AssignmentHandler.UpdateUserRoles)
+		admin.POST("/users/:id/experience/adjust", requirePermission("experience:adjust"), app.AdminLevelHandler.AdjustUserExperience)
+		admin.GET("/levels", requirePermission("level_config:read"), app.AdminLevelHandler.ListLevels)
+		admin.POST("/levels", requirePermission("level_config:create"), app.AdminLevelHandler.CreateLevel)
+		admin.PUT("/levels/:id", requirePermission("level_config:update"), app.AdminLevelHandler.UpdateLevel)
+		admin.DELETE("/levels/:id", requirePermission("level_config:update"), app.AdminLevelHandler.DeleteLevel)
+		admin.GET("/experience-rules", requirePermission("experience_rule:read"), app.AdminLevelHandler.ListExperienceRules)
+		admin.PUT("/experience-rules/:id", requirePermission("experience_rule:update"), app.AdminLevelHandler.UpdateExperienceRule)
 	}
 
 	posts := protected.Group("/posts")
@@ -267,4 +275,8 @@ func (app *App) setupRoutes() {
 	protected.PATCH("/users/me/profile", app.UserProfileHandler.UpdateProfile)
 	protected.GET("/users/me/privacy", app.UserProfileHandler.GetPrivacy)
 	protected.PATCH("/users/me/privacy", app.UserProfileHandler.UpdatePrivacy)
+	protected.GET("/users/me/experience", app.LevelHandler.GetUserExperience)
+	protected.GET("/users/me/experience/logs", app.LevelHandler.ListMyExperienceLogs)
+	protected.POST("/users/me/checkin", app.LevelHandler.Checkin)
+	protected.GET("/users/me/checkin", app.LevelHandler.GetCheckinStatus)
 }

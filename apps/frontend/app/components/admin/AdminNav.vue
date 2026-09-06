@@ -146,6 +146,18 @@ const items: AdminNavItem[] = [
       'user:delete',
       'role:assign'
     ]
+  },
+  {
+    key: '/admin/levels',
+    label: '等级与经验',
+    icon: 'lucide:trending-up',
+    permissions: [
+      'level_config:read',
+      'level_config:create',
+      'level_config:update',
+      'experience_rule:read',
+      'experience_rule:update'
+    ]
   }
 ]
 

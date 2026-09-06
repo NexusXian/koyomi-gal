@@ -8,6 +8,7 @@ import (
 	contributionModel "backend/internal/contribution/model"
 	"backend/internal/contribution/repository"
 	galgameRepository "backend/internal/galgame/repository"
+	leveldto "backend/internal/level/dto"
 	relationModel "backend/internal/relation/model"
 
 	"gorm.io/gorm"
@@ -17,6 +18,12 @@ var (
 	ErrInvalidContribution = errors.New("invalid contribution")
 	ErrGalgameNotFound     = errors.New("galgame not found")
 )
+
+// LevelSummarizer batches level badge data for contributor listings;
+// implemented by the level module's ExperienceService.
+type LevelSummarizer interface {
+	Summaries(ctx context.Context, userIDs []uint) (map[uint]leveldto.UserLevelSummary, error)
+}
 
 type RecordContributionInput struct {
 	TargetType string

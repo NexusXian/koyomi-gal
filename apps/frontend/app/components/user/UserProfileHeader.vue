@@ -23,6 +23,13 @@ const genderLabels: Record<string, string> = {
       <div class="identity-main">
         <h1>{{ profile.display_name || profile.username }}</h1>
         <div class="identity-line">
+          <UserLevelBadge
+            v-if="profile.level"
+            :level="profile.level.level ?? 1"
+            :name="profile.level.name ?? ''"
+            :color="profile.level.color"
+            :icon-url="profile.level.icon_url"
+          />
           <span>@{{ profile.username }}</span>
           <span v-if="profile.id">UID {{ profile.id }}</span>
         </div>

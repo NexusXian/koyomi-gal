@@ -3,6 +3,8 @@ package dto
 import (
 	"encoding/json"
 	"time"
+
+	leveldto "backend/internal/level/dto"
 )
 
 type PublicUserSummary struct {
@@ -25,21 +27,22 @@ type ProfileAccess struct {
 
 type PublicUserProfile struct {
 	PublicUserSummary
-	BannerURL     string        `json:"banner_url,omitempty"`
-	Bio           string        `json:"bio,omitempty"`
-	Gender        string        `json:"gender,omitempty"`
-	Location      string        `json:"location,omitempty"`
-	Birthday      *string       `json:"birthday,omitempty" example:"2000-01-02"`
-	WebsiteURL    string        `json:"website_url,omitempty"`
-	RegisteredAt  *time.Time    `json:"registered_at,omitempty"`
-	PostCount     *int64        `json:"post_count,omitempty"`
-	CommentCount  *int64        `json:"comment_count,omitempty"`
-	RatingCount   *int64        `json:"rating_count,omitempty"`
-	FavoriteCount *int64        `json:"favorite_count,omitempty"`
-	IsSelf        bool          `json:"is_self"`
-	IsPrivate     bool          `json:"is_private"`
-	IsRestricted  bool          `json:"is_restricted"`
-	Access        ProfileAccess `json:"access"`
+	BannerURL     string                     `json:"banner_url,omitempty"`
+	Bio           string                     `json:"bio,omitempty"`
+	Gender        string                     `json:"gender,omitempty"`
+	Location      string                     `json:"location,omitempty"`
+	Birthday      *string                    `json:"birthday,omitempty" example:"2000-01-02"`
+	WebsiteURL    string                     `json:"website_url,omitempty"`
+	RegisteredAt  *time.Time                 `json:"registered_at,omitempty"`
+	PostCount     *int64                     `json:"post_count,omitempty"`
+	CommentCount  *int64                     `json:"comment_count,omitempty"`
+	RatingCount   *int64                     `json:"rating_count,omitempty"`
+	FavoriteCount *int64                     `json:"favorite_count,omitempty"`
+	Level         *leveldto.UserLevelSummary `json:"level,omitempty"`
+	IsSelf        bool                       `json:"is_self"`
+	IsPrivate     bool                       `json:"is_private"`
+	IsRestricted  bool                       `json:"is_restricted"`
+	Access        ProfileAccess              `json:"access"`
 }
 
 type PublicUserProfileResponse struct {

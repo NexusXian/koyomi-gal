@@ -9,6 +9,7 @@ import (
 
 	imageModel "backend/internal/image/model"
 	imageService "backend/internal/image/service"
+	leveldto "backend/internal/level/dto"
 	"backend/internal/user/dto"
 	"backend/internal/user/model"
 	"backend/internal/user/repository"
@@ -58,12 +59,23 @@ func NewMeData(ctx context.Context, images *imageService.ImageAssetService, user
 	}
 }
 
+// LevelProvider batches level badge summaries for profile responses;
+// implemented by the level module's ExperienceService.
+type LevelProvider interface {
+	Summaries(ctx context.Context, userIDs []uint) (map[uint]leveldto.UserLevelSummary, error)
+}
+
 type UserProfileService struct {
 	users       *repository.UserAuthRepository
 	preferences *repository.UserPreferenceRepository
 	images      *imageService.ImageAssetService
 	profiles    *repository.UserProfileRepository
 	access      *ProfileAccessService
+	levels      LevelProvider
+}
+
+func (s *UserProfileService) SetLevelProvider(levels LevelProvider) {
+	s.levels = levels
 }
 
 func NewUserProfileService(
@@ -168,6 +180,15 @@ func (s *UserProfileService) buildPublicProfile(ctx context.Context, profile *mo
 	}
 	if !access.CanViewProfile {
 		return result, nil
+	}
+	if s.levels != nil {
+		if summaries, err := s.levels.Summaries(ctx, []uint{profile.ID}); err == nil {
+			if summary, ok := summaries[profile.ID]; ok {
+				result.Level = &summary
+			}
+		} else {
+			logger.Error("load profile level summary", zap.Uint("user_id", profile.ID), zap.Error(err))
+		}
 	}
 	result.BannerURL = profile.BannerURL
 	result.Bio = profile.Bio

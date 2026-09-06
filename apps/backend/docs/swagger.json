@@ -1111,6 +1111,121 @@
                 }
             }
         },
+        "/api/v1/admin/experience-rules": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部经验事件规则；需要 experience_rule:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询经验规则",
+                "operationId": "listAdminExperienceRules",
+                "responses": {
+                    "200": {
+                        "description": "经验规则列表",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.ExperienceRuleListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/experience-rules/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新经验事件的名称、经验值、每日次数、每日经验上限、冷却与启用状态；需要 experience_rule:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "更新经验规则",
+                "operationId": "updateAdminExperienceRule",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "经验规则 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新经验规则请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.UpdateExperienceRuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.ExperienceRuleDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "经验规则不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/feedback": {
             "get": {
                 "security": [
@@ -4507,6 +4622,240 @@
                 }
             }
         },
+        "/api/v1/admin/levels": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回全部等级定义；需要 level_config:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询等级配置",
+                "operationId": "listAdminLevels",
+                "responses": {
+                    "200": {
+                        "description": "等级配置列表",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.LevelConfigListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "新增一个等级定义；需要 level_config:create 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "创建等级配置",
+                "operationId": "createAdminLevel",
+                "parameters": [
+                    {
+                        "description": "创建等级请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.CreateLevelConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.LevelConfigDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "等级已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/levels/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新等级名称、所需经验、图标、颜色、描述与启用状态；需要 level_config:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "更新等级配置",
+                "operationId": "updateAdminLevel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "等级配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新等级请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.UpdateLevelConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.LevelConfigDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "等级配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除未被用户持有的等级；仍有用户处于该等级时仅禁用；需要 level_config:update 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "删除等级配置",
+                "operationId": "deleteAdminLevel",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "等级配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "等级已删除或已禁用",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "等级配置 ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "等级配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/novel-volumes": {
             "get": {
                 "security": [
@@ -5638,6 +5987,77 @@
                     },
                     "500": {
                         "description": "删除用户失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/users/{id}/experience/adjust": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "手动增加或扣减用户经验（扣减后不低于 0）并写入经验流水；需要 experience:adjust 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员调整用户经验",
+                "operationId": "adjustUserExperience",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "调整经验请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.AdjustExperienceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "调整后的等级概况",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.UserLevelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -11301,6 +11721,178 @@
                 }
             }
         },
+        "/api/v1/users/me/checkin": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回今天是否已签到与连续签到天数",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "查看签到状态",
+                "operationId": "getCheckinStatus",
+                "responses": {
+                    "200": {
+                        "description": "签到状态",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.CheckinStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "记录今日签到并发放签到经验；同一天只能签到一次",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "每日签到",
+                "operationId": "checkin",
+                "responses": {
+                    "200": {
+                        "description": "签到结果",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.CheckinResultResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "今天已经签到过了",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "签到失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/me/experience": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回当前登录用户的等级、总经验、等级进度与签到状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "查看我的等级与经验",
+                "operationId": "getMyExperience",
+                "responses": {
+                    "200": {
+                        "description": "等级概况",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.UserLevelResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/me/experience/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回当前登录用户的经验变动记录",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "查看我的经验流水",
+                "operationId": "listMyExperienceLogs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "经验记录列表",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.ExperienceLogListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/me/privacy": {
             "get": {
                 "security": [
@@ -11638,6 +12230,54 @@
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{username}/level": {
+            "get": {
+                "description": "按用户名返回公开等级信息与进度",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "查看用户等级",
+                "operationId": "getUserLevel",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "等级概况",
+                        "schema": {
+                            "$ref": "#/definitions/leveldto.UserLevelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "用户名格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -13840,6 +14480,9 @@
                 },
                 "id": {
                     "type": "integer"
+                },
+                "level": {
+                    "$ref": "#/definitions/leveldto.UserLevelSummary"
                 },
                 "username": {
                     "type": "string"
@@ -17984,6 +18627,9 @@
                 "is_self": {
                     "type": "boolean"
                 },
+                "level": {
+                    "$ref": "#/definitions/leveldto.UserLevelSummary"
+                },
                 "location": {
                     "type": "string"
                 },
@@ -20108,6 +20754,9 @@
                 "last_contributed_at": {
                     "type": "string"
                 },
+                "level": {
+                    "$ref": "#/definitions/leveldto.UserLevelSummary"
+                },
                 "user_id": {
                     "type": "integer",
                     "example": 1001
@@ -20171,6 +20820,570 @@
                 }
             }
         },
+        "leveldto.AdjustExperienceRequest": {
+            "type": "object",
+            "required": [
+                "exp",
+                "reason"
+            ],
+            "properties": {
+                "exp": {
+                    "type": "integer",
+                    "example": 500
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "夏季资源贡献活动奖励"
+                }
+            }
+        },
+        "leveldto.CheckinResultData": {
+            "type": "object",
+            "properties": {
+                "consecutive_days": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "exp_gained": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "level": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "level_name": {
+                    "type": "string",
+                    "example": "爱好者"
+                },
+                "total_exp": {
+                    "type": "integer",
+                    "example": 1280
+                }
+            }
+        },
+        "leveldto.CheckinResultResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.CheckinResultData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.CheckinStatusData": {
+            "type": "object",
+            "properties": {
+                "checked_in_today": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "consecutive_days": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "leveldto.CheckinStatusResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.CheckinStatusData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.CreateLevelConfigRequest": {
+            "type": "object",
+            "required": [
+                "level",
+                "min_exp",
+                "name"
+            ],
+            "properties": {
+                "color": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "#dc2626"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "社区的传奇贡献者"
+                },
+                "icon_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": ""
+                },
+                "is_enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "level": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1,
+                    "example": 9
+                },
+                "min_exp": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 150000
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "传奇"
+                }
+            }
+        },
+        "leveldto.ExperienceLogData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "每日签到"
+                },
+                "event_type": {
+                    "type": "string",
+                    "example": "daily_checkin"
+                },
+                "exp_delta": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "source_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "source_type": {
+                    "type": "string",
+                    "example": "checkin"
+                }
+            }
+        },
+        "leveldto.ExperienceLogListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/leveldto.ExperienceLogData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "leveldto.ExperienceLogListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.ExperienceLogListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.ExperienceRuleData": {
+            "type": "object",
+            "properties": {
+                "cooldown_seconds": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "daily_exp_limit": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "daily_limit": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "description": {
+                    "type": "string",
+                    "example": "每天首次签到获得经验"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "event_type": {
+                    "type": "string",
+                    "example": "daily_checkin"
+                },
+                "exp": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "每日签到"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "leveldto.ExperienceRuleDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.ExperienceRuleData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.ExperienceRuleListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/leveldto.ExperienceRuleData"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 11
+                }
+            }
+        },
+        "leveldto.ExperienceRuleListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.ExperienceRuleListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.LevelConfigData": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string",
+                    "example": "#f59e0b"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "对 Galgame 有自己的见解"
+                },
+                "icon_url": {
+                    "type": "string",
+                    "example": ""
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "level": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "min_exp": {
+                    "type": "integer",
+                    "example": 1500
+                },
+                "name": {
+                    "type": "string",
+                    "example": "鉴赏家"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "leveldto.LevelConfigDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.LevelConfigData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.LevelConfigListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/leveldto.LevelConfigData"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 8
+                }
+            }
+        },
+        "leveldto.LevelConfigListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.LevelConfigListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.UpdateExperienceRuleRequest": {
+            "type": "object",
+            "properties": {
+                "cooldown_seconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
+                },
+                "daily_exp_limit": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
+                },
+                "daily_limit": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 1
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "每天首次签到获得经验"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "exp": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 10
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "每日签到"
+                }
+            }
+        },
+        "leveldto.UpdateLevelConfigRequest": {
+            "type": "object",
+            "required": [
+                "is_enabled",
+                "min_exp",
+                "name"
+            ],
+            "properties": {
+                "color": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "#f59e0b"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "对 Galgame 有自己的见解"
+                },
+                "icon_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "example": ""
+                },
+                "is_enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "min_exp": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 1500
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "鉴赏家"
+                }
+            }
+        },
+        "leveldto.UserLevelData": {
+            "type": "object",
+            "properties": {
+                "checked_in_today": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "color": {
+                    "type": "string",
+                    "example": ""
+                },
+                "consecutive_days": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "current_level_exp": {
+                    "type": "integer",
+                    "example": 1500
+                },
+                "icon_url": {
+                    "type": "string",
+                    "example": ""
+                },
+                "is_max_level": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "level": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "level_name": {
+                    "type": "string",
+                    "example": "鉴赏家"
+                },
+                "next_level": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "next_level_exp": {
+                    "type": "integer",
+                    "example": 4000
+                },
+                "next_level_name": {
+                    "type": "string",
+                    "example": "资深鉴赏家"
+                },
+                "progress": {
+                    "type": "number",
+                    "example": 0.792
+                },
+                "remaining_exp": {
+                    "type": "integer",
+                    "example": 520
+                },
+                "total_exp": {
+                    "type": "integer",
+                    "example": 3480
+                }
+            }
+        },
+        "leveldto.UserLevelResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/leveldto.UserLevelData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "leveldto.UserLevelSummary": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string",
+                    "example": "#f59e0b"
+                },
+                "icon_url": {
+                    "type": "string",
+                    "example": ""
+                },
+                "level": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "name": {
+                    "type": "string",
+                    "example": "资深鉴赏家"
+                }
+            }
+        },
         "model.EditorMode": {
             "type": "string",
             "enum": [
@@ -20222,6 +21435,7 @@
                 "report_rejected",
                 "post_moderated",
                 "comment_moderated",
+                "level_up",
                 "system"
             ],
             "x-enum-varnames": [
@@ -20247,6 +21461,7 @@
                 "TypeReportRejected",
                 "TypePostModerated",
                 "TypeCommentModerated",
+                "TypeLevelUp",
                 "TypeSystem"
             ]
         },

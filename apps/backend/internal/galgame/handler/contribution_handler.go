@@ -16,10 +16,15 @@ import (
 
 type ContributionHandler struct {
 	service *service.ContributionService
+	levels  service.LevelSummarizer
 }
 
-func NewContributionHandler(service *service.ContributionService) *ContributionHandler {
-	return &ContributionHandler{service: service}
+func NewContributionHandler(service *service.ContributionService, levels ...service.LevelSummarizer) *ContributionHandler {
+	handler := &ContributionHandler{service: service}
+	if len(levels) > 0 {
+		handler.levels = levels[0]
+	}
+	return handler
 }
 
 // ListGalgameContributors godoc
@@ -65,8 +70,25 @@ func (h *ContributionHandler) ListGalgameContributors(c *gin.Context) {
 		response.Error(c, appErrors.ErrInternal("查询贡献者失败"))
 		return
 	}
+	items := dto.NewContributorData(contributors)
+	if h.levels != nil && len(items) > 0 {
+		userIDs := make([]uint, 0, len(items))
+		for i := range items {
+			userIDs = append(userIDs, items[i].UserID)
+		}
+		if summaries, summaryErr := h.levels.Summaries(c.Request.Context(), userIDs); summaryErr == nil {
+			for i := range items {
+				if summary, ok := summaries[items[i].UserID]; ok {
+					summary := summary
+					items[i].Level = &summary
+				}
+			}
+		} else {
+			logger.Error("load contributor levels", zap.Uint64("galgame_id", id), zap.Error(summaryErr))
+		}
+	}
 	response.Ok(c, dto.ContributorListData{
-		Items:    dto.NewContributorData(contributors),
+		Items:    items,
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,

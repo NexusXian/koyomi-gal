@@ -17,6 +17,7 @@ import type {
   DtoUpdateAdminUserRequest,
   DtoUpdateUserRolesRequest,
   DtoUserActivityListResponse,
+  LeveldtoUserLevelResponse,
   ListAdminUsersParams,
   ListUserActivitiesParams,
   ListUserCommentsParams,
@@ -334,6 +335,30 @@ export const listUserFavorites = async (username: string,
     params?: ListUserFavoritesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfileGalgameListResponse> => {
 
   return apiMutator<DtoProfileGalgameListResponse>(getListUserFavoritesUrl(username,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getGetUserLevelUrl = (username: string,) => {
+
+
+
+
+  return `/api/v1/users/${username}/level`
+}
+
+/**
+ * 按用户名返回公开等级信息与进度
+ * @summary 查看用户等级
+ */
+export const getUserLevel = async (username: string, options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoUserLevelResponse> => {
+
+  return apiMutator<LeveldtoUserLevelResponse>(getGetUserLevelUrl(username),
   {
     ...options,
     method: 'GET'

@@ -9,6 +9,8 @@ import (
 	contributionModel "backend/internal/contribution/model"
 	contributionService "backend/internal/contribution/service"
 	galgameRepository "backend/internal/galgame/repository"
+	levelModel "backend/internal/level/model"
+	levelService "backend/internal/level/service"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	novelRepository "backend/internal/novel/repository"
@@ -50,10 +52,15 @@ type ResourceService struct {
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
 	contributions *contributionService.ContributionService
+	experiences   *levelService.ExperienceService
 }
 
 func (s *ResourceService) SetActivityRecorder(recorder userService.ActivityRecorder) {
 	s.activities = recorder
+}
+
+func (s *ResourceService) SetExperienceService(experiences *levelService.ExperienceService) {
+	s.experiences = experiences
 }
 
 func (s *ResourceService) SetContributionService(contributions *contributionService.ContributionService) {
@@ -214,6 +221,7 @@ func (s *ResourceService) CreateResource(
 	if created.Status == model.ResourceStatusPending {
 		s.notifyResourceSubmitted(ctx, uploaderID, created)
 	}
+	s.grantResourceExperience(ctx, created)
 	if s.activities != nil {
 		metadata := map[string]any{
 			"title":       created.Title,
@@ -306,6 +314,9 @@ func (s *ResourceService) UpdateResource(
 		logger.Error("update resource",
 			zap.Uint("resource_id", id), zap.Uint("actor_id", actorID), zap.Error(err))
 		return nil, err
+	}
+	if oldStatus != model.ResourceStatusPublished && resource.Status == model.ResourceStatusPublished {
+		s.grantResourceExperience(ctx, resource)
 	}
 	return s.resources.FindByID(ctx, id)
 }
@@ -424,12 +435,30 @@ func (s *ResourceService) ReviewResource(
 	if err != nil {
 		return nil, err
 	}
+	if req.Status == model.ResourceStatusPublished {
+		s.grantResourceExperience(ctx, reviewed)
+	}
 	var actorID *uint
 	if len(actorIDs) > 0 {
 		actorID = &actorIDs[0]
 	}
 	s.notifyResourceReviewResult(ctx, actorID, reviewed)
 	return reviewed, nil
+}
+
+// grantResourceExperience reports the resource_approved event for the
+// uploader once a resource becomes published; the level system's idempotency
+// key guards against repeated review transitions.
+func (s *ResourceService) grantResourceExperience(ctx context.Context, resource *model.Resource) {
+	if s.experiences == nil || resource == nil || resource.UploaderID == nil {
+		return
+	}
+	if _, err := s.experiences.Grant(
+		ctx, *resource.UploaderID, levelModel.EventResourceApproved,
+		levelModel.SourceResource, resource.ID,
+	); err != nil {
+		logger.Error("grant resource experience", zap.Uint("resource_id", resource.ID), zap.Error(err))
+	}
 }
 
 func (s *ResourceService) notifyResourceSubmitted(ctx context.Context, actorID uint, resource *model.Resource) {

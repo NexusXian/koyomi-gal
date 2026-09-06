@@ -62,6 +62,15 @@ import type {
   DtoUpdateGalgameCharacterRequest,
   DtoUpdateGalleryImageRequest,
   DtoVolumeDataResponse,
+  LeveldtoAdjustExperienceRequest,
+  LeveldtoCreateLevelConfigRequest,
+  LeveldtoExperienceRuleDataResponse,
+  LeveldtoExperienceRuleListResponse,
+  LeveldtoLevelConfigDataResponse,
+  LeveldtoLevelConfigListResponse,
+  LeveldtoUpdateExperienceRuleRequest,
+  LeveldtoUpdateLevelConfigRequest,
+  LeveldtoUserLevelResponse,
   ListAdminArticlesParams,
   ListAdminBackgroundPresetsParams,
   ListAdminBannersParams,
@@ -620,6 +629,61 @@ export const listAdminComments = async (params?: ListAdminCommentsParams, option
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getListAdminExperienceRulesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/experience-rules`
+}
+
+/**
+ * 返回全部经验事件规则；需要 experience_rule:read 权限
+ * @summary 管理端查询经验规则
+ */
+export const listAdminExperienceRules = async ( options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoExperienceRuleListResponse> => {
+
+  return apiMutator<LeveldtoExperienceRuleListResponse>(getListAdminExperienceRulesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateAdminExperienceRuleUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/experience-rules/${id}`
+}
+
+/**
+ * 更新经验事件的名称、经验值、每日次数、每日经验上限、冷却与启用状态；需要 experience_rule:update 权限
+ * @summary 更新经验规则
+ */
+export const updateAdminExperienceRule = async (id: number,
+    leveldtoUpdateExperienceRuleRequest: LeveldtoUpdateExperienceRuleRequest, options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoExperienceRuleDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<LeveldtoExperienceRuleDataResponse>(getUpdateAdminExperienceRuleUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(leveldtoUpdateExperienceRuleRequest)
   }
 );}
 
@@ -1317,6 +1381,115 @@ export const deleteAdminImage = async (id: number, options?: Parameters<typeof a
 );}
 
 
+export const getListAdminLevelsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/levels`
+}
+
+/**
+ * 返回全部等级定义；需要 level_config:read 权限
+ * @summary 管理端查询等级配置
+ */
+export const listAdminLevels = async ( options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoLevelConfigListResponse> => {
+
+  return apiMutator<LeveldtoLevelConfigListResponse>(getListAdminLevelsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateAdminLevelUrl = () => {
+
+
+
+
+  return `/api/v1/admin/levels`
+}
+
+/**
+ * 新增一个等级定义；需要 level_config:create 权限
+ * @summary 创建等级配置
+ */
+export const createAdminLevel = async (leveldtoCreateLevelConfigRequest: LeveldtoCreateLevelConfigRequest, options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoLevelConfigDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<LeveldtoLevelConfigDataResponse>(getCreateAdminLevelUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(leveldtoCreateLevelConfigRequest)
+  }
+);}
+
+
+export const getUpdateAdminLevelUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/levels/${id}`
+}
+
+/**
+ * 更新等级名称、所需经验、图标、颜色、描述与启用状态；需要 level_config:update 权限
+ * @summary 更新等级配置
+ */
+export const updateAdminLevel = async (id: number,
+    leveldtoUpdateLevelConfigRequest: LeveldtoUpdateLevelConfigRequest, options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoLevelConfigDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<LeveldtoLevelConfigDataResponse>(getUpdateAdminLevelUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(leveldtoUpdateLevelConfigRequest)
+  }
+);}
+
+
+export const getDeleteAdminLevelUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/levels/${id}`
+}
+
+/**
+ * 删除未被用户持有的等级；仍有用户处于该等级时仅禁用；需要 level_config:update 权限
+ * @summary 删除等级配置
+ */
+export const deleteAdminLevel = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminLevelUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
 export const getListAdminNovelVolumesUrl = (params?: ListAdminNovelVolumesParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1616,6 +1789,37 @@ return apiMutator<DtoResourceDataResponse>(getReviewResourceUrl(id),
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoReviewResourceRequest)
+  }
+);}
+
+
+export const getAdjustUserExperienceUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/users/${id}/experience/adjust`
+}
+
+/**
+ * 手动增加或扣减用户经验（扣减后不低于 0）并写入经验流水；需要 experience:adjust 权限
+ * @summary 管理员调整用户经验
+ */
+export const adjustUserExperience = async (id: number,
+    leveldtoAdjustExperienceRequest: LeveldtoAdjustExperienceRequest, options?: Parameters<typeof apiMutator>[1]): Promise<LeveldtoUserLevelResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<LeveldtoUserLevelResponse>(getAdjustUserExperienceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(leveldtoAdjustExperienceRequest)
   }
 );}
 

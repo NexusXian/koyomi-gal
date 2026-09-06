@@ -91,6 +91,12 @@ var seedPermissions = []seedPermission{
 	{Code: "image:manage", Name: "上传管理图片", Description: "允许上传 galgames、banners、admin 分类的图片"},
 	{Code: "image:read", Name: "查看图片资源", Description: "允许查看管理端图片资源列表"},
 	{Code: "image:delete", Name: "删除图片资源", Description: "允许删除任意用户上传的图片"},
+	{Code: "level_config:read", Name: "查看等级配置", Description: "允许查看等级与经验规则配置"},
+	{Code: "level_config:create", Name: "创建等级配置", Description: "允许新增等级定义"},
+	{Code: "level_config:update", Name: "更新等级配置", Description: "允许修改和删除等级定义"},
+	{Code: "experience_rule:read", Name: "查看经验规则", Description: "允许查看经验事件规则"},
+	{Code: "experience_rule:update", Name: "更新经验规则", Description: "允许修改经验事件规则"},
+	{Code: "experience:adjust", Name: "调整用户经验", Description: "允许手动增减用户经验"},
 }
 
 // seedRolePermissions maps seed role codes to granted seed permission codes.
@@ -145,6 +151,12 @@ var seedRolePermissions = map[string][]string{
 		"image:manage",
 		"image:read",
 		"image:delete",
+		"level_config:read",
+		"level_config:create",
+		"level_config:update",
+		"experience_rule:read",
+		"experience_rule:update",
+		"experience:adjust",
 	},
 }
 

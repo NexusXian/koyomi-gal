@@ -64,7 +64,13 @@ const navigationItems = computed(() => {
       'article:read',
       'galgame_classification:read',
       'galgame_classification:run',
-      'galgame_classification:apply'
+      'galgame_classification:apply',
+      'level_config:read',
+      'level_config:create',
+      'level_config:update',
+      'experience_rule:read',
+      'experience_rule:update',
+      'experience:adjust'
     ])
   ) {
     const target = has('galgame:review')

@@ -13,6 +13,8 @@ import (
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
 	imageService "backend/internal/image/service"
+	levelModel "backend/internal/level/model"
+	levelService "backend/internal/level/service"
 	relationModel "backend/internal/relation/model"
 	"backend/pkg/logger"
 
@@ -49,10 +51,15 @@ type GalleryService struct {
 	gallery       *repository.GalleryRepository
 	images        *imageService.ImageAssetService
 	contributions *contributionService.ContributionService
+	experiences   *levelService.ExperienceService
 }
 
 func (s *GalleryService) SetContributionService(contributions *contributionService.ContributionService) {
 	s.contributions = contributions
+}
+
+func (s *GalleryService) SetExperienceService(experiences *levelService.ExperienceService) {
+	s.experiences = experiences
 }
 
 func NewGalleryService(
@@ -409,6 +416,7 @@ func (s *GalleryService) ReviewGalleryImages(ctx context.Context, input ReviewGa
 	}
 	now := time.Now()
 	reviewed := 0
+	var credited []model.GalleryImage
 
 	write := func(gallery *repository.GalleryRepository, db *gorm.DB) error {
 		images, err := gallery.FindByIDs(ctx, input.IDs)
@@ -471,6 +479,7 @@ func (s *GalleryService) ReviewGalleryImages(ctx context.Context, input ReviewGa
 			}, db); err != nil {
 				return err
 			}
+			credited = append(credited, *image)
 		}
 		return nil
 	}
@@ -488,6 +497,19 @@ func (s *GalleryService) ReviewGalleryImages(ctx context.Context, input ReviewGa
 	if err != nil {
 		logger.Error("review gallery images", zap.Uints("ids", input.IDs), zap.Error(err))
 		return 0, err
+	}
+	// Experience is granted post-commit; per-image idempotency keys keep the
+	// reward single-shot across repeated reviews.
+	if s.experiences != nil {
+		for i := range credited {
+			image := &credited[i]
+			if _, err := s.experiences.Grant(
+				ctx, *image.CreatedBy, levelModel.EventCGApproved,
+				levelModel.SourceGalleryImage, image.ID,
+			); err != nil {
+				logger.Error("grant gallery experience", zap.Uint("gallery_id", image.ID), zap.Error(err))
+			}
+		}
 	}
 	return reviewed, nil
 }

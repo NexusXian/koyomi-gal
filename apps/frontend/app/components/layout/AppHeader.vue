@@ -44,6 +44,11 @@ async function handleAccountAction({ key }: { key: string | number }): Promise<v
     return
   }
 
+  if (key === 'experience') {
+    void router.push('/settings/experience')
+    return
+  }
+
   if (key === 'logout') {
     loggingOut.value = true
     try {
@@ -192,6 +197,12 @@ onMounted(() => {
                   <span class="menu-item-label">
                     <KunIcon name="lucide:settings" />
                     个人设置
+                  </span>
+                </a-menu-item>
+                <a-menu-item key="experience">
+                  <span class="menu-item-label">
+                    <KunIcon name="lucide:trending-up" />
+                    等级与经验
                   </span>
                 </a-menu-item>
                 <a-menu-item key="galgames">

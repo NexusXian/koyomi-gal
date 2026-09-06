@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DtoProfileAccess } from './dtoProfileAccess';
+import type { LeveldtoUserLevelSummary } from './leveldtoUserLevelSummary';
 
 export interface DtoPublicUserProfile {
   access?: DtoProfileAccess;
@@ -21,6 +22,7 @@ export interface DtoPublicUserProfile {
   is_private?: boolean;
   is_restricted?: boolean;
   is_self?: boolean;
+  level?: LeveldtoUserLevelSummary;
   location?: string;
   post_count?: number;
   rating_count?: number;

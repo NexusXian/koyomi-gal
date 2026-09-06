@@ -12,6 +12,8 @@ import (
 	"backend/internal/galgame/dto"
 	"backend/internal/galgame/model"
 	"backend/internal/galgame/repository"
+	levelModel "backend/internal/level/model"
+	levelService "backend/internal/level/service"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
@@ -53,10 +55,15 @@ type CatalogService struct {
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
+	experiences   *levelService.ExperienceService
 }
 
 func (s *CatalogService) SetContributionService(contributions *contributionService.ContributionService) {
 	s.contributions = contributions
+}
+
+func (s *CatalogService) SetExperienceService(experiences *levelService.ExperienceService) {
+	s.experiences = experiences
 }
 
 func (s *CatalogService) SetRelationRepository(relations *relationRepository.RelationRepository) {
@@ -356,6 +363,9 @@ func (s *CatalogService) CreateGalgame(
 	if created.Status == model.GalgameStatusPending {
 		s.notifyGalgameSubmitted(ctx, userID, created)
 	}
+	if galgame.Status == model.GalgameStatusPublished {
+		s.grantGalgameExperience(ctx, galgame.ID, userID)
+	}
 	return created, nil
 }
 
@@ -486,6 +496,17 @@ func (s *CatalogService) UpdateGalgame(
 		logger.Error("update galgame", zap.Uint("galgame_id", id), zap.Error(err))
 		return nil, err
 	}
+	if oldStatus != model.GalgameStatusPublished && galgame.Status == model.GalgameStatusPublished {
+		contributorID := uint(0)
+		if galgame.CreatedBy != nil {
+			contributorID = *galgame.CreatedBy
+		} else if len(actorIDs) > 0 {
+			contributorID = actorIDs[0]
+		}
+		if contributorID != 0 {
+			s.grantGalgameExperience(ctx, id, contributorID)
+		}
+	}
 	return s.getGalgame(ctx, id, false)
 }
 
@@ -540,6 +561,9 @@ func (s *CatalogService) ReviewGalgame(
 	if err != nil {
 		logger.Error("find reviewed galgame", zap.Uint("galgame_id", id), zap.Error(err))
 		return nil, err
+	}
+	if req.Status == model.GalgameStatusPublished && galgame.CreatedBy != nil {
+		s.grantGalgameExperience(ctx, id, *galgame.CreatedBy)
 	}
 	s.notifyGalgameReviewResult(ctx, actorID, galgame)
 	if req.Status == model.GalgameStatusPublished && galgame.CreatedBy != nil && s.activities != nil {
@@ -1016,6 +1040,21 @@ func (s *CatalogService) notifyGalgameSubmitted(ctx context.Context, actorID uin
 	}
 	if _, err := s.notifications.CreateMany(ctx, inputs); err != nil {
 		logger.Error("create galgame submission notifications", zap.Uint("galgame_id", galgame.ID), zap.Error(err))
+	}
+}
+
+// grantGalgameExperience reports the game_contribution_approved event once a
+// galgame reaches published; the idempotency key prevents double rewards on
+// repeated review transitions.
+func (s *CatalogService) grantGalgameExperience(ctx context.Context, galgameID, contributorID uint) {
+	if s.experiences == nil {
+		return
+	}
+	if _, err := s.experiences.Grant(
+		ctx, contributorID, levelModel.EventGameContributionApproved,
+		levelModel.SourceGalgame, galgameID,
+	); err != nil {
+		logger.Error("grant galgame experience", zap.Uint("galgame_id", galgameID), zap.Error(err))
 	}
 }
 

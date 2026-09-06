@@ -31,7 +31,8 @@ const commentAuthor = computed(() => ({
   id: props.comment.author?.id ?? props.comment.author_id,
   username: props.comment.author?.username,
   displayName: props.comment.author?.display_name ?? props.comment.author_name,
-  avatarUrl: props.comment.author?.avatar_url ?? props.comment.author_avatar
+  avatarUrl: props.comment.author?.avatar_url ?? props.comment.author_avatar,
+  level: props.comment.author?.level ?? null
 }))
 const likePending = ref(false)
 const likeState = ref(false)
@@ -195,6 +196,13 @@ async function removeComment(): Promise<void> {
             :username="commentAuthor.username"
             :display-name="commentAuthor.displayName"
             :user-id="commentAuthor.id"
+          />
+          <UserLevelBadge
+            v-if="commentAuthor.level"
+            :level="commentAuthor.level.level ?? 1"
+            :name="commentAuthor.level.name ?? ''"
+            :color="commentAuthor.level.color"
+            :icon-url="commentAuthor.level.icon_url"
           />
           <template v-if="comment.reply_to?.username">
             <span class="reply-to-label">回复</span>

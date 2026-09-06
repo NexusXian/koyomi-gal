@@ -32,5 +32,6 @@ export const ModelNotificationType = {
   TypeReportRejected: 'report_rejected',
   TypePostModerated: 'post_moderated',
   TypeCommentModerated: 'comment_moderated',
+  TypeLevelUp: 'level_up',
   TypeSystem: 'system',
 } as const;

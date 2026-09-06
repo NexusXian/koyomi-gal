@@ -5,10 +5,12 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { LeveldtoUserLevelSummary } from './leveldtoUserLevelSummary';
 
 export interface DtoCommunityUserSummary {
   avatar_url?: string;
   display_name?: string;
   id?: number;
+  level?: LeveldtoUserLevelSummary;
   username?: string;
 }

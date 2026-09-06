@@ -33,6 +33,7 @@ const (
 	TypeReportRejected       NotificationType = "report_rejected"
 	TypePostModerated        NotificationType = "post_moderated"
 	TypeCommentModerated     NotificationType = "comment_moderated"
+	TypeLevelUp              NotificationType = "level_up"
 	TypeSystem               NotificationType = "system"
 )
 
@@ -138,6 +139,7 @@ func IsValidType(notificationType NotificationType) bool {
 		TypeReportRejected,
 		TypePostModerated,
 		TypeCommentModerated,
+		TypeLevelUp,
 		TypeSystem:
 		return true
 	default:
