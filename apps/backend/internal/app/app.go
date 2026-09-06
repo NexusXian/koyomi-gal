@@ -105,6 +105,7 @@ type App struct {
 	NovelAdminHandler     *novelHandler.AdminHandler
 	UserRelationHandler   *galgameHandler.UserRelationHandler
 	GalleryHandler        *galgameHandler.GalleryHandler
+	CharacterHandler      *galgameHandler.CharacterHandler
 	ResourceHandler       *resourceHandler.ResourceHandler
 	ReportHandler         *resourceHandler.ReportHandler
 	FeedbackHandler       *feedbackHandler.FeedbackHandler
@@ -210,6 +211,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	userStateService := galgameService.NewUserStateService(galgameRepository, userRelationRepository)
 	userRelationService := galgameService.NewUserRelationService(galgameRepository, userRelationRepository)
 	galleryRepository := galgameRepo.NewGalleryRepository(postgresDB)
+	characterRepository := galgameRepo.NewCharacterRepository(postgresDB)
+	characterService := galgameService.NewCharacterService(galgameRepository, characterRepository)
 
 	resourceRepository := resourceRepo.NewResourceRepository(postgresDB, cfg.R2.PublicURL)
 	resourceSvc := resourceService.NewResourceService(resourceRepository, galgameRepository, novelRepository, rbacSvc)
@@ -368,6 +371,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 			userRelationService,
 		),
 		GalleryHandler:        galgameHandler.NewGalleryHandler(galleryService),
+		CharacterHandler:      galgameHandler.NewCharacterHandler(characterService),
 		ResourceHandler:       resourceHandler.NewResourceHandler(resourceSvc),
 		ReportHandler:         resourceHandler.NewReportHandler(reportSvc),
 		FeedbackHandler:       feedbackHandler.NewFeedbackHandler(feedbackSvc),

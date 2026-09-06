@@ -14,6 +14,7 @@ export const ListAdminImagesCategory = {
   posts: 'posts',
   comments: 'comments',
   galgames: 'galgames',
+  novels: 'novels',
   backgrounds: 'backgrounds',
   banners: 'banners',
   admin: 'admin',

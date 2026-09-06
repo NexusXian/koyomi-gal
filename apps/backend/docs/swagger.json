@@ -747,6 +747,298 @@
                 }
             }
         },
+        "/api/v1/admin/characters": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. Case-insensitive literal substring search of name, original_name and source_id, ordered by id DESC. Omit q to list all. Responses must not be cached.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Search shared characters for administration",
+                "operationId": "searchAdminCharacters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search text (at most 255 characters)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page (1-1000000)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size (1-100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CharacterSearchResponse"
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "type": "string",
+                                "description": "private, no-store"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. A nonempty source and source_id pair atomically reuses an existing character without overwriting any metadata. description must contain only non-spoiler public text. image_url may be empty or an HTTP/HTTPS URL without credentials or whitespace (maximum 2048 bytes); uploaded images use their existing public URL, not an asset ID. birthday is free-form month/day text; height is integer centimeters, 0 for unknown.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create or reuse a shared character",
+                "operationId": "createCharacter",
+                "parameters": [
+                    {
+                        "description": "Shared character metadata; name is required",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CharacterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Created or existing unchanged character",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CharacterDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/characters/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. Full replacement: omitted optional fields reset to empty strings or 0. Changes affect every linked galgame. description must be spoiler-free. image_url accepts only an empty string or an HTTP/HTTPS URL without credentials or whitespace, at most 2048 bytes. birthday is free-form text; height is integer centimeters, 0 unknown. A conflicting nonempty source/source_id returns 409 and never merges characters.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Replace shared character metadata",
+                "operationId": "updateCharacter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Shared character ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Replacement metadata; name is required",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CharacterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CharacterDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. Cascades through all galgame associations; does not delete the image URL's storage object or any galgames.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete a shared character and all its galgame associations",
+                "operationId": "deleteCharacter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Shared character ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/comments": {
             "get": {
                 "security": [
@@ -1457,6 +1749,312 @@
                     },
                     "500": {
                         "description": "查询 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/characters": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. Includes full identity and spoiler text for galgames in any status, including drafts. Sorted by sort_order ASC, relation id ASC. id is the relation ID; character_id is the shared character ID. Responses must not be cached.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List all galgame character associations for administration",
+                "operationId": "listAdminGalgameCharacters",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameCharacterListResponse"
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "type": "string",
+                                "description": "private, no-store"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. Works with drafts. character_id is the shared character ID. role defaults to other and accepts other/protagonist/main/supporting/guest; spoiler_level defaults to none and accepts none/minor/major. description is game-specific non-spoiler text; spoiler_description is revealed only with spoiler=true. appearance_spoiler conceals all identity fields by default. Returns full association metadata; id is the relation ID. Duplicate bindings return 409.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Bind an existing character to a galgame",
+                "operationId": "bindGalgameCharacter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Character ID and association metadata",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameCharacterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameCharacterDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/galgames/{id}/characters/{characterId}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. Full replacement, including drafts: omitted fields reset to defaults (role=other, spoiler_level=none, false, empty strings, sort_order=0). characterId is the shared character ID, not the relation ID. Neither parent ID nor shared character metadata changes. description must be game-specific non-spoiler text; put spoilers in spoiler_description. Returns full association metadata, including spoiler text.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Replace a galgame character association's metadata",
+                "operationId": "updateGalgameCharacter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Shared character ID, not relation ID",
+                        "name": "characterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Replacement association metadata",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateGalgameCharacterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameCharacterDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires character:manage. characterId is the shared character ID, not the relation ID. Only deletes the scoped association; preserves the shared character, all other associations and image storage.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Unbind a character from one galgame",
+                "operationId": "unbindGalgameCharacter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Shared character ID, not relation ID",
+                        "name": "characterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -2729,6 +3327,7 @@
                             "posts",
                             "comments",
                             "galgames",
+                            "novels",
                             "backgrounds",
                             "banners",
                             "admin"
@@ -6465,6 +7064,67 @@
                     },
                     "500": {
                         "description": "删除 Galgame 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/galgames/{id}/characters": {
+            "get": {
+                "description": "Sorted by sort_order ASC, relation id ASC. With spoiler=false (default), appearance spoilers contain only id (relation ID), role, appearance_spoiler, has_spoiler and sort_order. Visible entries never include spoiler_description unless spoiler=true. has_spoiler reflects appearance_spoiler, a non-none spoiler_level or nonempty spoiler_description. No global public character lookup exists. Responses must not be cached.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "List characters of a published galgame",
+                "operationId": "listGalgameCharacters",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Explicitly reveal all character identity and spoiler text",
+                        "name": "spoiler",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameCharacterListResponse"
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "type": "string",
+                                "description": "private, no-store"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID or spoiler query",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame missing or not published",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -12700,6 +13360,154 @@
                 }
             }
         },
+        "dto.CharacterDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CharacterResponse"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.CharacterRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "birthday": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "03-14"
+                },
+                "blood_type": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "height": {
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "example": 165
+                },
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "original_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "source": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "vndb"
+                },
+                "source_id": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "c123"
+                }
+            }
+        },
+        "dto.CharacterResponse": {
+            "type": "object",
+            "properties": {
+                "birthday": {
+                    "type": "string"
+                },
+                "blood_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "original_name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "source_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CharacterSearchData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CharacterResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CharacterSearchResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CharacterSearchData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.ClassificationDetailData": {
             "type": "object",
             "properties": {
@@ -14555,6 +15363,174 @@
                 "title": {
                     "type": "string",
                     "example": "千恋＊万花"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GalgameCharacterDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GalgameCharacterResponse"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.GalgameCharacterListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GalgameCharacterResponse"
+                    }
+                }
+            }
+        },
+        "dto.GalgameCharacterListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GalgameCharacterListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.GalgameCharacterRequest": {
+            "type": "object",
+            "required": [
+                "character_id"
+            ],
+            "properties": {
+                "appearance_spoiler": {
+                    "type": "boolean"
+                },
+                "character_id": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "default": "other",
+                    "enum": [
+                        "other",
+                        "protagonist",
+                        "main",
+                        "supporting",
+                        "guest"
+                    ]
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": -2147483648
+                },
+                "spoiler_description": {
+                    "type": "string"
+                },
+                "spoiler_level": {
+                    "type": "string",
+                    "default": "none",
+                    "enum": [
+                        "none",
+                        "minor",
+                        "major"
+                    ]
+                }
+            }
+        },
+        "dto.GalgameCharacterResponse": {
+            "type": "object",
+            "properties": {
+                "appearance_spoiler": {
+                    "type": "boolean"
+                },
+                "birthday": {
+                    "type": "string"
+                },
+                "blood_type": {
+                    "type": "string"
+                },
+                "character_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "has_spoiler": {
+                    "type": "boolean"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "original_name": {
+                    "type": "string"
+                },
+                "public_description": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "other",
+                        "protagonist",
+                        "main",
+                        "supporting",
+                        "guest"
+                    ]
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "source_id": {
+                    "type": "string"
+                },
+                "spoiler_description": {
+                    "type": "string"
+                },
+                "spoiler_level": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "minor",
+                        "major"
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -16650,6 +17626,7 @@
                         "posts",
                         "comments",
                         "galgames",
+                        "novels",
                         "backgrounds",
                         "banners",
                         "profile-banners",
@@ -18012,6 +18989,45 @@
                 "website": {
                     "type": "string",
                     "example": "https://www.yuzu-soft.com"
+                }
+            }
+        },
+        "dto.UpdateGalgameCharacterRequest": {
+            "type": "object",
+            "properties": {
+                "appearance_spoiler": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "default": "other",
+                    "enum": [
+                        "other",
+                        "protagonist",
+                        "main",
+                        "supporting",
+                        "guest"
+                    ]
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": -2147483648
+                },
+                "spoiler_description": {
+                    "type": "string"
+                },
+                "spoiler_level": {
+                    "type": "string",
+                    "default": "none",
+                    "enum": [
+                        "none",
+                        "minor",
+                        "major"
+                    ]
                 }
             }
         },

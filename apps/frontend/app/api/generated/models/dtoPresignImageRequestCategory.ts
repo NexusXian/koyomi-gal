@@ -14,6 +14,7 @@ export const DtoPresignImageRequestCategory = {
   posts: 'posts',
   comments: 'comments',
   galgames: 'galgames',
+  novels: 'novels',
   backgrounds: 'backgrounds',
   banners: 'banners',
   'profile-banners': 'profile-banners',

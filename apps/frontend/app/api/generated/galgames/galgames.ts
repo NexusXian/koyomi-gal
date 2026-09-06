@@ -9,6 +9,7 @@ import type {
   DtoContributorListResponse,
   DtoCreateGalgameRequest,
   DtoFavoriteDataResponse,
+  DtoGalgameCharacterListResponse,
   DtoGalgameDataResponse,
   DtoGalgameListResponse,
   DtoGalgameUserRelationResponse,
@@ -18,6 +19,7 @@ import type {
   DtoUpsertRatingRequest,
   DtoUpsertUserStateRequest,
   DtoUserStateDataResponse,
+  ListGalgameCharactersParams,
   ListGalgameContributorsParams,
   ListGalgamesParams,
   ResponseMessageResponse
@@ -159,6 +161,39 @@ export const deleteGalgame = async (id: number, options?: Parameters<typeof apiM
   {
     ...options,
     method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListGalgameCharactersUrl = (id: number,
+    params?: ListGalgameCharactersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/galgames/${id}/characters?${stringifiedParams}` : `/api/v1/galgames/${id}/characters`
+}
+
+/**
+ * Sorted by sort_order ASC, relation id ASC. With spoiler=false (default), appearance spoilers contain only id (relation ID), role, appearance_spoiler, has_spoiler and sort_order. Visible entries never include spoiler_description unless spoiler=true. has_spoiler reflects appearance_spoiler, a non-none spoiler_level or nonempty spoiler_description. No global public character lookup exists. Responses must not be cached.
+ * @summary List characters of a published galgame
+ */
+export const listGalgameCharacters = async (id: number,
+    params?: ListGalgameCharactersParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameCharacterListResponse> => {
+
+  return apiMutator<DtoGalgameCharacterListResponse>(getListGalgameCharactersUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
 
 
   }

@@ -433,7 +433,7 @@ onMounted(() => {
             </KunButton>
 
             <KunButton
-              v-if="has('galgame:update')"
+              v-if="has('galgame:update') || has('character:manage')"
               color="default"
               variant="bordered"
               :href="`/galgames/${galgameId}/edit`"
@@ -476,6 +476,8 @@ onMounted(() => {
         </p>
       </div>
     </KunCard>
+
+    <GalgameCharacters :key="galgameId" :galgame-id="galgameId" />
 
     <GalgameGallery :galgame-id="galgameId" :game-title="galgame?.title" />
 

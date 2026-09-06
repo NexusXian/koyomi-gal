@@ -24,11 +24,17 @@ import type {
   DtoBatchReviewGalleryRequest,
   DtoBatchUpdateGalgameRequest,
   DtoBatchUpdateGalgameResponse,
+  DtoCharacterDataResponse,
+  DtoCharacterRequest,
+  DtoCharacterSearchResponse,
   DtoCreateArticleRequest,
   DtoCreateBackgroundPresetRequest,
   DtoCreateBannerRequest,
   DtoCreateGalleryImageRequest,
   DtoFeedbackDataResponse,
+  DtoGalgameCharacterDataResponse,
+  DtoGalgameCharacterListResponse,
+  DtoGalgameCharacterRequest,
   DtoGalgameDataResponse,
   DtoGalgameListResponse,
   DtoGalleryBatchResponse,
@@ -53,6 +59,7 @@ import type {
   DtoUpdateArticleRequest,
   DtoUpdateBackgroundPresetRequest,
   DtoUpdateBannerRequest,
+  DtoUpdateGalgameCharacterRequest,
   DtoUpdateGalleryImageRequest,
   DtoVolumeDataResponse,
   ListAdminArticlesParams,
@@ -68,7 +75,8 @@ import type {
   ListAdminResourcesParams,
   ListGalleryReviewsParams,
   ListResourceReportsParams,
-  ResponseMessageResponse
+  ResponseMessageResponse,
+  SearchAdminCharactersParams
 } from '../models';
 
 import { apiMutator } from '../../mutator';
@@ -469,6 +477,122 @@ export const deleteAdminBanner = async (id: number, options?: Parameters<typeof 
 );}
 
 
+export const getSearchAdminCharactersUrl = (params?: SearchAdminCharactersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/characters?${stringifiedParams}` : `/api/v1/admin/characters`
+}
+
+/**
+ * Requires character:manage. Case-insensitive literal substring search of name, original_name and source_id, ordered by id DESC. Omit q to list all. Responses must not be cached.
+ * @summary Search shared characters for administration
+ */
+export const searchAdminCharacters = async (params?: SearchAdminCharactersParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCharacterSearchResponse> => {
+
+  return apiMutator<DtoCharacterSearchResponse>(getSearchAdminCharactersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateCharacterUrl = () => {
+
+
+
+
+  return `/api/v1/admin/characters`
+}
+
+/**
+ * Requires character:manage. A nonempty source and source_id pair atomically reuses an existing character without overwriting any metadata. description must contain only non-spoiler public text. image_url may be empty or an HTTP/HTTPS URL without credentials or whitespace (maximum 2048 bytes); uploaded images use their existing public URL, not an asset ID. birthday is free-form month/day text; height is integer centimeters, 0 for unknown.
+ * @summary Create or reuse a shared character
+ */
+export const createCharacter = async (dtoCharacterRequest: DtoCharacterRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCharacterDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoCharacterDataResponse>(getCreateCharacterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCharacterRequest)
+  }
+);}
+
+
+export const getUpdateCharacterUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/characters/${id}`
+}
+
+/**
+ * Requires character:manage. Full replacement: omitted optional fields reset to empty strings or 0. Changes affect every linked galgame. description must be spoiler-free. image_url accepts only an empty string or an HTTP/HTTPS URL without credentials or whitespace, at most 2048 bytes. birthday is free-form text; height is integer centimeters, 0 unknown. A conflicting nonempty source/source_id returns 409 and never merges characters.
+ * @summary Replace shared character metadata
+ */
+export const updateCharacter = async (id: number,
+    dtoCharacterRequest: DtoCharacterRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCharacterDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoCharacterDataResponse>(getUpdateCharacterUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCharacterRequest)
+  }
+);}
+
+
+export const getDeleteCharacterUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/characters/${id}`
+}
+
+/**
+ * Requires character:manage. Cascades through all galgame associations; does not delete the image URL's storage object or any galgames.
+ * @summary Delete a shared character and all its galgame associations
+ */
+export const deleteCharacter = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteCharacterUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
 export const getListAdminCommentsUrl = (params?: ListAdminCommentsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -671,6 +795,120 @@ export const getAdminGalgame = async (id: number, options?: Parameters<typeof ap
   {
     ...options,
     method: 'GET'
+
+
+  }
+);}
+
+
+export const getListAdminGalgameCharactersUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/characters`
+}
+
+/**
+ * Requires character:manage. Includes full identity and spoiler text for galgames in any status, including drafts. Sorted by sort_order ASC, relation id ASC. id is the relation ID; character_id is the shared character ID. Responses must not be cached.
+ * @summary List all galgame character associations for administration
+ */
+export const listAdminGalgameCharacters = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameCharacterListResponse> => {
+
+  return apiMutator<DtoGalgameCharacterListResponse>(getListAdminGalgameCharactersUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getBindGalgameCharacterUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/characters`
+}
+
+/**
+ * Requires character:manage. Works with drafts. character_id is the shared character ID. role defaults to other and accepts other/protagonist/main/supporting/guest; spoiler_level defaults to none and accepts none/minor/major. description is game-specific non-spoiler text; spoiler_description is revealed only with spoiler=true. appearance_spoiler conceals all identity fields by default. Returns full association metadata; id is the relation ID. Duplicate bindings return 409.
+ * @summary Bind an existing character to a galgame
+ */
+export const bindGalgameCharacter = async (id: number,
+    dtoGalgameCharacterRequest: DtoGalgameCharacterRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameCharacterDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalgameCharacterDataResponse>(getBindGalgameCharacterUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoGalgameCharacterRequest)
+  }
+);}
+
+
+export const getUpdateGalgameCharacterUrl = (id: number,
+    characterId: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/characters/${characterId}`
+}
+
+/**
+ * Requires character:manage. Full replacement, including drafts: omitted fields reset to defaults (role=other, spoiler_level=none, false, empty strings, sort_order=0). characterId is the shared character ID, not the relation ID. Neither parent ID nor shared character metadata changes. description must be game-specific non-spoiler text; put spoilers in spoiler_description. Returns full association metadata, including spoiler text.
+ * @summary Replace a galgame character association's metadata
+ */
+export const updateGalgameCharacter = async (id: number,
+    characterId: number,
+    dtoUpdateGalgameCharacterRequest: DtoUpdateGalgameCharacterRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameCharacterDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalgameCharacterDataResponse>(getUpdateGalgameCharacterUrl(id,characterId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateGalgameCharacterRequest)
+  }
+);}
+
+
+export const getUnbindGalgameCharacterUrl = (id: number,
+    characterId: number,) => {
+
+
+
+
+  return `/api/v1/admin/galgames/${id}/characters/${characterId}`
+}
+
+/**
+ * Requires character:manage. characterId is the shared character ID, not the relation ID. Only deletes the scoped association; preserves the shared character, all other associations and image storage.
+ * @summary Unbind a character from one galgame
+ */
+export const unbindGalgameCharacter = async (id: number,
+    characterId: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getUnbindGalgameCharacterUrl(id,characterId),
+  {
+    ...options,
+    method: 'DELETE'
 
 
   }

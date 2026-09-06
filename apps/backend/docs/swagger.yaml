@@ -950,6 +950,109 @@ definitions:
         example: success
         type: string
     type: object
+  dto.CharacterDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CharacterResponse'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.CharacterRequest:
+    properties:
+      birthday:
+        example: 03-14
+        maxLength: 50
+        type: string
+      blood_type:
+        maxLength: 50
+        type: string
+      description:
+        type: string
+      gender:
+        maxLength: 50
+        type: string
+      height:
+        example: 165
+        maximum: 2147483647
+        minimum: 0
+        type: integer
+      image_url:
+        maxLength: 2048
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      original_name:
+        maxLength: 255
+        type: string
+      source:
+        example: vndb
+        maxLength: 50
+        type: string
+      source_id:
+        example: c123
+        maxLength: 255
+        type: string
+    required:
+    - name
+    type: object
+  dto.CharacterResponse:
+    properties:
+      birthday:
+        type: string
+      blood_type:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      gender:
+        type: string
+      height:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      name:
+        type: string
+      original_name:
+        type: string
+      source:
+        type: string
+      source_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.CharacterSearchData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CharacterResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.CharacterSearchResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CharacterSearchData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.ClassificationDetailData:
     properties:
       classification:
@@ -2311,6 +2414,123 @@ definitions:
         type: string
       title:
         example: 千恋＊万花
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.GalgameCharacterDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalgameCharacterResponse'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.GalgameCharacterListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.GalgameCharacterResponse'
+        type: array
+    type: object
+  dto.GalgameCharacterListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalgameCharacterListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.GalgameCharacterRequest:
+    properties:
+      appearance_spoiler:
+        type: boolean
+      character_id:
+        type: integer
+      description:
+        type: string
+      role:
+        default: other
+        enum:
+        - other
+        - protagonist
+        - main
+        - supporting
+        - guest
+        type: string
+      sort_order:
+        maximum: 2147483647
+        minimum: -2147483648
+        type: integer
+      spoiler_description:
+        type: string
+      spoiler_level:
+        default: none
+        enum:
+        - none
+        - minor
+        - major
+        type: string
+    required:
+    - character_id
+    type: object
+  dto.GalgameCharacterResponse:
+    properties:
+      appearance_spoiler:
+        type: boolean
+      birthday:
+        type: string
+      blood_type:
+        type: string
+      character_id:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      gender:
+        type: string
+      has_spoiler:
+        type: boolean
+      height:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      name:
+        type: string
+      original_name:
+        type: string
+      public_description:
+        type: string
+      role:
+        enum:
+        - other
+        - protagonist
+        - main
+        - supporting
+        - guest
+        type: string
+      sort_order:
+        type: integer
+      source:
+        type: string
+      source_id:
+        type: string
+      spoiler_description:
+        type: string
+      spoiler_level:
+        enum:
+        - none
+        - minor
+        - major
         type: string
       updated_at:
         type: string
@@ -3783,6 +4003,7 @@ definitions:
         - posts
         - comments
         - galgames
+        - novels
         - backgrounds
         - banners
         - profile-banners
@@ -4745,6 +4966,35 @@ definitions:
     required:
     - name
     - slug
+    type: object
+  dto.UpdateGalgameCharacterRequest:
+    properties:
+      appearance_spoiler:
+        type: boolean
+      description:
+        type: string
+      role:
+        default: other
+        enum:
+        - other
+        - protagonist
+        - main
+        - supporting
+        - guest
+        type: string
+      sort_order:
+        maximum: 2147483647
+        minimum: -2147483648
+        type: integer
+      spoiler_description:
+        type: string
+      spoiler_level:
+        default: none
+        enum:
+        - none
+        - minor
+        - major
+        type: string
     type: object
   dto.UpdateGalgameRequest:
     properties:
@@ -6159,6 +6409,209 @@ paths:
       summary: 更新 Banner
       tags:
       - admin
+  /api/v1/admin/characters:
+    get:
+      description: Requires character:manage. Case-insensitive literal substring search
+        of name, original_name and source_id, ordered by id DESC. Omit q to list all.
+        Responses must not be cached.
+      operationId: searchAdminCharacters
+      parameters:
+      - description: Search text (at most 255 characters)
+        in: query
+        name: q
+        type: string
+      - default: 1
+        description: Page (1-1000000)
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size (1-100)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Cache-Control:
+              description: private, no-store
+              type: string
+          schema:
+            $ref: '#/definitions/dto.CharacterSearchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search shared characters for administration
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Requires character:manage. A nonempty source and source_id pair
+        atomically reuses an existing character without overwriting any metadata.
+        description must contain only non-spoiler public text. image_url may be empty
+        or an HTTP/HTTPS URL without credentials or whitespace (maximum 2048 bytes);
+        uploaded images use their existing public URL, not an asset ID. birthday is
+        free-form month/day text; height is integer centimeters, 0 for unknown.
+      operationId: createCharacter
+      parameters:
+      - description: Shared character metadata; name is required
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CharacterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Created or existing unchanged character
+          schema:
+            $ref: '#/definitions/dto.CharacterDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create or reuse a shared character
+      tags:
+      - admin
+  /api/v1/admin/characters/{id}:
+    delete:
+      description: Requires character:manage. Cascades through all galgame associations;
+        does not delete the image URL's storage object or any galgames.
+      operationId: deleteCharacter
+      parameters:
+      - description: Shared character ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a shared character and all its galgame associations
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 'Requires character:manage. Full replacement: omitted optional
+        fields reset to empty strings or 0. Changes affect every linked galgame. description
+        must be spoiler-free. image_url accepts only an empty string or an HTTP/HTTPS
+        URL without credentials or whitespace, at most 2048 bytes. birthday is free-form
+        text; height is integer centimeters, 0 unknown. A conflicting nonempty source/source_id
+        returns 409 and never merges characters.'
+      operationId: updateCharacter
+      parameters:
+      - description: Shared character ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Replacement metadata; name is required
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CharacterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CharacterDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Replace shared character metadata
+      tags:
+      - admin
   /api/v1/admin/comments:
     get:
       description: 按评论内容、作者或帖子标题搜索全部评论；需要 comment:moderate 权限
@@ -6423,6 +6876,222 @@ paths:
       security:
       - BearerAuth: []
       summary: 管理端查看 Galgame 详情
+      tags:
+      - admin
+  /api/v1/admin/galgames/{id}/characters:
+    get:
+      description: Requires character:manage. Includes full identity and spoiler text
+        for galgames in any status, including drafts. Sorted by sort_order ASC, relation
+        id ASC. id is the relation ID; character_id is the shared character ID. Responses
+        must not be cached.
+      operationId: listAdminGalgameCharacters
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Cache-Control:
+              description: private, no-store
+              type: string
+          schema:
+            $ref: '#/definitions/dto.GalgameCharacterListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all galgame character associations for administration
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Requires character:manage. Works with drafts. character_id is the
+        shared character ID. role defaults to other and accepts other/protagonist/main/supporting/guest;
+        spoiler_level defaults to none and accepts none/minor/major. description is
+        game-specific non-spoiler text; spoiler_description is revealed only with
+        spoiler=true. appearance_spoiler conceals all identity fields by default.
+        Returns full association metadata; id is the relation ID. Duplicate bindings
+        return 409.
+      operationId: bindGalgameCharacter
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Character ID and association metadata
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GalgameCharacterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GalgameCharacterDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Bind an existing character to a galgame
+      tags:
+      - admin
+  /api/v1/admin/galgames/{id}/characters/{characterId}:
+    delete:
+      description: Requires character:manage. characterId is the shared character
+        ID, not the relation ID. Only deletes the scoped association; preserves the
+        shared character, all other associations and image storage.
+      operationId: unbindGalgameCharacter
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Shared character ID, not relation ID
+        in: path
+        name: characterId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unbind a character from one galgame
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 'Requires character:manage. Full replacement, including drafts:
+        omitted fields reset to defaults (role=other, spoiler_level=none, false, empty
+        strings, sort_order=0). characterId is the shared character ID, not the relation
+        ID. Neither parent ID nor shared character metadata changes. description must
+        be game-specific non-spoiler text; put spoilers in spoiler_description. Returns
+        full association metadata, including spoiler text.'
+      operationId: updateGalgameCharacter
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Shared character ID, not relation ID
+        in: path
+        name: characterId
+        required: true
+        type: integer
+      - description: Replacement association metadata
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateGalgameCharacterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GalgameCharacterDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Replace a galgame character association's metadata
       tags:
       - admin
   /api/v1/admin/galgames/{id}/classification:
@@ -7454,6 +8123,7 @@ paths:
         - posts
         - comments
         - galgames
+        - novels
         - backgrounds
         - banners
         - admin
@@ -9909,6 +10579,52 @@ paths:
       security:
       - BearerAuth: []
       summary: 更新 Galgame
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/characters:
+    get:
+      description: Sorted by sort_order ASC, relation id ASC. With spoiler=false (default),
+        appearance spoilers contain only id (relation ID), role, appearance_spoiler,
+        has_spoiler and sort_order. Visible entries never include spoiler_description
+        unless spoiler=true. has_spoiler reflects appearance_spoiler, a non-none spoiler_level
+        or nonempty spoiler_description. No global public character lookup exists.
+        Responses must not be cached.
+      operationId: listGalgameCharacters
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: false
+        description: Explicitly reveal all character identity and spoiler text
+        in: query
+        name: spoiler
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Cache-Control:
+              description: private, no-store
+              type: string
+          schema:
+            $ref: '#/definitions/dto.GalgameCharacterListResponse'
+        "400":
+          description: Invalid ID or spoiler query
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame missing or not published
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List characters of a published galgame
       tags:
       - galgames
   /api/v1/galgames/{id}/contributors:

@@ -29,6 +29,7 @@ func (app *App) setupRoutes() {
 	v1.GET("/galgames/:id", app.CatalogHandler.GetGalgame)
 	v1.GET("/galgames/:id/contributors", app.ContributionHandler.ListGalgameContributors)
 	v1.GET("/galgames/:id/gallery", app.GalleryHandler.ListGalgameGallery)
+	v1.GET("/galgames/:id/characters", app.CharacterHandler.ListGalgameCharacters)
 	v1.GET("/novels", app.NovelHandler.ListNovels)
 	v1.GET("/novels/:id", app.NovelHandler.GetNovel)
 	v1.GET("/novels/:id/volumes", app.NovelVolumeHandler.ListNovelVolumes)
@@ -115,6 +116,14 @@ func (app *App) setupRoutes() {
 
 	admin := protected.Group("/admin")
 	{
+		admin.GET("/characters", requirePermission("character:manage"), app.CharacterHandler.SearchAdminCharacters)
+		admin.POST("/characters", requirePermission("character:manage"), app.CharacterHandler.CreateCharacter)
+		admin.PUT("/characters/:id", requirePermission("character:manage"), app.CharacterHandler.UpdateCharacter)
+		admin.DELETE("/characters/:id", requirePermission("character:manage"), app.CharacterHandler.DeleteCharacter)
+		admin.GET("/galgames/:id/characters", requirePermission("character:manage"), app.CharacterHandler.ListAdminGalgameCharacters)
+		admin.POST("/galgames/:id/characters", requirePermission("character:manage"), app.CharacterHandler.BindGalgameCharacter)
+		admin.PUT("/galgames/:id/characters/:characterId", requirePermission("character:manage"), app.CharacterHandler.UpdateGalgameCharacter)
+		admin.DELETE("/galgames/:id/characters/:characterId", requirePermission("character:manage"), app.CharacterHandler.UnbindGalgameCharacter)
 		admin.GET("/galgames", requirePermission("galgame:review"), app.CatalogHandler.ListAdminGalgames)
 		admin.GET("/galgames/classification", requirePermission("galgame_classification:read"), app.ClassificationHandler.ListClassifications)
 		admin.GET("/galgames/:id", requirePermission("galgame:review"), app.CatalogHandler.GetAdminGalgame)
