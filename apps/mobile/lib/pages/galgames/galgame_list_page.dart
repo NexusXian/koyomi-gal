@@ -405,7 +405,7 @@ class _FilterSheetState extends State<_FilterSheet> {
           const Text('开发商', style: TextStyle(fontSize: 13)),
           const SizedBox(height: 6),
           DropdownButtonFormField<int?>(
-            initialValue: _developerId,
+            value: _developerId,
           isExpanded: true,
             decoration: const InputDecoration(isDense: true),
             items: [

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -52,17 +54,20 @@ class _AppImageState extends State<AppImage> {
             child: ClipRRect(
               borderRadius: widget.borderRadius ?? BorderRadius.zero,
               child: BackdropFilter(
-                filter: const ColorFilter.mode(
-                  Color(0x66101010),
-                  BlendMode.srcOver,
+                filter: ImageFilter.compose(
+                  outer: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  inner: ColorFilter.mode(
+                    const Color(0xCC101010),
+                    BlendMode.srcOver,
+                  ),
                 ),
                 child: Container(
                   color: Colors.black12,
                   alignment: Alignment.center,
                   child: const Icon(
                     Icons.visibility_off_outlined,
-                    color: Colors.white70,
-                    size: 20,
+                    color: Colors.white54,
+                    size: 24,
                   ),
                 ),
               ),

@@ -204,25 +204,148 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildBanners(List<HomeBanner> banners) {
     return SizedBox(
-      height: 130,
-      child: PageView.builder(
-        controller: _bannerController,
-        itemCount: banners.length,
-        onPageChanged: (index) => _bannerIndex = index,
-        itemBuilder: (context, index) {
-          final banner = banners[index];
-          return GestureDetector(
-            onTap: () => _openBanner(banner),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: AppImage(
-                url: banner.imageUrl,
-                borderRadius: BorderRadius.circular(12),
-              ),
+      height: 200,
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _bannerController,
+            itemCount: banners.length,
+            onPageChanged: (index) => _bannerIndex = index,
+            itemBuilder: (context, index) {
+              final banner = banners[index];
+              return GestureDetector(
+                onTap: () => _openBanner(banner),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        AppImage(url: banner.imageUrl),
+                        // Left-to-right + bottom-to-top dark gradient shade
+                        Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Color(0xCC0C0916),
+                                Color(0x73110D1D),
+                                Colors.transparent,
+                              ],
+                              stops: [0.0, 0.5, 0.78],
+                            ),
+                          ),
+                        ),
+                        Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Color(0x94090710),
+                                Colors.transparent,
+                              ],
+                              stops: [0.0, 0.55],
+                            ),
+                          ),
+                        ),
+                        // Text copy
+                        Positioned(
+                          bottom: 28,
+                          left: 20,
+                          right: 40,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ShaderMask(
+                                shaderCallback: (bounds) =>
+                                    const LinearGradient(
+                                      begin: Alignment(-0.9, 0),
+                                      end: Alignment(0.8, 0),
+                                      colors: [
+                                        Colors.white,
+                                        Color(0xFFF2DFFF),
+                                        Color(0xFFD9ECFF),
+                                      ],
+                                    ).createShader(bounds),
+                                child: Text(
+                                  banner.title ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.035,
+                                    height: 1.12,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              if (banner.subtitle != null &&
+                                  banner.subtitle!.isNotEmpty) ...[
+                                const SizedBox(height: 7),
+                                Text(
+                                  banner.subtitle!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white.withValues(alpha: 0.82),
+                                    height: 1.6,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          // Dot indicators
+          if (banners.length > 1)
+            Positioned(
+              right: 15,
+              bottom: 12,
+              child: _buildBannerIndicators(banners.length),
             ),
-          );
-        },
+        ],
       ),
+    );
+  }
+
+  Widget _buildBannerIndicators(int count) {
+    return ListenableBuilder(
+      listenable: _bannerController,
+      builder: (context, _) {
+        final current = _bannerController.positions.isNotEmpty
+            ? (_bannerController.page ?? _bannerIndex).round()
+            : _bannerIndex;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(count, (i) {
+            final isActive = i == current;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.only(left: 6),
+              width: isActive ? 20 : 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.48),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 

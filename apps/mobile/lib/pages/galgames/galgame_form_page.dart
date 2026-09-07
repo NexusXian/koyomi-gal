@@ -79,9 +79,15 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
       if (!mounted) {
         return;
       }
+      final developers = results[1] as List<DeveloperDataLite>;
       setState(() {
         _tags = results[0] as List<TagDataLite>;
-        _developers = results[1] as List<DeveloperDataLite>;
+        _developers = developers;
+        // Validate developerId exists in loaded list
+        if (_developerId != null &&
+            !developers.any((d) => d.id == _developerId)) {
+          _developerId = null;
+        }
       });
     } catch (_) {}
   }
@@ -111,6 +117,11 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
         _coverUrl = detail.coverUrl;
         _bannerUrl = detail.bannerUrl;
         _developerId = detail.developer?.id;
+        if (_developerId != null &&
+            _developers.isNotEmpty &&
+            !_developers.any((d) => d.id == _developerId)) {
+          _developerId = null;
+        }
         _selectedTagIds
             .addAll(detail.tags.map((tag) => tag.id).whereType<int>());
         _loading = false;
@@ -303,21 +314,30 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
             decoration: const InputDecoration(labelText: '原文标题'),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<int?>(
-            initialValue: _developerId,
-            decoration: const InputDecoration(labelText: '开发商'),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('未选择')),
-              ..._developers.map(
-                (developer) => DropdownMenuItem(
-                  value: developer.id,
-                  child: Text(developer.name ?? ''),
+          if (_developers.isNotEmpty)
+            DropdownButtonFormField<int?>(
+              isExpanded: true,
+              value: _developers.any((d) => d.id == _developerId)
+                  ? _developerId
+                  : null,
+              decoration: const InputDecoration(labelText: '开发商'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('未选择')),
+                ..._developers.map(
+                  (developer) => DropdownMenuItem(
+                    value: developer.id,
+                    child: Text(developer.name ?? ''),
+                  ),
                 ),
-              ),
-            ],
-            onChanged: (value) =>
-                setState(() => _developerId = value),
-          ),
+              ],
+              onChanged: (value) =>
+                  setState(() => _developerId = value),
+            )
+          else
+            InputDecorator(
+              decoration: const InputDecoration(labelText: '开发商'),
+              child: const Text('加载中…'),
+            ),
           const SizedBox(height: 12),
           InkWell(
             onTap: _pickDate,
@@ -333,7 +353,8 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            initialValue: _ageRating,
+            isExpanded: true,
+            value: _ageRating,
             decoration: const InputDecoration(labelText: '年龄等级'),
             items: [
               for (final option in ageRatingOptions)
@@ -345,7 +366,8 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
           const SizedBox(height: 12),
           if (isEditing)
             DropdownButtonFormField<int>(
-              initialValue: _status,
+              isExpanded: true,
+              value: _status,
               decoration: const InputDecoration(labelText: '状态'),
               items: [
                 for (final option in galgameStatusOptions)
