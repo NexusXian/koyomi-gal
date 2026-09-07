@@ -5,6 +5,7 @@ import {
   approveClassification,
   batchApproveClassification,
   batchClassification,
+  cancelClassification,
   getClassification,
   overrideClassification,
   rejectClassification,
@@ -128,7 +129,8 @@ const AI_STATUS_LABELS: Record<string, string> = {
   pending_review: '待审核',
   approved: '已采用',
   rejected: '已拒绝',
-  failed: '失败'
+  failed: '失败',
+  cancelled: '已取消'
 }
 
 const AI_RESULT_LABELS: Record<string, string> = {
@@ -162,6 +164,9 @@ function aiCellLabel(item: DtoGalgameListItem): string {
   }
   if (item.ai_status === 'failed') {
     return '失败'
+  }
+  if (item.ai_status === 'cancelled') {
+    return '已取消'
   }
   if (item.ai_classification) {
     const label = AI_RESULT_LABELS[item.ai_classification] ?? item.ai_classification
@@ -389,6 +394,22 @@ async function runAi(item: DtoGalgameListItem, retry = false): Promise<void> {
     await load()
   } catch (error) {
     message.error(getApiErrorMessage(error, retry ? '重试失败' : '启动失败'))
+  } finally {
+    aiActingId.value = null
+  }
+}
+
+async function cancelAi(item: DtoGalgameListItem): Promise<void> {
+  if (!item.id || aiActingId.value) {
+    return
+  }
+  aiActingId.value = item.id
+  try {
+    unwrapApiData(await cancelClassification(item.id), '取消失败')
+    message.success(`「${item.title ?? item.id}」的 AI 判断已取消`)
+    await load()
+  } catch (error) {
+    message.error(getApiErrorMessage(error, '取消失败'))
   } finally {
     aiActingId.value = null
   }
@@ -935,6 +956,15 @@ const rowSelection = computed(() =>
                 @click="runAi(record, record.ai_status === 'failed')"
               >
                 {{ record.ai_status === 'failed' ? '重试' : 'AI 判断' }}
+              </a-button>
+              <a-button
+                v-if="canRunAi && isAiRunning(record)"
+                size="small"
+                type="link"
+                :loading="aiActingId === record.id"
+                @click="cancelAi(record)"
+              >
+                取消
               </a-button>
               <template
                 v-if="canApplyAi && record.ai_status === 'pending_review'"
