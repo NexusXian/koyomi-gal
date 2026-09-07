@@ -23,8 +23,7 @@ class NovelService {
       '/api/v1/novels',
       queryParameters: {
         'keyword': keyword,
-        'tag_ids':
-            tagIds == null || tagIds.isEmpty ? null : tagIds.join(','),
+        'tag_ids': tagIds == null || tagIds.isEmpty ? null : tagIds.join(','),
         'author': author,
         'publisher': publisher,
         'label': label,
@@ -56,8 +55,13 @@ class NovelService {
     return NovelDetail.fromMap(Map<String, dynamic>.from(data));
   }
 
-  Future<Paginated<VolumeData>> volumes(int id,
-      {int page = 1, int limit = 100}) async {
+  Future<void> delete(int id) => _api.delete('/api/v1/novels/$id');
+
+  Future<Paginated<VolumeData>> volumes(
+    int id, {
+    int page = 1,
+    int limit = 100,
+  }) async {
     final data = await _api.get(
       '/api/v1/novels/$id/volumes',
       queryParameters: {'page': page, 'limit': limit},
@@ -66,6 +70,11 @@ class NovelService {
       Map<String, dynamic>.from(data),
       fromItem: VolumeData.fromMap,
     );
+  }
+
+  Future<VolumeData> getVolume(int id, int volumeId) async {
+    final data = await _api.get('/api/v1/novels/$id/volumes/$volumeId');
+    return VolumeData.fromMap(Map<String, dynamic>.from(data));
   }
 
   Future<VolumeData> createVolume(int id, Map<String, dynamic> payload) async {
@@ -78,8 +87,10 @@ class NovelService {
     int volumeId,
     Map<String, dynamic> payload,
   ) async {
-    final data =
-        await _api.put('/api/v1/novels/$id/volumes/$volumeId', data: payload);
+    final data = await _api.put(
+      '/api/v1/novels/$id/volumes/$volumeId',
+      data: payload,
+    );
     return VolumeData.fromMap(Map<String, dynamic>.from(data));
   }
 

@@ -103,7 +103,9 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
       }
     });
     try {
-      final result = await ref.read(galgameServiceProvider).list(
+      final result = await ref
+          .read(galgameServiceProvider)
+          .list(
             keyword: _keyword.isEmpty ? null : _keyword,
             developerId: _developerId,
             tagIds: _tagIds,
@@ -153,6 +155,7 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
         minChildSize: 0.5,
         expand: false,
         builder: (context, scrollController) => _FilterSheet(
+          scrollController: scrollController,
           tags: _tags,
           developers: _developers,
           selectedTagIds: List.of(_tagIds),
@@ -233,6 +236,7 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'galgame-create',
         onPressed: () => context.push('/galgames/new'),
         child: const Icon(Icons.add),
       ),
@@ -275,8 +279,7 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
                             '共 $_total 条',
                             style: TextStyle(
                               fontSize: 12,
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
               ),
@@ -297,6 +300,7 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
 
 class _FilterSheet extends StatefulWidget {
   const _FilterSheet({
+    required this.scrollController,
     required this.tags,
     required this.developers,
     required this.selectedTagIds,
@@ -306,6 +310,7 @@ class _FilterSheet extends StatefulWidget {
     required this.onChanged,
   });
 
+  final ScrollController scrollController;
   final List<TagDataLite> tags;
   final List<DeveloperDataLite> developers;
   final List<int> selectedTagIds;
@@ -317,7 +322,8 @@ class _FilterSheet extends StatefulWidget {
     int? developerId,
     int? ageRating,
     int sortIndex,
-  ) onChanged;
+  )
+  onChanged;
 
   @override
   State<_FilterSheet> createState() => _FilterSheetState();
@@ -339,10 +345,14 @@ class _FilterSheetState extends State<_FilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      controller: widget.scrollController,
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        24 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -384,8 +394,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                   label: Text(option.label),
                   selected: _ageRating == option.value,
                   onSelected: (_) => setState(
-                    () => _ageRating =
-                        _ageRating == option.value ? null : option.value,
+                  () => _ageRating = _ageRating == option.value
+                      ? null
+                      : option.value,
                   ),
                 ),
             ],
@@ -395,13 +406,18 @@ class _FilterSheetState extends State<_FilterSheet> {
           const SizedBox(height: 6),
           DropdownButtonFormField<int?>(
             initialValue: _developerId,
+          isExpanded: true,
             decoration: const InputDecoration(isDense: true),
             items: [
               const DropdownMenuItem(value: null, child: Text('全部开发商')),
               ...widget.developers.map(
                 (developer) => DropdownMenuItem(
                   value: developer.id,
-                  child: Text(developer.name ?? ''),
+                child: Text(
+                  developer.name ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 ),
               ),
             ],
@@ -424,24 +440,21 @@ class _FilterSheetState extends State<_FilterSheet> {
           const SizedBox(height: 6),
           TextField(
             controller: _tagSearchController,
-            decoration: const InputDecoration(
-              isDense: true,
-              hintText: '搜索 Tag',
-            ),
+          decoration: const InputDecoration(isDense: true, hintText: '搜索 Tag'),
             onChanged: (value) {
               setState(() {
                 _filteredTags = widget.tags
-                    .where((tag) => (tag.name ?? '')
-                        .toLowerCase()
-                        .contains(value.toLowerCase()))
+                  .where(
+                    (tag) => (tag.name ?? '').toLowerCase().contains(
+                      value.toLowerCase(),
+                    ),
+                  )
                     .toList();
               });
             },
           ),
           const SizedBox(height: 8),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Wrap(
+        Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
@@ -461,8 +474,6 @@ class _FilterSheetState extends State<_FilterSheet> {
                     ),
                 ],
               ),
-            ),
-          ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -475,7 +486,6 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
           ),
         ],
-      ),
     );
   }
 }

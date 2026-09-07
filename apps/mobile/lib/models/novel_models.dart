@@ -49,14 +49,14 @@ class NovelListItem {
         language: map['language'] as String?,
         releaseStatus: map['release_status'] as String?,
         firstReleaseDate: map['first_release_date'] as String?,
-        tags: (map['tags'] as List?)
+    tags:
+        (map['tags'] as List?)
                 ?.whereType<Map>()
                 .map((e) => TagSummary.fromMap(Map<String, dynamic>.from(e)))
                 .toList() ??
             const [],
         statistics: map['statistics'] is Map
-            ? NovelStatistics.fromMap(
-                Map<String, dynamic>.from(map['statistics']))
+        ? NovelStatistics.fromMap(Map<String, dynamic>.from(map['statistics']))
             : null,
         updatedAt: map['updated_at'] as String?,
         createdAt: map['created_at'] as String?,
@@ -86,23 +86,34 @@ class RelatedWorkData {
   const RelatedWorkData({
     this.workId,
     this.title,
+    this.originalTitle,
+    this.slug,
     this.coverUrl,
+    this.coverSensitive = false,
+    this.ageRating,
     this.relationType,
     this.relationId,
   });
 
-  factory RelatedWorkData.fromMap(Map<String, dynamic> map) =>
-      RelatedWorkData(
+  factory RelatedWorkData.fromMap(Map<String, dynamic> map) => RelatedWorkData(
         workId: (map['work_id'] as num?)?.toInt(),
         title: map['title'] as String?,
+    originalTitle: map['original_title'] as String?,
+    slug: map['slug'] as String?,
         coverUrl: map['cover_url'] as String?,
+    coverSensitive: map['cover_sensitive'] as bool? ?? false,
+    ageRating: (map['age_rating'] as num?)?.toInt(),
         relationType: map['relation_type'] as String?,
         relationId: (map['relation_id'] as num?)?.toInt(),
       );
 
   final int? workId;
   final String? title;
+  final String? originalTitle;
+  final String? slug;
   final String? coverUrl;
+  final bool coverSensitive;
+  final int? ageRating;
   final String? relationType;
   final int? relationId;
 }
@@ -111,6 +122,7 @@ class VolumeSummary {
   const VolumeSummary({
     this.id,
     this.title,
+    this.originalTitle,
     this.volumeNumber,
     this.isbn,
     this.coverUrl,
@@ -120,6 +132,7 @@ class VolumeSummary {
   factory VolumeSummary.fromMap(Map<String, dynamic> map) => VolumeSummary(
         id: (map['id'] as num?)?.toInt(),
         title: map['title'] as String?,
+    originalTitle: map['original_title'] as String?,
         volumeNumber: (map['volume_number'] as num?)?.toInt(),
         isbn: map['isbn'] as String?,
         coverUrl: map['cover_url'] as String?,
@@ -128,6 +141,7 @@ class VolumeSummary {
 
   final int? id;
   final String? title;
+  final String? originalTitle;
   final int? volumeNumber;
   final String? isbn;
   final String? coverUrl;
@@ -180,14 +194,14 @@ class NovelDetail extends NovelListItem {
         language: map['language'] as String?,
         releaseStatus: map['release_status'] as String?,
         firstReleaseDate: map['first_release_date'] as String?,
-        tags: (map['tags'] as List?)
+    tags:
+        (map['tags'] as List?)
                 ?.whereType<Map>()
                 .map((e) => TagSummary.fromMap(Map<String, dynamic>.from(e)))
                 .toList() ??
             const [],
         statistics: map['statistics'] is Map
-            ? NovelStatistics.fromMap(
-                Map<String, dynamic>.from(map['statistics']))
+        ? NovelStatistics.fromMap(Map<String, dynamic>.from(map['statistics']))
             : null,
         updatedAt: map['updated_at'] as String?,
         createdAt: map['created_at'] as String?,
@@ -196,17 +210,20 @@ class NovelDetail extends NovelListItem {
         summary: map['summary'] as String?,
         officialWebsite: map['official_website'] as String?,
         contributorCount: (map['contributor_count'] as num?)?.toInt(),
-        contributors: (map['contributors'] as List?)
+    contributors:
+        (map['contributors'] as List?)
                 ?.whereType<Map>()
                 .map((e) => ContributorData.fromMap(Map<String, dynamic>.from(e)))
                 .toList() ??
             const [],
-        relatedGalgames: (map['related_galgames'] as List?)
+    relatedGalgames:
+        (map['related_galgames'] as List?)
                 ?.whereType<Map>()
                 .map((e) => RelatedWorkData.fromMap(Map<String, dynamic>.from(e)))
                 .toList() ??
             const [],
-        volumes: (map['volumes'] as List?)
+    volumes:
+        (map['volumes'] as List?)
                 ?.whereType<Map>()
                 .map((e) => VolumeSummary.fromMap(Map<String, dynamic>.from(e)))
                 .toList() ??

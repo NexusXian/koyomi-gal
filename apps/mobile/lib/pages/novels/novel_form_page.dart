@@ -1,12 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/constants/domain.dart';
 import '../../providers/app_providers.dart';
 import '../../services/galgame_service.dart';
+import '../../widgets/app_image.dart';
 import '../../widgets/common_views.dart';
 
 class NovelFormPage extends ConsumerStatefulWidget {
@@ -35,6 +39,9 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
 
   int _ageRating = 0;
   int _releaseStatusIndex = 0;
+  int _status = 0;
+  String? _coverUrl;
+  bool _coverSensitive = false;
   bool _saving = false;
   bool _loading = false;
   String? _error;
@@ -103,10 +110,16 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
         _releaseDateController.text = _dateOnly(novel.firstReleaseDate);
         _summaryController.text = novel.summary ?? '';
         _ageRating = novel.ageRating ?? 0;
+        _status = novel.status ?? 0;
+        _coverUrl = novel.coverUrl;
+        _coverSensitive = novel.isCoverSensitive;
         _releaseStatusIndex = domainValueFromSlug(
-            novelReleaseStatusOptions, novel.releaseStatus);
-        _selectedTagIds
-            .addAll(novel.tags.map((tag) => tag.id).whereType<int>());
+          novelReleaseStatusOptions,
+          novel.releaseStatus,
+        );
+        _selectedTagIds.addAll(
+          novel.tags.map((tag) => tag.id).whereType<int>(),
+        );
         _loading = false;
       });
     } catch (error) {
@@ -142,6 +155,43 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
     }
   }
 
+  Future<void> _pickCover() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2400,
+    );
+    if (picked == null) {
+      return;
+    }
+    final bytes = await File(picked.path).readAsBytes();
+    final mime = picked.mimeType ?? 'image/jpeg';
+    setState(() => _saving = true);
+    try {
+      final service = ref.read(imageServiceProvider);
+      final presign = await service.presign(
+        filename: picked.name.split('/').last.isEmpty
+            ? 'image'
+            : picked.name.split('/').last,
+        contentType: mime,
+        size: bytes.length,
+        category: 'novels',
+      );
+      await service.uploadToPresigned(presign.uploadUrl, bytes, mime);
+      final asset = await service.complete(presign.id);
+      if (mounted) {
+        setState(() => _coverUrl = asset['url'] as String?);
+      }
+    } catch (error) {
+      if (mounted) {
+        showAppSnackBar(context, apiErrorMessage(error), error: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -161,16 +211,19 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
       'first_release_date': _releaseDateController.text.trim(),
       'summary': _summaryController.text.trim(),
       'age_rating': _ageRating,
-      'release_status':
-          domainSlug(novelReleaseStatusOptions, _releaseStatusIndex),
+      'status': isEditing ? _status : 0,
+      'cover_url': _coverUrl,
+      'is_cover_sensitive': _coverSensitive,
+      'release_status': domainSlug(
+        novelReleaseStatusOptions,
+        _releaseStatusIndex,
+      ),
       'tag_ids': _selectedTagIds,
     };
 
     try {
       final service = ref.read(novelServiceProvider);
       if (isEditing) {
-        payload['status'] = 1;
-        payload['is_cover_sensitive'] = false;
         await service.update(widget.editId!, payload);
         if (mounted) {
           showAppSnackBar(context, '已保存');
@@ -180,10 +233,10 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
         final novel = await service.create(payload);
         if (mounted) {
           showAppSnackBar(context, '已提交，等待审核');
-          if (novel.id != null) {
+          if (novel.id != null && novel.status == 1) {
             context.pushReplacement('/novels/${novel.id}');
           } else {
-            context.pop();
+            context.pop(true);
           }
         }
       }
@@ -228,16 +281,15 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _slugController,
-                        decoration:
-                            const InputDecoration(labelText: 'Slug *'),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty ? '请输入 slug' : null,
+                    decoration: const InputDecoration(labelText: 'Slug *'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? '请输入 slug'
+                        : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _originalTitleController,
-                        decoration:
-                            const InputDecoration(labelText: '原文标题'),
+                    decoration: const InputDecoration(labelText: '原文标题'),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -262,8 +314,9 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _languageController,
-                        decoration:
-                            const InputDecoration(labelText: '语言（如 ja、zh-CN）'),
+                    decoration: const InputDecoration(
+                      labelText: '语言（如 ja、zh-CN）',
+                    ),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -275,8 +328,7 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
                         onTap: _pickDate,
                         borderRadius: BorderRadius.circular(10),
                         child: InputDecorator(
-                          decoration:
-                              const InputDecoration(labelText: '初版日期'),
+                      decoration: const InputDecoration(labelText: '初版日期'),
                           child: Text(
                             _releaseDateController.text.isEmpty
                                 ? '选择日期'
@@ -291,7 +343,9 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
                         items: [
                           for (final option in ageRatingOptions)
                             DropdownMenuItem(
-                                value: option.value, child: Text(option.label)),
+                          value: option.value,
+                          child: Text(option.label),
+                        ),
                         ],
                         onChanged: (value) =>
                             setState(() => _ageRating = value ?? 0),
@@ -303,12 +357,72 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
                         items: [
                           for (final option in novelReleaseStatusOptions)
                             DropdownMenuItem(
-                                value: option.value, child: Text(option.label)),
+                          value: option.value,
+                          child: Text(option.label),
+                        ),
                         ],
                         onChanged: (value) =>
                             setState(() => _releaseStatusIndex = value ?? 0),
                       ),
                       const SizedBox(height: 12),
+                  if (isEditing)
+                    DropdownButtonFormField<int>(
+                      initialValue: _status,
+                      decoration: const InputDecoration(labelText: '状态'),
+                      items: [
+                        for (final option in galgameStatusOptions)
+                          DropdownMenuItem(
+                            value: option.value,
+                            child: Text(option.label),
+                          ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _status = value ?? 0),
+                    ),
+                  if (isEditing) const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      AppImage(
+                        url: _coverUrl,
+                        sensitive: _coverSensitive,
+                        width: 64,
+                        height: 90,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: _saving ? null : _pickCover,
+                              icon: const Icon(Icons.upload_outlined, size: 16),
+                              label: const Text('上传封面'),
+                            ),
+                            if (_coverUrl != null)
+                              TextButton.icon(
+                                onPressed: _saving
+                                    ? null
+                                    : () => setState(() => _coverUrl = null),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 16,
+                                ),
+                                label: const Text('移除封面'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('封面为敏感内容'),
+                    value: _coverSensitive,
+                    onChanged: (value) =>
+                        setState(() => _coverSensitive = value),
+                  ),
+                  const SizedBox(height: 12),
                       TextFormField(
                         controller: _websiteController,
                         decoration: const InputDecoration(labelText: '官方网站'),
@@ -317,8 +431,9 @@ class _NovelFormPageState extends ConsumerState<NovelFormPage> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _summaryController,
-                        decoration:
-                            const InputDecoration(labelText: '简介（支持 Markdown）'),
+                    decoration: const InputDecoration(
+                      labelText: '简介（支持 Markdown）',
+                    ),
                         minLines: 4,
                         maxLines: 10,
                       ),

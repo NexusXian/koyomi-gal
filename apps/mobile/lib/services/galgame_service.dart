@@ -24,9 +24,7 @@ class GalgameService {
       queryParameters: {
         'keyword': keyword,
         'developer_id': developerId,
-        'tag_ids': tagIds == null || tagIds.isEmpty
-            ? null
-            : tagIds.join(','),
+        'tag_ids': tagIds == null || tagIds.isEmpty ? null : tagIds.join(','),
         'age_rating': ageRating,
         'sort': sort,
         'page': page,
@@ -56,8 +54,7 @@ class GalgameService {
 
   Future<List<GalgameCharacter>> characters(int id) async {
     final data = await _api.get('/api/v1/galgames/$id/characters');
-    final items =
-        ((data as Map?)?['items'] as List?) ?? const [];
+    final items = ((data as Map?)?['items'] as List?) ?? const [];
     return items
         .whereType<Map>()
         .map((e) => GalgameCharacter.fromMap(Map<String, dynamic>.from(e)))
@@ -73,8 +70,11 @@ class GalgameService {
         .toList();
   }
 
-  Future<Paginated<ContributorData>> contributors(int id,
-      {int page = 1, int pageSize = 20}) async {
+  Future<Paginated<ContributorData>> contributors(
+    int id, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     final data = await _api.get(
       '/api/v1/galgames/$id/contributors',
       queryParameters: {'page': page, 'page_size': pageSize},
@@ -105,10 +105,7 @@ class GalgameService {
   Future<void> upsertState(int id, int state, {int? playTimeMinutes}) =>
       _api.put(
         '/api/v1/galgames/$id/state',
-        data: {
-          'state': state,
-          'play_time_minutes': ?playTimeMinutes,
-        },
+        data: {'state': state, 'play_time_minutes': ?playTimeMinutes},
       );
 
   Future<void> deleteState(int id) => _api.delete('/api/v1/galgames/$id/state');
@@ -195,17 +192,19 @@ class ResourceService {
     int galgameId, {
     int page = 1,
     int limit = 20,
-  }) =>
-      _list('/api/v2/galgames/$galgameId/resources', page, limit);
+  }) => _list('/api/v2/galgames/$galgameId/resources', page, limit);
 
   Future<Paginated<ResourceDataLite>> listByNovel(
     int novelId, {
     int page = 1,
     int limit = 20,
-  }) =>
-      _list('/api/v2/novels/$novelId/resources', page, limit);
+  }) => _list('/api/v2/novels/$novelId/resources', page, limit);
 
-  Future<Paginated<ResourceDataLite>> _list(String path, int page, int limit) async {
+  Future<Paginated<ResourceDataLite>> _list(
+    String path,
+    int page,
+    int limit,
+  ) async {
     final data = await _api.get(
       path,
       queryParameters: {'page': page, 'limit': limit},
@@ -225,6 +224,17 @@ class ResourceService {
     final data = await _api.put('/api/v1/resources/$id', data: payload);
     return ResourceDataLite.fromMap(Map<String, dynamic>.from(data));
   }
+
+  Future<void> delete(int id) => _api.delete('/api/v1/resources/$id');
+
+  Future<void> report(
+    int id, {
+    required int reason,
+    required String description,
+  }) => _api.post(
+    '/api/v1/resources/$id/reports',
+    data: {'reason': reason, 'description': description},
+  );
 }
 
 class ResourceDataLite {
@@ -234,6 +244,12 @@ class ResourceDataLite {
     this.description,
     this.type,
     this.status,
+    this.targetType,
+    this.targetId,
+    this.uploaderId,
+    this.uploader,
+    this.createdAt,
+    this.updatedAt,
     this.links = const [],
   });
 
@@ -244,10 +260,22 @@ class ResourceDataLite {
         description: map['description'] as String?,
         type: (map['type'] as num?)?.toInt(),
         status: (map['status'] as num?)?.toInt(),
-        links: (map['links'] as List?)
+        targetType: map['target_type'] as String?,
+        targetId: (map['target_id'] as num?)?.toInt(),
+        uploaderId: (map['uploader_id'] as num?)?.toInt(),
+        uploader: map['uploader'] is Map
+            ? ResourceUploaderLite.fromMap(
+                Map<String, dynamic>.from(map['uploader']),
+              )
+            : null,
+        createdAt: map['created_at'] as String?,
+        updatedAt: map['updated_at'] as String?,
+        links:
+            (map['links'] as List?)
                 ?.whereType<Map>()
-                .map((e) =>
-                    ResourceLinkLite.fromMap(Map<String, dynamic>.from(e)))
+                .map(
+                  (e) => ResourceLinkLite.fromMap(Map<String, dynamic>.from(e)),
+                )
                 .toList() ??
             const [],
       );
@@ -257,7 +285,35 @@ class ResourceDataLite {
   final String? description;
   final int? type;
   final int? status;
+  final String? targetType;
+  final int? targetId;
+  final int? uploaderId;
+  final ResourceUploaderLite? uploader;
+  final String? createdAt;
+  final String? updatedAt;
   final List<ResourceLinkLite> links;
+}
+
+class ResourceUploaderLite {
+  const ResourceUploaderLite({
+    this.id,
+    this.username,
+    this.displayName,
+    this.avatarUrl,
+  });
+
+  factory ResourceUploaderLite.fromMap(Map<String, dynamic> map) =>
+      ResourceUploaderLite(
+        id: (map['id'] as num?)?.toInt(),
+        username: map['username'] as String?,
+        displayName: map['display_name'] as String?,
+        avatarUrl: map['avatar_url'] as String?,
+      );
+
+  final int? id;
+  final String? username;
+  final String? displayName;
+  final String? avatarUrl;
 }
 
 class ResourceLinkLite {
@@ -301,7 +357,11 @@ class ImageService {
     );
   }
 
-  Future<void> uploadToPresigned(String url, List<int> bytes, String mime) async {
+  Future<void> uploadToPresigned(
+    String url,
+    List<int> bytes,
+    String mime,
+  ) async {
     await _dio.put(
       url,
       data: bytes,
@@ -314,13 +374,14 @@ class ImageService {
     );
   }
 
-  Future<Map<String, dynamic>> complete(int id, {int? width, int? height}) async {
+  Future<Map<String, dynamic>> complete(
+    int id, {
+    int? width,
+    int? height,
+  }) async {
     final data = await _api.post(
       '/api/v1/images/$id/complete',
-      data: {
-        'width': ?width,
-        'height': ?height,
-      },
+      data: {'width': ?width, 'height': ?height},
     );
     return Map<String, dynamic>.from(data);
   }

@@ -19,6 +19,7 @@ class NovelListPage extends ConsumerStatefulWidget {
 
 class _NovelListPageState extends ConsumerState<NovelListPage> {
   final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
 
   List<NovelListItem> _items = [];
   int _page = 1;
@@ -40,6 +41,7 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -62,12 +64,15 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
         _error = null;
       }
     });
+    final requestPage = reset ? 1 : _page;
     try {
-      final result = await ref.read(novelServiceProvider).list(
+      final result = await ref
+          .read(novelServiceProvider)
+          .list(
             keyword: _keyword.isEmpty ? null : _keyword,
             sort: domainSlug(novelSortOptions, _sortIndex),
             releaseStatus: _releaseStatus,
-            page: _page,
+            page: requestPage,
             limit: 20,
           );
       if (!mounted) {
@@ -76,7 +81,7 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
       setState(() {
         _items = reset ? result.items : [..._items, ...result.items];
         _hasMore = result.hasMore;
-        _page = reset ? 2 : _page + 1;
+        _page = requestPage + 1;
         _loading = false;
       });
     } catch (error) {
@@ -92,6 +97,12 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final canCreate = ref
+        .watch(mePermissionsProvider)
+        .maybeWhen(
+          data: (permissions) => permissions.has('novel:create'),
+          orElse: () => false,
+        );
     return Scaffold(
       appBar: AppBar(
         title: const Text('小说'),
@@ -111,22 +122,10 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
               _load(reset: true);
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'sort:0',
-                child: Text('排序：最近更新'),
-              ),
-              const PopupMenuItem(
-                value: 'sort:1',
-                child: Text('排序：最新收录'),
-              ),
-              const PopupMenuItem(
-                value: 'sort:2',
-                child: Text('排序：最早出版'),
-              ),
-              const PopupMenuItem(
-                value: 'sort:3',
-                child: Text('排序：最新出版'),
-              ),
+              const PopupMenuItem(value: 'sort:0', child: Text('排序：最近更新')),
+              const PopupMenuItem(value: 'sort:1', child: Text('排序：最新收录')),
+              const PopupMenuItem(value: 'sort:2', child: Text('排序：最早出版')),
+              const PopupMenuItem(value: 'sort:3', child: Text('排序：最新出版')),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'all', child: Text('连载状态：全部')),
               for (final option in novelReleaseStatusOptions)
@@ -142,27 +141,38 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: TextField(
+              controller: _searchController,
               decoration: InputDecoration(
                 isDense: true,
                 hintText: '搜索标题 / 原文标题 / 作者',
                 prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search, size: 18),
-                  onPressed: () => _load(reset: true),
+                  onPressed: () {
+                    _keyword = _searchController.text.trim();
+                    _load(reset: true);
+                  },
                 ),
               ),
               onSubmitted: (value) {
-                _keyword = value;
+                _keyword = value.trim();
                 _load(reset: true);
               },
             ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/novels/new'),
+      floatingActionButton: canCreate
+          ? FloatingActionButton(
+              heroTag: 'novel-create',
+              onPressed: () => context.push('/novels/new').then((result) {
+                if (result == true) {
+                  _load(reset: true);
+                }
+              }),
         child: const Icon(Icons.add),
-      ),
+            )
+          : null,
       body: _buildList(),
     );
   }
@@ -207,7 +217,11 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
               borderRadius: BorderRadius.circular(12),
               onTap: novel.id == null
                   ? null
-                  : () => context.push('/novels/${novel.id}'),
+                  : () => context.push('/novels/${novel.id}').then((result) {
+                      if (result == true) {
+                        _load(reset: true);
+                      }
+                    }),
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Row(
@@ -241,8 +255,9 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,
-                                color:
-                                    Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           const SizedBox(height: 4),
@@ -257,8 +272,9 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -270,11 +286,14 @@ class _NovelListPageState extends ConsumerState<NovelListPage> {
                                     novelReleaseStatusOptions,
                                     domainValueFromSlug(
                                         novelReleaseStatusOptions,
-                                        novel.releaseStatus),
+                                      novel.releaseStatus,
+                                    ),
                                   ),
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
                                   ),
                                 ),
                               const SizedBox(width: 10),

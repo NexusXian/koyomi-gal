@@ -193,6 +193,14 @@ final userServiceProvider =
 final meServiceProvider =
     Provider<MeService>((ref) => MeService(ref.watch(apiClientProvider)));
 
+final mePermissionsProvider = FutureProvider<MePermissions>((ref) async {
+  final auth = ref.watch(authControllerProvider);
+  if (!auth.isAuthenticated) {
+    return const MePermissions();
+  }
+  return ref.watch(meServiceProvider).permissions();
+});
+
 final notificationServiceProvider = Provider<NotificationService>(
     (ref) => NotificationService(ref.watch(apiClientProvider)));
 

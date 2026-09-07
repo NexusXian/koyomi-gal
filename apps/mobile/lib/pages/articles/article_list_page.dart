@@ -28,6 +28,7 @@ class _ArticleListPageState extends ConsumerState<ArticleListPage> {
   bool _hasMore = true;
   String? _error;
   String? _type;
+  int _loadGeneration = 0;
 
   static const _types = [
     (null, '全部'),
@@ -61,32 +62,36 @@ class _ArticleListPageState extends ConsumerState<ArticleListPage> {
   }
 
   Future<void> _load({bool reset = false}) async {
-    if (_loading) {
+    if (_loading && !reset) {
       return;
     }
+    final generation = reset ? ++_loadGeneration : _loadGeneration;
+    final requestedType = _type;
+    final requestedPage = reset ? 1 : _page;
     setState(() {
       _loading = true;
       if (reset) {
+        _items = [];
+        _page = 1;
+        _hasMore = true;
         _error = null;
       }
     });
     try {
-      final result = await ref.read(articleServiceProvider).list(
-            type: _type,
-            page: _page,
-            limit: 20,
-          );
-      if (!mounted) {
+      final result = await ref
+          .read(articleServiceProvider)
+          .list(type: requestedType, page: requestedPage, limit: 20);
+      if (!mounted || generation != _loadGeneration) {
         return;
       }
       setState(() {
         _items = reset ? result.items : [..._items, ...result.items];
         _hasMore = result.hasMore;
-        _page = reset ? 2 : _page + 1;
+        _page = result.page + 1;
         _loading = false;
       });
     } catch (error) {
-      if (!mounted) {
+      if (!mounted || generation != _loadGeneration) {
         return;
       }
       setState(() {
@@ -98,19 +103,24 @@ class _ArticleListPageState extends ConsumerState<ArticleListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('资讯')),
-      bottomNavigationBar: Material(
-        color: Theme.of(context).cardColor,
-        child: TabBar(
-          onTap: (index) {
-            setState(() => _type = _types[index].$1);
-            _load(reset: true);
-          },
-          tabs: [for (final type in _types) Tab(text: type.$2)],
+    final initialTabIndex = _types.indexWhere((type) => type.$1 == _type);
+    return DefaultTabController(
+      length: _types.length,
+      initialIndex: initialTabIndex < 0 ? 0 : initialTabIndex,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('资讯')),
+        bottomNavigationBar: Material(
+          color: Theme.of(context).cardColor,
+          child: TabBar(
+            onTap: (index) {
+              setState(() => _type = _types[index].$1);
+              _load(reset: true);
+            },
+            tabs: [for (final type in _types) Tab(text: type.$2)],
+          ),
         ),
+        body: _buildList(),
       ),
-      body: _buildList(),
     );
   }
 
@@ -176,8 +186,11 @@ class _ArticleListPageState extends ConsumerState<ArticleListPage> {
                             if (article.isPinned)
                               const Padding(
                                 padding: EdgeInsets.only(right: 6),
-                                child: Icon(Icons.push_pin,
-                                    size: 14, color: Colors.orange),
+                                child: Icon(
+                                  Icons.push_pin,
+                                  size: 14,
+                                  color: Colors.orange,
+                                ),
                               ),
                             Expanded(
                               child: Text(

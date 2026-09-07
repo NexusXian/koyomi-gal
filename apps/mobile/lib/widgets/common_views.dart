@@ -43,6 +43,7 @@ class EmptyView extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
+        child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -54,12 +55,14 @@ class EmptyView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               hint,
-              style:
-                  TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
             ),
             if (child != null) ...[const SizedBox(height: 12), child!],
           ],
         ),
+      ),
       ),
     );
   }
@@ -140,7 +143,11 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-void showAppSnackBar(BuildContext context, String message, {bool error = false}) {
+void showAppSnackBar(
+  BuildContext context,
+  String message, {
+  bool error = false,
+}) {
   final colorScheme = Theme.of(context).colorScheme;
   final snackBar = SnackBar(
     content: Text(
@@ -150,8 +157,7 @@ void showAppSnackBar(BuildContext context, String message, {bool error = false})
       ),
     ),
     behavior: SnackBarBehavior.floating,
-    backgroundColor:
-        error ? colorScheme.error : colorScheme.inverseSurface,
+    backgroundColor: error ? colorScheme.error : colorScheme.inverseSurface,
   );
   ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }

@@ -18,6 +18,8 @@ import 'pages/notifications/notifications_page.dart';
 import 'pages/novels/novel_detail_page.dart';
 import 'pages/novels/novel_form_page.dart';
 import 'pages/novels/novel_list_page.dart';
+import 'pages/novels/novel_volumes_page.dart';
+import 'pages/novels/volume_detail_page.dart';
 import 'pages/novels/volume_form_page.dart';
 import 'pages/posts/post_detail_page.dart';
 import 'pages/posts/post_form_page.dart';
@@ -44,7 +46,8 @@ String? _authGuard(BuildContext context, GoRouterState state) {
     return null;
   }
   final path = state.matchedLocation;
-  final isProtected = _protectedPrefixes.any(path.startsWith) ||
+  final isProtected =
+      _protectedPrefixes.any(path.startsWith) ||
       path.contains('/edit') ||
       path.contains('/volumes/new') ||
       path.contains('/volumes/') && path.endsWith('/edit');
@@ -63,10 +66,7 @@ GoRouter buildRouter() {
     initialLocation: '/home',
     redirect: _authGuard,
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
@@ -76,36 +76,43 @@ GoRouter buildRouter() {
           return ShellPage(navigationShell: navigationShell);
         },
         branches: [
-          StatefulShellBranch(routes: [
+          StatefulShellBranch(
+            routes: [
             GoRoute(
               path: '/home',
               builder: (context, state) => const HomePage(),
             ),
-          ]),
-          StatefulShellBranch(routes: [
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
             GoRoute(
               path: '/galgames',
               builder: (context, state) => const GalgameListPage(),
             ),
-          ]),
-          StatefulShellBranch(routes: [
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
             GoRoute(
               path: '/posts',
               builder: (context, state) => const PostListPage(),
             ),
-          ]),
-          StatefulShellBranch(routes: [
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
             GoRoute(
               path: '/novels',
               builder: (context, state) => const NovelListPage(),
             ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/my',
-              builder: (context, state) => const MyPage(),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/my', builder: (context, state) => const MyPage()),
+            ],
             ),
-          ]),
         ],
       ),
       GoRoute(
@@ -164,10 +171,24 @@ GoRouter buildRouter() {
             NovelFormPage(editId: int.parse(state.pathParameters['id']!)),
       ),
       GoRoute(
+        path: '/novels/:id/volumes',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            NovelVolumesPage(novelId: int.parse(state.pathParameters['id']!)),
+      ),
+      GoRoute(
         path: '/novels/:id/volumes/new',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) =>
             VolumeFormPage(novelId: int.parse(state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/novels/:id/volumes/:volumeId',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => VolumeDetailPage(
+          novelId: int.parse(state.pathParameters['id']!),
+          volumeId: int.parse(state.pathParameters['volumeId']!),
+        ),
       ),
       GoRoute(
         path: '/novels/:id/volumes/:volumeId/edit',
@@ -180,9 +201,8 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/articles',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => ArticleListPage(
-          type: state.uri.queryParameters['type'],
-        ),
+        builder: (context, state) =>
+            ArticleListPage(type: state.uri.queryParameters['type']),
       ),
       GoRoute(
         path: '/articles/:id',

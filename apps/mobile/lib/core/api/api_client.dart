@@ -28,7 +28,8 @@ class ApiClient {
         baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 20),
-        validateStatus: (status) => status != null && status < 500,
+        validateStatus: (status) =>
+            status != null && status >= 200 && status < 300,
         // Web: let the browser attach/send the httpOnly refresh cookie.
         extra: {'withCredentials': true},
       ),
@@ -58,18 +59,24 @@ class ApiClient {
             return handler.next(error);
           }
 
+          String? newToken;
           try {
-            final newToken = await refreshSession();
+            newToken = await refreshSession();
+          } catch (_) {
+            onSessionInvalid();
+            return handler.next(error);
+          }
+
             final options = error.requestOptions;
             options.extra['__retried'] = true;
             if (newToken != null && newToken.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $newToken';
             }
+          try {
             final retryResponse = await dio.fetch(options);
             return handler.resolve(retryResponse);
-          } catch (_) {
-            onSessionInvalid();
-            return handler.next(error);
+          } on DioException catch (retryError) {
+            return handler.next(retryError);
           }
         },
       ),

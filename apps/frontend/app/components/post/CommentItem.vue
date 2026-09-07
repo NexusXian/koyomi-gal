@@ -43,7 +43,7 @@ const replyTotal = ref(props.comment.reply_count ?? 0)
 const replyPage = ref(1)
 const replyLimit = 20
 const repliesLoading = ref(false)
-const repliesExpanded = ref(false)
+const repliesExpanded = ref(!props.isReply && replyTotal.value > 0)
 
 const replyTotalPage = computed(() =>
   Math.max(1, Math.ceil(replyTotal.value / replyLimit))
@@ -63,6 +63,9 @@ async function loadReplies(): Promise<void> {
     )
     replies.value = data.items ?? []
     replyTotal.value = data.total ?? 0
+    if (replyTotal.value === 0) {
+      repliesExpanded.value = false
+    }
   } catch (error) {
     message.error(getApiErrorMessage(error, '加载回复失败'))
   } finally {
@@ -96,12 +99,19 @@ watch(
     replyTotal.value = count ?? 0
     if ((count ?? 0) > (previousCount ?? 0)) {
       replyPage.value = Math.max(1, Math.ceil((count ?? 0) / replyLimit))
+      repliesExpanded.value = true
     }
     if (repliesExpanded.value) {
       void refreshReplies()
     }
   }
 )
+
+onMounted(() => {
+  if (repliesExpanded.value) {
+    void loadReplies()
+  }
+})
 
 async function toggleLike(): Promise<void> {
   if (!isAuthenticated.value) {

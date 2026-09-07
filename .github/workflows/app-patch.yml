@@ -1,0 +1,81 @@
+name: Publish App Patch
+run-name: Publish Android patch ${{ inputs.release_version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Shorebird release version, for example 1.0.0+1
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-android-patch
+  cancel-in-progress: false
+
+jobs:
+  publish-android-patch:
+    name: Publish Android patch
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Setup Shorebird
+        uses: shorebirdtech/setup-shorebird@v1
+        with:
+          cache: true
+
+      - name: Validate patch configuration
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          if [ ! -f shorebird.yaml ]; then
+            echo "::error::apps/mobile/shorebird.yaml is missing. Run shorebird init and commit the generated configuration first."
+            exit 1
+          fi
+
+          if [ -z "$SHOREBIRD_TOKEN" ]; then
+            echo "::error::GitHub Actions secret SHOREBIRD_TOKEN is missing."
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$ ]]; then
+            echo "::error::release_version must use the format 1.0.0+1."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Publish patch
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: shorebird patch android --release-version="$RELEASE_VERSION"

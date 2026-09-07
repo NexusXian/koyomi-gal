@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/constants/domain.dart';
 import '../../providers/app_providers.dart';
 import '../../widgets/app_image.dart';
 import '../../widgets/common_views.dart';
@@ -31,6 +32,7 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
   final _volumeNumberController = TextEditingController();
 
   String? _coverUrl;
+  int _status = 0;
   bool _saving = false;
   bool _loading = false;
   String? _error;
@@ -62,19 +64,10 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
       _error = null;
     });
     try {
-      final volumes =
-          await ref.read(novelServiceProvider).volumes(widget.novelId);
-      final volume = volumes.items
-          .where((volume) => volume.id == widget.volumeId)
-          .firstOrNull;
+      final volume = await ref
+          .read(novelServiceProvider)
+          .getVolume(widget.novelId, widget.volumeId!);
       if (!mounted) {
-        return;
-      }
-      if (volume == null) {
-        setState(() {
-          _error = '未找到该卷册';
-          _loading = false;
-        });
         return;
       }
       setState(() {
@@ -83,9 +76,9 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
         _isbnController.text = volume.isbn ?? '';
         _releaseDateController.text = _dateOnly(volume.releaseDate);
         _summaryController.text = volume.summary ?? '';
-        _volumeNumberController.text =
-            volume.volumeNumber?.toString() ?? '';
+        _volumeNumberController.text = volume.volumeNumber?.toString() ?? '';
         _coverUrl = volume.coverUrl;
+        _status = volume.status ?? 0;
         _loading = false;
       });
     } catch (error) {
@@ -122,8 +115,10 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
   }
 
   Future<void> _pickCover() async {
-    final picked = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, maxWidth: 2400);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2400,
+    );
     if (picked == null) {
       return;
     }
@@ -161,25 +156,22 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
       return;
     }
     setState(() => _saving = true);
+    final volumeNumber = int.tryParse(_volumeNumberController.text.trim());
     final payload = <String, dynamic>{
       'title': _titleController.text.trim(),
       'original_title': _originalTitleController.text.trim(),
       'isbn': _isbnController.text.trim(),
       'release_date': _releaseDateController.text.trim(),
       'summary': _summaryController.text.trim(),
-      'volume_number': int.tryParse(_volumeNumberController.text.trim()) ?? 0,
+      'volume_number': volumeNumber,
       'cover_url': _coverUrl,
+      'status': isEditing ? _status : 0,
     };
 
     try {
       final service = ref.read(novelServiceProvider);
       if (isEditing) {
-        payload['status'] = 1;
-        await service.updateVolume(
-          widget.novelId,
-          widget.volumeId!,
-          payload,
-        );
+        await service.updateVolume(widget.novelId, widget.volumeId!, payload);
         if (mounted) {
           showAppSnackBar(context, '已保存');
           context.pop(true);
@@ -202,12 +194,44 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
     }
   }
 
+  Future<void> _delete() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: '删除卷册',
+      content: '删除后无法恢复，确定删除吗？',
+      confirmText: '删除',
+      danger: true,
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await ref
+          .read(novelServiceProvider)
+          .deleteVolume(widget.novelId, widget.volumeId!);
+      if (mounted) {
+        showAppSnackBar(context, '已删除');
+        context.pop(true);
+      }
+    } catch (error) {
+      if (mounted) {
+        showAppSnackBar(context, apiErrorMessage(error), error: true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? '编辑卷册' : '新增卷册'),
         actions: [
+          if (isEditing)
+            IconButton(
+              onPressed: _saving ? null : _delete,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '删除',
+            ),
           TextButton(
             onPressed: _saving ? null : _submit,
             child: const Text('保存'),
@@ -228,16 +252,29 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
                         decoration: const InputDecoration(labelText: '卷标题'),
                       ),
                       const SizedBox(height: 12),
+                  if (isEditing)
+                    DropdownButtonFormField<int>(
+                      initialValue: _status,
+                      decoration: const InputDecoration(labelText: '状态'),
+                      items: [
+                        for (final option in galgameStatusOptions)
+                          DropdownMenuItem(
+                            value: option.value,
+                            child: Text(option.label),
+                          ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _status = value ?? 0),
+                    ),
+                  if (isEditing) const SizedBox(height: 12),
                       TextFormField(
                         controller: _originalTitleController,
-                        decoration:
-                            const InputDecoration(labelText: '原文标题'),
+                    decoration: const InputDecoration(labelText: '原文标题'),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _volumeNumberController,
-                        decoration:
-                            const InputDecoration(labelText: '卷号（0-9999）'),
+                    decoration: const InputDecoration(labelText: '卷号（0-9999）'),
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 12),
@@ -250,8 +287,7 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
                         onTap: _pickDate,
                         borderRadius: BorderRadius.circular(10),
                         child: InputDecorator(
-                          decoration:
-                              const InputDecoration(labelText: '出版日期'),
+                      decoration: const InputDecoration(labelText: '出版日期'),
                           child: Text(
                             _releaseDateController.text.isEmpty
                                 ? '选择日期'
@@ -279,8 +315,9 @@ class _VolumeFormPageState extends ConsumerState<VolumeFormPage> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _summaryController,
-                        decoration:
-                            const InputDecoration(labelText: '简介（支持 Markdown）'),
+                    decoration: const InputDecoration(
+                      labelText: '简介（支持 Markdown）',
+                    ),
                         minLines: 4,
                         maxLines: 10,
                       ),

@@ -87,6 +87,7 @@ class _PostListPageState extends ConsumerState<PostListPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('帖子')),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'post-create',
         onPressed: () => context.push('/posts/new'),
         child: const Icon(Icons.edit),
       ),

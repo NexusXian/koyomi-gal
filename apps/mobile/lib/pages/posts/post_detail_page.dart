@@ -31,7 +31,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
   final _commentController = TextEditingController();
   final _commentFocus = FocusNode();
+  final _commentsKey = GlobalKey<_CommentsSectionState>();
   int? _replyParentId;
+  int? _replyToCommentId;
   CommunityUserSummary? _replyTo;
 
   @override
@@ -166,6 +168,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
   void _startReply(CommentData comment) {
     setState(() {
       _replyParentId = comment.parentId ?? comment.id;
+      _replyToCommentId = comment.parentId == null ? null : comment.id;
       _replyTo = comment.author;
     });
     _commentFocus.requestFocus();
@@ -174,6 +177,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
   void _cancelReply() {
     setState(() {
       _replyParentId = null;
+      _replyToCommentId = null;
       _replyTo = null;
     });
     _commentController.clear();
@@ -185,21 +189,32 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       return;
     }
     final parent = _replyParentId;
-    setState(() => _replyParentId = null);
+    final replyToCommentId = _replyToCommentId;
+    setState(() {
+      _replyParentId = null;
+      _replyToCommentId = null;
+    });
     try {
-      await ref.read(commentServiceProvider).create(
+      await ref
+          .read(commentServiceProvider)
+          .create(
             widget.id,
             content: content,
             parentId: parent,
+            replyToCommentId: replyToCommentId,
           );
       _commentController.clear();
       _replyTo = null;
+      await _commentsKey.currentState?._load();
       if (mounted) {
         showAppSnackBar(context, '评论成功');
       }
     } catch (error) {
       if (mounted) {
-        setState(() => _replyParentId = parent);
+        setState(() {
+          _replyParentId = parent;
+          _replyToCommentId = replyToCommentId;
+        });
         showAppSnackBar(context, apiErrorMessage(error), error: true);
       }
     }
@@ -333,6 +348,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
           ],
         ),
         _CommentsSection(
+          key: _commentsKey,
           postId: widget.id,
           onReply: _startReply,
           onChanged: _load,
@@ -412,6 +428,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
 class _CommentsSection extends ConsumerStatefulWidget {
   const _CommentsSection({
+    super.key,
     required this.postId,
     required this.onReply,
     required this.onChanged,
@@ -427,6 +444,7 @@ class _CommentsSection extends ConsumerStatefulWidget {
 
 class _CommentsSectionState extends ConsumerState<_CommentsSection> {
   List<CommentData> _comments = [];
+  Map<int, List<CommentData>> _replies = {};
   bool _loading = true;
   String? _error;
 
@@ -443,11 +461,27 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
       final result = await ref
           .read(commentServiceProvider)
           .listByPost(widget.postId, limit: 100);
+      final replyParents = result.items
+          .where((comment) => comment.id != null && comment.replyCount > 0)
+          .toList();
+      final replyResults = await Future.wait(
+        replyParents.map(
+          (comment) => ref
+              .read(commentServiceProvider)
+              .listReplies(comment.id!, limit: 100),
+        ),
+      );
       if (!mounted) {
         return;
       }
+      final replies = <int, List<CommentData>>{};
+      for (var index = 0; index < replyParents.length; index++) {
+        replies[replyParents[index].id!] = replyResults[index].items;
+      }
       setState(() {
         _comments = result.items;
+        _replies = replies;
+        _error = null;
         _loading = false;
       });
     } catch (error) {
@@ -535,16 +569,20 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     }
     return Column(
       children: [
-        for (final comment in _comments) _buildCommentTile(comment),
+        for (final comment in _comments) ...[
+          _buildCommentTile(comment),
+          for (final reply in _replies[comment.id] ?? const <CommentData>[])
+            _buildCommentTile(reply, isReply: true),
+        ],
       ],
     );
   }
 
-  Widget _buildCommentTile(CommentData comment) {
+  Widget _buildCommentTile(CommentData comment, {bool isReply = false}) {
     final id = comment.id;
     final liked = id == null ? false : (_likedMap[id] ?? false);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.fromLTRB(isReply ? 44 : 0, 8, 0, 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -576,8 +614,20 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  comment.content ?? '',
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      if (comment.replyTo != null)
+                        TextSpan(
+                          text:
+                              '回复 ${comment.replyTo?.displayName ?? comment.replyTo?.username ?? ''}：',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      TextSpan(text: comment.content ?? ''),
+                    ],
+                  ),
                   style: const TextStyle(fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 4),

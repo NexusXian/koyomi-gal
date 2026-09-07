@@ -67,11 +67,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       }
     });
     try {
-      final result = await ref.read(notificationServiceProvider).list(
-            category: _category,
-            page: _page,
-            limit: 20,
-          );
+      final result = await ref
+          .read(notificationServiceProvider)
+          .list(category: _category, page: _page, limit: 20);
       if (!mounted) {
         return;
       }
@@ -97,9 +95,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       return;
     }
     try {
-      await ref
-          .read(notificationServiceProvider)
-          .markRead(notification.id!);
+      await ref.read(notificationServiceProvider).markRead(notification.id!);
       setState(() {
         final index = _items.indexOf(notification);
         if (index >= 0) {
@@ -151,8 +147,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         context.push('/novels/$entityId');
       case 'comment':
         if (notification.targetUrl?.contains('post') == true) {
-          final match =
-              RegExp(r'/posts/(\d+)').firstMatch(notification.targetUrl!);
+          final match = RegExp(r'/posts/(\d+)')
+              .firstMatch(notification.targetUrl!);
           if (match != null) {
             context.push('/posts/${match.group(1)}');
           }
@@ -164,7 +160,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return DefaultTabController(
+      length: _categories.length,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('通知'),
         actions: [
@@ -184,12 +182,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 setState(() => _category = _categories[index].$1);
                 _load(reset: true);
               },
-              tabs: [for (final category in _categories) Tab(text: category.$2)],
+                tabs: [
+                  for (final category in _categories) Tab(text: category.$2),
+                ],
             ),
           ),
         ),
       ),
       body: _buildList(),
+      ),
     );
   }
 
@@ -236,7 +237,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   Widget _buildNotificationTile(NotificationData notification) {
     final theme = Theme.of(context);
     return Card(
-      color: notification.isRead ? null : theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
+      color: notification.isRead
+          ? null
+          : theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openTarget(notification),
