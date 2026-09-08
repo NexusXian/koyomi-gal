@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/startup/startup_prompt_coordinator.dart';
 import '../../models/galgame_models.dart';
 import '../../models/user_models.dart';
 import '../../pages/galgames/widgets.dart';
@@ -23,6 +25,8 @@ class _MyPageState extends ConsumerState<MyPage> {
   UserLevelData? _level;
   CheckinStatusData? _checkinStatus;
   bool _checkingIn = false;
+  bool _checkingUpdate = false;
+  String? _currentVersion;
   String? _error;
   bool _loading = true;
 
@@ -42,6 +46,14 @@ class _MyPageState extends ConsumerState<MyPage> {
       }
     });
     _load();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _currentVersion = info.version);
+    }
   }
 
   Future<void> _load() async {
@@ -103,6 +115,37 @@ class _MyPageState extends ConsumerState<MyPage> {
     } finally {
       if (mounted) {
         setState(() => _checkingIn = false);
+      }
+    }
+  }
+
+  Future<void> _checkUpdate() async {
+    if (_checkingUpdate) {
+      return;
+    }
+    setState(() => _checkingUpdate = true);
+    try {
+      final result = await ref
+          .read(startupPromptCoordinatorProvider)
+          .checkNow(context);
+      if (!mounted) {
+        return;
+      }
+      switch (result) {
+        case ManualUpdateCheckResult.upToDate:
+          showAppSnackBar(context, '当前已是最新版本');
+        case ManualUpdateCheckResult.unsupported:
+          showAppSnackBar(context, '当前平台暂不支持应用内更新');
+        case ManualUpdateCheckResult.updateAvailable:
+          break;
+      }
+    } catch (_) {
+      if (mounted) {
+        showAppSnackBar(context, '检查更新失败，请稍后重试', error: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _checkingUpdate = false);
       }
     }
   }
@@ -404,6 +447,22 @@ class _MyPageState extends ConsumerState<MyPage> {
             title: const Text('意见反馈'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/feedback'),
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          ListTile(
+            leading: const Icon(Icons.system_update_outlined),
+            title: const Text('检查更新'),
+            subtitle: _currentVersion == null
+                ? null
+                : Text('当前版本 v$_currentVersion'),
+            trailing: _checkingUpdate
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: _checkingUpdate ? null : _checkUpdate,
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           ListTile(

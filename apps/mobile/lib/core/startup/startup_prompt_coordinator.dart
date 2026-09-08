@@ -18,6 +18,8 @@ enum StartupPromptKind {
 
 enum StartupCheckTrigger { coldStart, resume }
 
+enum ManualUpdateCheckResult { updateAvailable, upToDate, unsupported }
+
 class StartupPromptSelection {
   const StartupPromptSelection._({
     required this.kind,
@@ -173,6 +175,42 @@ class StartupPromptCoordinator {
         _dialogVisible = false;
       }
     } catch (_) {}
+  }
+
+  /// User-triggered check that bypasses the periodic throttle and the
+  /// ignored-version preference; shows the update dialog directly.
+  Future<ManualUpdateCheckResult> checkNow(BuildContext context) async {
+    if (!isAndroid) {
+      return ManualUpdateCheckResult.unsupported;
+    }
+    final info = await _packageInfo();
+    final release = await _updateService.getLatestRelease(
+      versionCode: int.tryParse(info.buildNumber) ?? 0,
+      versionName: info.version,
+    );
+    final hasUsableUpdate =
+        release.hasUpdate &&
+        release.latestVersion != null &&
+        (release.downloadUrl?.isNotEmpty ?? false);
+    if (!hasUsableUpdate) {
+      return ManualUpdateCheckResult.upToDate;
+    }
+    if (context.mounted) {
+      _dialogVisible = true;
+      try {
+        final result = await showUpdateDialog(context, release);
+        if (result == UpdateDialogResult.ignore && !release.forceUpdate) {
+          final preferences = await _preferences();
+          await preferences.setInt(
+            ignoredVersionKey,
+            release.latestVersion!.versionCode,
+          );
+        }
+      } finally {
+        _dialogVisible = false;
+      }
+    }
+    return ManualUpdateCheckResult.updateAvailable;
   }
 
   static bool isCheckDue({
