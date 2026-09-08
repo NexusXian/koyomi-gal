@@ -43,14 +43,16 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
     });
     try {
       final service = ref.read(galgameServiceProvider);
-      final detail = await service.get(widget.id);
-      GalgameUserRelation? relation;
       final auth = ref.read(authControllerProvider);
-      if (auth.isAuthenticated) {
-        try {
-          relation = await service.myRelation(widget.id);
-        } catch (_) {}
-      }
+      // Detail and per-user relation are independent; fetch in parallel.
+      final relationFuture = auth.isAuthenticated
+          ? service
+                .myRelation(widget.id)
+                .then<GalgameUserRelation?>((relation) => relation)
+                .catchError((_) => null)
+          : Future<GalgameUserRelation?>.value();
+      final detail = await service.get(widget.id);
+      final relation = await relationFuture;
       if (!mounted) {
         return;
       }
@@ -112,7 +114,6 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
       } else {
         await ref.read(galgameServiceProvider).upsertRating(widget.id, score);
       }
-      await _reloadRelation();
       await _load();
     } catch (error) {
       if (mounted) {
@@ -684,26 +685,40 @@ class _GalleryTabState extends ConsumerState<_GalleryTab> {
         crossAxisSpacing: 8,
       ),
       itemCount: _images!.length,
-      itemBuilder: (context, index) {
-        final image = _images![index];
-        return GestureDetector(
-          onTap: () => _openViewer(index),
-          child: AppImage(
-            url: image.url,
-            sensitive: image.isSpoiler,
-            borderRadius: BorderRadius.circular(8),
-          ),
-        );
-      },
+        itemBuilder: (context, index) {
+          final image = _images![index];
+          return GestureDetector(
+            onTap: () => _openViewer(index),
+            child: AppImage(
+              url: image.url,
+              sensitive: image.isSpoiler,
+              borderRadius: BorderRadius.circular(8),
+              maxCacheWidth: 480,
+            ),
+          );
+        },
     );
   }
 }
 
-class _GalleryViewer extends StatelessWidget {
+class _GalleryViewer extends StatefulWidget {
   const _GalleryViewer({required this.images, required this.initialIndex});
 
   final List<GalleryImage> images;
   final int initialIndex;
+
+  @override
+  State<_GalleryViewer> createState() => _GalleryViewerState();
+}
+
+class _GalleryViewerState extends State<_GalleryViewer> {
+  late final _pageController = PageController(initialPage: widget.initialIndex);
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -711,10 +726,10 @@ class _GalleryViewer extends StatelessWidget {
       backgroundColor: Colors.black,
       appBar: AppBar(backgroundColor: Colors.black),
       body: PageView.builder(
-        controller: PageController(initialPage: initialIndex),
-        itemCount: images.length,
+        controller: _pageController,
+        itemCount: widget.images.length,
         itemBuilder: (context, index) {
-          final image = images[index];
+          final image = widget.images[index];
           return InteractiveViewer(
             maxScale: 4,
             child: Center(
@@ -722,6 +737,7 @@ class _GalleryViewer extends StatelessWidget {
                 url: image.url,
                 sensitive: image.isSpoiler,
                 fit: BoxFit.contain,
+                maxCacheWidth: 1600,
               ),
             ),
           );

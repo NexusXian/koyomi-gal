@@ -145,6 +145,7 @@ class GalgameGridCard extends StatelessWidget {
               url: coverUrl,
               sensitive: sensitive,
               borderRadius: BorderRadius.circular(10),
+              maxCacheWidth: 480,
             ),
           ),
           const SizedBox(height: 6),

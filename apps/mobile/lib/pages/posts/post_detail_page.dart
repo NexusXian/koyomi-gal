@@ -246,106 +246,124 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       return ErrorView(message: _error!, onRetry: _load);
     }
     final post = _post!;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      children: [
-        Text(
-          post.title ?? '',
-          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            UserAvatar(
-              url: post.author?.avatarUrl ?? post.authorAvatar,
-              size: 32,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        post.author?.displayName ??
-                            post.authorName ??
-                            post.author?.username ??
-                            '',
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(width: 6),
-                      LevelBadge(level: post.author?.level),
-                    ],
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  post.title ?? '',
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
                   ),
-                  Text(
-                    formatDateTime(post.createdAt),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (post.galgameId != null)
-              TextButton(
-                onPressed: () => context.push('/galgames/${post.galgameId}'),
-                child: Text(
-                  post.galgameTitle ?? '查看 Galgame',
-                  style: const TextStyle(fontSize: 12),
                 ),
-              ),
-          ],
-        ),
-        const Divider(height: 20),
-        if (post.editorMode == 'markdown' && post.content != null)
-          MarkdownView(data: post.content!)
-        else
-          Text(
-            post.content ?? '',
-            style: const TextStyle(fontSize: 15, height: 1.65),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    UserAvatar(
+                      url: post.author?.avatarUrl ?? post.authorAvatar,
+                      size: 32,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                post.author?.displayName ??
+                                    post.authorName ??
+                                    post.author?.username ??
+                                    '',
+                                style: const TextStyle(
+                                    fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(width: 6),
+                              LevelBadge(level: post.author?.level),
+                            ],
+                          ),
+                          Text(
+                            formatDateTime(post.createdAt),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (post.galgameId != null)
+                      TextButton(
+                        onPressed: () =>
+                            context.push('/galgames/${post.galgameId}'),
+                        child: Text(
+                          post.galgameTitle ?? '查看 Galgame',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+                const Divider(height: 20),
+                if (post.editorMode == 'markdown' && post.content != null)
+                  MarkdownView(data: post.content!)
+                else
+                  Text(
+                    post.content ?? '',
+                    style: const TextStyle(fontSize: 15, height: 1.65),
+                  ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _toggleLike,
+                      icon: Icon(
+                        _liked ? Icons.favorite : Icons.favorite_border,
+                        size: 16,
+                        color: _liked
+                            ? Theme.of(context).colorScheme.error
+                            : null,
+                      ),
+                      label: Text('$_likeCount'),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: _toggleFavorite,
+                      icon: Icon(
+                        _favorited ? Icons.bookmark : Icons.bookmark_border,
+                        size: 16,
+                        color: _favorited
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      label: Text(_favorited ? '已收藏' : '收藏'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text(
+                      '评论 ${_post?.commentCount ?? 0}',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      tooltip: '编辑帖子',
+                      onPressed: () => context.push('/posts/${widget.id}/edit'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            OutlinedButton.icon(
-              onPressed: _toggleLike,
-              icon: Icon(
-                _liked ? Icons.favorite : Icons.favorite_border,
-                size: 16,
-                color: _liked ? Theme.of(context).colorScheme.error : null,
-              ),
-              label: Text('$_likeCount'),
-            ),
-            const SizedBox(width: 12),
-            OutlinedButton.icon(
-              onPressed: _toggleFavorite,
-              icon: Icon(
-                _favorited ? Icons.bookmark : Icons.bookmark_border,
-                size: 16,
-                color: _favorited ? Theme.of(context).colorScheme.primary : null,
-              ),
-              label: Text(_favorited ? '已收藏' : '收藏'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Text(
-              '评论 ${_post?.commentCount ?? 0}',
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              tooltip: '编辑帖子',
-              onPressed: () => context.push('/posts/${widget.id}/edit'),
-            ),
-          ],
         ),
         _CommentsSection(
           key: _commentsKey,
@@ -547,34 +565,49 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
           ),
         ),
       );
     }
     if (_error != null) {
-      return ErrorView(message: _error!, onRetry: _load);
-    }
-    if (_comments.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: Text('暂无评论，来抢沙发吧')),
+      return SliverToBoxAdapter(
+        child: ErrorView(message: _error!, onRetry: _load),
       );
     }
-    return Column(
-      children: [
-        for (final comment in _comments) ...[
-          _buildCommentTile(comment),
-          for (final reply in _replies[comment.id] ?? const <CommentData>[])
-            _buildCommentTile(reply, isReply: true),
-        ],
+    if (_comments.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: Text('暂无评论，来抢沙发吧')),
+        ),
+      );
+    }
+    // Flatten comments and their replies for lazy sliver rendering.
+    final entries = <(CommentData, bool)>[
+      for (final comment in _comments) ...[
+        (comment, false),
+        for (final reply in _replies[comment.id] ?? const <CommentData>[])
+          (reply, true),
       ],
+    ];
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      sliver: SliverList.builder(
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          final (comment, isReply) = entries[index];
+          return _buildCommentTile(comment, isReply: isReply);
+        },
+      ),
     );
   }
 
