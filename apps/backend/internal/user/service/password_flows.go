@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/repository"
 	"backend/pkg/bcrypt"
 )

@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"backend/internal/middleware"
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/service"
 	appErrors "backend/pkg/errors"
 	"backend/pkg/logger"
@@ -25,7 +25,7 @@ type UserProfileHandler struct {
 // @Tags         users
 // @Produce      json
 // @Param        username path string true "用户名"
-// @Success      200 {object} dto.PublicUserProfileResponse
+// @Success      200 {object} userdto.PublicUserProfileResponse
 // @Failure      401 {object} response.ErrorResponse "提供的登录凭证失效"
 // @Failure      404 {object} response.ErrorResponse "用户不存在"
 // @Router       /api/v1/users/{username} [get]
@@ -47,7 +47,7 @@ func (h *UserProfileHandler) GetPublicProfile(c *gin.Context) {
 // @ID       getMyProfile
 // @Tags     me
 // @Produce  json
-// @Success  200 {object} dto.PublicUserProfileResponse
+// @Success  200 {object} userdto.PublicUserProfileResponse
 // @Failure  401 {object} response.ErrorResponse
 // @Security BearerAuth
 // @Router   /api/v1/users/me/profile [get]
@@ -71,8 +71,8 @@ func (h *UserProfileHandler) GetMyProfile(c *gin.Context) {
 // @Tags     me
 // @Accept   json
 // @Produce  json
-// @Param    request body dto.UpdateProfileRequest true "资料更新"
-// @Success  200 {object} dto.PublicUserProfileResponse
+// @Param    request body userdto.UpdateProfileRequest true "资料更新"
+// @Success  200 {object} userdto.PublicUserProfileResponse
 // @Failure  400 {object} response.ErrorResponse
 // @Failure  401 {object} response.ErrorResponse
 // @Security BearerAuth
@@ -100,7 +100,7 @@ func (h *UserProfileHandler) UpdateProfile(c *gin.Context) {
 // @ID       getMyPrivacy
 // @Tags     me
 // @Produce  json
-// @Success  200 {object} dto.PrivacySettingsResponse
+// @Success  200 {object} userdto.PrivacySettingsResponse
 // @Failure  401 {object} response.ErrorResponse
 // @Security BearerAuth
 // @Router   /api/v1/users/me/privacy [get]
@@ -123,8 +123,8 @@ func (h *UserProfileHandler) GetPrivacy(c *gin.Context) {
 // @Tags     me
 // @Accept   json
 // @Produce  json
-// @Param    request body dto.UpdatePrivacyRequest true "隐私设置"
-// @Success  200 {object} dto.PrivacySettingsResponse
+// @Param    request body userdto.UpdatePrivacyRequest true "隐私设置"
+// @Success  200 {object} userdto.PrivacySettingsResponse
 // @Failure  400 {object} response.ErrorResponse
 // @Failure  401 {object} response.ErrorResponse
 // @Security BearerAuth
@@ -155,7 +155,7 @@ func (h *UserProfileHandler) UpdatePrivacy(c *gin.Context) {
 // @Param username path string true "用户名"
 // @Param page query int false "页码"
 // @Param limit query int false "每页数量"
-// @Success 200 {object} dto.ProfilePostListResponse
+// @Success 200 {object} userdto.ProfilePostListResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Router /api/v1/users/{username}/posts [get]
 func (h *UserProfileHandler) ListUserPosts(c *gin.Context) {
@@ -179,7 +179,7 @@ func (h *UserProfileHandler) ListUserPosts(c *gin.Context) {
 // @Param username path string true "用户名"
 // @Param page query int false "页码"
 // @Param limit query int false "每页数量"
-// @Success 200 {object} dto.ProfileCommentListResponse
+// @Success 200 {object} userdto.ProfileCommentListResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Router /api/v1/users/{username}/comments [get]
 func (h *UserProfileHandler) ListUserComments(c *gin.Context) {
@@ -203,7 +203,7 @@ func (h *UserProfileHandler) ListUserComments(c *gin.Context) {
 // @Param username path string true "用户名"
 // @Param page query int false "页码"
 // @Param limit query int false "每页数量"
-// @Success 200 {object} dto.ProfileGalgameListResponse
+// @Success 200 {object} userdto.ProfileGalgameListResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Router /api/v1/users/{username}/ratings [get]
 func (h *UserProfileHandler) ListUserRatings(c *gin.Context) { h.listGalgames(c, false) }
@@ -216,7 +216,7 @@ func (h *UserProfileHandler) ListUserRatings(c *gin.Context) { h.listGalgames(c,
 // @Param username path string true "用户名"
 // @Param page query int false "页码"
 // @Param limit query int false "每页数量"
-// @Success 200 {object} dto.ProfileGalgameListResponse
+// @Success 200 {object} userdto.ProfileGalgameListResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Router /api/v1/users/{username}/favorites [get]
 func (h *UserProfileHandler) ListUserFavorites(c *gin.Context) { h.listGalgames(c, true) }
@@ -250,7 +250,7 @@ func (h *UserProfileHandler) listGalgames(c *gin.Context, favorites bool) {
 // @Param username path string true "用户名"
 // @Param page query int false "页码"
 // @Param limit query int false "每页数量"
-// @Success 200 {object} dto.UserActivityListResponse
+// @Success 200 {object} userdto.UserActivityListResponse
 // @Failure 403 {object} response.ErrorResponse
 // @Router /api/v1/users/{username}/activities [get]
 func (h *UserProfileHandler) ListUserActivities(c *gin.Context) {
@@ -293,8 +293,8 @@ func NewUserProfileHandler(profileService *service.UserProfileService) *UserProf
 // @Tags         me
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.UpdateMeRequest true "资料更新请求"
-// @Success      200 {object} dto.MeResponse "更新后的用户资料"
+// @Param        request body userdto.UpdateMeRequest true "资料更新请求"
+// @Success      200 {object} userdto.MeResponse "更新后的用户资料"
 // @Failure      400 {object} response.ErrorResponse "请求参数或头像资源不合法"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      500 {object} response.ErrorResponse "更新失败"
@@ -324,7 +324,7 @@ func (h *UserProfileHandler) UpdateMe(c *gin.Context) {
 // @ID           getMePreferences
 // @Tags         me
 // @Produce      json
-// @Success      200 {object} dto.UserPreferencesResponse "背景偏好"
+// @Success      200 {object} userdto.UserPreferencesResponse "背景偏好"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      500 {object} response.ErrorResponse "查询失败"
 // @Security     BearerAuth
@@ -349,8 +349,8 @@ func (h *UserProfileHandler) GetPreferences(c *gin.Context) {
 // @Tags         me
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.UpdateUserPreferencesRequest true "背景偏好更新请求"
-// @Success      200 {object} dto.UserPreferencesResponse "保存后的背景偏好"
+// @Param        request body userdto.UpdateUserPreferencesRequest true "背景偏好更新请求"
+// @Success      200 {object} userdto.UserPreferencesResponse "保存后的背景偏好"
 // @Failure      400 {object} response.ErrorResponse "请求参数或背景资源不合法"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      500 {object} response.ErrorResponse "保存失败"

@@ -50,6 +50,7 @@ func (app *App) setupRoutes() {
 	v1.GET("/app/releases/latest", app.AppReleaseHandler.Latest)
 	v1.GET("/changelogs", app.ChangelogHandler.List)
 	v1.GET("/home", app.HomeHandler.GetHome)
+	v1.GET("/ws", app.RealtimeHandler.Connect)
 	v1.GET("/developers", app.CatalogHandler.ListDevelopers)
 	v1.GET("/developers/:id", app.CatalogHandler.GetDeveloper)
 	v1.GET("/tags", app.CatalogHandler.ListTags)
@@ -274,6 +275,18 @@ func (app *App) setupRoutes() {
 		notifications.PATCH("/read-all", app.NotificationHandler.MarkAllRead)
 	}
 
+	messages := protected.Group("/messages")
+	{
+		messages.POST("/conversations", app.MessageHandler.CreateConversation)
+		messages.GET("/conversations", app.MessageHandler.ListConversations)
+		messages.GET("/conversations/:id/messages", app.MessageHandler.ListMessages)
+		messages.POST("/conversations/:id/messages", app.MessageHandler.SendMessage)
+		messages.POST("/conversations/:id/read", app.MessageHandler.MarkRead)
+		messages.DELETE("/conversations/:id", app.MessageHandler.DeleteConversation)
+		messages.DELETE("/:message_id", app.MessageHandler.DeleteMessage)
+		messages.GET("/unread-count", app.MessageHandler.UnreadCount)
+	}
+
 	roles := protected.Group("/roles")
 	{
 		roles.GET("", requirePermission("role:list"), app.RoleHandler.List)
@@ -305,6 +318,11 @@ func (app *App) setupRoutes() {
 	protected.GET("/users/me/experience", app.LevelHandler.GetUserExperience)
 	protected.GET("/users/me/experience/logs", app.LevelHandler.ListMyExperienceLogs)
 	protected.POST("/users/me/checkin", app.LevelHandler.Checkin)
+	protected.POST("/ws/ticket", app.RealtimeHandler.CreateTicket)
+	protected.GET("/users/me/message-settings", app.MessageHandler.GetSettings)
+	protected.PUT("/users/me/message-settings", app.MessageHandler.UpdateSettings)
+	protected.POST("/users/:id/block", app.MessageHandler.BlockUser)
+	protected.DELETE("/users/:id/block", app.MessageHandler.UnblockUser)
 	protected.GET("/users/me/checkin", app.LevelHandler.GetCheckinStatus)
 	protected.POST("/users/me/password/code", app.UserAuthHandler.PasswordChangeCode)
 	protected.PUT("/users/me/password", app.UserAuthHandler.ChangePassword)

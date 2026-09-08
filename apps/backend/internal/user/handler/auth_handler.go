@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"backend/internal/middleware"
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/service"
 	appErrors "backend/pkg/errors"
 	"backend/pkg/logger"
@@ -43,7 +43,7 @@ func NewUserAuthHandler(
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.UserRegisterRequest true "注册请求"
+// @Param        request body userdto.UserRegisterRequest true "注册请求"
 // @Success      200 {object} response.MessageResponse "用户注册成功"
 // @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
 // @Failure      500 {object} response.ErrorResponse "用户注册失败"
@@ -86,8 +86,8 @@ func (h *UserAuthHandler) Register(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.UserLoginRequest true "登录请求"
-// @Success      200 {object} dto.AuthSessionResponse "登录成功"
+// @Param        request body userdto.UserLoginRequest true "登录请求"
+// @Success      200 {object} userdto.AuthSessionResponse "登录成功"
 // @Failure      400 {object} response.ErrorResponse "账号或密码格式不正确"
 // @Failure      401 {object} response.ErrorResponse "账号或密码错误"
 // @Failure      403 {object} response.ErrorResponse "账号已封禁"
@@ -117,7 +117,7 @@ func (h *UserAuthHandler) Login(c *gin.Context) {
 // @ID           refreshSession
 // @Tags         auth
 // @Produce      json
-// @Success      200 {object} dto.AuthSessionResponse "刷新成功"
+// @Success      200 {object} userdto.AuthSessionResponse "刷新成功"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      403 {object} response.ErrorResponse "账号已封禁"
 // @Failure      500 {object} response.ErrorResponse "认证服务异常"
@@ -178,7 +178,7 @@ func (h *UserAuthHandler) Logout(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.PasswordForgotCodeRequest true "忘记密码验证码请求"
+// @Param        request body userdto.PasswordForgotCodeRequest true "忘记密码验证码请求"
 // @Success      202 {object} response.MessageResponse "如果该邮箱已注册，验证码将发送到邮箱"
 // @Failure      400 {object} response.ErrorResponse "邮箱格式不正确"
 // @Failure      429 {object} response.ErrorResponse "请求过于频繁"
@@ -204,8 +204,8 @@ func (h *UserAuthHandler) ForgotPasswordCode(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.PasswordForgotVerifyRequest true "验证码验证请求"
-// @Success      200 {object} dto.PasswordResetTokenResponse "验证成功"
+// @Param        request body userdto.PasswordForgotVerifyRequest true "验证码验证请求"
+// @Success      200 {object} userdto.PasswordResetTokenResponse "验证成功"
 // @Failure      400 {object} response.ErrorResponse "验证码错误或已过期"
 // @Failure      500 {object} response.ErrorResponse "验证码验证失败"
 // @Router       /api/v1/auth/password/forgot/verify [post]
@@ -235,7 +235,7 @@ func (h *UserAuthHandler) ForgotPasswordVerify(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.PasswordForgotResetRequest true "重置密码请求"
+// @Param        request body userdto.PasswordForgotResetRequest true "重置密码请求"
 // @Success      200 {object} response.MessageResponse "密码重置成功"
 // @Failure      400 {object} response.ErrorResponse "重置凭证或密码无效"
 // @Failure      403 {object} response.ErrorResponse "账号已封禁"
@@ -262,7 +262,7 @@ func (h *UserAuthHandler) ForgotPasswordReset(c *gin.Context) {
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
-// @Success      200 {object} dto.PasswordCodeResponse "验证码已发送"
+// @Success      200 {object} userdto.PasswordCodeResponse "验证码已发送"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      403 {object} response.ErrorResponse "账号已封禁"
 // @Failure      429 {object} response.ErrorResponse "请求过于频繁"
@@ -298,7 +298,7 @@ func (h *UserAuthHandler) PasswordChangeCode(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        request body dto.ChangePasswordRequest true "修改密码请求"
+// @Param        request body userdto.ChangePasswordRequest true "修改密码请求"
 // @Success      200 {object} response.MessageResponse "密码修改成功"
 // @Failure      400 {object} response.ErrorResponse "验证码或密码无效"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"

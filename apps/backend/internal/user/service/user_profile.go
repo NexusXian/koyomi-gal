@@ -10,7 +10,7 @@ import (
 	imageModel "backend/internal/image/model"
 	imageService "backend/internal/image/service"
 	leveldto "backend/internal/level/dto"
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/model"
 	"backend/internal/user/repository"
 	"backend/pkg/logger"

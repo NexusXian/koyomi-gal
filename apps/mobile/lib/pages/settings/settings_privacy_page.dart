@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/api_client.dart';
 import '../../models/user_models.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/message_providers.dart';
 import '../../widgets/common_views.dart';
 
 class SettingsPrivacyPage extends ConsumerStatefulWidget {
@@ -19,11 +20,53 @@ class _SettingsPrivacyPageState extends ConsumerState<SettingsPrivacyPage> {
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  String _messagePermission = 'everyone';
+  bool _messagePermissionSaving = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadMessagePermission();
+  }
+
+  Future<void> _loadMessagePermission() async {
+    try {
+      final permission =
+          await ref.read(messageServiceProvider).messagePermission();
+      if (mounted) {
+        setState(() => _messagePermission = permission);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _changeMessagePermission(String? permission) async {
+    if (permission == null ||
+        permission == _messagePermission ||
+        _messagePermissionSaving) {
+      return;
+    }
+    final previous = _messagePermission;
+    setState(() => _messagePermission = permission);
+    setState(() => _messagePermissionSaving = true);
+    try {
+      await ref.read(messageServiceProvider).updateMessagePermission(permission);
+      if (mounted) {
+        showAppSnackBar(
+          context,
+          permission == 'none' ? '已关闭陌生人私信' : '已向所有人开放私信',
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _messagePermission = previous);
+        showAppSnackBar(context, apiErrorMessage(error), error: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _messagePermissionSaving = false);
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -189,6 +232,38 @@ class _SettingsPrivacyPageState extends ConsumerState<SettingsPrivacyPage> {
                 value: settings.showLocation,
                 onChanged: (value) =>
                     _update((current) => current.copyWith(showLocation: value)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Text('私信权限'),
+              ),
+              RadioGroup<String>(
+                groupValue: _messagePermission,
+                onChanged: _changeMessagePermission,
+                child: Column(
+                  children: [
+                    RadioListTile<String>(
+                      value: 'everyone',
+                      title: const Text('所有人'),
+                      subtitle: const Text('任何用户都可以给我发私信'),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    RadioListTile<String>(
+                      value: 'none',
+                      title: const Text('任何人都不可以'),
+                      subtitle: const Text('无法收到新的私信会话'),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

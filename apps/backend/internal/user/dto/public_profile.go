@@ -1,4 +1,4 @@
-package dto
+package userdto
 
 import (
 	"encoding/json"

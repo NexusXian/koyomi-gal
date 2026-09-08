@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
+import {
+  getMessageSettings,
+  updateMessageSettings
+} from '~/api/generated/messages/messages'
 import { getMyPrivacy, updateMyPrivacy } from '~/api/generated/me/me'
 import type {
   DtoPrivacySettingsData,
@@ -14,6 +18,9 @@ const userStore = useUserStore()
 const { user, initialized, isAuthenticated } = storeToRefs(userStore)
 const { mode: sensitiveCoverMode, setMode: setSensitiveCoverMode } = useSensitiveCover()
 const sensitiveCoverSaving = ref(false)
+const messagePermission = ref<'everyone' | 'none'>('everyone')
+const messagePermissionLoading = ref(false)
+const messagePermissionSaving = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const loaded = ref(false)
@@ -77,9 +84,42 @@ watch(
       return
     }
     void loadPrivacy()
+    void loadMessagePermission()
   },
   { immediate: true }
 )
+
+async function loadMessagePermission(): Promise<void> {
+  messagePermissionLoading.value = true
+  try {
+    const data = unwrapApiData(
+      await getMessageSettings(),
+      '私信设置加载失败'
+    )
+    messagePermission.value = data.permission === 'none' ? 'none' : 'everyone'
+  } catch {
+    // 保留默认值
+  } finally {
+    messagePermissionLoading.value = false
+  }
+}
+
+async function changeMessagePermission(event: { target: { value: string } }): Promise<void> {
+  const next = event.target.value === 'none' ? 'none' : 'everyone'
+  if (next === messagePermission.value || messagePermissionSaving.value) return
+  const previous = messagePermission.value
+  messagePermission.value = next
+  messagePermissionSaving.value = true
+  try {
+    await updateMessageSettings({ permission: next })
+    message.success(next === 'none' ? '已关闭陌生人私信' : '已向所有人开放私信')
+  } catch (error) {
+    messagePermission.value = previous
+    message.error(getApiErrorMessage(error, '私信设置保存失败'))
+  } finally {
+    messagePermissionSaving.value = false
+  }
+}
 
 async function changeSensitiveCoverMode(event: { target: { value: 'blur' | 'show' } }): Promise<void> {
   const next = event.target.value
@@ -137,6 +177,30 @@ async function changeSensitiveCoverMode(event: { target: { value: 'blur' | 'show
       </a-spin>
     </KunCard>
 
+    <KunCard padding="lg" class-name="message-permission-card">
+      <KunHeader
+        name="私信权限"
+        description="控制谁可以通过私信联系你"
+        scale="h3"
+      />
+      <a-spin :spinning="messagePermissionLoading">
+        <div class="privacy-row">
+          <div>
+            <strong>谁可以给我发送私信</strong>
+            <p>关闭后将无法收到新的私信会话，已有会话的记录不受影响。</p>
+          </div>
+          <a-radio-group
+            :value="messagePermission"
+            :disabled="messagePermissionSaving"
+            @change="changeMessagePermission"
+          >
+            <a-radio value="everyone">所有人</a-radio>
+            <a-radio value="none">任何人都不可以</a-radio>
+          </a-radio-group>
+        </div>
+      </a-spin>
+    </KunCard>
+
     <KunCard padding="lg" class-name="sensitive-card">
       <KunHeader
         name="敏感内容"
@@ -177,7 +241,7 @@ async function changeSensitiveCoverMode(event: { target: { value: 'blur' | 'show
 .privacy-row strong { font-size: 15px; }
 .privacy-row p { margin: 4px 0 0; color: var(--color-default-500); font-size: 13px; }
 .saving-hint { margin-top: 8px; color: var(--color-default-400); font-size: 12px; text-align: right; }
-.sensitive-card { margin-top: 18px; }
+.sensitive-card, .message-permission-card { margin-top: 18px; }
 .sensitive-form { display: flex; flex-direction: column; }
 .sensitive-hint { margin: 12px 0 0; color: var(--color-default-400); font-size: 12px; }
 @media (max-width: 480px) {

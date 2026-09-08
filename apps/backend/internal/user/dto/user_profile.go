@@ -1,4 +1,4 @@
-package dto
+package userdto
 
 type UpdateMeRequest struct {
 	// AvatarAssetID references an image_assets row; null clears the avatar.

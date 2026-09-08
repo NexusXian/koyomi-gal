@@ -7,7 +7,7 @@ import (
 	"time"
 
 	rbacService "backend/internal/rbac/service"
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/model"
 	"backend/internal/user/repository"
 	"backend/pkg/bcrypt"

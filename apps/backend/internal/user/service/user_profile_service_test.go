@@ -15,7 +15,7 @@ import (
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/testutil"
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	userRepo "backend/internal/user/repository"
 
 	"gorm.io/gorm"

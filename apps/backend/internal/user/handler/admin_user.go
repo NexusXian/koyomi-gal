@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"backend/internal/middleware"
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/service"
 	appErrors "backend/pkg/errors"
 	"backend/pkg/logger"
@@ -32,7 +32,7 @@ func NewUserAdminHandler(users *service.UserAdminService) *UserAdminHandler {
 // @Param        keyword query string false "用户名、邮箱或用户 ID"
 // @Param        page query int false "页码" default(1)
 // @Param        limit query int false "每页数量，最大 100" default(20)
-// @Success      200 {object} dto.AdminUserListResponse "用户列表"
+// @Success      200 {object} userdto.AdminUserListResponse "用户列表"
 // @Failure      400 {object} response.ErrorResponse "查询参数格式不正确"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
@@ -62,7 +62,7 @@ func (h *UserAdminHandler) List(c *gin.Context) {
 // @Tags         users
 // @Produce      json
 // @Param        id path int true "用户 ID"
-// @Success      200 {object} dto.AdminUserDataResponse "用户详情"
+// @Success      200 {object} userdto.AdminUserDataResponse "用户详情"
 // @Failure      400 {object} response.ErrorResponse "用户 ID 格式不正确"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
@@ -90,8 +90,8 @@ func (h *UserAdminHandler) Get(c *gin.Context) {
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.CreateAdminUserRequest true "创建用户请求"
-// @Success      200 {object} dto.AdminUserDataResponse "创建成功"
+// @Param        request body userdto.CreateAdminUserRequest true "创建用户请求"
+// @Success      200 {object} userdto.AdminUserDataResponse "创建成功"
 // @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
@@ -123,8 +123,8 @@ func (h *UserAdminHandler) Create(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id path int true "用户 ID"
-// @Param        request body dto.UpdateAdminUserRequest true "更新用户请求"
-// @Success      200 {object} dto.AdminUserDataResponse "更新成功"
+// @Param        request body userdto.UpdateAdminUserRequest true "更新用户请求"
+// @Success      200 {object} userdto.AdminUserDataResponse "更新成功"
 // @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
 // @Failure      401 {object} response.ErrorResponse "用户登录失效"
 // @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"

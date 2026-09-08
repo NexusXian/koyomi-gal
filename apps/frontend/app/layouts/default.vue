@@ -28,6 +28,10 @@ const navigationItems = computed(() => {
     { label: '资讯', icon: 'lucide:newspaper', to: '/articles' }
   ]
 
+  if (isAuthenticated.value) {
+    items.push({ label: '私信', icon: 'lucide:mail', to: '/messages' })
+  }
+
   if (
     isAuthenticated.value &&
     hasAny([

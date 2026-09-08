@@ -61,6 +61,9 @@ import (
 	levelHandler "backend/internal/level/handler"
 	levelRepo "backend/internal/level/repository"
 	levelService "backend/internal/level/service"
+	messageHandler "backend/internal/message/handler"
+	messageRepo "backend/internal/message/repository"
+	messageService "backend/internal/message/service"
 	"backend/internal/migrations"
 	notificationHandler "backend/internal/notification/handler"
 	notificationRepo "backend/internal/notification/repository"
@@ -71,6 +74,7 @@ import (
 	rbacHandler "backend/internal/rbac/handler"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
+	"backend/internal/realtime"
 	relationRepo "backend/internal/relation/repository"
 	resourceHandler "backend/internal/resource/handler"
 	resourceRepo "backend/internal/resource/repository"
@@ -133,6 +137,9 @@ type App struct {
 	HealthHandler         *healthHandler.HealthHandler
 	ImageHandler          *imageHandler.ImageHandler
 	NotificationHandler   *notificationHandler.NotificationHandler
+	MessageHandler        *messageHandler.MessageHandler
+	RealtimeHandler       *realtime.Handler
+	RealtimeHub           *realtime.Hub
 	LevelHandler          *levelHandler.LevelHandler
 	AdminLevelHandler     *levelHandler.AdminLevelHandler
 	AnnouncementHandler   *announcementHandler.AnnouncementHandler
@@ -186,6 +193,10 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	}
 	notificationRepository := notificationRepo.NewNotificationRepository(postgresDB, cfg.R2.PublicURL)
 	notificationSvc := notificationService.NewNotificationService(notificationRepository)
+	messageRepository := messageRepo.NewMessageRepository(postgresDB, cfg.R2.PublicURL)
+	messageLimiter := messageRepo.NewRateLimiter(redisClient)
+	realtimePublisher := realtime.NewRedisPublisher(redisClient)
+	messageSvc := messageService.NewMessageService(messageRepository, messageLimiter, realtimePublisher)
 
 	levelRepository := levelRepo.NewRepository(postgresDB)
 	levelConfigService := levelService.NewLevelConfigService(levelRepository, redisClient)
@@ -382,6 +393,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		cfg.Auth.RefreshTokenTTL,
 	)
 	userAdminService := userService.NewUserAdminService(userAdminRepository, rbacSvc)
+	realtimeHub := realtime.NewHub(redisClient)
 	app := &App{
 		Config:   cfg,
 		Postgres: postgresDB,
@@ -427,6 +439,9 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		HealthHandler:         healthHandler.NewHealthHandler(healthService),
 		ImageHandler:          imageHandler.NewImageHandler(imageSvc),
 		NotificationHandler:   notificationHandler.NewNotificationHandler(notificationSvc),
+		MessageHandler:        messageHandler.NewMessageHandler(messageSvc),
+		RealtimeHandler:       realtime.NewHandler(realtime.NewTicketStore(redisClient), realtimeHub, cfg.Server.AllowedOrigins),
+		RealtimeHub:           realtimeHub,
 		LevelHandler:          levelHandler.NewLevelHandler(experienceService, checkinService),
 		AdminLevelHandler:     levelHandler.NewAdminLevelHandler(levelConfigService, experienceService),
 		AnnouncementHandler:   announcementHandler.NewAnnouncementHandler(announcementSvc),
@@ -503,6 +518,9 @@ func (app *App) Close() {
 	}
 	if app.ClassificationQueue != nil {
 		_ = app.ClassificationQueue.Close()
+	}
+	if app.RealtimeHub != nil {
+		app.RealtimeHub.Close()
 	}
 	if app.Redis != nil {
 		_ = app.Redis.Close()

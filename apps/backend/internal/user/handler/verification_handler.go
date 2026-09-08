@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/service"
 	appErrors "backend/pkg/errors"
 	"backend/pkg/logger"
@@ -28,7 +28,7 @@ func NewVerificationHandler(verificationService *service.VerificationService) *V
 // @Tags         verification
 // @Accept       json
 // @Produce      json
-// @Param        request body dto.SendVerificationCodeRequest true "发送验证码请求"
+// @Param        request body userdto.SendVerificationCodeRequest true "发送验证码请求"
 // @Success      202 {object} response.MessageResponse "验证码已发送，请查收"
 // @Failure      400 {object} response.ErrorResponse "邮箱或验证码用途格式不正确"
 // @Failure      429 {object} response.ErrorResponse "请求过于频繁"

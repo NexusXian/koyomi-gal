@@ -6,19 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
-  DtoAdminUserDataResponse,
-  DtoAdminUserListResponse,
-  DtoChangePasswordRequest,
-  DtoCreateAdminUserRequest,
-  DtoPasswordCodeResponse,
-  DtoProfileCommentListResponse,
-  DtoProfileGalgameListResponse,
-  DtoProfilePostListResponse,
-  DtoPublicUserProfileResponse,
   DtoRoleListResponse,
-  DtoUpdateAdminUserRequest,
   DtoUpdateUserRolesRequest,
-  DtoUserActivityListResponse,
   LeveldtoUserLevelResponse,
   ListAdminUsersParams,
   ListUserActivitiesParams,
@@ -26,7 +15,18 @@ import type {
   ListUserFavoritesParams,
   ListUserPostsParams,
   ListUserRatingsParams,
-  ResponseMessageResponse
+  ResponseMessageResponse,
+  UserdtoAdminUserDataResponse,
+  UserdtoAdminUserListResponse,
+  UserdtoChangePasswordRequest,
+  UserdtoCreateAdminUserRequest,
+  UserdtoPasswordCodeResponse,
+  UserdtoProfileCommentListResponse,
+  UserdtoProfileGalgameListResponse,
+  UserdtoProfilePostListResponse,
+  UserdtoPublicUserProfileResponse,
+  UserdtoUpdateAdminUserRequest,
+  UserdtoUserActivityListResponse
 } from '../models';
 
 import { apiMutator } from '../../mutator';
@@ -50,9 +50,9 @@ export const getListAdminUsersUrl = (params?: ListAdminUsersParams,) => {
  * 按用户名、邮箱或精确数字 ID 搜索用户；需要 user:list 权限
  * @summary 管理端查询用户列表
  */
-export const listAdminUsers = async (params?: ListAdminUsersParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserListResponse> => {
+export const listAdminUsers = async (params?: ListAdminUsersParams, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoAdminUserListResponse> => {
 
-  return apiMutator<DtoAdminUserListResponse>(getListAdminUsersUrl(params),
+  return apiMutator<UserdtoAdminUserListResponse>(getListAdminUsersUrl(params),
   {
     ...options,
     method: 'GET'
@@ -74,7 +74,7 @@ export const getCreateAdminUserUrl = () => {
  * 创建用户并分配默认 user 角色；需要 user:create 权限
  * @summary 管理端创建用户
  */
-export const createAdminUser = async (dtoCreateAdminUserRequest: DtoCreateAdminUserRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserDataResponse> => {
+export const createAdminUser = async (userdtoCreateAdminUserRequest: UserdtoCreateAdminUserRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoAdminUserDataResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -82,12 +82,12 @@ export const createAdminUser = async (dtoCreateAdminUserRequest: DtoCreateAdminU
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoAdminUserDataResponse>(getCreateAdminUserUrl(),
+return apiMutator<UserdtoAdminUserDataResponse>(getCreateAdminUserUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoCreateAdminUserRequest)
+    body: JSON.stringify(userdtoCreateAdminUserRequest)
   }
 );}
 
@@ -104,9 +104,9 @@ export const getGetAdminUserUrl = (id: number,) => {
  * 按 ID 返回用户详情；需要 user:read 权限
  * @summary 管理端查看用户详情
  */
-export const getAdminUser = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserDataResponse> => {
+export const getAdminUser = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoAdminUserDataResponse> => {
 
-  return apiMutator<DtoAdminUserDataResponse>(getGetAdminUserUrl(id),
+  return apiMutator<UserdtoAdminUserDataResponse>(getGetAdminUserUrl(id),
   {
     ...options,
     method: 'GET'
@@ -129,7 +129,7 @@ export const getUpdateAdminUserUrl = (id: number,) => {
  * @summary 管理端更新用户
  */
 export const updateAdminUser = async (id: number,
-    dtoUpdateAdminUserRequest: DtoUpdateAdminUserRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminUserDataResponse> => {
+    userdtoUpdateAdminUserRequest: UserdtoUpdateAdminUserRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoAdminUserDataResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -137,12 +137,12 @@ export const updateAdminUser = async (id: number,
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoAdminUserDataResponse>(getUpdateAdminUserUrl(id),
+return apiMutator<UserdtoAdminUserDataResponse>(getUpdateAdminUserUrl(id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoUpdateAdminUserRequest)
+    body: JSON.stringify(userdtoUpdateAdminUserRequest)
   }
 );}
 
@@ -238,7 +238,7 @@ export const getChangePasswordUrl = () => {
  * 使用绑定当前用户的验证码设置新密码并使旧会话失效
  * @summary 修改当前用户密码
  */
-export const changePassword = async (dtoChangePasswordRequest: DtoChangePasswordRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+export const changePassword = async (userdtoChangePasswordRequest: UserdtoChangePasswordRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -251,7 +251,7 @@ return apiMutator<ResponseMessageResponse>(getChangePasswordUrl(),
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoChangePasswordRequest)
+    body: JSON.stringify(userdtoChangePasswordRequest)
   }
 );}
 
@@ -268,9 +268,9 @@ export const getPasswordChangeCodeUrl = () => {
  * 向当前用户绑定邮箱发送修改密码验证码
  * @summary 发送修改密码验证码
  */
-export const passwordChangeCode = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoPasswordCodeResponse> => {
+export const passwordChangeCode = async ( options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoPasswordCodeResponse> => {
 
-  return apiMutator<DtoPasswordCodeResponse>(getPasswordChangeCodeUrl(),
+  return apiMutator<UserdtoPasswordCodeResponse>(getPasswordChangeCodeUrl(),
   {
     ...options,
     method: 'POST'
@@ -292,9 +292,9 @@ export const getGetPublicUserProfileUrl = (username: string,) => {
  * 私密或仅注册用户可见的资料在无权查看时返回最小身份和访问标记
  * @summary 查看用户公开资料
  */
-export const getPublicUserProfile = async (username: string, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPublicUserProfileResponse> => {
+export const getPublicUserProfile = async (username: string, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoPublicUserProfileResponse> => {
 
-  return apiMutator<DtoPublicUserProfileResponse>(getGetPublicUserProfileUrl(username),
+  return apiMutator<UserdtoPublicUserProfileResponse>(getGetPublicUserProfileUrl(username),
   {
     ...options,
     method: 'GET'
@@ -324,9 +324,9 @@ export const getListUserActivitiesUrl = (username: string,
  * @summary 查看用户动态
  */
 export const listUserActivities = async (username: string,
-    params?: ListUserActivitiesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoUserActivityListResponse> => {
+    params?: ListUserActivitiesParams, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoUserActivityListResponse> => {
 
-  return apiMutator<DtoUserActivityListResponse>(getListUserActivitiesUrl(username,params),
+  return apiMutator<UserdtoUserActivityListResponse>(getListUserActivitiesUrl(username,params),
   {
     ...options,
     method: 'GET'
@@ -356,9 +356,9 @@ export const getListUserCommentsUrl = (username: string,
  * @summary 查看用户评论
  */
 export const listUserComments = async (username: string,
-    params?: ListUserCommentsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfileCommentListResponse> => {
+    params?: ListUserCommentsParams, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoProfileCommentListResponse> => {
 
-  return apiMutator<DtoProfileCommentListResponse>(getListUserCommentsUrl(username,params),
+  return apiMutator<UserdtoProfileCommentListResponse>(getListUserCommentsUrl(username,params),
   {
     ...options,
     method: 'GET'
@@ -388,9 +388,9 @@ export const getListUserFavoritesUrl = (username: string,
  * @summary 查看用户收藏
  */
 export const listUserFavorites = async (username: string,
-    params?: ListUserFavoritesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfileGalgameListResponse> => {
+    params?: ListUserFavoritesParams, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoProfileGalgameListResponse> => {
 
-  return apiMutator<DtoProfileGalgameListResponse>(getListUserFavoritesUrl(username,params),
+  return apiMutator<UserdtoProfileGalgameListResponse>(getListUserFavoritesUrl(username,params),
   {
     ...options,
     method: 'GET'
@@ -444,9 +444,9 @@ export const getListUserPostsUrl = (username: string,
  * @summary 查看用户帖子
  */
 export const listUserPosts = async (username: string,
-    params?: ListUserPostsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfilePostListResponse> => {
+    params?: ListUserPostsParams, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoProfilePostListResponse> => {
 
-  return apiMutator<DtoProfilePostListResponse>(getListUserPostsUrl(username,params),
+  return apiMutator<UserdtoProfilePostListResponse>(getListUserPostsUrl(username,params),
   {
     ...options,
     method: 'GET'
@@ -476,9 +476,9 @@ export const getListUserRatingsUrl = (username: string,
  * @summary 查看用户评分
  */
 export const listUserRatings = async (username: string,
-    params?: ListUserRatingsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoProfileGalgameListResponse> => {
+    params?: ListUserRatingsParams, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoProfileGalgameListResponse> => {
 
-  return apiMutator<DtoProfileGalgameListResponse>(getListUserRatingsUrl(username,params),
+  return apiMutator<UserdtoProfileGalgameListResponse>(getListUserRatingsUrl(username,params),
   {
     ...options,
     method: 'GET'

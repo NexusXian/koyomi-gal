@@ -185,6 +185,7 @@ onMounted(() => {
         </KunTooltip>
 
         <template v-if="isHydrated && isAuthenticated">
+          <MessageBell />
           <NotificationBell />
           <a-dropdown>
             <div class="account" :title="user?.username">

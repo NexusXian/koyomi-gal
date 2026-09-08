@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  DtoAdminAnnouncementListResponse,
   DtoAdminArticleListResponse,
   DtoAdminBackgroundPresetListResponse,
   DtoAdminBannerListResponse,
@@ -13,8 +14,13 @@ import type {
   DtoAdminFeedbackListResponse,
   DtoAdminImageListResponse,
   DtoAdminPostListResponse,
+  DtoAdminReleaseListResponse,
   DtoAdminResourceListResponse,
   DtoAdminVolumeListResponse,
+  DtoAnnouncementDataResponse,
+  DtoAnnouncementRequest,
+  DtoAppReleaseDataResponse,
+  DtoAppReleaseRequest,
   DtoArticleDataResponse,
   DtoBackgroundPresetDataResponse,
   DtoBannerDataResponse,
@@ -24,6 +30,9 @@ import type {
   DtoBatchReviewGalleryRequest,
   DtoBatchUpdateGalgameRequest,
   DtoBatchUpdateGalgameResponse,
+  DtoChangelogDataResponse,
+  DtoChangelogListResponse,
+  DtoChangelogRequest,
   DtoCharacterDataResponse,
   DtoCharacterRequest,
   DtoCharacterSearchResponse,
@@ -42,11 +51,13 @@ import type {
   DtoGalleryListResponse,
   DtoGalleryReviewBatchResponse,
   DtoGalleryReviewListResponse,
+  DtoGitHubReleaseListResponse,
   DtoHandleFeedbackRequest,
   DtoHandleResourceReportRequest,
   DtoImageDataResponse,
   DtoNovelDataResponse,
   DtoNovelListResponse,
+  DtoPublishReleaseRequest,
   DtoReorderGalleryRequest,
   DtoResourceDataResponse,
   DtoResourceReportDataResponse,
@@ -71,17 +82,21 @@ import type {
   LeveldtoUpdateExperienceRuleRequest,
   LeveldtoUpdateLevelConfigRequest,
   LeveldtoUserLevelResponse,
+  ListAdminAnnouncementsParams,
+  ListAdminAppReleasesParams,
   ListAdminArticlesParams,
   ListAdminBackgroundPresetsParams,
   ListAdminBannersParams,
   ListAdminCommentsParams,
   ListAdminFeedbackParams,
   ListAdminGalgamesParams,
+  ListAdminGitHubReleasesParams,
   ListAdminImagesParams,
   ListAdminNovelVolumesParams,
   ListAdminNovelsParams,
   ListAdminPostsParams,
   ListAdminResourcesParams,
+  ListAdminSiteChangelogsParams,
   ListGalleryReviewsParams,
   ListResourceReportsParams,
   ResponseMessageResponse,
@@ -89,6 +104,420 @@ import type {
 } from '../models';
 
 import { apiMutator } from '../../mutator';
+
+export const getListAdminAnnouncementsUrl = (params?: ListAdminAnnouncementsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/announcements?${stringifiedParams}` : `/api/v1/admin/announcements`
+}
+
+/**
+ * Requires announcement:read
+ * @summary List announcements for administration
+ */
+export const listAdminAnnouncements = async (params?: ListAdminAnnouncementsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminAnnouncementListResponse> => {
+
+  return apiMutator<DtoAdminAnnouncementListResponse>(getListAdminAnnouncementsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateAdminAnnouncementUrl = () => {
+
+
+
+
+  return `/api/v1/admin/announcements`
+}
+
+/**
+ * Requires announcement:create; publishing also requires announcement:publish
+ * @summary Create an announcement
+ */
+export const createAdminAnnouncement = async (dtoAnnouncementRequest: DtoAnnouncementRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAnnouncementDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoAnnouncementDataResponse>(getCreateAdminAnnouncementUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoAnnouncementRequest)
+  }
+);}
+
+
+export const getGetAdminAnnouncementUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/announcements/${id}`
+}
+
+/**
+ * Requires announcement:read
+ * @summary Get an announcement
+ */
+export const getAdminAnnouncement = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAnnouncementDataResponse> => {
+
+  return apiMutator<DtoAnnouncementDataResponse>(getGetAdminAnnouncementUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateAdminAnnouncementUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/announcements/${id}`
+}
+
+/**
+ * Requires announcement:update; publication changes also require announcement:publish
+ * @summary Update an announcement
+ */
+export const updateAdminAnnouncement = async (id: number,
+    dtoAnnouncementRequest: DtoAnnouncementRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAnnouncementDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoAnnouncementDataResponse>(getUpdateAdminAnnouncementUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoAnnouncementRequest)
+  }
+);}
+
+
+export const getDeleteAdminAnnouncementUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/announcements/${id}`
+}
+
+/**
+ * Requires announcement:delete
+ * @summary Delete an announcement
+ */
+export const deleteAdminAnnouncement = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminAnnouncementUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getPublishAnnouncementUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/announcements/${id}/publish`
+}
+
+/**
+ * Requires announcement:publish
+ * @summary Publish an announcement
+ */
+export const publishAnnouncement = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAnnouncementDataResponse> => {
+
+  return apiMutator<DtoAnnouncementDataResponse>(getPublishAnnouncementUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+export const getWithdrawAnnouncementUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/announcements/${id}/withdraw`
+}
+
+/**
+ * Requires announcement:publish
+ * @summary Withdraw an announcement
+ */
+export const withdrawAnnouncement = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAnnouncementDataResponse> => {
+
+  return apiMutator<DtoAnnouncementDataResponse>(getWithdrawAnnouncementUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+export const getListAdminGitHubReleasesUrl = (params?: ListAdminGitHubReleasesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/app/github-releases?${stringifiedParams}` : `/api/v1/admin/app/github-releases`
+}
+
+/**
+ * Returns published GitHub releases of the configured repository so admins can import official download URLs; requires app_release:read
+ * @summary List GitHub releases with APK assets
+ */
+export const listAdminGitHubReleases = async (params?: ListAdminGitHubReleasesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGitHubReleaseListResponse> => {
+
+  return apiMutator<DtoGitHubReleaseListResponse>(getListAdminGitHubReleasesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getListAdminAppReleasesUrl = (params?: ListAdminAppReleasesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/app/releases?${stringifiedParams}` : `/api/v1/admin/app/releases`
+}
+
+/**
+ * Requires app_release:read
+ * @summary List app releases for administration
+ */
+export const listAdminAppReleases = async (params?: ListAdminAppReleasesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAdminReleaseListResponse> => {
+
+  return apiMutator<DtoAdminReleaseListResponse>(getListAdminAppReleasesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateAdminAppReleaseUrl = () => {
+
+
+
+
+  return `/api/v1/admin/app/releases`
+}
+
+/**
+ * Requires app_release:create; publishing also requires app_release:publish
+ * @summary Create an app release
+ */
+export const createAdminAppRelease = async (dtoAppReleaseRequest: DtoAppReleaseRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAppReleaseDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoAppReleaseDataResponse>(getCreateAdminAppReleaseUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoAppReleaseRequest)
+  }
+);}
+
+
+export const getGetAdminAppReleaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/app/releases/${id}`
+}
+
+/**
+ * Requires app_release:read
+ * @summary Get an app release
+ */
+export const getAdminAppRelease = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAppReleaseDataResponse> => {
+
+  return apiMutator<DtoAppReleaseDataResponse>(getGetAdminAppReleaseUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateAdminAppReleaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/app/releases/${id}`
+}
+
+/**
+ * Requires app_release:update; publication changes also require app_release:publish
+ * @summary Update an app release
+ */
+export const updateAdminAppRelease = async (id: number,
+    dtoAppReleaseRequest: DtoAppReleaseRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAppReleaseDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoAppReleaseDataResponse>(getUpdateAdminAppReleaseUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoAppReleaseRequest)
+  }
+);}
+
+
+export const getDeleteAdminAppReleaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/app/releases/${id}`
+}
+
+/**
+ * Requires app_release:delete
+ * @summary Delete an app release
+ */
+export const deleteAdminAppRelease = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteAdminAppReleaseUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getDisableAppReleaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/app/releases/${id}/disable`
+}
+
+/**
+ * Requires app_release:publish
+ * @summary Disable an app release
+ */
+export const disableAppRelease = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAppReleaseDataResponse> => {
+
+  return apiMutator<DtoAppReleaseDataResponse>(getDisableAppReleaseUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+export const getPublishAppReleaseUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/app/releases/${id}/publish`
+}
+
+/**
+ * Requires app_release:publish
+ * @summary Publish an app release
+ */
+export const publishAppRelease = async (id: number,
+    dtoPublishReleaseRequest?: DtoPublishReleaseRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAppReleaseDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoAppReleaseDataResponse>(getPublishAppReleaseUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoPublishReleaseRequest)
+  }
+);}
+
 
 export const getListAdminArticlesUrl = (params?: ListAdminArticlesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -477,6 +906,146 @@ export const getDeleteAdminBannerUrl = (id: number,) => {
 export const deleteAdminBanner = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
   return apiMutator<ResponseMessageResponse>(getDeleteAdminBannerUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListAdminSiteChangelogsUrl = (params?: ListAdminSiteChangelogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/changelogs?${stringifiedParams}` : `/api/v1/admin/changelogs`
+}
+
+/**
+ * 分页返回站点更新日志；需要 changelog:read 权限
+ * @summary 管理端查询站点更新日志
+ */
+export const listAdminSiteChangelogs = async (params?: ListAdminSiteChangelogsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoChangelogListResponse> => {
+
+  return apiMutator<DtoChangelogListResponse>(getListAdminSiteChangelogsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateSiteChangelogUrl = () => {
+
+
+
+
+  return `/api/v1/admin/changelogs`
+}
+
+/**
+ * 新增一条站点版本更新日志；需要 changelog:create 权限
+ * @summary 创建更新日志
+ */
+export const createSiteChangelog = async (dtoChangelogRequest: DtoChangelogRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoChangelogDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoChangelogDataResponse>(getCreateSiteChangelogUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoChangelogRequest)
+  }
+);}
+
+
+export const getGetAdminSiteChangelogUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/changelogs/${id}`
+}
+
+/**
+ * 需要 changelog:read 权限
+ * @summary 管理端查询单条更新日志
+ */
+export const getAdminSiteChangelog = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoChangelogDataResponse> => {
+
+  return apiMutator<DtoChangelogDataResponse>(getGetAdminSiteChangelogUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateSiteChangelogUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/changelogs/${id}`
+}
+
+/**
+ * 修改站点版本更新日志的内容；需要 changelog:update 权限
+ * @summary 更新更新日志
+ */
+export const updateSiteChangelog = async (id: number,
+    dtoChangelogRequest: DtoChangelogRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoChangelogDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoChangelogDataResponse>(getUpdateSiteChangelogUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoChangelogRequest)
+  }
+);}
+
+
+export const getDeleteSiteChangelogUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/changelogs/${id}`
+}
+
+/**
+ * 删除站点版本更新日志；需要 changelog:delete 权限
+ * @summary 删除更新日志
+ */
+export const deleteSiteChangelog = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteSiteChangelogUrl(id),
   {
     ...options,
     method: 'DELETE'

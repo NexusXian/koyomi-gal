@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
-  DtoSendVerificationCodeRequest,
-  ResponseMessageResponse
+  ResponseMessageResponse,
+  UserdtoSendVerificationCodeRequest
 } from '../models';
 
 import { apiMutator } from '../../mutator';
@@ -24,7 +24,7 @@ export const getSendVerificationCodeUrl = () => {
  * 创建验证码邮件任务，202 表示任务已入队，不代表邮件已送达
  * @summary 发送邮箱验证码
  */
-export const sendVerificationCode = async (dtoSendVerificationCodeRequest: DtoSendVerificationCodeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+export const sendVerificationCode = async (userdtoSendVerificationCodeRequest: UserdtoSendVerificationCodeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -37,7 +37,7 @@ return apiMutator<ResponseMessageResponse>(getSendVerificationCodeUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoSendVerificationCodeRequest)
+    body: JSON.stringify(userdtoSendVerificationCodeRequest)
   }
 );}
 

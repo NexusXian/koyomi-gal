@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'providers/app_providers.dart';
+import 'models/message_models.dart';
 import 'pages/articles/article_detail_page.dart';
 import 'pages/articles/article_list_page.dart';
 import 'pages/auth/forgot_password_page.dart';
@@ -14,6 +15,8 @@ import 'pages/galgames/galgame_form_page.dart';
 import 'pages/galgames/galgame_list_page.dart';
 import 'pages/home/home_page.dart';
 import 'pages/home/shell_page.dart';
+import 'pages/messages/chat_page.dart';
+import 'pages/messages/conversations_page.dart';
 import 'pages/my/my_page.dart';
 import 'pages/notifications/notifications_page.dart';
 import 'pages/novels/novel_detail_page.dart';
@@ -36,6 +39,7 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _protectedPrefixes = [
   '/my',
   '/notifications',
+  '/messages',
   '/settings',
   '/galgames/new',
   '/posts/new',
@@ -226,6 +230,21 @@ GoRouter buildRouter() {
         path: '/notifications',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: '/messages',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ConversationsPage(),
+      ),
+      GoRoute(
+        path: '/messages/:id',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => ChatPage(
+          conversationId: int.parse(state.pathParameters['id']!),
+          conversation: state.extra is Conversation
+              ? state.extra as Conversation
+              : null,
+        ),
       ),
       GoRoute(
         path: '/settings/profile',

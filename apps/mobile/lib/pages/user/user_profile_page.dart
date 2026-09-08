@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/utils/format.dart';
+import '../../models/message_models.dart';
 import '../../models/pagination.dart';
 import '../../models/user_models.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/message_providers.dart';
 import '../../widgets/app_image.dart';
 import '../../widgets/common_views.dart';
 import '../../widgets/user_widgets.dart';
@@ -24,11 +26,34 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
   PublicUserProfile? _profile;
   String? _error;
   bool _loading = true;
+  bool _messaging = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future<void> _startConversation() async {
+    final profile = _profile;
+    if (profile?.id == null || _messaging) return;
+    setState(() => _messaging = true);
+    try {
+      final conversation = await ref
+          .read(messageServiceProvider)
+          .createConversation(profile!.id!);
+      if (!mounted) return;
+      ref.read(unreadMessagesProvider).consume(0);
+      context.push('/messages/${conversation.id}', extra: conversation);
+    } catch (error) {
+      if (mounted) {
+        showAppSnackBar(context, friendlyMessageError(error), error: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _messaging = false);
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -226,10 +251,32 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                   ),
                 ),
               const SizedBox(height: 12),
+              _buildMessageAction(profile),
+              const SizedBox(height: 12),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMessageAction(PublicUserProfile profile) {
+    final auth = ref.watch(authControllerProvider.select(
+      (controller) => controller.status,
+    ));
+    if (auth != AuthStatus.authenticated || profile.isSelf || profile.id == null) {
+      return const SizedBox.shrink();
+    }
+    return OutlinedButton.icon(
+      onPressed: _messaging ? null : _startConversation,
+      icon: _messaging
+          ? const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.mail_outline, size: 18),
+      label: Text(_messaging ? '正在打开...' : '发私信'),
     );
   }
 }

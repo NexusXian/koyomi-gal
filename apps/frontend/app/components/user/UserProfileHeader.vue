@@ -1,11 +1,44 @@
 <script setup lang="ts">
+import { message as antMessage } from 'ant-design-vue'
+import { storeToRefs } from 'pinia'
 import type { DtoPublicUserProfile } from '~/api/generated/models'
 import { formatDate } from '~/constants/domain'
 
-defineProps<{ profile: DtoPublicUserProfile }>()
+const props = defineProps<{ profile: DtoPublicUserProfile }>()
+
+const router = useRouter()
+const userStore = useUserStore()
+const { isAuthenticated, initialized } = storeToRefs(userStore)
+const messageStore = useMessageStore()
+const messaging = ref(false)
 
 const genderLabels: Record<string, string> = {
   male: '男', female: '女', non_binary: '非二元', undisclosed: '未公开'
+}
+
+const canMessage = computed(
+  () =>
+    initialized.value &&
+    isAuthenticated.value &&
+    !props.profile.is_self &&
+    !!props.profile.id
+)
+
+async function startConversation(): Promise<void> {
+  if (!props.profile.id || messaging.value) return
+  messaging.value = true
+  try {
+    const conversationId = await messageStore.startConversationWith(
+      props.profile.id
+    )
+    if (conversationId) {
+      void router.push(`/messages/${conversationId}`)
+    }
+  } catch (error) {
+    antMessage.error(getApiErrorMessage(error, '暂时无法向该用户发送私信'))
+  } finally {
+    messaging.value = false
+  }
 }
 </script>
 
@@ -40,6 +73,18 @@ const genderLabels: Record<string, string> = {
         </KunButton>
         <KunButton href="/settings/privacy" color="default" variant="bordered" size="sm">
           <KunIcon name="lucide:lock-keyhole" />隐私设置
+        </KunButton>
+      </div>
+      <div v-else-if="canMessage" class="owner-actions">
+        <KunButton
+          color="primary"
+          variant="light"
+          size="sm"
+          :disabled="messaging"
+          @click="startConversation"
+        >
+          <KunIcon name="lucide:mail" />
+          {{ messaging ? '正在打开...' : '发私信' }}
         </KunButton>
       </div>
     </div>

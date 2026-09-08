@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/model"
 )
 

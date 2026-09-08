@@ -7,6 +7,7 @@ import '../../models/galgame_models.dart';
 import '../../models/user_models.dart';
 import '../../pages/galgames/widgets.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/message_providers.dart';
 import '../../widgets/common_views.dart';
 import '../../widgets/user_widgets.dart';
 
@@ -353,6 +354,20 @@ class _MyPageState extends ConsumerState<MyPage> {
               child: const Icon(Icons.chevron_right),
             ),
             onTap: () => context.push('/notifications'),
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          ListTile(
+            leading: const Icon(Icons.mail_outlined),
+            title: const Text('私信'),
+            trailing: Badge(
+              isLabelVisible: ref.watch(
+                    unreadMessagesProvider.select((value) => value.count),
+                  ) >
+                  0,
+              label: Text('${ref.watch(unreadMessagesProvider.select((value) => value.count))}'),
+              child: const Icon(Icons.chevron_right),
+            ),
+            onTap: () => context.push('/messages'),
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           ListTile(

@@ -2,7 +2,7 @@ package service
 
 import (
 	imageService "backend/internal/image/service"
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/model"
 	"backend/internal/user/repository"
 	"backend/pkg/bcrypt"

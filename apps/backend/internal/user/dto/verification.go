@@ -1,4 +1,4 @@
-package dto
+package userdto
 
 type SendVerificationCodeRequest struct {
 	Email   string `json:"email" binding:"required,email,max=254" example:"user@example.com"`

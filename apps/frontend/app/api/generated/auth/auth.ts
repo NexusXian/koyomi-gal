@@ -6,14 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
-  DtoAuthSessionResponse,
-  DtoPasswordForgotCodeRequest,
-  DtoPasswordForgotResetRequest,
-  DtoPasswordForgotVerifyRequest,
-  DtoPasswordResetTokenResponse,
-  DtoUserLoginRequest,
-  DtoUserRegisterRequest,
-  ResponseMessageResponse
+  ResponseMessageResponse,
+  UserdtoAuthSessionResponse,
+  UserdtoPasswordForgotCodeRequest,
+  UserdtoPasswordForgotResetRequest,
+  UserdtoPasswordForgotVerifyRequest,
+  UserdtoPasswordResetTokenResponse,
+  UserdtoUserLoginRequest,
+  UserdtoUserRegisterRequest
 } from '../models';
 
 import { apiMutator } from '../../mutator';
@@ -30,7 +30,7 @@ export const getLoginUrl = () => {
  * 校验邮箱或用户名和密码，返回 Access Token 与用户信息，并通过 Set-Cookie 写入 HttpOnly 的 Refresh Token
  * @summary 用户登录
  */
-export const login = async (dtoUserLoginRequest: DtoUserLoginRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoAuthSessionResponse> => {
+export const login = async (userdtoUserLoginRequest: UserdtoUserLoginRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoAuthSessionResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -38,12 +38,12 @@ export const login = async (dtoUserLoginRequest: DtoUserLoginRequest, options?: 
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoAuthSessionResponse>(getLoginUrl(),
+return apiMutator<UserdtoAuthSessionResponse>(getLoginUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoUserLoginRequest)
+    body: JSON.stringify(userdtoUserLoginRequest)
   }
 );}
 
@@ -84,7 +84,7 @@ export const getForgotPasswordCodeUrl = () => {
  * 无论邮箱是否存在均返回相同结果，202 表示请求已处理
  * @summary 发送忘记密码验证码
  */
-export const forgotPasswordCode = async (dtoPasswordForgotCodeRequest: DtoPasswordForgotCodeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+export const forgotPasswordCode = async (userdtoPasswordForgotCodeRequest: UserdtoPasswordForgotCodeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -97,7 +97,7 @@ return apiMutator<ResponseMessageResponse>(getForgotPasswordCodeUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoPasswordForgotCodeRequest)
+    body: JSON.stringify(userdtoPasswordForgotCodeRequest)
   }
 );}
 
@@ -114,7 +114,7 @@ export const getForgotPasswordResetUrl = () => {
  * 使用一次性重置凭证设置新密码并使旧会话失效
  * @summary 重置忘记的密码
  */
-export const forgotPasswordReset = async (dtoPasswordForgotResetRequest: DtoPasswordForgotResetRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+export const forgotPasswordReset = async (userdtoPasswordForgotResetRequest: UserdtoPasswordForgotResetRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -127,7 +127,7 @@ return apiMutator<ResponseMessageResponse>(getForgotPasswordResetUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoPasswordForgotResetRequest)
+    body: JSON.stringify(userdtoPasswordForgotResetRequest)
   }
 );}
 
@@ -144,7 +144,7 @@ export const getForgotPasswordVerifyUrl = () => {
  * 验证成功后签发十分钟有效的一次性重置凭证
  * @summary 验证忘记密码验证码
  */
-export const forgotPasswordVerify = async (dtoPasswordForgotVerifyRequest: DtoPasswordForgotVerifyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPasswordResetTokenResponse> => {
+export const forgotPasswordVerify = async (userdtoPasswordForgotVerifyRequest: UserdtoPasswordForgotVerifyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoPasswordResetTokenResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -152,12 +152,12 @@ export const forgotPasswordVerify = async (dtoPasswordForgotVerifyRequest: DtoPa
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoPasswordResetTokenResponse>(getForgotPasswordVerifyUrl(),
+return apiMutator<UserdtoPasswordResetTokenResponse>(getForgotPasswordVerifyUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoPasswordForgotVerifyRequest)
+    body: JSON.stringify(userdtoPasswordForgotVerifyRequest)
   }
 );}
 
@@ -174,9 +174,9 @@ export const getRefreshSessionUrl = () => {
  * 使用 refresh_token Cookie 轮换 Refresh Token，返回新的 Access Token 与用户信息
  * @summary 刷新登录会话
  */
-export const refreshSession = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoAuthSessionResponse> => {
+export const refreshSession = async ( options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoAuthSessionResponse> => {
 
-  return apiMutator<DtoAuthSessionResponse>(getRefreshSessionUrl(),
+  return apiMutator<UserdtoAuthSessionResponse>(getRefreshSessionUrl(),
   {
     ...options,
     method: 'POST'
@@ -198,7 +198,7 @@ export const getRegisterUrl = () => {
  * 使用邮箱验证码创建新账号
  * @summary 用户注册
  */
-export const register = async (dtoUserRegisterRequest: DtoUserRegisterRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+export const register = async (userdtoUserRegisterRequest: UserdtoUserRegisterRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -211,7 +211,7 @@ return apiMutator<ResponseMessageResponse>(getRegisterUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoUserRegisterRequest)
+    body: JSON.stringify(userdtoUserRegisterRequest)
   }
 );}
 

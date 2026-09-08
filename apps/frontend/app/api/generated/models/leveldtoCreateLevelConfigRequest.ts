@@ -20,7 +20,7 @@ export interface LeveldtoCreateLevelConfigRequest {
      */
   level: number;
   /** @minimum 0 */
-  min_exp: number;
+  min_exp?: number;
   /** @maxLength 50 */
   name: string;
 }

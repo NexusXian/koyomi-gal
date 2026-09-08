@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'core/startup/startup_prompt_coordinator.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/app_providers.dart';
+import 'providers/message_providers.dart';
 import 'router.dart';
 
 Future<void> main() async {
@@ -112,6 +113,9 @@ class _StartupPromptHostState extends ConsumerState<StartupPromptHost>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncMessagesOnResume();
+    }
     if (state == AppLifecycleState.resumed && _startupDelayElapsed) {
       _check(
         _coldStartCheckPending
@@ -119,6 +123,16 @@ class _StartupPromptHostState extends ConsumerState<StartupPromptHost>
             : StartupCheckTrigger.resume,
       );
     }
+  }
+
+  /// App 回前台：必要时重连私信 WebSocket 并校正未读数。
+  void _syncMessagesOnResume() {
+    final auth = ref.read(authControllerProvider);
+    if (!auth.isAuthenticated) {
+      return;
+    }
+    ref.read(messageRealtimeProvider).resume();
+    ref.read(unreadMessagesProvider).refresh();
   }
 
   void _check(StartupCheckTrigger trigger) {

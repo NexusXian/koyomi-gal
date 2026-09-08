@@ -8,20 +8,20 @@
 import type {
   DtoGalgameListResponse,
   DtoMePermissionsResponse,
-  DtoMeResponse,
-  DtoPrivacySettingsResponse,
-  DtoPublicUserProfileResponse,
-  DtoUpdateMeRequest,
-  DtoUpdatePrivacyRequest,
-  DtoUpdateProfileRequest,
-  DtoUpdateUserPreferencesRequest,
-  DtoUserPreferencesResponse,
   LeveldtoCheckinResultResponse,
   LeveldtoCheckinStatusResponse,
   LeveldtoExperienceLogListResponse,
   LeveldtoUserLevelResponse,
   ListMyExperienceLogsParams,
-  ListMyGalgamesParams
+  ListMyGalgamesParams,
+  UserdtoMeResponse,
+  UserdtoPrivacySettingsResponse,
+  UserdtoPublicUserProfileResponse,
+  UserdtoUpdateMeRequest,
+  UserdtoUpdatePrivacyRequest,
+  UserdtoUpdateProfileRequest,
+  UserdtoUpdateUserPreferencesRequest,
+  UserdtoUserPreferencesResponse
 } from '../models';
 
 import { apiMutator } from '../../mutator';
@@ -38,7 +38,7 @@ export const getUpdateMeUrl = () => {
  * 更新头像引用；头像必须是本人上传的 avatars 分类图片，更换后旧头像资源会被删除
  * @summary 更新当前用户资料
  */
-export const updateMe = async (dtoUpdateMeRequest: DtoUpdateMeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoMeResponse> => {
+export const updateMe = async (userdtoUpdateMeRequest: UserdtoUpdateMeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoMeResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -46,12 +46,12 @@ export const updateMe = async (dtoUpdateMeRequest: DtoUpdateMeRequest, options?:
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoMeResponse>(getUpdateMeUrl(),
+return apiMutator<UserdtoMeResponse>(getUpdateMeUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoUpdateMeRequest)
+    body: JSON.stringify(userdtoUpdateMeRequest)
   }
 );}
 
@@ -123,9 +123,9 @@ export const getGetMePreferencesUrl = () => {
  * 返回当前用户的背景偏好；从未设置时返回默认值
  * @summary 查看个性化背景设置
  */
-export const getMePreferences = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoUserPreferencesResponse> => {
+export const getMePreferences = async ( options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoUserPreferencesResponse> => {
 
-  return apiMutator<DtoUserPreferencesResponse>(getGetMePreferencesUrl(),
+  return apiMutator<UserdtoUserPreferencesResponse>(getGetMePreferencesUrl(),
   {
     ...options,
     method: 'GET'
@@ -147,7 +147,7 @@ export const getUpdateMePreferencesUrl = () => {
  * 保存背景偏好；custom 来源必须引用本人上传的 backgrounds 分类图片，更换后旧背景资源会被删除
  * @summary 更新个性化背景设置
  */
-export const updateMePreferences = async (dtoUpdateUserPreferencesRequest: DtoUpdateUserPreferencesRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoUserPreferencesResponse> => {
+export const updateMePreferences = async (userdtoUpdateUserPreferencesRequest: UserdtoUpdateUserPreferencesRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoUserPreferencesResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -155,12 +155,12 @@ export const updateMePreferences = async (dtoUpdateUserPreferencesRequest: DtoUp
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoUserPreferencesResponse>(getUpdateMePreferencesUrl(),
+return apiMutator<UserdtoUserPreferencesResponse>(getUpdateMePreferencesUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoUpdateUserPreferencesRequest)
+    body: JSON.stringify(userdtoUpdateUserPreferencesRequest)
   }
 );}
 
@@ -279,9 +279,9 @@ export const getGetMyPrivacyUrl = () => {
 /**
  * @summary 查看当前用户隐私设置
  */
-export const getMyPrivacy = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoPrivacySettingsResponse> => {
+export const getMyPrivacy = async ( options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoPrivacySettingsResponse> => {
 
-  return apiMutator<DtoPrivacySettingsResponse>(getGetMyPrivacyUrl(),
+  return apiMutator<UserdtoPrivacySettingsResponse>(getGetMyPrivacyUrl(),
   {
     ...options,
     method: 'GET'
@@ -302,7 +302,7 @@ export const getUpdateMyPrivacyUrl = () => {
 /**
  * @summary 更新当前用户隐私设置
  */
-export const updateMyPrivacy = async (dtoUpdatePrivacyRequest: DtoUpdatePrivacyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPrivacySettingsResponse> => {
+export const updateMyPrivacy = async (userdtoUpdatePrivacyRequest: UserdtoUpdatePrivacyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoPrivacySettingsResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -310,12 +310,12 @@ export const updateMyPrivacy = async (dtoUpdatePrivacyRequest: DtoUpdatePrivacyR
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoPrivacySettingsResponse>(getUpdateMyPrivacyUrl(),
+return apiMutator<UserdtoPrivacySettingsResponse>(getUpdateMyPrivacyUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoUpdatePrivacyRequest)
+    body: JSON.stringify(userdtoUpdatePrivacyRequest)
   }
 );}
 
@@ -331,9 +331,9 @@ export const getGetMyProfileUrl = () => {
 /**
  * @summary 查看当前用户资料
  */
-export const getMyProfile = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoPublicUserProfileResponse> => {
+export const getMyProfile = async ( options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoPublicUserProfileResponse> => {
 
-  return apiMutator<DtoPublicUserProfileResponse>(getGetMyProfileUrl(),
+  return apiMutator<UserdtoPublicUserProfileResponse>(getGetMyProfileUrl(),
   {
     ...options,
     method: 'GET'
@@ -355,7 +355,7 @@ export const getUpdateMyProfileUrl = () => {
  * 头像和横幅只能引用本人已激活的 avatars/profile-banners 图片；null 清除图片
  * @summary 更新当前用户资料
  */
-export const updateMyProfile = async (dtoUpdateProfileRequest: DtoUpdateProfileRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPublicUserProfileResponse> => {
+export const updateMyProfile = async (userdtoUpdateProfileRequest: UserdtoUpdateProfileRequest, options?: Parameters<typeof apiMutator>[1]): Promise<UserdtoPublicUserProfileResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -363,12 +363,12 @@ export const updateMyProfile = async (dtoUpdateProfileRequest: DtoUpdateProfileR
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return apiMutator<DtoPublicUserProfileResponse>(getUpdateMyProfileUrl(),
+return apiMutator<UserdtoPublicUserProfileResponse>(getUpdateMyProfileUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(dtoUpdateProfileRequest)
+    body: JSON.stringify(userdtoUpdateProfileRequest)
   }
 );}
 

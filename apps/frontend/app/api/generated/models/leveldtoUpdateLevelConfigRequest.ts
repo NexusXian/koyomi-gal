@@ -15,7 +15,7 @@ export interface LeveldtoUpdateLevelConfigRequest {
   icon_url?: string;
   is_enabled: boolean;
   /** @minimum 0 */
-  min_exp: number;
+  min_exp?: number;
   /** @maxLength 50 */
   name: string;
 }

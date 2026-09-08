@@ -6729,7 +6729,7 @@ const docTemplate = `{
                     "200": {
                         "description": "用户列表",
                         "schema": {
-                            "$ref": "#/definitions/dto.AdminUserListResponse"
+                            "$ref": "#/definitions/userdto.AdminUserListResponse"
                         }
                     },
                     "400": {
@@ -6783,7 +6783,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateAdminUserRequest"
+                            "$ref": "#/definitions/userdto.CreateAdminUserRequest"
                         }
                     }
                 ],
@@ -6791,7 +6791,7 @@ const docTemplate = `{
                     "200": {
                         "description": "创建成功",
                         "schema": {
-                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                            "$ref": "#/definitions/userdto.AdminUserDataResponse"
                         }
                     },
                     "400": {
@@ -6856,7 +6856,7 @@ const docTemplate = `{
                     "200": {
                         "description": "用户详情",
                         "schema": {
-                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                            "$ref": "#/definitions/userdto.AdminUserDataResponse"
                         }
                     },
                     "400": {
@@ -6923,7 +6923,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateAdminUserRequest"
+                            "$ref": "#/definitions/userdto.UpdateAdminUserRequest"
                         }
                     }
                 ],
@@ -6931,7 +6931,7 @@ const docTemplate = `{
                     "200": {
                         "description": "更新成功",
                         "schema": {
-                            "$ref": "#/definitions/dto.AdminUserDataResponse"
+                            "$ref": "#/definitions/userdto.AdminUserDataResponse"
                         }
                     },
                     "400": {
@@ -7478,7 +7478,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserLoginRequest"
+                            "$ref": "#/definitions/userdto.UserLoginRequest"
                         }
                     }
                 ],
@@ -7486,7 +7486,7 @@ const docTemplate = `{
                     "200": {
                         "description": "登录成功",
                         "schema": {
-                            "$ref": "#/definitions/dto.AuthSessionResponse"
+                            "$ref": "#/definitions/userdto.AuthSessionResponse"
                         },
                         "headers": {
                             "Set-Cookie": {
@@ -7582,7 +7582,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.PasswordForgotCodeRequest"
+                            "$ref": "#/definitions/userdto.PasswordForgotCodeRequest"
                         }
                     }
                 ],
@@ -7635,7 +7635,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.PasswordForgotResetRequest"
+                            "$ref": "#/definitions/userdto.PasswordForgotResetRequest"
                         }
                     }
                 ],
@@ -7688,7 +7688,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.PasswordForgotVerifyRequest"
+                            "$ref": "#/definitions/userdto.PasswordForgotVerifyRequest"
                         }
                     }
                 ],
@@ -7696,7 +7696,7 @@ const docTemplate = `{
                     "200": {
                         "description": "验证成功",
                         "schema": {
-                            "$ref": "#/definitions/dto.PasswordResetTokenResponse"
+                            "$ref": "#/definitions/userdto.PasswordResetTokenResponse"
                         }
                     },
                     "400": {
@@ -7729,7 +7729,7 @@ const docTemplate = `{
                     "200": {
                         "description": "刷新成功",
                         "schema": {
-                            "$ref": "#/definitions/dto.AuthSessionResponse"
+                            "$ref": "#/definitions/userdto.AuthSessionResponse"
                         },
                         "headers": {
                             "Set-Cookie": {
@@ -7780,7 +7780,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserRegisterRequest"
+                            "$ref": "#/definitions/userdto.UserRegisterRequest"
                         }
                     }
                 ],
@@ -7827,7 +7827,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.SendVerificationCodeRequest"
+                            "$ref": "#/definitions/userdto.SendVerificationCodeRequest"
                         }
                     }
                 ],
@@ -9738,7 +9738,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateMeRequest"
+                            "$ref": "#/definitions/userdto.UpdateMeRequest"
                         }
                     }
                 ],
@@ -9746,7 +9746,7 @@ const docTemplate = `{
                     "200": {
                         "description": "更新后的用户资料",
                         "schema": {
-                            "$ref": "#/definitions/dto.MeResponse"
+                            "$ref": "#/definitions/userdto.MeResponse"
                         }
                     },
                     "400": {
@@ -9895,7 +9895,7 @@ const docTemplate = `{
                     "200": {
                         "description": "背景偏好",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserPreferencesResponse"
+                            "$ref": "#/definitions/userdto.UserPreferencesResponse"
                         }
                     },
                     "401": {
@@ -9937,7 +9937,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateUserPreferencesRequest"
+                            "$ref": "#/definitions/userdto.UpdateUserPreferencesRequest"
                         }
                     }
                 ],
@@ -9945,7 +9945,7 @@ const docTemplate = `{
                     "200": {
                         "description": "保存后的背景偏好",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserPreferencesResponse"
+                            "$ref": "#/definitions/userdto.UserPreferencesResponse"
                         }
                     },
                     "400": {
@@ -9962,6 +9962,536 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "保存失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/conversations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按最后消息时间和会话 ID 稳定分页返回当前用户的会话",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "查询私信会话",
+                "operationId": "listMessageConversations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "不透明游标",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ConversationListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户与目标用户的私信会话，不存在时创建",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "获取或创建私信会话",
+                "operationId": "createMessageConversation",
+                "parameters": [
+                    {
+                        "description": "目标用户",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateConversationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ConversationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/conversations/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "仅隐藏当前用户的会话视图，不删除对方视图或历史消息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "删除私信会话",
+                "operationId": "deleteMessageConversation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "会话 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/conversations/{id}/messages": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回指定会话消息，数据库倒序查询后按从旧到新输出",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "查询会话消息",
+                "operationId": "listConversationMessages",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "会话 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "上一页最早消息 ID",
+                        "name": "before_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 30,
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "在指定私信会话中发送文本消息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "发送私信",
+                "operationId": "sendConversationMessage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "会话 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "消息内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/conversations/{id}/read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将会话读取进度推进到指定消息，读取进度不会倒退",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "标记会话已读",
+                "operationId": "markConversationRead",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "会话 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "读取到的消息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MarkReadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "查询未读私信数",
+                "operationId": "getMessageUnreadCount",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageUnreadCountResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/{message_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "仅允许发送者软删除自己的消息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "删除私信消息",
+                "operationId": "deleteMessage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "消息 ID",
+                        "name": "message_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -13234,6 +13764,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/users/me/message-settings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "查询私信设置",
+                "operationId": "getMessageSettings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageSettingsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "更新私信设置",
+                "operationId": "updateMessageSettings",
+                "parameters": [
+                    {
+                        "description": "私信设置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateMessageSettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageSettingsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/me/password": {
             "put": {
                 "security": [
@@ -13260,7 +13882,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ChangePasswordRequest"
+                            "$ref": "#/definitions/userdto.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -13318,7 +13940,7 @@ const docTemplate = `{
                     "200": {
                         "description": "验证码已发送",
                         "schema": {
-                            "$ref": "#/definitions/dto.PasswordCodeResponse"
+                            "$ref": "#/definitions/userdto.PasswordCodeResponse"
                         }
                     },
                     "401": {
@@ -13367,7 +13989,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                            "$ref": "#/definitions/userdto.PrivacySettingsResponse"
                         }
                     },
                     "401": {
@@ -13402,7 +14024,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdatePrivacyRequest"
+                            "$ref": "#/definitions/userdto.UpdatePrivacyRequest"
                         }
                     }
                 ],
@@ -13410,7 +14032,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                            "$ref": "#/definitions/userdto.PrivacySettingsResponse"
                         }
                     },
                     "400": {
@@ -13447,7 +14069,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PublicUserProfileResponse"
+                            "$ref": "#/definitions/userdto.PublicUserProfileResponse"
                         }
                     },
                     "401": {
@@ -13483,7 +14105,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateProfileRequest"
+                            "$ref": "#/definitions/userdto.UpdateProfileRequest"
                         }
                     }
                 ],
@@ -13491,7 +14113,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PublicUserProfileResponse"
+                            "$ref": "#/definitions/userdto.PublicUserProfileResponse"
                         }
                     },
                     "400": {
@@ -13502,6 +14124,120 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{id}/block": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "屏蔽用户私信",
+                "operationId": "blockMessageUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "取消屏蔽用户私信",
+                "operationId": "unblockMessageUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -13533,7 +14269,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PublicUserProfileResponse"
+                            "$ref": "#/definitions/userdto.PublicUserProfileResponse"
                         }
                     },
                     "401": {
@@ -13586,7 +14322,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserActivityListResponse"
+                            "$ref": "#/definitions/userdto.UserActivityListResponse"
                         }
                     },
                     "403": {
@@ -13633,7 +14369,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ProfileCommentListResponse"
+                            "$ref": "#/definitions/userdto.ProfileCommentListResponse"
                         }
                     },
                     "403": {
@@ -13680,7 +14416,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ProfileGalgameListResponse"
+                            "$ref": "#/definitions/userdto.ProfileGalgameListResponse"
                         }
                     },
                     "403": {
@@ -13775,7 +14511,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ProfilePostListResponse"
+                            "$ref": "#/definitions/userdto.ProfilePostListResponse"
                         }
                     },
                     "403": {
@@ -13822,11 +14558,49 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ProfileGalgameListResponse"
+                            "$ref": "#/definitions/userdto.ProfileGalgameListResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/ws/ticket": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建一个 30 秒内有效且仅可使用一次的 WebSocket 连接票据",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "websocket"
+                ],
+                "summary": "创建 WebSocket 连接票据",
+                "operationId": "createWebSocketTicket",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/realtime.TicketResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -14545,111 +15319,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AdminUserData": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "user@example.com"
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_banned": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.AdminUserRoleData"
-                    }
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string",
-                    "example": "koyomi"
-                }
-            }
-        },
-        "dto.AdminUserDataResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.AdminUserData"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
-        "dto.AdminUserListData": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.AdminUserData"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "example": 20
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "dto.AdminUserListResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.AdminUserListData"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
-        "dto.AdminUserRoleData": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "user"
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 2
-                },
-                "name": {
-                    "type": "string",
-                    "example": "普通用户"
-                }
-            }
-        },
         "dto.AdminVolumeListData": {
             "type": "object",
             "properties": {
@@ -15253,53 +15922,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AuthSession": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/dto.AuthUser"
-                }
-            }
-        },
-        "dto.AuthSessionResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.AuthSession"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
-        "dto.AuthUser": {
-            "type": "object",
-            "properties": {
-                "avatar": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "user@example.com"
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "username": {
-                    "type": "string",
-                    "example": "koyomi"
-                }
-            }
-        },
         "dto.Author": {
             "type": "object",
             "properties": {
@@ -15840,28 +16462,6 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
-                }
-            }
-        },
-        "dto.ChangePasswordRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "confirm_password",
-                "new_password"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "123456"
-                },
-                "confirm_password": {
-                    "type": "string",
-                    "example": "newpassword123"
-                },
-                "new_password": {
-                    "type": "string",
-                    "example": "newpassword123"
                 }
             }
         },
@@ -16592,33 +17192,89 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateAdminUserRequest": {
+        "dto.ConversationData": {
             "type": "object",
-            "required": [
-                "email",
-                "password",
-                "username"
-            ],
             "properties": {
-                "email": {
-                    "type": "string",
-                    "maxLength": 254,
-                    "example": "user@example.com"
+                "can_send": {
+                    "type": "boolean"
                 },
-                "is_banned": {
-                    "type": "boolean",
-                    "example": false
+                "created_at": {
+                    "type": "string"
                 },
-                "password": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 8,
-                    "example": "password123"
+                "id": {
+                    "type": "integer",
+                    "example": 8
                 },
-                "username": {
+                "is_blocked": {
+                    "type": "boolean"
+                },
+                "last_message": {
+                    "$ref": "#/definitions/dto.MessagePreview"
+                },
+                "last_message_at": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string",
-                    "maxLength": 50,
-                    "example": "koyomi"
+                    "example": "direct"
+                },
+                "unread_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/userdto.PublicUserSummary"
+                }
+            }
+        },
+        "dto.ConversationListData": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ConversationData"
+                    }
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ConversationListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ConversationListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ConversationResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ConversationData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -16784,6 +17440,19 @@ const docTemplate = `{
                 "reply_to_comment_id": {
                     "type": "integer",
                     "example": 5
+                }
+            }
+        },
+        "dto.CreateConversationRequest": {
+            "type": "object",
+            "required": [
+                "user_id"
+            ],
+            "properties": {
+                "user_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1002
                 }
             }
         },
@@ -19408,6 +20077,19 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MarkReadRequest": {
+            "type": "object",
+            "required": [
+                "message_id"
+            ],
+            "properties": {
+                "message_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 42
+                }
+            }
+        },
         "dto.MatchCandidateBatchData": {
             "type": "object",
             "properties": {
@@ -19613,27 +20295,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MeData": {
-            "type": "object",
-            "properties": {
-                "avatar": {
-                    "type": "string",
-                    "example": "https://img.example.com/avatars/1/2026/09/uuid.png"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "user@example.com"
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "username": {
-                    "type": "string",
-                    "example": "koyomi"
-                }
-            }
-        },
         "dto.MePermissionsData": {
             "type": "object",
             "properties": {
@@ -19674,7 +20335,65 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MeResponse": {
+        "dto.MessageData": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "Hello"
+                },
+                "conversation_id": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "is_deleted": {
+                    "type": "boolean"
+                },
+                "receiver_id": {
+                    "type": "integer",
+                    "example": 1002
+                },
+                "sender": {
+                    "$ref": "#/definitions/userdto.PublicUserSummary"
+                },
+                "sender_id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "type": {
+                    "type": "string",
+                    "example": "text"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MessageListData": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MessageData"
+                    }
+                },
+                "next_cursor": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.MessageListResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -19682,7 +20401,87 @@ const docTemplate = `{
                     "example": 0
                 },
                 "data": {
-                    "$ref": "#/definitions/dto.MeData"
+                    "$ref": "#/definitions/dto.MessageListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.MessagePreview": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_deleted": {
+                    "type": "boolean"
+                },
+                "sender_id": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MessageData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.MessageSettingsData": {
+            "type": "object",
+            "properties": {
+                "permission": {
+                    "type": "string",
+                    "example": "everyone"
+                }
+            }
+        },
+        "dto.MessageSettingsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MessageSettingsData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.MessageUnreadCountResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_message_dto.UnreadCountData"
                 },
                 "msg": {
                     "type": "string",
@@ -20080,107 +20879,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PasswordCodeData": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "us***@example.com"
-                }
-            }
-        },
-        "dto.PasswordCodeResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.PasswordCodeData"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "验证码已发送"
-                }
-            }
-        },
-        "dto.PasswordForgotCodeRequest": {
-            "type": "object",
-            "required": [
-                "email"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "maxLength": 254,
-                    "example": "user@example.com"
-                }
-            }
-        },
-        "dto.PasswordForgotResetRequest": {
-            "type": "object",
-            "required": [
-                "confirm_password",
-                "password",
-                "reset_token"
-            ],
-            "properties": {
-                "confirm_password": {
-                    "type": "string",
-                    "example": "newpassword123"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "newpassword123"
-                },
-                "reset_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.PasswordForgotVerifyRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "email"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "123456"
-                },
-                "email": {
-                    "type": "string",
-                    "maxLength": 254,
-                    "example": "user@example.com"
-                }
-            }
-        },
-        "dto.PasswordResetTokenData": {
-            "type": "object",
-            "properties": {
-                "reset_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.PasswordResetTokenResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.PasswordResetTokenData"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
         "dto.PermissionListResponse": {
             "type": "object",
             "properties": {
@@ -20534,365 +21232,6 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/dto.PresignImageData"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
-        "dto.PrivacySettingsData": {
-            "type": "object",
-            "properties": {
-                "profile_visibility": {
-                    "type": "string",
-                    "example": "public"
-                },
-                "show_activity": {
-                    "type": "boolean"
-                },
-                "show_birthday": {
-                    "type": "boolean"
-                },
-                "show_comments": {
-                    "type": "boolean"
-                },
-                "show_favorites": {
-                    "type": "boolean"
-                },
-                "show_location": {
-                    "type": "boolean"
-                },
-                "show_posts": {
-                    "type": "boolean"
-                },
-                "show_ratings": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "dto.PrivacySettingsResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.PrivacySettingsData"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
-        "dto.ProfileAccess": {
-            "type": "object",
-            "properties": {
-                "can_view_activity": {
-                    "type": "boolean"
-                },
-                "can_view_birthday": {
-                    "type": "boolean"
-                },
-                "can_view_comments": {
-                    "type": "boolean"
-                },
-                "can_view_favorites": {
-                    "type": "boolean"
-                },
-                "can_view_location": {
-                    "type": "boolean"
-                },
-                "can_view_posts": {
-                    "type": "boolean"
-                },
-                "can_view_profile": {
-                    "type": "boolean"
-                },
-                "can_view_ratings": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "dto.ProfileCommentData": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "like_count": {
-                    "type": "integer"
-                },
-                "parent_id": {
-                    "type": "integer"
-                },
-                "post_id": {
-                    "type": "integer"
-                },
-                "post_title": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.ProfileCommentListData": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ProfileCommentData"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.ProfileCommentListResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.ProfileCommentListData"
-                },
-                "msg": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.ProfileGalgameData": {
-            "type": "object",
-            "properties": {
-                "cover_sensitive": {
-                    "type": "boolean"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "score": {
-                    "type": "integer"
-                },
-                "slug": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.ProfileGalgameListData": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ProfileGalgameData"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.ProfileGalgameListResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.ProfileGalgameListData"
-                },
-                "msg": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.ProfilePostData": {
-            "type": "object",
-            "properties": {
-                "comment_count": {
-                    "type": "integer"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "editor_mode": {
-                    "type": "string"
-                },
-                "favorite_count": {
-                    "type": "integer"
-                },
-                "galgame_id": {
-                    "type": "integer"
-                },
-                "galgame_title": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "like_count": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.ProfilePostListData": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ProfilePostData"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.ProfilePostListResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.ProfilePostListData"
-                },
-                "msg": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.PublicUserProfile": {
-            "type": "object",
-            "properties": {
-                "access": {
-                    "$ref": "#/definitions/dto.ProfileAccess"
-                },
-                "avatar_url": {
-                    "type": "string",
-                    "example": "https://img.example.com/avatars/1001/avatar.webp"
-                },
-                "banner_url": {
-                    "type": "string"
-                },
-                "bio": {
-                    "type": "string"
-                },
-                "birthday": {
-                    "type": "string",
-                    "example": "2000-01-02"
-                },
-                "comment_count": {
-                    "type": "integer"
-                },
-                "display_name": {
-                    "type": "string",
-                    "example": "Koyomi"
-                },
-                "favorite_count": {
-                    "type": "integer"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 1001
-                },
-                "is_private": {
-                    "type": "boolean"
-                },
-                "is_restricted": {
-                    "type": "boolean"
-                },
-                "is_self": {
-                    "type": "boolean"
-                },
-                "level": {
-                    "$ref": "#/definitions/leveldto.UserLevelSummary"
-                },
-                "location": {
-                    "type": "string"
-                },
-                "post_count": {
-                    "type": "integer"
-                },
-                "rating_count": {
-                    "type": "integer"
-                },
-                "registered_at": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string",
-                    "example": "koyomi"
-                },
-                "website_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.PublicUserProfileResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.PublicUserProfile"
                 },
                 "msg": {
                     "type": "string",
@@ -21550,21 +21889,16 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SendVerificationCodeRequest": {
+        "dto.SendMessageRequest": {
             "type": "object",
-            "required": [
-                "email",
-                "purpose"
-            ],
             "properties": {
-                "email": {
+                "content": {
                     "type": "string",
-                    "maxLength": 254,
-                    "example": "user@example.com"
+                    "example": "Hello"
                 },
-                "purpose": {
+                "type": {
                     "type": "string",
-                    "example": "register"
+                    "example": "text"
                 }
             }
         },
@@ -21630,15 +21964,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UnreadCountData": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 3
-                }
-            }
-        },
         "dto.UnreadCountResponse": {
             "type": "object",
             "properties": {
@@ -21647,36 +21972,11 @@ const docTemplate = `{
                     "example": 0
                 },
                 "data": {
-                    "$ref": "#/definitions/dto.UnreadCountData"
+                    "$ref": "#/definitions/internal_notification_dto.UnreadCountData"
                 },
                 "msg": {
                     "type": "string",
                     "example": "success"
-                }
-            }
-        },
-        "dto.UpdateAdminUserRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "maxLength": 254,
-                    "example": "user@example.com"
-                },
-                "is_banned": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 8,
-                    "example": "new-password123"
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "example": "koyomi"
                 }
             }
         },
@@ -22075,14 +22375,12 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateMeRequest": {
+        "dto.UpdateMessageSettingsRequest": {
             "type": "object",
             "properties": {
-                "avatar_asset_id": {
-                    "description": "AvatarAssetID references an image_assets row; null clears the avatar.",
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 123
+                "permission": {
+                    "type": "string",
+                    "example": "everyone"
                 }
             }
         },
@@ -22258,85 +22556,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdatePrivacyRequest": {
-            "type": "object",
-            "properties": {
-                "profile_visibility": {
-                    "type": "string",
-                    "enum": [
-                        "public",
-                        "registered",
-                        "private"
-                    ]
-                },
-                "show_activity": {
-                    "type": "boolean"
-                },
-                "show_birthday": {
-                    "type": "boolean"
-                },
-                "show_comments": {
-                    "type": "boolean"
-                },
-                "show_favorites": {
-                    "type": "boolean"
-                },
-                "show_location": {
-                    "type": "boolean"
-                },
-                "show_posts": {
-                    "type": "boolean"
-                },
-                "show_ratings": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "dto.UpdateProfileRequest": {
-            "type": "object",
-            "properties": {
-                "avatar_asset_id": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "x-nullable": true
-                },
-                "banner_asset_id": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "x-nullable": true
-                },
-                "bio": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "birthday": {
-                    "type": "string",
-                    "x-nullable": true,
-                    "example": "2000-01-02"
-                },
-                "display_name": {
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "gender": {
-                    "type": "string",
-                    "enum": [
-                        "male",
-                        "female",
-                        "non_binary",
-                        "undisclosed"
-                    ]
-                },
-                "location": {
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "website_url": {
-                    "type": "string",
-                    "maxLength": 2048
-                }
-            }
-        },
         "dto.UpdateResourceRequest": {
             "type": "object",
             "required": [
@@ -22456,66 +22675,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateUserPreferencesRequest": {
-            "type": "object",
-            "required": [
-                "background_source"
-            ],
-            "properties": {
-                "background_asset_id": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 100
-                },
-                "background_blur": {
-                    "type": "number",
-                    "maximum": 20,
-                    "minimum": 0,
-                    "example": 0
-                },
-                "background_opacity": {
-                    "type": "number",
-                    "maximum": 1,
-                    "minimum": 0,
-                    "example": 0.35
-                },
-                "background_position": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "example": "center center"
-                },
-                "background_preset": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "example": "default-01"
-                },
-                "background_size": {
-                    "type": "string",
-                    "enum": [
-                        "cover",
-                        "contain"
-                    ],
-                    "example": "cover"
-                },
-                "background_source": {
-                    "type": "string",
-                    "enum": [
-                        "none",
-                        "preset",
-                        "custom"
-                    ],
-                    "example": "custom"
-                },
-                "sensitive_cover_mode": {
-                    "type": "string",
-                    "enum": [
-                        "blur",
-                        "show"
-                    ],
-                    "example": "blur"
-                }
-            }
-        },
         "dto.UpdateUserRolesRequest": {
             "type": "object",
             "required": [
@@ -22631,180 +22790,6 @@ const docTemplate = `{
                         5
                     ],
                     "example": 2
-                }
-            }
-        },
-        "dto.UserActivityData": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "metadata": {
-                    "type": "object"
-                },
-                "target_id": {
-                    "type": "integer"
-                },
-                "target_type": {
-                    "type": "string",
-                    "example": "post"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "post_created"
-                }
-            }
-        },
-        "dto.UserActivityListData": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserActivityData"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.UserActivityListResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.UserActivityListData"
-                },
-                "msg": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UserLoginRequest": {
-            "type": "object",
-            "required": [
-                "account",
-                "password"
-            ],
-            "properties": {
-                "account": {
-                    "type": "string",
-                    "maxLength": 254,
-                    "example": "user@example.com"
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 8,
-                    "example": "password123"
-                }
-            }
-        },
-        "dto.UserPreferencesData": {
-            "type": "object",
-            "properties": {
-                "background_asset_id": {
-                    "type": "integer",
-                    "example": 100
-                },
-                "background_blur": {
-                    "type": "number",
-                    "example": 0
-                },
-                "background_image_url": {
-                    "description": "BackgroundImageURL is the resolved CDN URL of the custom background.",
-                    "type": "string"
-                },
-                "background_opacity": {
-                    "type": "number",
-                    "example": 0.35
-                },
-                "background_position": {
-                    "type": "string",
-                    "example": "center center"
-                },
-                "background_preset": {
-                    "type": "string",
-                    "example": "default-01"
-                },
-                "background_size": {
-                    "type": "string",
-                    "example": "cover"
-                },
-                "background_source": {
-                    "type": "string",
-                    "example": "preset"
-                },
-                "sensitive_cover_mode": {
-                    "type": "string",
-                    "example": "blur"
-                }
-            }
-        },
-        "dto.UserPreferencesResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "$ref": "#/definitions/dto.UserPreferencesData"
-                },
-                "msg": {
-                    "type": "string",
-                    "example": "success"
-                }
-            }
-        },
-        "dto.UserRegisterRequest": {
-            "type": "object",
-            "required": [
-                "confirm_password",
-                "email",
-                "password",
-                "username",
-                "verification_code"
-            ],
-            "properties": {
-                "confirm_password": {
-                    "type": "string",
-                    "maxLength": 72,
-                    "minLength": 8,
-                    "example": "password123"
-                },
-                "email": {
-                    "type": "string",
-                    "maxLength": 254,
-                    "example": "user@example.com"
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 72,
-                    "minLength": 8,
-                    "example": "password123"
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "example": "koyomi"
-                },
-                "verification_code": {
-                    "type": "string",
-                    "example": "123456"
                 }
             }
         },
@@ -23057,6 +23042,24 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "纯爱"
+                }
+            }
+        },
+        "internal_message_dto.UnreadCountData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "internal_notification_dto.UnreadCountData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },
@@ -23743,6 +23746,33 @@ const docTemplate = `{
                 "TypeSystem"
             ]
         },
+        "realtime.TicketData": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "ticket": {
+                    "type": "string"
+                }
+            }
+        },
+        "realtime.TicketResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/realtime.TicketData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "response.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -23766,6 +23796,1095 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "userdto.AdminUserData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_banned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/userdto.AdminUserRoleData"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
+        "userdto.AdminUserDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.AdminUserData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.AdminUserListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/userdto.AdminUserData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "userdto.AdminUserListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.AdminUserListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.AdminUserRoleData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "user"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "name": {
+                    "type": "string",
+                    "example": "普通用户"
+                }
+            }
+        },
+        "userdto.AuthSession": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/userdto.AuthUser"
+                }
+            }
+        },
+        "userdto.AuthSessionResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.AuthSession"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.AuthUser": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
+        "userdto.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "confirm_password",
+                "new_password"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "confirm_password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                },
+                "new_password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                }
+            }
+        },
+        "userdto.CreateAdminUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                },
+                "is_banned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8,
+                    "example": "password123"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "koyomi"
+                }
+            }
+        },
+        "userdto.MeData": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string",
+                    "example": "https://img.example.com/avatars/1/2026/09/uuid.png"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
+        "userdto.MeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.MeData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.PasswordCodeData": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "us***@example.com"
+                }
+            }
+        },
+        "userdto.PasswordCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.PasswordCodeData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "验证码已发送"
+                }
+            }
+        },
+        "userdto.PasswordForgotCodeRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "userdto.PasswordForgotResetRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "password",
+                "reset_token"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                },
+                "reset_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.PasswordForgotVerifyRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "userdto.PasswordResetTokenData": {
+            "type": "object",
+            "properties": {
+                "reset_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.PasswordResetTokenResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.PasswordResetTokenData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.PrivacySettingsData": {
+            "type": "object",
+            "properties": {
+                "profile_visibility": {
+                    "type": "string",
+                    "example": "public"
+                },
+                "show_activity": {
+                    "type": "boolean"
+                },
+                "show_birthday": {
+                    "type": "boolean"
+                },
+                "show_comments": {
+                    "type": "boolean"
+                },
+                "show_favorites": {
+                    "type": "boolean"
+                },
+                "show_location": {
+                    "type": "boolean"
+                },
+                "show_posts": {
+                    "type": "boolean"
+                },
+                "show_ratings": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "userdto.PrivacySettingsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.PrivacySettingsData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.ProfileAccess": {
+            "type": "object",
+            "properties": {
+                "can_view_activity": {
+                    "type": "boolean"
+                },
+                "can_view_birthday": {
+                    "type": "boolean"
+                },
+                "can_view_comments": {
+                    "type": "boolean"
+                },
+                "can_view_favorites": {
+                    "type": "boolean"
+                },
+                "can_view_location": {
+                    "type": "boolean"
+                },
+                "can_view_posts": {
+                    "type": "boolean"
+                },
+                "can_view_profile": {
+                    "type": "boolean"
+                },
+                "can_view_ratings": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "userdto.ProfileCommentData": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "parent_id": {
+                    "type": "integer"
+                },
+                "post_id": {
+                    "type": "integer"
+                },
+                "post_title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.ProfileCommentListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/userdto.ProfileCommentData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "userdto.ProfileCommentListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.ProfileCommentListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.ProfileGalgameData": {
+            "type": "object",
+            "properties": {
+                "cover_sensitive": {
+                    "type": "boolean"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.ProfileGalgameListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/userdto.ProfileGalgameData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "userdto.ProfileGalgameListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.ProfileGalgameListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.ProfilePostData": {
+            "type": "object",
+            "properties": {
+                "comment_count": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "editor_mode": {
+                    "type": "string"
+                },
+                "favorite_count": {
+                    "type": "integer"
+                },
+                "galgame_id": {
+                    "type": "integer"
+                },
+                "galgame_title": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.ProfilePostListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/userdto.ProfilePostData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "userdto.ProfilePostListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.ProfilePostListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.PublicUserProfile": {
+            "type": "object",
+            "properties": {
+                "access": {
+                    "$ref": "#/definitions/userdto.ProfileAccess"
+                },
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://img.example.com/avatars/1001/avatar.webp"
+                },
+                "banner_url": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "birthday": {
+                    "type": "string",
+                    "example": "2000-01-02"
+                },
+                "comment_count": {
+                    "type": "integer"
+                },
+                "display_name": {
+                    "type": "string",
+                    "example": "Koyomi"
+                },
+                "favorite_count": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "is_private": {
+                    "type": "boolean"
+                },
+                "is_restricted": {
+                    "type": "boolean"
+                },
+                "is_self": {
+                    "type": "boolean"
+                },
+                "level": {
+                    "$ref": "#/definitions/leveldto.UserLevelSummary"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "post_count": {
+                    "type": "integer"
+                },
+                "rating_count": {
+                    "type": "integer"
+                },
+                "registered_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                },
+                "website_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.PublicUserProfileResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.PublicUserProfile"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.PublicUserSummary": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://img.example.com/avatars/1001/avatar.webp"
+                },
+                "display_name": {
+                    "type": "string",
+                    "example": "Koyomi"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "username": {
+                    "type": "string",
+                    "example": "koyomi"
+                }
+            }
+        },
+        "userdto.SendVerificationCodeRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "purpose"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                },
+                "purpose": {
+                    "type": "string",
+                    "example": "register"
+                }
+            }
+        },
+        "userdto.UpdateAdminUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                },
+                "is_banned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8,
+                    "example": "new-password123"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "koyomi"
+                }
+            }
+        },
+        "userdto.UpdateMeRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_asset_id": {
+                    "description": "AvatarAssetID references an image_assets row; null clears the avatar.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 123
+                }
+            }
+        },
+        "userdto.UpdatePrivacyRequest": {
+            "type": "object",
+            "properties": {
+                "profile_visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "registered",
+                        "private"
+                    ]
+                },
+                "show_activity": {
+                    "type": "boolean"
+                },
+                "show_birthday": {
+                    "type": "boolean"
+                },
+                "show_comments": {
+                    "type": "boolean"
+                },
+                "show_favorites": {
+                    "type": "boolean"
+                },
+                "show_location": {
+                    "type": "boolean"
+                },
+                "show_posts": {
+                    "type": "boolean"
+                },
+                "show_ratings": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "userdto.UpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_asset_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "x-nullable": true
+                },
+                "banner_asset_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "x-nullable": true
+                },
+                "bio": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "birthday": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": "2000-01-02"
+                },
+                "display_name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "gender": {
+                    "type": "string",
+                    "enum": [
+                        "male",
+                        "female",
+                        "non_binary",
+                        "undisclosed"
+                    ]
+                },
+                "location": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "website_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
+        "userdto.UpdateUserPreferencesRequest": {
+            "type": "object",
+            "required": [
+                "background_source"
+            ],
+            "properties": {
+                "background_asset_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 100
+                },
+                "background_blur": {
+                    "type": "number",
+                    "maximum": 20,
+                    "minimum": 0,
+                    "example": 0
+                },
+                "background_opacity": {
+                    "type": "number",
+                    "maximum": 1,
+                    "minimum": 0,
+                    "example": 0.35
+                },
+                "background_position": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "center center"
+                },
+                "background_preset": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "default-01"
+                },
+                "background_size": {
+                    "type": "string",
+                    "enum": [
+                        "cover",
+                        "contain"
+                    ],
+                    "example": "cover"
+                },
+                "background_source": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "preset",
+                        "custom"
+                    ],
+                    "example": "custom"
+                },
+                "sensitive_cover_mode": {
+                    "type": "string",
+                    "enum": [
+                        "blur",
+                        "show"
+                    ],
+                    "example": "blur"
+                }
+            }
+        },
+        "userdto.UserActivityData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object"
+                },
+                "target_id": {
+                    "type": "integer"
+                },
+                "target_type": {
+                    "type": "string",
+                    "example": "post"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "post_created"
+                }
+            }
+        },
+        "userdto.UserActivityListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/userdto.UserActivityData"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "userdto.UserActivityListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.UserActivityListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "userdto.UserLoginRequest": {
+            "type": "object",
+            "required": [
+                "account",
+                "password"
+            ],
+            "properties": {
+                "account": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 8,
+                    "example": "password123"
+                }
+            }
+        },
+        "userdto.UserPreferencesData": {
+            "type": "object",
+            "properties": {
+                "background_asset_id": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "background_blur": {
+                    "type": "number",
+                    "example": 0
+                },
+                "background_image_url": {
+                    "description": "BackgroundImageURL is the resolved CDN URL of the custom background.",
+                    "type": "string"
+                },
+                "background_opacity": {
+                    "type": "number",
+                    "example": 0.35
+                },
+                "background_position": {
+                    "type": "string",
+                    "example": "center center"
+                },
+                "background_preset": {
+                    "type": "string",
+                    "example": "default-01"
+                },
+                "background_size": {
+                    "type": "string",
+                    "example": "cover"
+                },
+                "background_source": {
+                    "type": "string",
+                    "example": "preset"
+                },
+                "sensitive_cover_mode": {
+                    "type": "string",
+                    "example": "blur"
+                }
+            }
+        },
+        "userdto.UserPreferencesResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/userdto.UserPreferencesData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "userdto.UserRegisterRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "email",
+                "password",
+                "username",
+                "verification_code"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string",
+                    "maxLength": 72,
+                    "minLength": 8,
+                    "example": "password123"
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 72,
+                    "minLength": 8,
+                    "example": "password123"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "koyomi"
+                },
+                "verification_code": {
+                    "type": "string",
+                    "example": "123456"
                 }
             }
         }

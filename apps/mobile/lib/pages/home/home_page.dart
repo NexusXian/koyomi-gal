@@ -9,6 +9,7 @@ import '../../core/utils/format.dart';
 import '../../models/misc_models.dart';
 import '../../models/post_models.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/message_providers.dart';
 import '../../widgets/app_image.dart';
 import '../../widgets/common_views.dart';
 import '../../widgets/user_widgets.dart';
@@ -121,6 +122,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       appBar: AppBar(
         title: const Text('Koyomi Gal'),
         actions: [
+          IconButton(
+            onPressed: () => context.push('/messages'),
+            icon: Badge(
+              isLabelVisible: ref.watch(
+                    unreadMessagesProvider.select((value) => value.count),
+                  ) >
+                  0,
+              label: Text(
+                '${ref.watch(unreadMessagesProvider.select((value) => value.count))}',
+              ),
+              child: const Icon(Icons.mail_outlined),
+            ),
+          ),
           IconButton(
             onPressed: () => context.push('/notifications'),
             icon: Badge(

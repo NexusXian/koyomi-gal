@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"backend/internal/user/dto"
+	dto "backend/internal/user/dto"
 	"backend/internal/user/model"
 )
 
