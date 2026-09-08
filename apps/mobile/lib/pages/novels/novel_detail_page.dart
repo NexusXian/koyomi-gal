@@ -722,19 +722,22 @@ class _NovelResourcesSectionState
               ),
             if (resource.uploader?.username?.isNotEmpty == true) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  UserAvatar(url: resource.uploader?.avatarUrl, size: 24),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      resource.uploader?.displayName ??
-                          resource.uploader?.username ??
-                          '',
-                      style: const TextStyle(fontSize: 12),
+              TappableUser(
+                username: resource.uploader?.username,
+                child: Row(
+                  children: [
+                    UserAvatar(url: resource.uploader?.avatarUrl, size: 24),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        resource.uploader?.displayName ??
+                            resource.uploader?.username ??
+                            '',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
             if (resource.links.isNotEmpty) ...[

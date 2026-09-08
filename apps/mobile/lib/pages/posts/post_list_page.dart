@@ -141,18 +141,24 @@ class _PostListPageState extends ConsumerState<PostListPage> {
                   children: [
                     Row(
                       children: [
-                        UserAvatar(
-                          url: post.author?.avatarUrl ?? post.authorAvatar,
-                          size: 28,
+                        TappableUser(
+                          username: post.author?.username,
+                          child: UserAvatar(
+                            url: post.author?.avatarUrl ?? post.authorAvatar,
+                            size: 28,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            post.author?.displayName ??
-                                post.authorName ??
-                                post.author?.username ??
-                                '',
-                            style: const TextStyle(fontSize: 13),
+                          child: TappableUser(
+                            username: post.author?.username,
+                            child: Text(
+                              post.author?.displayName ??
+                                  post.authorName ??
+                                  post.author?.username ??
+                                  '',
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ),
                         ),
                         Text(

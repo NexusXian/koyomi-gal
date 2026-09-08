@@ -264,9 +264,12 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    UserAvatar(
-                      url: post.author?.avatarUrl ?? post.authorAvatar,
-                      size: 32,
+                    TappableUser(
+                      username: post.author?.username,
+                      child: UserAvatar(
+                        url: post.author?.avatarUrl ?? post.authorAvatar,
+                        size: 32,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -275,13 +278,16 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                post.author?.displayName ??
-                                    post.authorName ??
-                                    post.author?.username ??
-                                    '',
-                                style: const TextStyle(
-                                    fontSize: 13, fontWeight: FontWeight.w500),
+                              TappableUser(
+                                username: post.author?.username,
+                                child: Text(
+                                  post.author?.displayName ??
+                                      post.authorName ??
+                                      post.author?.username ??
+                                      '',
+                                  style: const TextStyle(
+                                      fontSize: 13, fontWeight: FontWeight.w500),
+                                ),
                               ),
                               const SizedBox(width: 6),
                               LevelBadge(level: post.author?.level),
@@ -619,7 +625,10 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          UserAvatar(url: comment.author?.avatarUrl, size: 34),
+          TappableUser(
+            username: comment.author?.username,
+            child: UserAvatar(url: comment.author?.avatarUrl, size: 34),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -627,12 +636,15 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      comment.author?.displayName ??
-                          comment.author?.username ??
-                          '',
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600),
+                    TappableUser(
+                      username: comment.author?.username,
+                      child: Text(
+                        comment.author?.displayName ??
+                            comment.author?.username ??
+                            '',
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     LevelBadge(level: comment.author?.level),

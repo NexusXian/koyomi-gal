@@ -212,9 +212,12 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
           }
           final conversation = _items[index];
           return ListTile(
-            leading: UserAvatar(
-              url: conversation.user?.avatarUrl,
-              size: 46,
+            leading: TappableUser(
+              username: conversation.user?.username,
+              child: UserAvatar(
+                url: conversation.user?.avatarUrl,
+                size: 46,
+              ),
             ),
             title: Text(
               conversation.user?.displayName ??

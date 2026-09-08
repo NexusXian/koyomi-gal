@@ -1,7 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/user_models.dart';
 import 'app_image.dart';
+
+class TappableUser extends StatelessWidget {
+  const TappableUser({super.key, required this.username, required this.child});
+
+  final String? username;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = username;
+    if (name == null || name.isEmpty) {
+      return child;
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.push('/user/${Uri.encodeComponent(name)}'),
+      child: child,
+    );
+  }
+}
 
 class UserAvatar extends StatelessWidget {
   const UserAvatar({super.key, this.url, this.size = 40});

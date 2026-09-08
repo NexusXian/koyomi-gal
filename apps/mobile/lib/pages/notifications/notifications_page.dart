@@ -248,7 +248,10 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              UserAvatar(url: notification.actor?.avatarUrl, size: 36),
+              TappableUser(
+                username: notification.actor?.username,
+                child: UserAvatar(url: notification.actor?.avatarUrl, size: 36),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
