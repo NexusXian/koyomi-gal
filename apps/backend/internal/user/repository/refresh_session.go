@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -28,6 +29,11 @@ redis.call("DEL", KEYS[1])
 return 1
 `)
 
+type RefreshSession struct {
+	UserID      uint
+	AuthVersion uint64
+}
+
 type RefreshSessionRepository struct {
 	rdb *redis.Client
 }
@@ -39,13 +45,13 @@ func NewRefreshSessionRepository(rdb *redis.Client) *RefreshSessionRepository {
 func (r *RefreshSessionRepository) Create(
 	ctx context.Context,
 	token string,
-	userID uint,
+	session RefreshSession,
 	ttl time.Duration,
 ) error {
 	created, err := r.rdb.SetNX(
 		ctx,
 		refreshSessionKey(token),
-		strconv.FormatUint(uint64(userID), 10),
+		refreshSessionValue(session),
 		ttl,
 	).Result()
 	if err != nil {
@@ -57,34 +63,34 @@ func (r *RefreshSessionRepository) Create(
 	return nil
 }
 
-func (r *RefreshSessionRepository) FindUserID(ctx context.Context, token string) (uint, error) {
+func (r *RefreshSessionRepository) Find(ctx context.Context, token string) (RefreshSession, error) {
 	value, err := r.rdb.Get(ctx, refreshSessionKey(token)).Result()
 	if errors.Is(err, redis.Nil) {
-		return 0, ErrRefreshSessionNotFound
+		return RefreshSession{}, ErrRefreshSessionNotFound
 	}
 	if err != nil {
-		return 0, fmt.Errorf("find refresh session: %w", err)
+		return RefreshSession{}, fmt.Errorf("find refresh session: %w", err)
 	}
 
-	userID, err := strconv.ParseUint(value, 10, 64)
+	session, err := parseRefreshSessionValue(value)
 	if err != nil {
-		return 0, fmt.Errorf("parse refresh session user id: %w", err)
+		return RefreshSession{}, fmt.Errorf("parse refresh session: %w", err)
 	}
-	return uint(userID), nil
+	return session, nil
 }
 
 func (r *RefreshSessionRepository) Rotate(
 	ctx context.Context,
 	currentToken string,
 	replacementToken string,
-	userID uint,
+	session RefreshSession,
 	ttl time.Duration,
 ) error {
 	result, err := rotateRefreshSessionScript.Run(
 		ctx,
 		r.rdb,
 		[]string{refreshSessionKey(currentToken), refreshSessionKey(replacementToken)},
-		strconv.FormatUint(uint64(userID), 10),
+		refreshSessionValue(session),
 		ttl.Milliseconds(),
 	).Int()
 	if err != nil {
@@ -108,6 +114,32 @@ func (r *RefreshSessionRepository) Revoke(ctx context.Context, token string) err
 		return fmt.Errorf("revoke refresh session: %w", err)
 	}
 	return nil
+}
+
+func parseRefreshSessionValue(value string) (RefreshSession, error) {
+	userIDValue, authVersionValue, hasVersion := strings.Cut(value, ":")
+	userID, err := strconv.ParseUint(userIDValue, 10, 64)
+	if err != nil || userID == 0 {
+		return RefreshSession{}, errors.New("invalid user id")
+	}
+	session := RefreshSession{UserID: uint(userID)}
+	if !hasVersion {
+		return session, nil
+	}
+	if authVersionValue == "" {
+		return RefreshSession{}, errors.New("invalid auth version")
+	}
+	authVersion, err := strconv.ParseUint(authVersionValue, 10, 64)
+	if err != nil {
+		return RefreshSession{}, errors.New("invalid auth version")
+	}
+	session.AuthVersion = authVersion
+	return session, nil
+}
+
+func refreshSessionValue(session RefreshSession) string {
+	return strconv.FormatUint(uint64(session.UserID), 10) + ":" +
+		strconv.FormatUint(session.AuthVersion, 10)
 }
 
 func refreshSessionKey(token string) string {

@@ -4,6 +4,7 @@ import (
 	"backend/internal/user/model"
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
@@ -12,6 +13,7 @@ import (
 var (
 	ErrUsernameUniqueViolation = errors.New("username unique constraint violated")
 	ErrEmailUniqueViolation    = errors.New("email unique constraint violated")
+	ErrUserNotFound            = errors.New("user not found")
 )
 
 const (
@@ -78,22 +80,41 @@ func (r *UserAuthRepository) FindUserByID(ctx context.Context, userID uint) (*mo
 	return &user, nil
 }
 
-func (r *UserAuthRepository) AccessUserStatus(ctx context.Context, userID uint) (bool, bool, error) {
+func (r *UserAuthRepository) UpdatePassword(ctx context.Context, userID uint, passwordHash string) error {
+	result := r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]any{
+			"password_hash": passwordHash,
+			"auth_version":  gorm.Expr("auth_version + 1"),
+			"updated_at":    time.Now(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *UserAuthRepository) AccessUserStatus(ctx context.Context, userID uint) (bool, bool, uint64, error) {
 	var status struct {
-		IsBanned bool
+		IsBanned    bool
+		AuthVersion uint64
 	}
 	err := r.db.WithContext(ctx).
 		Model(&model.User{}).
-		Select("is_banned").
+		Select("is_banned", "auth_version").
 		Where("id = ?", userID).
 		Take(&status).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return false, false, nil
+		return false, false, 0, nil
 	}
 	if err != nil {
-		return false, false, err
+		return false, false, 0, err
 	}
-	return true, status.IsBanned, nil
+	return true, status.IsBanned, status.AuthVersion, nil
 }
 
 func mapUserWriteError(err error) error {

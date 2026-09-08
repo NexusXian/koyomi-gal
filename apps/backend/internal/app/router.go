@@ -23,6 +23,9 @@ func (app *App) setupRoutes() {
 		auth.POST("/refresh", app.UserAuthHandler.Refresh)
 		auth.POST("/logout", app.UserAuthHandler.Logout)
 		auth.POST("/verification-codes", app.VerificationHandler.SendCode)
+		auth.POST("/password/forgot/code", app.UserAuthHandler.ForgotPasswordCode)
+		auth.POST("/password/forgot/verify", app.UserAuthHandler.ForgotPasswordVerify)
+		auth.POST("/password/forgot/reset", app.UserAuthHandler.ForgotPasswordReset)
 	}
 
 	v1.GET("/galgames", app.CatalogHandler.ListGalgames)
@@ -279,4 +282,6 @@ func (app *App) setupRoutes() {
 	protected.GET("/users/me/experience/logs", app.LevelHandler.ListMyExperienceLogs)
 	protected.POST("/users/me/checkin", app.LevelHandler.Checkin)
 	protected.GET("/users/me/checkin", app.LevelHandler.GetCheckinStatus)
+	protected.POST("/users/me/password/code", app.UserAuthHandler.PasswordChangeCode)
+	protected.PUT("/users/me/password", app.UserAuthHandler.ChangePassword)
 }

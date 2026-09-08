@@ -7,6 +7,10 @@
  */
 import type {
   DtoAuthSessionResponse,
+  DtoPasswordForgotCodeRequest,
+  DtoPasswordForgotResetRequest,
+  DtoPasswordForgotVerifyRequest,
+  DtoPasswordResetTokenResponse,
   DtoUserLoginRequest,
   DtoUserRegisterRequest,
   ResponseMessageResponse
@@ -64,6 +68,96 @@ export const logout = async ( options?: Parameters<typeof apiMutator>[1]): Promi
     method: 'POST'
 
 
+  }
+);}
+
+
+export const getForgotPasswordCodeUrl = () => {
+
+
+
+
+  return `/api/v1/auth/password/forgot/code`
+}
+
+/**
+ * 无论邮箱是否存在均返回相同结果，202 表示请求已处理
+ * @summary 发送忘记密码验证码
+ */
+export const forgotPasswordCode = async (dtoPasswordForgotCodeRequest: DtoPasswordForgotCodeRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<ResponseMessageResponse>(getForgotPasswordCodeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoPasswordForgotCodeRequest)
+  }
+);}
+
+
+export const getForgotPasswordResetUrl = () => {
+
+
+
+
+  return `/api/v1/auth/password/forgot/reset`
+}
+
+/**
+ * 使用一次性重置凭证设置新密码并使旧会话失效
+ * @summary 重置忘记的密码
+ */
+export const forgotPasswordReset = async (dtoPasswordForgotResetRequest: DtoPasswordForgotResetRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<ResponseMessageResponse>(getForgotPasswordResetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoPasswordForgotResetRequest)
+  }
+);}
+
+
+export const getForgotPasswordVerifyUrl = () => {
+
+
+
+
+  return `/api/v1/auth/password/forgot/verify`
+}
+
+/**
+ * 验证成功后签发十分钟有效的一次性重置凭证
+ * @summary 验证忘记密码验证码
+ */
+export const forgotPasswordVerify = async (dtoPasswordForgotVerifyRequest: DtoPasswordForgotVerifyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoPasswordResetTokenResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoPasswordResetTokenResponse>(getForgotPasswordVerifyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoPasswordForgotVerifyRequest)
   }
 );}
 

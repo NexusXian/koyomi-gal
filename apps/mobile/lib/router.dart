@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'providers/app_providers.dart';
 import 'pages/articles/article_detail_page.dart';
 import 'pages/articles/article_list_page.dart';
+import 'pages/auth/forgot_password_page.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/auth/register_page.dart';
 import 'pages/feedback/feedback_page.dart';
@@ -27,6 +28,7 @@ import 'pages/posts/post_list_page.dart';
 import 'pages/settings/settings_experience_page.dart';
 import 'pages/settings/settings_privacy_page.dart';
 import 'pages/settings/settings_profile_page.dart';
+import 'pages/settings/settings_security_page.dart';
 import 'pages/user/user_profile_page.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -70,6 +72,10 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordPage(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -230,6 +236,11 @@ GoRouter buildRouter() {
         path: '/settings/privacy',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsPrivacyPage(),
+      ),
+      GoRoute(
+        path: '/settings/security',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const SettingsSecurityPage(),
       ),
       GoRoute(
         path: '/settings/experience',

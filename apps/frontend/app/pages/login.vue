@@ -153,9 +153,11 @@ async function submitLogin() {
       </form>
 
       <div class="form-footer">
-        <p>
+        <p class="footer-links">
           还没有账号？
           <NuxtLink to="/register">立即注册</NuxtLink>
+          <span class="footer-divider">|</span>
+          <NuxtLink to="/forgot-password">忘记密码？</NuxtLink>
         </p>
         <NuxtLink class="back-link" to="/">
           <KunIcon name="lucide:arrow-left" />
@@ -370,6 +372,11 @@ async function submitLogin() {
 
 .form-footer p {
   margin: 0;
+}
+
+.footer-links .footer-divider {
+  margin: 0 8px;
+  color: var(--color-default-300);
 }
 
 .form-footer a {

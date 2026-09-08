@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"backend/internal/middleware"
 	"backend/internal/user/dto"
 	"backend/internal/user/service"
 	appErrors "backend/pkg/errors"
@@ -65,6 +66,8 @@ func (h *UserAuthHandler) Register(c *gin.Context) {
 			response.Error(c, appErrors.ErrValidation("邮箱已存在"))
 		case errors.Is(err, service.ErrPasswordMismatch):
 			response.Error(c, appErrors.ErrValidation("两次输入的密码不一致"))
+		case errors.Is(err, service.ErrInvalidPassword):
+			response.Error(c, appErrors.ErrValidation("密码长度必须为 8 到 72 字节"))
 		case errors.Is(err, service.ErrInvalidVerificationCode):
 			response.Error(c, appErrors.ErrValidation("验证码错误或已过期"))
 		default:
@@ -166,6 +169,195 @@ func (h *UserAuthHandler) Logout(c *gin.Context) {
 
 	h.clearRefreshTokenCookie(c)
 	response.OkWithMsg(c, "success")
+}
+
+// ForgotPasswordCode godoc
+// @Summary      发送忘记密码验证码
+// @Description  无论邮箱是否存在均返回相同结果，202 表示请求已处理
+// @ID           forgotPasswordCode
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.PasswordForgotCodeRequest true "忘记密码验证码请求"
+// @Success      202 {object} response.MessageResponse "如果该邮箱已注册，验证码将发送到邮箱"
+// @Failure      400 {object} response.ErrorResponse "邮箱格式不正确"
+// @Failure      429 {object} response.ErrorResponse "请求过于频繁"
+// @Failure      500 {object} response.ErrorResponse "验证码发送任务创建失败"
+// @Router       /api/v1/auth/password/forgot/code [post]
+func (h *UserAuthHandler) ForgotPasswordCode(c *gin.Context) {
+	var req dto.PasswordForgotCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("邮箱格式不正确"))
+		return
+	}
+	if err := h.userAuthService.RequestPasswordResetCode(c.Request.Context(), req.Email, c.ClientIP()); err != nil {
+		h.respondVerificationSendError(c, err, "request password reset code")
+		return
+	}
+	response.AcceptedWithMsg(c, "如果该邮箱已注册，验证码将发送到邮箱")
+}
+
+// ForgotPasswordVerify godoc
+// @Summary      验证忘记密码验证码
+// @Description  验证成功后签发十分钟有效的一次性重置凭证
+// @ID           forgotPasswordVerify
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.PasswordForgotVerifyRequest true "验证码验证请求"
+// @Success      200 {object} dto.PasswordResetTokenResponse "验证成功"
+// @Failure      400 {object} response.ErrorResponse "验证码错误或已过期"
+// @Failure      500 {object} response.ErrorResponse "验证码验证失败"
+// @Router       /api/v1/auth/password/forgot/verify [post]
+func (h *UserAuthHandler) ForgotPasswordVerify(c *gin.Context) {
+	var req dto.PasswordForgotVerifyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
+		return
+	}
+	resetToken, err := h.userAuthService.VerifyPasswordResetCode(c.Request.Context(), &req)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidVerificationCode) {
+			response.Error(c, appErrors.ErrValidation("验证码错误或已过期"))
+			return
+		}
+		logger.Error("verify password reset code", zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("验证码验证失败"))
+		return
+	}
+	response.OkWithDataAndMsg(c, dto.PasswordResetTokenData{ResetToken: resetToken}, "邮箱验证成功")
+}
+
+// ForgotPasswordReset godoc
+// @Summary      重置忘记的密码
+// @Description  使用一次性重置凭证设置新密码并使旧会话失效
+// @ID           forgotPasswordReset
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.PasswordForgotResetRequest true "重置密码请求"
+// @Success      200 {object} response.MessageResponse "密码重置成功"
+// @Failure      400 {object} response.ErrorResponse "重置凭证或密码无效"
+// @Failure      403 {object} response.ErrorResponse "账号已封禁"
+// @Failure      500 {object} response.ErrorResponse "密码重置失败"
+// @Router       /api/v1/auth/password/forgot/reset [post]
+func (h *UserAuthHandler) ForgotPasswordReset(c *gin.Context) {
+	var req dto.PasswordForgotResetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
+		return
+	}
+	if err := h.userAuthService.ResetPassword(c.Request.Context(), &req); err != nil {
+		h.respondPasswordError(c, err, "reset password", "密码重置失败")
+		return
+	}
+	h.clearRefreshTokenCookie(c)
+	response.OkWithMsg(c, "密码重置成功")
+}
+
+// PasswordChangeCode godoc
+// @Summary      发送修改密码验证码
+// @Description  向当前用户绑定邮箱发送修改密码验证码
+// @ID           passwordChangeCode
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} dto.PasswordCodeResponse "验证码已发送"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "账号已封禁"
+// @Failure      429 {object} response.ErrorResponse "请求过于频繁"
+// @Failure      500 {object} response.ErrorResponse "验证码发送任务创建失败"
+// @Router       /api/v1/users/me/password/code [post]
+func (h *UserAuthHandler) PasswordChangeCode(c *gin.Context) {
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	maskedEmail, err := h.userAuthService.RequestPasswordChangeCode(c.Request.Context(), userID, c.ClientIP())
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			response.Error(c, appErrors.ErrAuthExpired())
+			return
+		}
+		if errors.Is(err, service.ErrAccountBanned) {
+			response.Error(c, appErrors.ErrAccountBanned())
+			return
+		}
+		h.respondVerificationSendError(c, err, "request password change code")
+		return
+	}
+	response.OkWithDataAndMsg(c, dto.PasswordCodeData{Email: maskedEmail}, "验证码已发送")
+}
+
+// ChangePassword godoc
+// @Summary      修改当前用户密码
+// @Description  使用绑定当前用户的验证码设置新密码并使旧会话失效
+// @ID           changePassword
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body dto.ChangePasswordRequest true "修改密码请求"
+// @Success      200 {object} response.MessageResponse "密码修改成功"
+// @Failure      400 {object} response.ErrorResponse "验证码或密码无效"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "账号已封禁"
+// @Failure      500 {object} response.ErrorResponse "密码修改失败"
+// @Router       /api/v1/users/me/password [put]
+func (h *UserAuthHandler) ChangePassword(c *gin.Context) {
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
+		return
+	}
+	if err := h.userAuthService.ChangePassword(c.Request.Context(), userID, &req); err != nil {
+		h.respondPasswordError(c, err, "change password", "密码修改失败")
+		return
+	}
+	h.clearRefreshTokenCookie(c)
+	response.OkWithMsg(c, "密码修改成功")
+}
+
+func (h *UserAuthHandler) respondVerificationSendError(c *gin.Context, err error, operation string) {
+	switch {
+	case errors.Is(err, service.ErrInvalidVerification):
+		response.Error(c, appErrors.ErrValidation("邮箱格式不正确"))
+	case errors.Is(err, service.ErrVerificationCooldown):
+		response.Error(c, appErrors.ErrTooManyRequests("验证码发送过于频繁，请稍后重试"))
+	case errors.Is(err, service.ErrVerificationRateLimit):
+		response.Error(c, appErrors.ErrTooManyRequests("请求过于频繁，请稍后重试"))
+	default:
+		logger.Error(operation, zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("验证码发送任务创建失败"))
+	}
+}
+
+func (h *UserAuthHandler) respondPasswordError(c *gin.Context, err error, operation string, internalMessage string) {
+	switch {
+	case errors.Is(err, service.ErrInvalidResetToken):
+		response.Error(c, appErrors.ErrValidation("重置凭证无效或已过期"))
+	case errors.Is(err, service.ErrInvalidVerificationCode):
+		response.Error(c, appErrors.ErrValidation("验证码错误或已过期"))
+	case errors.Is(err, service.ErrPasswordMismatch):
+		response.Error(c, appErrors.ErrValidation("两次输入的密码不一致"))
+	case errors.Is(err, service.ErrInvalidPassword):
+		response.Error(c, appErrors.ErrValidation("密码长度必须为 8 到 72 字节"))
+	case errors.Is(err, service.ErrSamePassword):
+		response.Error(c, appErrors.ErrValidation("新密码不能与原密码相同"))
+	case errors.Is(err, service.ErrUserNotFound):
+		response.Error(c, appErrors.ErrAuthExpired())
+	case errors.Is(err, service.ErrAccountBanned):
+		response.Error(c, appErrors.ErrAccountBanned())
+	default:
+		logger.Error(operation, zap.Error(err))
+		response.Error(c, appErrors.ErrInternal(internalMessage))
+	}
 }
 
 func (h *UserAuthHandler) respondAuthError(c *gin.Context, err error, operation string) {

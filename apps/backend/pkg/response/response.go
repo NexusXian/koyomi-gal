@@ -22,6 +22,14 @@ func OkWithMsg(c *gin.Context, msg string) {
 	})
 }
 
+func OkWithDataAndMsg(c *gin.Context, data any, msg string) {
+	c.JSON(http.StatusOK, gin.H{
+		"code": errors.CodeOK,
+		"data": data,
+		"msg":  msg,
+	})
+}
+
 func AcceptedWithMsg(c *gin.Context, msg string) {
 	c.JSON(http.StatusAccepted, gin.H{
 		"code": errors.CodeOK,

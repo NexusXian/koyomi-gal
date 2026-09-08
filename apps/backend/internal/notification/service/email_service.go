@@ -30,12 +30,20 @@ func (s *EmailService) SendVerificationCode(
 	code string,
 	expiresAt time.Time,
 ) error {
-	var purposeName string
+	var purposeName, subject, securityText string
 	switch purpose {
 	case userService.VerificationPurposeRegister:
 		purposeName = "注册"
+		subject = "Koyomi Gal | 注册验证码"
+		securityText = "如果这不是你的注册操作，请直接忽略这封邮件。为了账户安全，请不要将验证码告诉任何人。"
 	case userService.VerificationPurposePasswordReset:
 		purposeName = "重置密码"
+		subject = "Koyomi Gal - 重置密码验证码"
+		securityText = "如果你没有申请重置密码，请直接忽略这封邮件，并注意保护账户安全。请不要将验证码告诉任何人。"
+	case userService.VerificationPurposeChangePassword:
+		purposeName = "修改密码"
+		subject = "Koyomi Gal - 修改密码验证码"
+		securityText = "如果你没有申请修改密码，请直接忽略这封邮件，并尽快检查账户安全。请不要将验证码告诉任何人。"
 	default:
 		return errors.New("unsupported verification purpose")
 	}
@@ -46,8 +54,6 @@ func (s *EmailService) SendVerificationCode(
 	}
 	minutes := int((remaining + time.Minute - 1) / time.Minute)
 	bannerURL := strings.TrimRight(s.publicURL, "/") + "/avatars/1/2026/09/8062221c-3653-437c-b31d-9acc372bfc3f.png"
-	subject := fmt.Sprintf("Koyomi Gal | %s验证码", purposeName)
-
 	body := fmt.Sprintf(`
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -194,8 +200,7 @@ func (s *EmailService) SendVerificationCode(
         font-size:12px;
         line-height:1.8;
       ">
-        如果这不是你的操作，请直接忽略这封邮件。
-        为了账户安全，请不要将验证码告诉任何人。
+        %s
       </div>
 
       <!-- Goodbye -->
@@ -240,6 +245,7 @@ func (s *EmailService) SendVerificationCode(
 		purposeName,
 		code,
 		minutes,
+		securityText,
 	)
 	return s.mailer.Send(ctx, email, subject, body)
 }

@@ -22,12 +22,13 @@ const (
 )
 
 type accessTokenClaims struct {
-	TokenType string `json:"token_type"`
+	TokenType   string `json:"token_type"`
+	AuthVersion uint64 `json:"auth_version"`
 	jwt.RegisteredClaims
 }
 
 type AccessUserChecker interface {
-	AccessUserStatus(ctx context.Context, userID uint) (exists, banned bool, err error)
+	AccessUserStatus(ctx context.Context, userID uint) (exists, banned bool, authVersion uint64, err error)
 }
 
 // Auth validates the Bearer access token and stores the userID in the context.
@@ -46,7 +47,7 @@ func AuthWithUserChecker(secret string, checker AccessUserChecker) gin.HandlerFu
 			return
 		}
 
-		userID, err := parseAccessToken(strings.TrimSpace(token), secret)
+		userID, tokenAuthVersion, err := parseAccessToken(strings.TrimSpace(token), secret)
 		if err != nil {
 			response.Error(c, appErrors.ErrAuthExpired())
 			c.Abort()
@@ -54,7 +55,7 @@ func AuthWithUserChecker(secret string, checker AccessUserChecker) gin.HandlerFu
 		}
 
 		if checker != nil {
-			exists, banned, err := checker.AccessUserStatus(c.Request.Context(), userID)
+			exists, banned, authVersion, err := checker.AccessUserStatus(c.Request.Context(), userID)
 			if err != nil {
 				logger.Error("check access token user", zap.Uint("user_id", userID), zap.Error(err))
 				response.Error(c, appErrors.ErrInternal("用户状态校验失败"))
@@ -68,6 +69,11 @@ func AuthWithUserChecker(secret string, checker AccessUserChecker) gin.HandlerFu
 			}
 			if banned {
 				response.Error(c, appErrors.ErrAccountBanned())
+				c.Abort()
+				return
+			}
+			if tokenAuthVersion != authVersion {
+				response.Error(c, appErrors.ErrAuthExpired())
 				c.Abort()
 				return
 			}
@@ -102,7 +108,7 @@ func CurrentUserID(c *gin.Context) (uint, bool) {
 	return userID, ok
 }
 
-func parseAccessToken(token string, secret string) (uint, error) {
+func parseAccessToken(token string, secret string) (uint, uint64, error) {
 	claims := &accessTokenClaims{}
 	parsed, err := jwt.ParseWithClaims(
 		token,
@@ -113,15 +119,15 @@ func parseAccessToken(token string, secret string) (uint, error) {
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	if !parsed.Valid || claims.TokenType != accessTokenType {
-		return 0, jwt.ErrTokenInvalidClaims
+		return 0, 0, jwt.ErrTokenInvalidClaims
 	}
 
 	userID, err := strconv.ParseUint(claims.Subject, 10, 64)
 	if err != nil || userID == 0 {
-		return 0, jwt.ErrTokenInvalidClaims
+		return 0, 0, jwt.ErrTokenInvalidClaims
 	}
-	return uint(userID), nil
+	return uint(userID), claims.AuthVersion, nil
 }

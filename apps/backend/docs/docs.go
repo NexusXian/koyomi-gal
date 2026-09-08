@@ -6406,6 +6406,159 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/password/forgot/code": {
+            "post": {
+                "description": "无论邮箱是否存在均返回相同结果，202 表示请求已处理",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "发送忘记密码验证码",
+                "operationId": "forgotPasswordCode",
+                "parameters": [
+                    {
+                        "description": "忘记密码验证码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PasswordForgotCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "如果该邮箱已注册，验证码将发送到邮箱",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "邮箱格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "请求过于频繁",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "验证码发送任务创建失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/password/forgot/reset": {
+            "post": {
+                "description": "使用一次性重置凭证设置新密码并使旧会话失效",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "重置忘记的密码",
+                "operationId": "forgotPasswordReset",
+                "parameters": [
+                    {
+                        "description": "重置密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PasswordForgotResetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "密码重置成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "重置凭证或密码无效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "账号已封禁",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "密码重置失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/password/forgot/verify": {
+            "post": {
+                "description": "验证成功后签发十分钟有效的一次性重置凭证",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "验证忘记密码验证码",
+                "operationId": "forgotPasswordVerify",
+                "parameters": [
+                    {
+                        "description": "验证码验证请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PasswordForgotVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "验证成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PasswordResetTokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "验证码错误或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "验证码验证失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/refresh": {
             "post": {
                 "description": "使用 refresh_token Cookie 轮换 Refresh Token，返回新的 Access Token 与用户信息",
@@ -11899,6 +12052,120 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/users/me/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "使用绑定当前用户的验证码设置新密码并使旧会话失效",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "修改当前用户密码",
+                "operationId": "changePassword",
+                "parameters": [
+                    {
+                        "description": "修改密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "密码修改成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "验证码或密码无效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "账号已封禁",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "密码修改失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/me/password/code": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "向当前用户绑定邮箱发送修改密码验证码",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "发送修改密码验证码",
+                "operationId": "passwordChangeCode",
+                "responses": {
+                    "200": {
+                        "description": "验证码已发送",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PasswordCodeResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "账号已封禁",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "请求过于频繁",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "验证码发送任务创建失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/me/privacy": {
             "get": {
                 "security": [
@@ -14003,6 +14270,28 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "confirm_password",
+                "new_password"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "confirm_password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                },
+                "new_password": {
+                    "type": "string",
+                    "example": "newpassword123"
                 }
             }
         },
@@ -17954,6 +18243,107 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PasswordCodeData": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "us***@example.com"
+                }
+            }
+        },
+        "dto.PasswordCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.PasswordCodeData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "验证码已发送"
+                }
+            }
+        },
+        "dto.PasswordForgotCodeRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "dto.PasswordForgotResetRequest": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "password",
+                "reset_token"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                },
+                "reset_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PasswordForgotVerifyRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "dto.PasswordResetTokenData": {
+            "type": "object",
+            "properties": {
+                "reset_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PasswordResetTokenResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.PasswordResetTokenData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.PermissionListResponse": {
             "type": "object",
             "properties": {
@@ -19329,10 +19719,6 @@ const docTemplate = `{
                 },
                 "purpose": {
                     "type": "string",
-                    "enum": [
-                        "register",
-                        "password_reset"
-                    ],
                     "example": "register"
                 }
             }
@@ -20519,7 +20905,7 @@ const docTemplate = `{
             "properties": {
                 "confirm_password": {
                     "type": "string",
-                    "maxLength": 255,
+                    "maxLength": 72,
                     "minLength": 8,
                     "example": "password123"
                 },
@@ -20530,7 +20916,7 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string",
-                    "maxLength": 255,
+                    "maxLength": 72,
                     "minLength": 8,
                     "example": "password123"
                 },

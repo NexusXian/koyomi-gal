@@ -950,6 +950,22 @@ definitions:
         example: success
         type: string
     type: object
+  dto.ChangePasswordRequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      confirm_password:
+        example: newpassword123
+        type: string
+      new_password:
+        example: newpassword123
+        type: string
+    required:
+    - code
+    - confirm_password
+    - new_password
+    type: object
   dto.CharacterDataResponse:
     properties:
       code:
@@ -3784,6 +3800,76 @@ definitions:
     required:
     - classification
     type: object
+  dto.PasswordCodeData:
+    properties:
+      email:
+        example: us***@example.com
+        type: string
+    type: object
+  dto.PasswordCodeResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PasswordCodeData'
+      msg:
+        example: 验证码已发送
+        type: string
+    type: object
+  dto.PasswordForgotCodeRequest:
+    properties:
+      email:
+        example: user@example.com
+        maxLength: 254
+        type: string
+    required:
+    - email
+    type: object
+  dto.PasswordForgotResetRequest:
+    properties:
+      confirm_password:
+        example: newpassword123
+        type: string
+      password:
+        example: newpassword123
+        type: string
+      reset_token:
+        type: string
+    required:
+    - confirm_password
+    - password
+    - reset_token
+    type: object
+  dto.PasswordForgotVerifyRequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      email:
+        example: user@example.com
+        maxLength: 254
+        type: string
+    required:
+    - code
+    - email
+    type: object
+  dto.PasswordResetTokenData:
+    properties:
+      reset_token:
+        type: string
+    type: object
+  dto.PasswordResetTokenResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PasswordResetTokenData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.PermissionListResponse:
     properties:
       code:
@@ -4735,9 +4821,6 @@ definitions:
         maxLength: 254
         type: string
       purpose:
-        enum:
-        - register
-        - password_reset
         example: register
         type: string
     required:
@@ -5620,7 +5703,7 @@ definitions:
     properties:
       confirm_password:
         example: password123
-        maxLength: 255
+        maxLength: 72
         minLength: 8
         type: string
       email:
@@ -5629,7 +5712,7 @@ definitions:
         type: string
       password:
         example: password123
-        maxLength: 255
+        maxLength: 72
         minLength: 8
         type: string
       username:
@@ -10550,6 +10633,107 @@ paths:
       summary: 退出登录
       tags:
       - auth
+  /api/v1/auth/password/forgot/code:
+    post:
+      consumes:
+      - application/json
+      description: 无论邮箱是否存在均返回相同结果，202 表示请求已处理
+      operationId: forgotPasswordCode
+      parameters:
+      - description: 忘记密码验证码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PasswordForgotCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: 如果该邮箱已注册，验证码将发送到邮箱
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 邮箱格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "429":
+          description: 请求过于频繁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 验证码发送任务创建失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 发送忘记密码验证码
+      tags:
+      - auth
+  /api/v1/auth/password/forgot/reset:
+    post:
+      consumes:
+      - application/json
+      description: 使用一次性重置凭证设置新密码并使旧会话失效
+      operationId: forgotPasswordReset
+      parameters:
+      - description: 重置密码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PasswordForgotResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 密码重置成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 重置凭证或密码无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 账号已封禁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 密码重置失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 重置忘记的密码
+      tags:
+      - auth
+  /api/v1/auth/password/forgot/verify:
+    post:
+      consumes:
+      - application/json
+      description: 验证成功后签发十分钟有效的一次性重置凭证
+      operationId: forgotPasswordVerify
+      parameters:
+      - description: 验证码验证请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PasswordForgotVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 验证成功
+          schema:
+            $ref: '#/definitions/dto.PasswordResetTokenResponse'
+        "400":
+          description: 验证码错误或已过期
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 验证码验证失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 验证忘记密码验证码
+      tags:
+      - auth
   /api/v1/auth/refresh:
     post:
       description: 使用 refresh_token Cookie 轮换 Refresh Token，返回新的 Access Token 与用户信息
@@ -14360,6 +14544,79 @@ paths:
       summary: 查看我的经验流水
       tags:
       - me
+  /api/v1/users/me/password:
+    put:
+      consumes:
+      - application/json
+      description: 使用绑定当前用户的验证码设置新密码并使旧会话失效
+      operationId: changePassword
+      parameters:
+      - description: 修改密码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 密码修改成功
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 验证码或密码无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 账号已封禁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 密码修改失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 修改当前用户密码
+      tags:
+      - users
+  /api/v1/users/me/password/code:
+    post:
+      description: 向当前用户绑定邮箱发送修改密码验证码
+      operationId: passwordChangeCode
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 验证码已发送
+          schema:
+            $ref: '#/definitions/dto.PasswordCodeResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 账号已封禁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "429":
+          description: 请求过于频繁
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 验证码发送任务创建失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 发送修改密码验证码
+      tags:
+      - users
   /api/v1/users/me/privacy:
     get:
       operationId: getMyPrivacy

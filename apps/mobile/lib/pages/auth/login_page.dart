@@ -119,9 +119,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       : const Text('登录'),
                 ),
                 const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => context.push('/register'),
-                  child: const Text('没有账号？去注册'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => context.push('/register'),
+                      child: const Text('没有账号？去注册'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/forgot-password'),
+                      child: const Text('忘记密码？'),
+                    ),
+                  ],
                 ),
               ],
             ),

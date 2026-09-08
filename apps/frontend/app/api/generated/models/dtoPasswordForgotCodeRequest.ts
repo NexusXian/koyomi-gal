@@ -6,8 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface DtoSendVerificationCodeRequest {
+export interface DtoPasswordForgotCodeRequest {
   /** @maxLength 254 */
   email: string;
-  purpose: string;
 }

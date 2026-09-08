@@ -133,6 +133,7 @@ watch(
     <nav class="settings-nav" aria-label="设置导航">
       <NuxtLink class="active" to="/settings/profile">个人资料</NuxtLink>
       <NuxtLink to="/settings/privacy">隐私设置</NuxtLink>
+      <NuxtLink to="/settings/security">账号与安全</NuxtLink>
       <NuxtLink v-if="user?.username" :to="`/user/${user.username}`">查看个人空间</NuxtLink>
     </nav>
 

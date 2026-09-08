@@ -29,6 +29,9 @@ var (
 	ErrEmailExists             = errors.New("email already exists")
 	ErrPasswordMismatch        = errors.New("password confirmation does not match")
 	ErrInvalidVerificationCode = errors.New("verification code is invalid or expired")
+	ErrInvalidResetToken       = errors.New("password reset token is invalid or expired")
+	ErrSamePassword            = errors.New("new password matches current password")
+	ErrUserNotFound            = errors.New("user not found")
 )
 
 const (
@@ -43,7 +46,8 @@ type RoleAssigner interface {
 }
 
 type accessTokenClaims struct {
-	TokenType string `json:"token_type"`
+	TokenType   string `json:"token_type"`
+	AuthVersion uint64 `json:"auth_version"`
 	jwt.RegisteredClaims
 }
 
@@ -118,15 +122,15 @@ func (s *UserAuthService) UserRegister(
 		return ErrEmailExists
 	}
 
-	if len(req.Password) < 8 {
-		return errors.New("密码长度不能小于8")
+	if err := ValidatePassword(req.Password); err != nil {
+		return err
 	}
 
 	if req.Password != req.ConfirmPassword {
 		return ErrPasswordMismatch
 	}
 
-	validCode, err := s.verificationService.VerifyCode(
+	validCode, err := s.verificationService.ConsumeCode(
 		ctx,
 		email,
 		VerificationPurposeRegister,
@@ -219,11 +223,11 @@ func (s *UserAuthService) UserLogin(
 		return nil, "", ErrAccountBanned
 	}
 
-	accessToken, err := s.issueAccessToken(user.ID)
+	accessToken, err := s.issueAccessToken(user.ID, user.AuthVersion)
 	if err != nil {
 		return nil, "", err
 	}
-	refreshToken, err := s.createRefreshSession(ctx, user.ID)
+	refreshToken, err := s.createRefreshSession(ctx, user.ID, user.AuthVersion)
 	if err != nil {
 		return nil, "", err
 	}
@@ -239,7 +243,7 @@ func (s *UserAuthService) RefreshSession(
 		return nil, "", ErrInvalidRefreshToken
 	}
 
-	userID, err := s.refreshSessionRepo.FindUserID(ctx, refreshToken)
+	refreshSession, err := s.refreshSessionRepo.Find(ctx, refreshToken)
 	if errors.Is(err, repository.ErrRefreshSessionNotFound) {
 		return nil, "", ErrInvalidRefreshToken
 	}
@@ -247,7 +251,7 @@ func (s *UserAuthService) RefreshSession(
 		return nil, "", err
 	}
 
-	user, err := s.authRepo.FindUserByID(ctx, userID)
+	user, err := s.authRepo.FindUserByID(ctx, refreshSession.UserID)
 	if err != nil {
 		return nil, "", fmt.Errorf("find refresh session user: %w", err)
 	}
@@ -263,12 +267,18 @@ func (s *UserAuthService) RefreshSession(
 		}
 		return nil, "", ErrAccountBanned
 	}
+	if user.AuthVersion != refreshSession.AuthVersion {
+		if err := s.refreshSessionRepo.Revoke(ctx, refreshToken); err != nil {
+			return nil, "", err
+		}
+		return nil, "", ErrInvalidRefreshToken
+	}
 
-	accessToken, err := s.issueAccessToken(user.ID)
+	accessToken, err := s.issueAccessToken(user.ID, user.AuthVersion)
 	if err != nil {
 		return nil, "", err
 	}
-	replacementToken, err := s.rotateRefreshSession(ctx, refreshToken, user.ID)
+	replacementToken, err := s.rotateRefreshSession(ctx, refreshToken, refreshSession)
 	if err != nil {
 		return nil, "", err
 	}
@@ -283,7 +293,7 @@ func (s *UserAuthService) Logout(ctx context.Context, refreshToken string) error
 	return s.refreshSessionRepo.Revoke(ctx, refreshToken)
 }
 
-func (s *UserAuthService) issueAccessToken(userID uint) (string, error) {
+func (s *UserAuthService) issueAccessToken(userID uint, authVersion uint64) (string, error) {
 	now := time.Now()
 	tokenID, err := randomToken(16)
 	if err != nil {
@@ -291,7 +301,8 @@ func (s *UserAuthService) issueAccessToken(userID uint) (string, error) {
 	}
 
 	claims := accessTokenClaims{
-		TokenType: "access",
+		TokenType:   "access",
+		AuthVersion: authVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    accessTokenIssuer,
 			Subject:   strconv.FormatUint(uint64(userID), 10),
@@ -309,13 +320,16 @@ func (s *UserAuthService) issueAccessToken(userID uint) (string, error) {
 	return signedToken, nil
 }
 
-func (s *UserAuthService) createRefreshSession(ctx context.Context, userID uint) (string, error) {
+func (s *UserAuthService) createRefreshSession(ctx context.Context, userID uint, authVersion uint64) (string, error) {
 	for range maxTokenGenerationRetries {
 		token, err := randomToken(32)
 		if err != nil {
 			return "", fmt.Errorf("generate refresh token: %w", err)
 		}
-		err = s.refreshSessionRepo.Create(ctx, token, userID, s.refreshTokenTTL)
+		err = s.refreshSessionRepo.Create(ctx, token, repository.RefreshSession{
+			UserID:      userID,
+			AuthVersion: authVersion,
+		}, s.refreshTokenTTL)
 		if errors.Is(err, repository.ErrRefreshTokenCollision) {
 			continue
 		}
@@ -330,7 +344,7 @@ func (s *UserAuthService) createRefreshSession(ctx context.Context, userID uint)
 func (s *UserAuthService) rotateRefreshSession(
 	ctx context.Context,
 	currentToken string,
-	userID uint,
+	session repository.RefreshSession,
 ) (string, error) {
 	for range maxTokenGenerationRetries {
 		replacementToken, err := randomToken(32)
@@ -341,7 +355,7 @@ func (s *UserAuthService) rotateRefreshSession(
 			ctx,
 			currentToken,
 			replacementToken,
-			userID,
+			session,
 			s.refreshTokenTTL,
 		)
 		switch {

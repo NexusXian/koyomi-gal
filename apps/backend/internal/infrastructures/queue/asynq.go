@@ -96,7 +96,7 @@ func NewServeMux(
 		if err := json.Unmarshal(decryptedPayload, &payload); err != nil {
 			return asynq.RevokeTask
 		}
-		if payload.RequestID == "" || payload.Email == "" || payload.Code == "" {
+		if payload.RequestID == "" || payload.Email == "" || payload.Identifier == "" || payload.Code == "" {
 			return asynq.RevokeTask
 		}
 		if !time.Now().Before(time.Unix(payload.ExpiresAt, 0)) {
@@ -105,7 +105,7 @@ func NewServeMux(
 
 		current, err := verificationRepository.IsVerificationCodeCurrent(
 			ctx,
-			payload.Email,
+			payload.Identifier,
 			payload.Purpose,
 			payload.RequestID,
 		)

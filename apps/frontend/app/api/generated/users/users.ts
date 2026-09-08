@@ -8,7 +8,9 @@
 import type {
   DtoAdminUserDataResponse,
   DtoAdminUserListResponse,
+  DtoChangePasswordRequest,
   DtoCreateAdminUserRequest,
+  DtoPasswordCodeResponse,
   DtoProfileCommentListResponse,
   DtoProfileGalgameListResponse,
   DtoProfilePostListResponse,
@@ -220,6 +222,60 @@ return apiMutator<ResponseMessageResponse>(getUpdateUserRolesUrl(id),
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoUpdateUserRolesRequest)
+  }
+);}
+
+
+export const getChangePasswordUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/password`
+}
+
+/**
+ * 使用绑定当前用户的验证码设置新密码并使旧会话失效
+ * @summary 修改当前用户密码
+ */
+export const changePassword = async (dtoChangePasswordRequest: DtoChangePasswordRequest, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<ResponseMessageResponse>(getChangePasswordUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoChangePasswordRequest)
+  }
+);}
+
+
+export const getPasswordChangeCodeUrl = () => {
+
+
+
+
+  return `/api/v1/users/me/password/code`
+}
+
+/**
+ * 向当前用户绑定邮箱发送修改密码验证码
+ * @summary 发送修改密码验证码
+ */
+export const passwordChangeCode = async ( options?: Parameters<typeof apiMutator>[1]): Promise<DtoPasswordCodeResponse> => {
+
+  return apiMutator<DtoPasswordCodeResponse>(getPasswordChangeCodeUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
   }
 );}
 

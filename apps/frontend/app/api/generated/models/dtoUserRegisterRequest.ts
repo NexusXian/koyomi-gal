@@ -9,14 +9,14 @@
 export interface DtoUserRegisterRequest {
   /**
      * @minLength 8
-     * @maxLength 255
+     * @maxLength 72
      */
   confirm_password: string;
   /** @maxLength 254 */
   email: string;
   /**
      * @minLength 8
-     * @maxLength 255
+     * @maxLength 72
      */
   password: string;
   /** @maxLength 50 */

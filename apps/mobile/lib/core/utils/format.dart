@@ -1,5 +1,17 @@
 import 'package:intl/intl.dart';
 
+String maskEmail(String? email) {
+  final value = email?.trim() ?? '';
+  final atIndex = value.indexOf('@');
+  if (atIndex <= 0 || atIndex == value.length - 1) {
+    return '';
+  }
+  final local = value.substring(0, atIndex);
+  final domain = value.substring(atIndex + 1);
+  final visible = local.length < 3 ? 1 : 2;
+  return '${local.substring(0, visible)}***@$domain';
+}
+
 String formatDateTime(String? value) {
   if (value == null || value.isEmpty) {
     return '-';

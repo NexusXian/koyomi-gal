@@ -14,13 +14,14 @@ import (
 )
 
 type stubAccessUserChecker struct {
-	exists bool
-	banned bool
-	err    error
+	exists      bool
+	banned      bool
+	authVersion uint64
+	err         error
 }
 
-func (s stubAccessUserChecker) AccessUserStatus(context.Context, uint) (bool, bool, error) {
-	return s.exists, s.banned, s.err
+func (s stubAccessUserChecker) AccessUserStatus(context.Context, uint) (bool, bool, uint64, error) {
+	return s.exists, s.banned, s.authVersion, s.err
 }
 
 func TestAuthWithUserChecker(t *testing.T) {
@@ -35,6 +36,7 @@ func TestAuthWithUserChecker(t *testing.T) {
 		{name: "active", checker: stubAccessUserChecker{exists: true}, status: http.StatusNoContent},
 		{name: "deleted", checker: stubAccessUserChecker{}, status: http.StatusUnauthorized},
 		{name: "banned", checker: stubAccessUserChecker{exists: true, banned: true}, status: http.StatusForbidden},
+		{name: "auth version mismatch", checker: stubAccessUserChecker{exists: true, authVersion: 1}, status: http.StatusUnauthorized},
 		{name: "database failure", checker: stubAccessUserChecker{err: errors.New("database unavailable")}, status: http.StatusInternalServerError},
 	}
 	for _, tt := range tests {
@@ -101,10 +103,15 @@ func TestOptionalAuthWithUserChecker(t *testing.T) {
 }
 
 func testAccessToken(t *testing.T, secret string, userID uint) string {
+	return testAccessTokenWithVersion(t, secret, userID, 0)
+}
+
+func testAccessTokenWithVersion(t *testing.T, secret string, userID uint, authVersion uint64) string {
 	t.Helper()
 	now := time.Now()
 	claims := accessTokenClaims{
-		TokenType: accessTokenType,
+		TokenType:   accessTokenType,
+		AuthVersion: authVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    accessTokenIssuer,
 			Subject:   strconv.FormatUint(uint64(userID), 10),
