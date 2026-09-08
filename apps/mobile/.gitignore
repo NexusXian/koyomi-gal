@@ -4,6 +4,7 @@
 *.pyc
 *.jks
 *.keystore
+keystore*base64*
 *.swp
 .DS_Store
 .atom/
