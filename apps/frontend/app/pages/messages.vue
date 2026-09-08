@@ -51,16 +51,18 @@ onUnmounted(() => {
 .messages-layout {
   display: grid;
   grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 14px;
-  min-height: 70vh;
+  height: calc(100dvh - 230px);
+  min-height: 420px;
 }
 
 /* 移动端：会话列表与聊天页互斥显示 */
 .conversations-pane {
-  height: 75vh;
+  min-height: 0;
   border: 1px solid var(--app-glass-border);
   border-radius: var(--radius-kun-lg);
-  background: var(--app-glass-bg, transparent);
+  background: var(--color-content1);
   overflow: hidden;
 }
 
@@ -75,10 +77,10 @@ onUnmounted(() => {
 
 .messages-layout.has-thread .thread-pane {
   display: flex;
-  height: 75vh;
+  min-height: 0;
   border: 1px solid var(--app-glass-border);
   border-radius: var(--radius-kun-lg);
-  background: var(--app-glass-bg, transparent);
+  background: var(--color-content1);
   overflow: hidden;
 }
 
@@ -88,19 +90,17 @@ onUnmounted(() => {
 
 @media (min-width: 1024px) {
   .messages-layout {
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 320px minmax(0, 1fr);
   }
 
   .conversations-pane,
   .messages-layout.has-thread .conversations-pane {
     display: block;
-    height: 75vh;
   }
 
   .thread-pane,
   .messages-layout.has-thread .thread-pane {
     display: flex;
-    height: 75vh;
   }
 }
 </style>

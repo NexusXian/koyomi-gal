@@ -145,7 +145,7 @@ function retry(): void {
 }
 
 .message-row.mine .bubble-body {
-  background: color-mix(in srgb, var(--color-primary) 88%, transparent);
+  background: var(--color-primary);
   color: var(--color-primary-foreground);
   border-bottom-right-radius: 4px;
 }
