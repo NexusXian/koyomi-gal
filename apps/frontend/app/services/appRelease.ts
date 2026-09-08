@@ -83,10 +83,11 @@ export function createAppReleaseService(api: ApiClient) {
       )
     },
 
-    async publish(id: number): Promise<void> {
+    async publish(id: number, createAnnouncement = false): Promise<void> {
       ensureSuccess(
         await api<ApiResponse>(`/api/v1/admin/app/releases/${id}/publish`, {
-          method: 'PATCH'
+          method: 'PATCH',
+          body: { createAnnouncement }
         }),
         '版本发布失败'
       )

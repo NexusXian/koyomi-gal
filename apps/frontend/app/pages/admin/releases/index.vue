@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import { createAppReleaseService } from '~/services/appRelease'
 import type {
@@ -232,10 +232,45 @@ async function changeStatus(
   action: 'publish' | 'disable'
 ): Promise<void> {
   if (!has('app_release:publish')) return
+
+  if (action === 'publish') {
+    Modal.confirm({
+      title: '发布版本',
+      content: '是否同时创建关联公告？',
+      okText: '创建公告并发布',
+      cancelText: '仅发布',
+      async onOk() {
+        actionKey.value = `publish:${item.id}`
+        try {
+          await releaseService.publish(item.id, true)
+          message.success('版本已发布并创建关联公告')
+          await load()
+        } catch (error) {
+          message.error(getApiErrorMessage(error, '版本状态更新失败'))
+        } finally {
+          actionKey.value = ''
+        }
+      },
+      async onCancel() {
+        actionKey.value = `publish:${item.id}`
+        try {
+          await releaseService.publish(item.id, false)
+          message.success('版本已发布')
+          await load()
+        } catch (error) {
+          message.error(getApiErrorMessage(error, '版本状态更新失败'))
+        } finally {
+          actionKey.value = ''
+        }
+      }
+    })
+    return
+  }
+
   actionKey.value = `${action}:${item.id}`
   try {
     await releaseService[action](item.id)
-    message.success(action === 'publish' ? '版本已发布' : '版本已停用')
+    message.success('版本已停用')
     await load()
   } catch (error) {
     message.error(getApiErrorMessage(error, '版本状态更新失败'))
