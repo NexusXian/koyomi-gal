@@ -25,7 +25,8 @@ const navigationItems = computed(() => {
     { label: 'galgame', icon: 'lucide:gamepad-2', to: '/galgames' },
     { label: '小说', icon: 'lucide:book-open', to: '/novels' },
     { label: '帖子', icon: 'lucide:message-square-text', to: '/posts' },
-    { label: '资讯', icon: 'lucide:newspaper', to: '/articles' }
+    { label: '资讯', icon: 'lucide:newspaper', to: '/articles' },
+    { label: 'App 下载', icon: 'lucide:smartphone', to: '/download' }
   ]
 
   if (isAuthenticated.value) {

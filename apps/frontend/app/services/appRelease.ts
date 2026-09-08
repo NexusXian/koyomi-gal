@@ -1,5 +1,11 @@
 import type { ApiClient, ApiResponse } from '~/types/api'
-import type { AppRelease, AppReleasePayload, GitHubRelease } from '~/types/appRelease'
+import type {
+  AppRelease,
+  AppReleasePayload,
+  AppReleasePlatform,
+  GitHubRelease,
+  LatestAppRelease
+} from '~/types/appRelease'
 import type { PaginatedData, PaginationParams } from '~/types/content'
 import { unwrapApiData } from '~/utils/api'
 
@@ -34,6 +40,22 @@ function normalizePage(
 
 export function createAppReleaseService(api: ApiClient) {
   return {
+    async latest(
+      platform: AppReleasePlatform = 'android'
+    ): Promise<LatestAppRelease> {
+      return unwrapApiData(
+        await api<ApiResponse<LatestAppRelease>>(
+          '/api/v1/app/releases/latest',
+          {
+            query: { platform, versionCode: 0 },
+            skipAuth: true,
+            skipRefresh: true
+          }
+        ),
+        '版本信息加载失败'
+      )
+    },
+
     async listAdmin(
       params: PaginationParams
     ): Promise<PaginatedData<AppRelease>> {

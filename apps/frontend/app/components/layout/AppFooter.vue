@@ -32,6 +32,7 @@ const legalLinks = [
       </nav>
 
       <nav class="footer-links" aria-label="项目相关">
+        <NuxtLink to="/download">App 下载</NuxtLink>
         <NuxtLink to="/changelog">更新日志</NuxtLink>
         <NuxtLink to="/feedback">意见反馈</NuxtLink>
         <a :href="SITE_GITHUB_URL" target="_blank" rel="noopener noreferrer">

@@ -60,3 +60,15 @@ export interface GitHubRelease {
   publishedAt: string
   apk?: GitHubReleaseAsset | null
 }
+
+export interface LatestAppRelease {
+  hasUpdate: boolean
+  forceUpdate?: boolean
+  latestVersion?: { versionName: string; versionCode: number }
+  title?: string
+  changelog?: string
+  downloadUrl?: string
+  fileSize?: number | null
+  sha256?: string | null
+  publishedAt?: string
+}
