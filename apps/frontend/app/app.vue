@@ -19,8 +19,10 @@ const antdTheme = computed(() => ({
 }))
 
 const backgroundStore = useBackgroundStore()
+const mounted = ref(false)
 
 onMounted(() => {
+  mounted.value = true
   void backgroundStore.initialize()
 })
 
@@ -39,6 +41,7 @@ onBeforeUnmount(() => {
         <NuxtLayout>
           <NuxtPage />
         </NuxtLayout>
+        <StartupAnnouncementModal v-if="mounted" />
       </div>
     </div>
   </a-config-provider>

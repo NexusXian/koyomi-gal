@@ -70,7 +70,17 @@ const navigationItems = computed(() => {
       'level_config:update',
       'experience_rule:read',
       'experience_rule:update',
-      'experience:adjust'
+      'experience:adjust',
+      'announcement:read',
+      'announcement:create',
+      'announcement:update',
+      'announcement:delete',
+      'announcement:publish',
+      'app_release:read',
+      'app_release:create',
+      'app_release:update',
+      'app_release:delete',
+      'app_release:publish'
     ])
   ) {
     const target = has('galgame:review')
@@ -97,7 +107,23 @@ const navigationItems = computed(() => {
                           ? '/admin/backgrounds'
                           : has('article:read')
                             ? '/admin/articles'
-                            : has('galgame_classification:read')
+                            : hasAny([
+                                'announcement:read',
+                                'announcement:create',
+                                'announcement:update',
+                                'announcement:delete',
+                                'announcement:publish'
+                              ])
+                              ? '/admin/announcements'
+                              : hasAny([
+                                  'app_release:read',
+                                  'app_release:create',
+                                  'app_release:update',
+                                  'app_release:delete',
+                                  'app_release:publish'
+                                ])
+                                ? '/admin/releases'
+                                : has('galgame_classification:read')
                               ? '/admin/classification'
                               : hasAny(['galgame:import', 'galgame:import:batch'])
                               ? '/admin/import'

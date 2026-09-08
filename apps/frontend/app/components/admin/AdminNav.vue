@@ -112,6 +112,30 @@ const items: AdminNavItem[] = [
     permissions: ['article:read']
   },
   {
+    key: '/admin/announcements',
+    label: '公告',
+    icon: 'lucide:megaphone',
+    permissions: [
+      'announcement:read',
+      'announcement:create',
+      'announcement:update',
+      'announcement:delete',
+      'announcement:publish'
+    ]
+  },
+  {
+    key: '/admin/releases',
+    label: '应用版本',
+    icon: 'lucide:package-open',
+    permissions: [
+      'app_release:read',
+      'app_release:create',
+      'app_release:update',
+      'app_release:delete',
+      'app_release:publish'
+    ]
+  },
+  {
     key: '/admin/roles',
     label: '角色',
     icon: 'lucide:shield',

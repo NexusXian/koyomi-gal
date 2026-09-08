@@ -1,0 +1,44 @@
+export type AppReleasePlatform =
+  | 'android'
+  | 'ios'
+  | 'windows'
+  | 'macos'
+  | 'linux'
+
+export type AppReleaseStatus = 'draft' | 'published' | 'disabled'
+
+export interface AppRelease {
+  id: number
+  platform: AppReleasePlatform
+  versionName: string
+  versionCode: number
+  title: string
+  changelog: string
+  downloadUrl: string
+  fileSize?: number | null
+  sha256?: string | null
+  minimumVersionCode: number
+  forceUpdate: boolean
+  status: AppReleaseStatus
+  publishedAt?: string | null
+  announcementId?: number | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AppReleasePayload {
+  platform: AppReleasePlatform
+  versionName: string
+  versionCode: number
+  title: string
+  changelog: string
+  downloadUrl: string
+  fileSize?: number | null
+  sha256?: string | null
+  minimumVersionCode: number
+  forceUpdate: boolean
+  createAnnouncement: boolean
+  status: AppReleaseStatus
+  publishedAt?: string | null
+  announcementId?: number | null
+}

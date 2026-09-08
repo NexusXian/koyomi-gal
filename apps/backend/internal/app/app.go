@@ -10,6 +10,12 @@ import (
 	"time"
 
 	"backend/config"
+	announcementHandler "backend/internal/announcement/handler"
+	announcementRepo "backend/internal/announcement/repository"
+	announcementService "backend/internal/announcement/service"
+	appreleaseHandler "backend/internal/apprelease/handler"
+	appreleaseRepo "backend/internal/apprelease/repository"
+	appreleaseService "backend/internal/apprelease/service"
 	articleHandler "backend/internal/article/handler"
 	articleRepo "backend/internal/article/repository"
 	articleService "backend/internal/article/service"
@@ -125,6 +131,8 @@ type App struct {
 	NotificationHandler   *notificationHandler.NotificationHandler
 	LevelHandler          *levelHandler.LevelHandler
 	AdminLevelHandler     *levelHandler.AdminLevelHandler
+	AnnouncementHandler   *announcementHandler.AnnouncementHandler
+	AppReleaseHandler     *appreleaseHandler.AppReleaseHandler
 	stopImageCleanup      func()
 }
 
@@ -248,6 +256,10 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	articleRepository := articleRepo.NewArticleRepository(postgresDB)
 	bannerSvc := bannerService.NewBannerService(bannerRepository, redisClient)
 	articleSvc := articleService.NewArticleService(articleRepository, rbacSvc, redisClient)
+	announcementRepository := announcementRepo.NewAnnouncementRepository(postgresDB)
+	announcementSvc := announcementService.NewAnnouncementService(announcementRepository, rbacSvc)
+	appReleaseRepository := appreleaseRepo.NewAppReleaseRepository(postgresDB)
+	appReleaseSvc := appreleaseService.NewAppReleaseService(appReleaseRepository, rbacSvc)
 	backgroundPresetRepository := backgroundRepo.NewBackgroundPresetRepository(postgresDB)
 	backgroundPresetSvc := backgroundService.NewBackgroundPresetService(backgroundPresetRepository, cfg.R2.PublicURL)
 
@@ -404,6 +416,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		NotificationHandler:   notificationHandler.NewNotificationHandler(notificationSvc),
 		LevelHandler:          levelHandler.NewLevelHandler(experienceService, checkinService),
 		AdminLevelHandler:     levelHandler.NewAdminLevelHandler(levelConfigService, experienceService),
+		AnnouncementHandler:   announcementHandler.NewAnnouncementHandler(announcementSvc),
+		AppReleaseHandler:     appreleaseHandler.NewAppReleaseHandler(appReleaseSvc),
 		stopImageCleanup:      stopImageCleanup,
 	}
 	ginApp := gin.Default()

@@ -52,7 +52,17 @@ onMounted(async () => {
       'banner:read',
       'background_preset:read',
       'article:read',
-      'feedback:read'
+      'feedback:read',
+      'announcement:read',
+      'announcement:create',
+      'announcement:update',
+      'announcement:delete',
+      'announcement:publish',
+      'app_release:read',
+      'app_release:create',
+      'app_release:update',
+      'app_release:delete',
+      'app_release:publish'
     ])
   ) {
     throw createError({

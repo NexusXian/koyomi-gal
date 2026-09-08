@@ -1,5 +1,30 @@
 basePath: /
 definitions:
+  dto.ActiveAnnouncementData:
+    properties:
+      content:
+        type: string
+      dismissible:
+        type: boolean
+      displayMode:
+        type: string
+      endsAt:
+        type: string
+      id:
+        type: integer
+      priority:
+        type: integer
+      startsAt:
+        type: string
+      target:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   dto.ActorData:
     properties:
       avatar:
@@ -16,6 +41,15 @@ definitions:
         type: integer
       username:
         example: koyomi
+        type: string
+    type: object
+  dto.AdminAnnouncementListResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AnnouncementListData'
+      msg:
         type: string
     type: object
   dto.AdminArticleListData:
@@ -234,6 +268,15 @@ definitions:
         example: success
         type: string
     type: object
+  dto.AdminReleaseListResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AppReleaseListData'
+      msg:
+        type: string
+    type: object
   dto.AdminResourceListData:
     properties:
       items:
@@ -423,6 +466,229 @@ definitions:
       type:
         example: announcement
         type: string
+    type: object
+  dto.AnnouncementData:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      dismissible:
+        type: boolean
+      displayMode:
+        type: string
+      endsAt:
+        type: string
+      id:
+        type: integer
+      priority:
+        type: integer
+      published:
+        type: boolean
+      startsAt:
+        type: string
+      target:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  dto.AnnouncementDataResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AnnouncementData'
+      msg:
+        type: string
+    type: object
+  dto.AnnouncementListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.AnnouncementData'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.AnnouncementListResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.ActiveAnnouncementData'
+        type: array
+      msg:
+        type: string
+    type: object
+  dto.AnnouncementRequest:
+    properties:
+      content:
+        type: string
+      dismissible:
+        type: boolean
+      displayMode:
+        enum:
+        - normal
+        - banner
+        - modal
+        - startup_modal
+        type: string
+      endsAt:
+        type: string
+      priority:
+        type: integer
+      published:
+        type: boolean
+      startsAt:
+        type: string
+      target:
+        enum:
+        - all
+        - web
+        - android
+        - ios
+        - desktop
+        type: string
+      title:
+        maxLength: 255
+        type: string
+      type:
+        enum:
+        - normal
+        - update
+        - maintenance
+        - warning
+        - event
+        - system
+        type: string
+    required:
+    - content
+    - displayMode
+    - target
+    - title
+    - type
+    type: object
+  dto.AppReleaseData:
+    properties:
+      announcementId:
+        type: integer
+      changelog:
+        type: string
+      createdAt:
+        type: string
+      downloadUrl:
+        type: string
+      fileSize:
+        type: integer
+      forceUpdate:
+        type: boolean
+      id:
+        type: integer
+      minimumVersionCode:
+        type: integer
+      platform:
+        type: string
+      publishedAt:
+        type: string
+      sha256:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+      versionCode:
+        type: integer
+      versionName:
+        type: string
+    type: object
+  dto.AppReleaseDataResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.AppReleaseData'
+      msg:
+        type: string
+    type: object
+  dto.AppReleaseListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.AppReleaseData'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.AppReleaseRequest:
+    properties:
+      announcementId:
+        type: integer
+      changelog:
+        type: string
+      createAnnouncement:
+        type: boolean
+      downloadUrl:
+        maxLength: 2048
+        type: string
+      fileSize:
+        minimum: 0
+        type: integer
+      forceUpdate:
+        type: boolean
+      minimumVersionCode:
+        minimum: 0
+        type: integer
+      platform:
+        enum:
+        - android
+        - ios
+        - windows
+        - macos
+        - linux
+        type: string
+      publishedAt:
+        type: string
+      sha256:
+        type: string
+      status:
+        enum:
+        - draft
+        - published
+        - disabled
+        type: string
+      title:
+        maxLength: 255
+        type: string
+      versionCode:
+        minimum: 0
+        type: integer
+      versionName:
+        maxLength: 64
+        type: string
+    required:
+    - changelog
+    - downloadUrl
+    - platform
+    - title
+    - versionCode
+    - versionName
     type: object
   dto.ArticleData:
     properties:
@@ -3327,6 +3593,15 @@ definitions:
         example: success
         type: string
     type: object
+  dto.LatestReleaseResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.UpdateData'
+      msg:
+        type: string
+    type: object
   dto.MatchCandidateBatchData:
     properties:
       failed_count:
@@ -4363,6 +4638,11 @@ definitions:
         example: success
         type: string
     type: object
+  dto.PublishReleaseRequest:
+    properties:
+      createAnnouncement:
+        type: boolean
+    type: object
   dto.RatingData:
     properties:
       created_at:
@@ -5026,6 +5306,27 @@ definitions:
         type: string
     required:
     - content
+    type: object
+  dto.UpdateData:
+    properties:
+      changelog:
+        type: string
+      downloadUrl:
+        type: string
+      fileSize:
+        type: integer
+      forceUpdate:
+        type: boolean
+      hasUpdate:
+        type: boolean
+      latestVersion:
+        $ref: '#/definitions/dto.VersionData'
+      publishedAt:
+        type: string
+      sha256:
+        type: string
+      title:
+        type: string
     type: object
   dto.UpdateDeveloperRequest:
     properties:
@@ -5753,6 +6054,13 @@ definitions:
         example: success
         type: string
     type: object
+  dto.VersionData:
+    properties:
+      versionCode:
+        type: integer
+      versionName:
+        type: string
+    type: object
   dto.VolumeData:
     properties:
       cover_url:
@@ -6431,6 +6739,440 @@ info:
   title: Koyomi Gal API
   version: 1.0.0
 paths:
+  /api/v1/admin/announcements:
+    get:
+      description: Requires announcement:read
+      operationId: listAdminAnnouncements
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AdminAnnouncementListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List announcements for administration
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Requires announcement:create; publishing also requires announcement:publish
+      operationId: createAdminAnnouncement
+      parameters:
+      - description: Announcement
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AnnouncementRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AnnouncementDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create an announcement
+      tags:
+      - admin
+  /api/v1/admin/announcements/{id}:
+    delete:
+      description: Requires announcement:delete
+      operationId: deleteAdminAnnouncement
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete an announcement
+      tags:
+      - admin
+    get:
+      description: Requires announcement:read
+      operationId: getAdminAnnouncement
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AnnouncementDataResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get an announcement
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Requires announcement:update; publication changes also require
+        announcement:publish
+      operationId: updateAdminAnnouncement
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Announcement
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AnnouncementRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AnnouncementDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update an announcement
+      tags:
+      - admin
+  /api/v1/admin/announcements/{id}/publish:
+    patch:
+      description: Requires announcement:publish
+      operationId: publishAnnouncement
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AnnouncementDataResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Publish an announcement
+      tags:
+      - admin
+  /api/v1/admin/announcements/{id}/withdraw:
+    patch:
+      description: Requires announcement:publish
+      operationId: withdrawAnnouncement
+      parameters:
+      - description: Announcement ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AnnouncementDataResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Withdraw an announcement
+      tags:
+      - admin
+  /api/v1/admin/app/releases:
+    get:
+      description: Requires app_release:read
+      operationId: listAdminAppReleases
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AdminReleaseListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List app releases for administration
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Requires app_release:create; publishing also requires app_release:publish
+      operationId: createAdminAppRelease
+      parameters:
+      - description: App release
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AppReleaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppReleaseDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create an app release
+      tags:
+      - admin
+  /api/v1/admin/app/releases/{id}:
+    delete:
+      description: Requires app_release:delete
+      operationId: deleteAdminAppRelease
+      parameters:
+      - description: App release ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete an app release
+      tags:
+      - admin
+    get:
+      description: Requires app_release:read
+      operationId: getAdminAppRelease
+      parameters:
+      - description: App release ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppReleaseDataResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get an app release
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Requires app_release:update; publication changes also require app_release:publish
+      operationId: updateAdminAppRelease
+      parameters:
+      - description: App release ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: App release
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AppReleaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppReleaseDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update an app release
+      tags:
+      - admin
+  /api/v1/admin/app/releases/{id}/disable:
+    patch:
+      description: Requires app_release:publish
+      operationId: disableAppRelease
+      parameters:
+      - description: App release ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppReleaseDataResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Disable an app release
+      tags:
+      - admin
+  /api/v1/admin/app/releases/{id}/publish:
+    patch:
+      consumes:
+      - application/json
+      description: Requires app_release:publish
+      operationId: publishAppRelease
+      parameters:
+      - description: App release ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Publication options
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.PublishReleaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppReleaseDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Publish an app release
+      tags:
+      - admin
   /api/v1/admin/articles:
     get:
       description: 分页返回全部文章；需要 article:read 权限
@@ -10497,6 +11239,85 @@ paths:
       summary: 更新用户角色
       tags:
       - users
+  /api/v1/announcements/active:
+    get:
+      description: Returns currently active announcements for a client platform
+      operationId: listActiveAnnouncements
+      parameters:
+      - description: Client platform
+        enum:
+        - web
+        - android
+        - ios
+        - windows
+        - macos
+        - linux
+        - desktop
+        in: query
+        name: platform
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AnnouncementListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List active announcements
+      tags:
+      - announcements
+  /api/v1/app/releases/latest:
+    get:
+      description: Returns the greatest currently published version newer than versionCode
+      operationId: getLatestAppRelease
+      parameters:
+      - description: Client platform
+        enum:
+        - android
+        - ios
+        - windows
+        - macos
+        - linux
+        in: query
+        name: platform
+        required: true
+        type: string
+      - description: Numeric client version code
+        in: query
+        name: versionCode
+        required: true
+        type: integer
+      - description: Display-only client version
+        in: query
+        name: versionName
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LatestReleaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Check for an app update
+      tags:
+      - app-releases
   /api/v1/articles:
     get:
       description: 分页返回已发布时间不晚于当前时间的文章，不包含正文

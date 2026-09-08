@@ -2,12 +2,17 @@ import 'dart:async';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api/api_client.dart';
 import '../core/config.dart';
+import '../core/startup/startup_prompt_coordinator.dart';
+import '../features/announcement/services/announcement_service.dart';
+import '../features/update/services/update_service.dart';
 import '../models/auth_models.dart';
 import '../services/article_service.dart';
 import '../services/auth_service.dart';
@@ -245,6 +250,31 @@ final homeServiceProvider =
 
 final feedbackServiceProvider = Provider<FeedbackService>(
     (ref) => FeedbackService(ref.watch(apiClientProvider)));
+
+final updateServiceProvider = Provider<UpdateService>(
+    (ref) => UpdateService(ref.watch(apiClientProvider)));
+
+final announcementServiceProvider = Provider<AnnouncementService>(
+    (ref) => AnnouncementService(ref.watch(apiClientProvider)));
+
+final startupPromptCoordinatorProvider = Provider<StartupPromptCoordinator>((ref) {
+  final platform = switch (defaultTargetPlatform) {
+    TargetPlatform.android => 'android',
+    TargetPlatform.iOS => 'ios',
+    TargetPlatform.macOS => 'macos',
+    TargetPlatform.windows => 'windows',
+    TargetPlatform.linux => 'linux',
+    TargetPlatform.fuchsia => 'fuchsia',
+  };
+  return StartupPromptCoordinator(
+    updateService: ref.watch(updateServiceProvider),
+    announcementService: ref.watch(announcementServiceProvider),
+    preferences: SharedPreferences.getInstance,
+    packageInfo: PackageInfo.fromPlatform,
+    isAndroid: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+    platform: kIsWeb ? 'web' : platform,
+  );
+});
 
 class UnreadNotifications extends ChangeNotifier {
   UnreadNotifications(this._ref) {

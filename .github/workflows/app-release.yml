@@ -2,8 +2,9 @@ name: Publish Android App
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - "mobile-v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -72,7 +73,11 @@ jobs:
           PUBSPEC_BUILD="$(python3 -c "import re; print(re.search(r'^version:\\s*[^+\\s]+\\+(\\d+)', open('pubspec.yaml').read(), re.M).group(1))")"
           BUILD_NUMBER="$((PUBSPEC_BUILD + GITHUB_RUN_NUMBER))"
           SHORT_SHA="${GITHUB_SHA::7}"
-          RELEASE_TAG="mobile-v${APP_VERSION}-build.${BUILD_NUMBER}-${SHORT_SHA}"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            RELEASE_TAG="$GITHUB_REF_NAME"
+          else
+            RELEASE_TAG="mobile-v${APP_VERSION}-build.${BUILD_NUMBER}-${SHORT_SHA}"
+          fi
           ASSET_NAME="koyomi-gal-${APP_VERSION}-${BUILD_NUMBER}-${SHORT_SHA}.apk"
 
           printf 'APP_VERSION=%s\n' "$APP_VERSION" >> "$GITHUB_ENV"
@@ -101,11 +106,16 @@ jobs:
           set -euo pipefail
 
           APK_PATH="build/app/outputs/flutter-apk/$ASSET_NAME"
+          CHECKSUM_PATH="${APK_PATH}.sha256"
+          (
+            cd "$(dirname "$APK_PATH")"
+            sha256sum "$(basename "$APK_PATH")" > "$(basename "$CHECKSUM_PATH")"
+          )
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "$APK_PATH" --clobber
+            gh release upload "$RELEASE_TAG" "$APK_PATH" "$CHECKSUM_PATH" --clobber
           else
-            gh release create "$RELEASE_TAG" "$APK_PATH" \
+            gh release create "$RELEASE_TAG" "$APK_PATH" "$CHECKSUM_PATH" \
               --target "$GITHUB_SHA" \
               --title "Koyomi Gal Android ${APP_VERSION} (build ${BUILD_NUMBER})" \
               --generate-notes

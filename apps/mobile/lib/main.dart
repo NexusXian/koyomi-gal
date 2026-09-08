@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'core/startup/startup_prompt_coordinator.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/app_providers.dart';
 import 'router.dart';
@@ -64,8 +67,96 @@ class KoyomiApp extends ConsumerWidget {
       darkTheme: buildDarkTheme(),
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) => StartupPromptHost(
+        navigatorKey: rootNavigatorKey,
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
+}
+
+class StartupPromptHost extends ConsumerStatefulWidget {
+  const StartupPromptHost({
+    super.key,
+    required this.navigatorKey,
+    required this.child,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
+  final Widget child;
+
+  @override
+  ConsumerState<StartupPromptHost> createState() => _StartupPromptHostState();
+}
+
+class _StartupPromptHostState extends ConsumerState<StartupPromptHost>
+    with WidgetsBindingObserver {
+  Timer? _startupTimer;
+  bool _startupDelayElapsed = false;
+  bool _coldStartCheckPending = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _startupTimer = Timer(const Duration(milliseconds: 750), () {
+        _startupDelayElapsed = true;
+        _check(StartupCheckTrigger.coldStart);
+      });
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _startupDelayElapsed) {
+      _check(
+        _coldStartCheckPending
+            ? StartupCheckTrigger.coldStart
+            : StartupCheckTrigger.resume,
+      );
+    }
+  }
+
+  void _check(StartupCheckTrigger trigger) {
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    if (!mounted ||
+        lifecycleState != null && lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
+    final context = widget.navigatorKey.currentContext;
+    if (context == null) {
+      if (trigger == StartupCheckTrigger.coldStart) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _coldStartCheckPending) {
+            _check(StartupCheckTrigger.coldStart);
+          }
+        });
+      }
+      return;
+    }
+    if (trigger == StartupCheckTrigger.coldStart) {
+      _coldStartCheckPending = false;
+    }
+    unawaited(
+      ref
+          .read(startupPromptCoordinatorProvider)
+          .check(context, trigger: trigger),
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _startupTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 final routerProvider = Provider<GoRouter>((ref) => buildRouter());
