@@ -125,7 +125,7 @@ type LevelConfigDataResponse struct {
 type CreateLevelConfigRequest struct {
 	Level       int    `json:"level" binding:"required,min=1,max=1000" example:"9"`
 	Name        string `json:"name" binding:"required,max=50" example:"传奇"`
-	MinExp      int64  `json:"min_exp" binding:"required,min=0" example:"150000"`
+	MinExp      int64  `json:"min_exp" binding:"min=0" example:"150000"`
 	IconURL     string `json:"icon_url" binding:"omitempty,max=2048" example:""`
 	Color       string `json:"color" binding:"omitempty,max=32" example:"#dc2626"`
 	Description string `json:"description" binding:"omitempty,max=255" example:"社区的传奇贡献者"`
@@ -134,7 +134,7 @@ type CreateLevelConfigRequest struct {
 
 type UpdateLevelConfigRequest struct {
 	Name        string `json:"name" binding:"required,max=50" example:"鉴赏家"`
-	MinExp      int64  `json:"min_exp" binding:"required,min=0" example:"1500"`
+	MinExp      int64  `json:"min_exp" binding:"min=0" example:"1500"`
 	IconURL     string `json:"icon_url" binding:"omitempty,max=2048" example:""`
 	Color       string `json:"color" binding:"omitempty,max=32" example:"#f59e0b"`
 	Description string `json:"description" binding:"omitempty,max=255" example:"对 Galgame 有自己的见解"`
