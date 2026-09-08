@@ -25,6 +25,9 @@ import (
 	bannerHandler "backend/internal/banner/handler"
 	bannerRepo "backend/internal/banner/repository"
 	bannerService "backend/internal/banner/service"
+	changelogHandler "backend/internal/changelog/handler"
+	changelogRepo "backend/internal/changelog/repository"
+	changelogService "backend/internal/changelog/service"
 	classificationAgent "backend/internal/classification/agent"
 	classificationHandler "backend/internal/classification/handler"
 	classificationRepo "backend/internal/classification/repository"
@@ -133,6 +136,7 @@ type App struct {
 	AdminLevelHandler     *levelHandler.AdminLevelHandler
 	AnnouncementHandler   *announcementHandler.AnnouncementHandler
 	AppReleaseHandler     *appreleaseHandler.AppReleaseHandler
+	ChangelogHandler      *changelogHandler.ChangelogHandler
 	stopImageCleanup      func()
 }
 
@@ -260,6 +264,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	announcementSvc := announcementService.NewAnnouncementService(announcementRepository, rbacSvc)
 	appReleaseRepository := appreleaseRepo.NewAppReleaseRepository(postgresDB)
 	appReleaseSvc := appreleaseService.NewAppReleaseService(appReleaseRepository, rbacSvc)
+	siteChangelogRepository := changelogRepo.NewChangelogRepository(postgresDB)
+	siteChangelogSvc := changelogService.NewChangelogService(siteChangelogRepository)
 	backgroundPresetRepository := backgroundRepo.NewBackgroundPresetRepository(postgresDB)
 	backgroundPresetSvc := backgroundService.NewBackgroundPresetService(backgroundPresetRepository, cfg.R2.PublicURL)
 
@@ -418,6 +424,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		AdminLevelHandler:     levelHandler.NewAdminLevelHandler(levelConfigService, experienceService),
 		AnnouncementHandler:   announcementHandler.NewAnnouncementHandler(announcementSvc),
 		AppReleaseHandler:     appreleaseHandler.NewAppReleaseHandler(appReleaseSvc),
+		ChangelogHandler:      changelogHandler.NewChangelogHandler(siteChangelogSvc),
 		stopImageCleanup:      stopImageCleanup,
 	}
 	ginApp := gin.Default()

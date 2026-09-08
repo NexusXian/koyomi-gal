@@ -1232,6 +1232,134 @@ definitions:
     - confirm_password
     - new_password
     type: object
+  dto.ChangelogData:
+    properties:
+      createdAt:
+        type: string
+      id:
+        example: 1
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/dto.ChangelogItemData'
+        type: array
+      publishedAt:
+        type: string
+      title:
+        example: 站点功能更新
+        type: string
+      updatedAt:
+        type: string
+      version:
+        example: 0.5.0
+        type: string
+    type: object
+  dto.ChangelogDataResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ChangelogData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ChangelogItemData:
+    properties:
+      text:
+        example: 新增站点页脚与更新日志页面
+        type: string
+      type:
+        example: new
+        type: string
+    type: object
+  dto.ChangelogItemPayload:
+    properties:
+      text:
+        example: 新增站点页脚与更新日志页面
+        maxLength: 255
+        type: string
+      type:
+        enum:
+        - new
+        - improve
+        - fix
+        example: new
+        type: string
+    required:
+    - text
+    - type
+    type: object
+  dto.ChangelogListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ChangelogData'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 5
+        type: integer
+    type: object
+  dto.ChangelogListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ChangelogListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ChangelogPublicListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ChangelogData'
+        type: array
+    type: object
+  dto.ChangelogPublicListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ChangelogPublicListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.ChangelogRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ChangelogItemPayload'
+        maxItems: 50
+        minItems: 1
+        type: array
+      publishedAt:
+        example: "2026-09-08T12:00:00Z"
+        type: string
+      title:
+        example: 站点功能更新
+        maxLength: 255
+        type: string
+      version:
+        example: 0.5.0
+        maxLength: 32
+        type: string
+    required:
+    - items
+    - title
+    - version
+    type: object
   dto.CharacterDataResponse:
     properties:
       code:
@@ -6329,7 +6457,6 @@ definitions:
         type: string
     required:
     - level
-    - min_exp
     - name
     type: object
   leveldto.ExperienceLogData:
@@ -6568,7 +6695,6 @@ definitions:
         type: string
     required:
     - is_enabled
-    - min_exp
     - name
     type: object
   leveldto.UserLevelData:
@@ -7647,6 +7773,209 @@ paths:
       security:
       - BearerAuth: []
       summary: 更新 Banner
+      tags:
+      - admin
+  /api/v1/admin/changelogs:
+    get:
+      description: 分页返回站点更新日志；需要 changelog:read 权限
+      operationId: listAdminSiteChangelogs
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新日志列表
+          schema:
+            $ref: '#/definitions/dto.ChangelogListResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询站点更新日志
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: 新增一条站点版本更新日志；需要 changelog:create 权限
+      operationId: createSiteChangelog
+      parameters:
+      - description: 更新日志请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangelogRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.ChangelogDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 版本已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建更新日志
+      tags:
+      - admin
+  /api/v1/admin/changelogs/{id}:
+    delete:
+      description: 删除站点版本更新日志；需要 changelog:delete 权限
+      operationId: deleteSiteChangelog
+      parameters:
+      - description: 更新日志 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新日志已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 更新日志不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除更新日志
+      tags:
+      - admin
+    get:
+      description: 需要 changelog:read 权限
+      operationId: getAdminSiteChangelog
+      parameters:
+      - description: 更新日志 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新日志详情
+          schema:
+            $ref: '#/definitions/dto.ChangelogDataResponse'
+        "400":
+          description: ID 格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 更新日志不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理端查询单条更新日志
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 修改站点版本更新日志的内容；需要 changelog:update 权限
+      operationId: updateSiteChangelog
+      parameters:
+      - description: 更新日志 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新日志请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangelogRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.ChangelogDataResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 更新日志不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: 版本已存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新更新日志
       tags:
       - admin
   /api/v1/admin/characters:
@@ -11687,6 +12016,24 @@ paths:
       summary: 查看有效 Banner
       tags:
       - banners
+  /api/v1/changelogs:
+    get:
+      description: 返回全部已发布的站点版本更新日志，按发布时间倒序
+      operationId: listSiteChangelogs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新日志列表
+          schema:
+            $ref: '#/definitions/dto.ChangelogPublicListResponse'
+        "500":
+          description: 查询失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 获取站点更新日志
+      tags:
+      - changelogs
   /api/v1/comments/{id}:
     delete:
       description: 删除评论（回复级联）并按子树大小原子减少帖子评论计数；作者本人或拥有 comment:moderate 权限

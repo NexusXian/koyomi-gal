@@ -136,6 +136,17 @@ const items: AdminNavItem[] = [
     ]
   },
   {
+    key: '/admin/changelogs',
+    label: '更新日志',
+    icon: 'lucide:scroll-text',
+    permissions: [
+      'changelog:read',
+      'changelog:create',
+      'changelog:update',
+      'changelog:delete'
+    ]
+  },
+  {
     key: '/admin/roles',
     label: '角色',
     icon: 'lucide:shield',

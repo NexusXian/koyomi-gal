@@ -1428,6 +1428,319 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/changelogs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页返回站点更新日志；需要 changelog:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询站点更新日志",
+                "operationId": "listAdminSiteChangelogs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新日志列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangelogListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "新增一条站点版本更新日志；需要 changelog:create 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "创建更新日志",
+                "operationId": "createSiteChangelog",
+                "parameters": [
+                    {
+                        "description": "更新日志请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangelogRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangelogDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "版本已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/changelogs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "需要 changelog:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理端查询单条更新日志",
+                "operationId": "getAdminSiteChangelog",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "更新日志 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新日志详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangelogDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "更新日志不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "修改站点版本更新日志的内容；需要 changelog:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "更新更新日志",
+                "operationId": "updateSiteChangelog",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "更新日志 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新日志请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangelogRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangelogDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "更新日志不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "版本已存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "删除站点版本更新日志；需要 changelog:delete 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "删除更新日志",
+                "operationId": "deleteSiteChangelog",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "更新日志 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新日志已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "ID 格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "更新日志不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/characters": {
             "get": {
                 "security": [
@@ -7539,6 +7852,33 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "查询 Banner 失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/changelogs": {
+            "get": {
+                "description": "返回全部已发布的站点版本更新日志，按发布时间倒序",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "changelogs"
+                ],
+                "summary": "获取站点更新日志",
+                "operationId": "listSiteChangelogs",
+                "responses": {
+                    "200": {
+                        "description": "更新日志列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChangelogPublicListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -15471,6 +15811,188 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ChangelogData": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ChangelogItemData"
+                    }
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "站点功能更新"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "0.5.0"
+                }
+            }
+        },
+        "dto.ChangelogDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ChangelogData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ChangelogItemData": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "example": "新增站点页脚与更新日志页面"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "new"
+                }
+            }
+        },
+        "dto.ChangelogItemPayload": {
+            "type": "object",
+            "required": [
+                "text",
+                "type"
+            ],
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "新增站点页脚与更新日志页面"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "new",
+                        "improve",
+                        "fix"
+                    ],
+                    "example": "new"
+                }
+            }
+        },
+        "dto.ChangelogListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ChangelogData"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "dto.ChangelogListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ChangelogListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ChangelogPublicListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ChangelogData"
+                    }
+                }
+            }
+        },
+        "dto.ChangelogPublicListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ChangelogPublicListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.ChangelogRequest": {
+            "type": "object",
+            "required": [
+                "items",
+                "title",
+                "version"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.ChangelogItemPayload"
+                    }
+                },
+                "publishedAt": {
+                    "type": "string",
+                    "example": "2026-09-08T12:00:00Z"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "站点功能更新"
+                },
+                "version": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "example": "0.5.0"
+                }
+            }
+        },
         "dto.CharacterDataResponse": {
             "type": "object",
             "properties": {
@@ -22545,7 +23067,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "level",
-                "min_exp",
                 "name"
             ],
             "properties": {
@@ -22884,7 +23405,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "is_enabled",
-                "min_exp",
                 "name"
             ],
             "properties": {
