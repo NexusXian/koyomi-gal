@@ -17,6 +17,34 @@ type AdminReleaseQuery struct {
 	Limit int `form:"limit" binding:"omitempty,min=1,max=100"`
 }
 
+type GitHubReleaseAssetData struct {
+	Name        string    `json:"name"`
+	Size        int64     `json:"size"`
+	SHA256      *string   `json:"sha256"`
+	DownloadURL string    `json:"downloadUrl"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type GitHubReleaseData struct {
+	Tag         string                  `json:"tag"`
+	Name        string                  `json:"name"`
+	Body        string                  `json:"body"`
+	Prerelease  bool                    `json:"prerelease"`
+	CreatedAt   time.Time               `json:"createdAt"`
+	PublishedAt time.Time               `json:"publishedAt"`
+	APK         *GitHubReleaseAssetData `json:"apk"`
+}
+
+type GitHubReleaseListData struct {
+	Items []GitHubReleaseData `json:"items"`
+}
+
+type GitHubReleaseListResponse struct {
+	Code int                   `json:"code"`
+	Data GitHubReleaseListData `json:"data"`
+	Msg  string                `json:"msg"`
+}
+
 type AppReleaseRequest struct {
 	Platform           string     `json:"platform" binding:"required,oneof=android ios windows macos linux"`
 	VersionName        string     `json:"versionName" binding:"required,max=64"`

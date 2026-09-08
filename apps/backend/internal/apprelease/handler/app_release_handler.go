@@ -106,6 +106,34 @@ func (h *AppReleaseHandler) GetAdmin(c *gin.Context) {
 	response.Ok(c, dto.NewAppReleaseData(value))
 }
 
+// ListGitHubReleases godoc
+// @Summary      List GitHub releases with APK assets
+// @Description  Returns published GitHub releases of the configured repository so admins can import official download URLs; requires app_release:read
+// @ID           listAdminGitHubReleases
+// @Tags         admin
+// @Produce      json
+// @Param        page query int false "Page" default(1)
+// @Param        limit query int false "Page size" default(20)
+// @Success      200 {object} dto.GitHubReleaseListResponse
+// @Failure      400 {object} response.ErrorResponse
+// @Failure      500 {object} response.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/admin/app/github-releases [get]
+func (h *AppReleaseHandler) ListGitHubReleases(c *gin.Context) {
+	var query dto.AdminReleaseQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, appErrors.ErrValidation("查询参数格式不正确"))
+		return
+	}
+	items, err := h.service.ListGitHubReleases(c.Request.Context(), query.Page, query.Limit)
+	if err != nil {
+		h.respondError(c, err, "list github releases")
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	response.Ok(c, dto.GitHubReleaseListData{Items: items})
+}
+
 // CreateAdmin godoc
 // @Summary      Create an app release
 // @Description  Requires app_release:create; publishing also requires app_release:publish
@@ -280,6 +308,11 @@ func (h *AppReleaseHandler) respondError(c *gin.Context, err error, operation st
 		response.Error(c, appErrors.ErrValidation("关联公告不存在"))
 	case errors.Is(err, service.ErrAnnouncementLinked):
 		response.Error(c, appErrors.ErrConflict("关联公告已被其他版本使用"))
+	case errors.Is(err, service.ErrGitHubNotConfigured):
+		response.Error(c, appErrors.ErrValidation("GitHub Release 集成未配置，请设置 GITHUB_REPO"))
+	case errors.Is(err, service.ErrGitHubUnavailable):
+		logger.Error(operation, zap.Error(err))
+		response.Error(c, appErrors.ErrInternal("获取 GitHub Release 失败，请稍后重试"))
 	default:
 		logger.Error(operation, zap.Error(err))
 		response.Error(c, appErrors.ErrInternal("应用版本操作失败"))

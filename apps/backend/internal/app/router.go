@@ -205,6 +205,7 @@ func (app *App) setupRoutes() {
 		admin.PATCH("/announcements/:id/publish", requirePermission("announcement:publish"), app.AnnouncementHandler.Publish)
 		admin.PATCH("/announcements/:id/withdraw", requirePermission("announcement:publish"), app.AnnouncementHandler.Withdraw)
 		admin.GET("/app/releases", requirePermission("app_release:read"), app.AppReleaseHandler.ListAdmin)
+		admin.GET("/app/github-releases", requirePermission("app_release:read"), app.AppReleaseHandler.ListGitHubReleases)
 		admin.GET("/app/releases/:id", requirePermission("app_release:read"), app.AppReleaseHandler.GetAdmin)
 		admin.POST("/app/releases", requirePermission("app_release:create"), app.AppReleaseHandler.CreateAdmin)
 		admin.PUT("/app/releases/:id", requirePermission("app_release:update"), app.AppReleaseHandler.UpdateAdmin)

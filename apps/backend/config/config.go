@@ -24,6 +24,16 @@ type Config struct {
 	RBAC           *RBAC
 	R2             *R2
 	Classification *Classification
+	GitHub         *GitHub
+}
+
+// GitHub configures the GitHub Releases integration used to resolve official
+// app download URLs. It is opt-in: when GITHUB_REPO is empty the integration
+// stays disabled and the admin UI keeps accepting manual download URLs.
+type GitHub struct {
+	Repo       string
+	APIToken   string
+	APIBaseURL string
 }
 
 // Classification configures the Eino-based game age rating agent. The agent is
@@ -207,6 +217,11 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	githubConfig, err := loadGitHub()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
 		Postgres: &Postgres{
 			Host:     postgresHost,
@@ -240,6 +255,33 @@ func Load() (*Config, error) {
 		},
 		R2:             r2Config,
 		Classification: classificationConfig,
+		GitHub:         githubConfig,
+	}, nil
+}
+
+func loadGitHub() (*GitHub, error) {
+	repo := strings.TrimSpace(os.Getenv("GITHUB_REPO"))
+	if repo == "" {
+		return nil, nil
+	}
+	parts := strings.Split(repo, "/")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return nil, errors.New("GITHUB_REPO must be in owner/name format")
+	}
+
+	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("GITHUB_API_BASE_URL")), "/")
+	if baseURL == "" {
+		baseURL = "https://api.github.com"
+	}
+	parsed, err := url.Parse(baseURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return nil, errors.New("GITHUB_API_BASE_URL must be an HTTP(S) origin")
+	}
+
+	return &GitHub{
+		Repo:       repo,
+		APIToken:   strings.TrimSpace(os.Getenv("GITHUB_API_TOKEN")),
+		APIBaseURL: baseURL,
 	}, nil
 }
 

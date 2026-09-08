@@ -54,6 +54,7 @@ import (
 	importerRepo "backend/internal/importer/repository"
 	importerService "backend/internal/importer/service"
 	"backend/internal/infrastructures/database"
+	githubInfrastructure "backend/internal/infrastructures/github"
 	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
 	"backend/internal/infrastructures/storage"
@@ -263,7 +264,13 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	announcementRepository := announcementRepo.NewAnnouncementRepository(postgresDB)
 	announcementSvc := announcementService.NewAnnouncementService(announcementRepository, rbacSvc)
 	appReleaseRepository := appreleaseRepo.NewAppReleaseRepository(postgresDB)
-	appReleaseSvc := appreleaseService.NewAppReleaseService(appReleaseRepository, rbacSvc)
+	var githubClient *githubInfrastructure.Client
+	if cfg.GitHub != nil {
+		githubClient = githubInfrastructure.NewClient(
+			cfg.GitHub.APIBaseURL, cfg.GitHub.Repo, cfg.GitHub.APIToken, nil,
+		)
+	}
+	appReleaseSvc := appreleaseService.NewAppReleaseService(appReleaseRepository, rbacSvc, githubClient)
 	siteChangelogRepository := changelogRepo.NewChangelogRepository(postgresDB)
 	siteChangelogSvc := changelogService.NewChangelogService(siteChangelogRepository)
 	backgroundPresetRepository := backgroundRepo.NewBackgroundPresetRepository(postgresDB)

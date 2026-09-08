@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"backend/internal/apprelease/dto"
 	"backend/internal/apprelease/model"
 	"backend/internal/apprelease/repository"
+	githubInfrastructure "backend/internal/infrastructures/github"
 	rbacService "backend/internal/rbac/service"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -28,6 +30,8 @@ var (
 	ErrVersionExists           = errors.New("app release version already exists")
 	ErrInvalidAnnouncementLink = errors.New("invalid announcement link")
 	ErrAnnouncementLinked      = errors.New("announcement already linked")
+	ErrGitHubNotConfigured     = errors.New("github integration not configured")
+	ErrGitHubUnavailable       = errors.New("github api unavailable")
 )
 
 const PermissionAppReleasePublish = "app_release:publish"
@@ -37,10 +41,48 @@ var sha256Pattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 type AppReleaseService struct {
 	releases *repository.AppReleaseRepository
 	rbac     *rbacService.RBACService
+	github   *githubInfrastructure.Client
 }
 
-func NewAppReleaseService(releases *repository.AppReleaseRepository, rbac *rbacService.RBACService) *AppReleaseService {
-	return &AppReleaseService{releases: releases, rbac: rbac}
+func NewAppReleaseService(
+	releases *repository.AppReleaseRepository,
+	rbac *rbacService.RBACService,
+	github *githubInfrastructure.Client,
+) *AppReleaseService {
+	return &AppReleaseService{releases: releases, rbac: rbac, github: github}
+}
+
+// ListGitHubReleases returns published GitHub releases of the configured
+// repository with their APK asset metadata so admins can import official
+// browser_download_url values instead of copying them by hand.
+func (s *AppReleaseService) ListGitHubReleases(ctx context.Context, page, limit int) ([]dto.GitHubReleaseData, error) {
+	if s.github == nil {
+		return nil, ErrGitHubNotConfigured
+	}
+	page, limit = pagination(page, limit)
+	values, err := s.github.ListReleases(ctx, page, limit)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrGitHubUnavailable, err.Error())
+	}
+	items := make([]dto.GitHubReleaseData, 0, len(values))
+	for i := range values {
+		item := dto.GitHubReleaseData{
+			Tag: values[i].TagName, Name: values[i].Name, Body: values[i].Body,
+			Prerelease: values[i].Prerelease, CreatedAt: values[i].CreatedAt,
+			PublishedAt: values[i].PublishedAt,
+		}
+		if apk := values[i].FindAPKAsset(); apk != nil {
+			asset := &dto.GitHubReleaseAssetData{
+				Name: apk.Name, Size: apk.Size, DownloadURL: apk.DownloadURL, UpdatedAt: apk.UpdatedAt,
+			}
+			if checksum, ok := githubInfrastructure.ParseAssetSHA256(apk.Digest); ok {
+				asset.SHA256 = &checksum
+			}
+			item.APK = asset
+		}
+		items = append(items, item)
+	}
+	return items, nil
 }
 
 func (s *AppReleaseService) Latest(ctx context.Context, platform string, versionCode int64) (*model.AppRelease, error) {

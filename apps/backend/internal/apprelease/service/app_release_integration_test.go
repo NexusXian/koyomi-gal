@@ -26,7 +26,7 @@ func TestManagedAnnouncementFollowsReleaseLifecycle(t *testing.T) {
 	if err := rbac.AssignRoleByCode(ctx, actorID, rbacService.RoleCodeAdmin); err != nil {
 		t.Fatalf("assign admin role: %v", err)
 	}
-	svc := NewAppReleaseService(repository.NewAppReleaseRepository(db), rbac)
+	svc := NewAppReleaseService(repository.NewAppReleaseRepository(db), rbac, nil)
 	announcements := announcementRepo.NewAnnouncementRepository(db)
 	versionCode := int64(12)
 	release, err := svc.Create(ctx, actorID, &dto.AppReleaseRequest{
@@ -130,7 +130,7 @@ func TestArbitraryLinkedAnnouncementIsNotManaged(t *testing.T) {
 	if err := announcements.Create(ctx, replacement); err != nil {
 		t.Fatalf("create replacement announcement: %v", err)
 	}
-	svc := NewAppReleaseService(repository.NewAppReleaseRepository(db), nil)
+	svc := NewAppReleaseService(repository.NewAppReleaseRepository(db), nil, nil)
 	versionCode := int64(20)
 	release, err := svc.Create(ctx, actorID, &dto.AppReleaseRequest{
 		Platform: "android", VersionName: "2.0.0", VersionCode: &versionCode,

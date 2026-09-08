@@ -338,6 +338,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/app/github-releases": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns published GitHub releases of the configured repository so admins can import official download URLs; requires app_release:read",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List GitHub releases with APK assets",
+                "operationId": "listAdminGitHubReleases",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GitHubReleaseListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/app/releases": {
             "get": {
                 "security": [
@@ -18729,6 +18783,77 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "example": "Sakura no Toki"
+                }
+            }
+        },
+        "dto.GitHubReleaseAssetData": {
+            "type": "object",
+            "properties": {
+                "downloadUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GitHubReleaseData": {
+            "type": "object",
+            "properties": {
+                "apk": {
+                    "$ref": "#/definitions/dto.GitHubReleaseAssetData"
+                },
+                "body": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "prerelease": {
+                    "type": "boolean"
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GitHubReleaseListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GitHubReleaseData"
+                    }
+                }
+            }
+        },
+        "dto.GitHubReleaseListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GitHubReleaseListData"
+                },
+                "msg": {
+                    "type": "string"
                 }
             }
         },

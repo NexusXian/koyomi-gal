@@ -42,3 +42,21 @@ export interface AppReleasePayload {
   publishedAt?: string | null
   announcementId?: number | null
 }
+
+export interface GitHubReleaseAsset {
+  name: string
+  size: number
+  sha256?: string | null
+  downloadUrl: string
+  updatedAt: string
+}
+
+export interface GitHubRelease {
+  tag: string
+  name: string
+  body: string
+  prerelease: boolean
+  createdAt: string
+  publishedAt: string
+  apk?: GitHubReleaseAsset | null
+}

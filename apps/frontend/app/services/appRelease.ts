@@ -1,5 +1,5 @@
 import type { ApiClient, ApiResponse } from '~/types/api'
-import type { AppRelease, AppReleasePayload } from '~/types/appRelease'
+import type { AppRelease, AppReleasePayload, GitHubRelease } from '~/types/appRelease'
 import type { PaginatedData, PaginationParams } from '~/types/content'
 import { unwrapApiData } from '~/utils/api'
 
@@ -52,6 +52,19 @@ export function createAppReleaseService(api: ApiClient) {
         await api<ApiResponse<AppRelease>>(`/api/v1/admin/app/releases/${id}`),
         '版本加载失败'
       )
+    },
+
+    async listGitHubReleases(
+      params: PaginationParams = { page: 1, limit: 30 }
+    ): Promise<GitHubRelease[]> {
+      const data = unwrapApiData(
+        await api<ApiResponse<{ items: GitHubRelease[] } | GitHubRelease[]>>(
+          '/api/v1/admin/app/github-releases',
+          { query: params }
+        ),
+        'GitHub Release 列表加载失败'
+      )
+      return Array.isArray(data) ? data : (data.items ?? [])
     },
 
     async create(payload: AppReleasePayload): Promise<void> {

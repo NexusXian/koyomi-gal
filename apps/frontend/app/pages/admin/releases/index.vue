@@ -6,7 +6,8 @@ import type {
   AppRelease,
   AppReleasePayload,
   AppReleasePlatform,
-  AppReleaseStatus
+  AppReleaseStatus,
+  GitHubRelease
 } from '~/types/appRelease'
 
 useSeoMeta({ title: '应用版本管理 - Koyomi' })
@@ -22,6 +23,22 @@ const saving = ref(false)
 const actionKey = ref('')
 const modalOpen = ref(false)
 const editing = ref<AppRelease | null>(null)
+
+const githubReleases = ref<GitHubRelease[]>([])
+const githubLoading = ref(false)
+const githubError = ref('')
+const githubTag = ref<string | undefined>(undefined)
+
+const githubOptions = computed(() =>
+  githubReleases.value
+    .filter((release) => release.apk)
+    .map((release) => ({
+      label: release.prerelease ? `${release.tag}（预发布）` : release.tag,
+      value: release.tag
+    }))
+)
+
+const APK_NAME_PATTERN = /-(\d+(?:\.\d+){1,3})-(\d+)-[0-9a-f]{7,40}\.apk$/i
 
 const platformOptions: { label: string; value: AppReleasePlatform }[] = [
   { label: 'Android', value: 'android' },
@@ -138,6 +155,8 @@ function openCreate(): void {
   if (!has('app_release:create')) return
   editing.value = null
   Object.assign(formState, emptyForm())
+  githubTag.value = undefined
+  void loadGitHubReleases()
   modalOpen.value = true
 }
 
@@ -162,11 +181,45 @@ async function openEdit(item: AppRelease): Promise<void> {
       publishedAt: toDateInput(detail.publishedAt),
       createAnnouncement: false
     })
+    githubTag.value = undefined
+    void loadGitHubReleases()
     modalOpen.value = true
   } catch (error) {
     message.error(getApiErrorMessage(error, '版本加载失败'))
   } finally {
     actionKey.value = ''
+  }
+}
+
+async function loadGitHubReleases(): Promise<void> {
+  if (githubLoading.value || githubReleases.value.length > 0 || githubError.value) {
+    return
+  }
+  githubLoading.value = true
+  try {
+    githubReleases.value = await releaseService.listGitHubReleases()
+  } catch (error) {
+    githubError.value = getApiErrorMessage(error, 'GitHub Release 列表加载失败')
+  } finally {
+    githubLoading.value = false
+  }
+}
+
+function importGitHubRelease(tag: string | undefined): void {
+  const release = githubReleases.value.find((item) => item.tag === tag)
+  if (!release?.apk) return
+  formState.downloadUrl = release.apk.downloadUrl
+  formState.fileSize = release.apk.size
+  formState.sha256 = release.apk.sha256 ?? ''
+  const match = release.apk.name.match(APK_NAME_PATTERN)
+  const [, versionName, build] = match ?? []
+  if (versionName && build) {
+    formState.versionName = versionName
+    formState.versionCode = Number.parseInt(build, 10)
+  }
+  if (!formState.title.trim()) formState.title = release.name
+  if (!formState.changelog.trim() && release.body) {
+    formState.changelog = release.body
   }
 }
 
@@ -423,6 +476,21 @@ const columns: TableColumnsType = [
       @ok="submit"
     >
       <a-form layout="vertical">
+        <a-form-item
+          label="从 GitHub Release 导入"
+          :validate-status="githubError ? 'warning' : undefined"
+          :help="githubError || '选择已发布的 GitHub Release，自动填充下载地址、文件大小和校验和'"
+        >
+          <a-select
+            v-model:value="githubTag"
+            :options="githubOptions"
+            :loading="githubLoading"
+            :placeholder="githubError || '选择 GitHub Release'"
+            :disabled="!!githubError"
+            allow-clear
+            @change="(value: string | undefined) => importGitHubRelease(value)"
+          />
+        </a-form-item>
         <div class="form-grid form-grid-three">
           <a-form-item label="平台" required>
             <a-select

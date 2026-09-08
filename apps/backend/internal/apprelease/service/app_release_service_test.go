@@ -1,12 +1,16 @@
 package service
 
 import (
+	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"backend/internal/apprelease/dto"
 	"backend/internal/apprelease/model"
+	githubInfrastructure "backend/internal/infrastructures/github"
 )
 
 func TestValidateAppRelease(t *testing.T) {
@@ -55,5 +59,77 @@ func TestReleaseFromRequestPreservesPublicationState(t *testing.T) {
 	if value.Status != model.StatusPublished || value.PublishedAt != current.PublishedAt ||
 		value.AnnouncementID != current.AnnouncementID {
 		t.Fatalf("publication state was not preserved: %+v", value)
+	}
+}
+
+func TestListGitHubReleasesRequiresConfiguration(t *testing.T) {
+	svc := NewAppReleaseService(nil, nil, nil)
+	if _, err := svc.ListGitHubReleases(context.Background(), 1, 20); !errors.Is(err, ErrGitHubNotConfigured) {
+		t.Fatalf("expected ErrGitHubNotConfigured, got %v", err)
+	}
+}
+
+func TestListGitHubReleasesMapsAPKAssets(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{
+			"tag_name": "mobile-v1.2.0",
+			"name": "Koyomi Gal Android 1.2.0 (build 42)",
+			"body": "release notes",
+			"draft": false,
+			"prerelease": true,
+			"created_at": "2026-09-01T10:00:00Z",
+			"published_at": "2026-09-01T10:05:00Z",
+			"assets": [{
+				"name": "koyomi-gal-1.2.0-42-abcdef0.apk",
+				"size": 12345678,
+				"digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+				"browser_download_url": "https://github.com/owner/repo/releases/download/mobile-v1.2.0/koyomi-gal-1.2.0-42-abcdef0.apk",
+				"updated_at": "2026-09-01T10:05:00Z"
+			}]
+		}, {
+			"tag_name": "no-assets",
+			"name": "No assets",
+			"draft": false,
+			"assets": []
+		}]`))
+	}))
+	t.Cleanup(server.Close)
+
+	svc := NewAppReleaseService(nil, nil,
+		githubInfrastructure.NewClient(server.URL, "owner/repo", "", server.Client()))
+	items, err := svc.ListGitHubReleases(context.Background(), 1, 20)
+	if err != nil {
+		t.Fatalf("list github releases: %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(items))
+	}
+	first := items[0]
+	if first.Tag != "mobile-v1.2.0" || !first.Prerelease || first.Body != "release notes" {
+		t.Fatalf("unexpected release data: %+v", first)
+	}
+	if first.APK == nil {
+		t.Fatal("expected apk asset on first release")
+	}
+	if first.APK.DownloadURL == "" || first.APK.Size != 12345678 || first.APK.SHA256 == nil ||
+		*first.APK.SHA256 != "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" {
+		t.Fatalf("unexpected apk asset: %+v", first.APK)
+	}
+	if items[1].APK != nil {
+		t.Fatalf("expected no apk asset on second release, got %+v", items[1].APK)
+	}
+}
+
+func TestListGitHubReleasesWrapsUpstreamFailures(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	t.Cleanup(server.Close)
+
+	svc := NewAppReleaseService(nil, nil,
+		githubInfrastructure.NewClient(server.URL, "owner/repo", "", server.Client()))
+	if _, err := svc.ListGitHubReleases(context.Background(), 1, 20); !errors.Is(err, ErrGitHubUnavailable) {
+		t.Fatalf("expected ErrGitHubUnavailable, got %v", err)
 	}
 }

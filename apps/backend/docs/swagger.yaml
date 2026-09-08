@@ -3346,6 +3346,52 @@ definitions:
         example: Sakura no Toki
         type: string
     type: object
+  dto.GitHubReleaseAssetData:
+    properties:
+      downloadUrl:
+        type: string
+      name:
+        type: string
+      sha256:
+        type: string
+      size:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  dto.GitHubReleaseData:
+    properties:
+      apk:
+        $ref: '#/definitions/dto.GitHubReleaseAssetData'
+      body:
+        type: string
+      createdAt:
+        type: string
+      name:
+        type: string
+      prerelease:
+        type: boolean
+      publishedAt:
+        type: string
+      tag:
+        type: string
+    type: object
+  dto.GitHubReleaseListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.GitHubReleaseData'
+        type: array
+    type: object
+  dto.GitHubReleaseListResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GitHubReleaseListData'
+      msg:
+        type: string
+    type: object
   dto.HandleFeedbackRequest:
     properties:
       handled:
@@ -7071,6 +7117,42 @@ paths:
       security:
       - BearerAuth: []
       summary: Withdraw an announcement
+      tags:
+      - admin
+  /api/v1/admin/app/github-releases:
+    get:
+      description: Returns published GitHub releases of the configured repository
+        so admins can import official download URLs; requires app_release:read
+      operationId: listAdminGitHubReleases
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GitHubReleaseListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List GitHub releases with APK assets
       tags:
       - admin
   /api/v1/admin/app/releases:
