@@ -287,24 +287,24 @@ export const useMessageStore = defineStore('message', {
         )
         if (index >= 0) {
           entries.splice(index, 1, message)
-          this.messages[conversationId] = [...entries]
+          this.messages[conversationId] = dedupeMessages([...entries])
           return
         }
       }
-      if (entries.some((item) => item.id && item.id === message.id)) {
-        this.syncPendingByContent(conversationId, message)
-        return
-      }
-      this.messages[conversationId] = dedupeMessages([...entries, message])
+      if (entries.some((item) => item.id && item.id === message.id)) return
+      this.syncPendingByContent(conversationId, message)
+      const remaining = this.messages[conversationId] ?? []
+      this.messages[conversationId] = dedupeMessages([...remaining, message])
     },
 
-    // WebSocket 先于 REST 响应到达时，用服务端消息替换同内容的本地乐观消息
+    // WebSocket 先于 REST 响应到达时，移除同内容的本地乐观消息
     syncPendingByContent(conversationId: number, message: DtoMessageData): void {
       const entries = this.messages[conversationId] ?? []
       const index = entries.findIndex(
         (item) =>
           !item.id &&
           item.status === 'sending' &&
+          item.sender_id === message.sender_id &&
           item.content === message.content
       )
       if (index >= 0) {
