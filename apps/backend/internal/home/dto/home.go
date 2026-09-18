@@ -65,6 +65,7 @@ type Post struct {
 	LikeCount     int64        `json:"like_count" example:"10"`
 	CommentCount  int64        `json:"comment_count" example:"3"`
 	FavoriteCount int64        `json:"favorite_count" example:"2"`
+	IPRegion      string       `json:"ip_region,omitempty" example:"四川"`
 	CreatedAt     time.Time    `json:"created_at"`
 }
 
@@ -144,7 +145,7 @@ func newGalgames(values []galgameModel.Galgame) []Galgame {
 		}
 		items = append(items, Galgame{ID: value.ID, Title: value.Title, CoverURL: value.CoverURL,
 			CoverSensitive: value.CoverSensitive,
-			Developer: developer, RatingAverage: value.RatingAverage, FavoriteCount: value.FavoriteCount,
+			Developer:      developer, RatingAverage: value.RatingAverage, FavoriteCount: value.FavoriteCount,
 			ReleaseDate: value.ReleaseDate, UpdatedAt: value.UpdatedAt})
 	}
 	return items
@@ -163,7 +164,7 @@ func newPosts(values []communityModel.Post) []Post {
 		}
 		items = append(items, Post{ID: value.ID, Title: value.Title, Author: author, Galgame: galgame,
 			LikeCount: value.LikeCount, CommentCount: value.CommentCount,
-			FavoriteCount: value.FavoriteCount, CreatedAt: value.CreatedAt})
+			FavoriteCount: value.FavoriteCount, IPRegion: value.IPRegion, CreatedAt: value.CreatedAt})
 	}
 	return items
 }

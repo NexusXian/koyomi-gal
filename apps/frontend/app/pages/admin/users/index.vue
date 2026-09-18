@@ -3,6 +3,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnsType } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
 import { listRoles } from '~/api/generated/roles/roles'
+import { listUserIPLogs } from '~/api/generated/admin/admin'
 import {
   createAdminUser,
   deleteAdminUser,
@@ -16,7 +17,8 @@ import type {
   DtoAdminUserData,
   DtoCreateAdminUserRequest,
   DtoRoleResponse,
-  DtoUpdateAdminUserRequest
+  DtoUpdateAdminUserRequest,
+  IpgeoUserIPLog
 } from '~/api/generated/models'
 
 useSeoMeta({ title: '用户管理 - Koyomi' })
@@ -29,8 +31,9 @@ const canCreate = computed(() => has('user:create'))
 const canUpdate = computed(() => has('user:update'))
 const canDelete = computed(() => has('user:delete'))
 const canManageRoles = computed(() => has('role:list') && has('role:assign'))
+const canAuditIP = computed(() => has('ip_audit:read'))
 const hasManualActions = computed(() =>
-  canRead.value || canUpdate.value || canDelete.value || canManageRoles.value
+  canRead.value || canUpdate.value || canDelete.value || canManageRoles.value || canAuditIP.value
 )
 
 const items = ref<DtoAdminUserData[]>([])
@@ -50,6 +53,14 @@ const editingUserId = ref<number | null>(null)
 const editingFromSnapshot = ref(false)
 const userSaving = ref(false)
 const deletingId = ref<number | null>(null)
+const ipAuditOpen = ref(false)
+const ipAuditLoading = ref(false)
+const ipAuditUserId = ref<number | null>(null)
+const ipAuditUserLabel = ref('')
+const ipAuditItems = ref<IpgeoUserIPLog[]>([])
+const ipAuditTotal = ref(0)
+const ipAuditPage = ref(1)
+const ipAuditLimit = 20
 const emptyUserForm = () => ({
   username: '',
   email: '',
@@ -76,7 +87,7 @@ const roleDataReady = computed(() =>
 )
 
 const hasTableActions = computed(() =>
-  canRead.value || canUpdate.value || canDelete.value || canManageRoles.value
+  canRead.value || canUpdate.value || canDelete.value || canManageRoles.value || canAuditIP.value
 )
 const userColumns = computed<TableColumnsType>(() => {
   const columns: TableColumnsType = [
@@ -88,10 +99,18 @@ const userColumns = computed<TableColumnsType>(() => {
     { title: '创建时间', dataIndex: 'created_at', width: 180 }
   ]
   if (hasTableActions.value) {
-    columns.push({ title: '操作', key: 'actions', width: 280 })
+    columns.push({ title: '操作', key: 'actions', width: 350 })
   }
   return columns
 })
+
+const ipAuditColumns: TableColumnsType = [
+  { title: '时间', dataIndex: 'created_at', width: 180 },
+  { title: '操作', key: 'action', width: 90 },
+  { title: 'IP', dataIndex: 'ip', width: 180 },
+  { title: '属地', key: 'location', width: 220 },
+  { title: 'ISP', dataIndex: 'isp', ellipsis: true }
+]
 
 onMounted(async () => {
   await loadPermissions()
@@ -288,6 +307,52 @@ function openManualRoles(): void {
   if (id && !isSelf(id)) void openRoles({ id })
 }
 
+function openManualIPAudit(): void {
+  const id = requireManualId()
+  if (id) void openIPAudit({ id })
+}
+
+async function openIPAudit(user: DtoAdminUserData): Promise<void> {
+  if (!user.id || !canAuditIP.value) return
+  ipAuditUserId.value = user.id
+  ipAuditUserLabel.value = user.username || `用户 #${user.id}`
+  ipAuditPage.value = 1
+  ipAuditOpen.value = true
+  await loadIPAudit()
+}
+
+async function loadIPAudit(): Promise<void> {
+  if (!ipAuditUserId.value || !canAuditIP.value) return
+  ipAuditLoading.value = true
+  try {
+    const data = unwrapApiData(await listUserIPLogs(ipAuditUserId.value, {
+      page: ipAuditPage.value,
+      limit: ipAuditLimit
+    }))
+    ipAuditItems.value = data.items ?? []
+    ipAuditTotal.value = data.total ?? 0
+  } catch (error) {
+    message.error(getApiErrorMessage(error, 'IP 历史加载失败'))
+  } finally {
+    ipAuditLoading.value = false
+  }
+}
+
+function changeIPAuditPage(next: number): void {
+  ipAuditPage.value = next
+  void loadIPAudit()
+}
+
+function ipLocation(item: IpgeoUserIPLog): string {
+  return [item.country, item.region, item.city].filter(Boolean).join(' ') || '-'
+}
+
+function ipAction(action?: string): string {
+  if (action === 'post') return '发帖'
+  if (action === 'comment') return '评论'
+  return action || '-'
+}
+
 async function openRoles(user: DtoAdminUserData): Promise<void> {
   if (!user.id || isSelf(user.id) || !canManageRoles.value) return
 
@@ -448,6 +513,9 @@ function roleColor(code?: string): string {
               <a-button v-if="canManageRoles && !isSelf(record.id)" size="small" @click="openRoles(record)">
                 角色
               </a-button>
+              <a-button v-if="canAuditIP" size="small" @click="openIPAudit(record)">
+                IP 历史
+              </a-button>
               <a-popconfirm
                 v-if="canDelete && !isSelf(record.id)"
                 :title="`确定删除用户「${record.username || `#${record.id}`}」吗？`"
@@ -482,6 +550,7 @@ function roleColor(code?: string): string {
         />
         <a-button v-if="canRead" @click="openManualDetail">查看详情</a-button>
         <a-button v-if="canUpdate" @click="openManualEdit">编辑</a-button>
+        <a-button v-if="canAuditIP" @click="openManualIPAudit">IP 历史</a-button>
         <a-button v-if="canManageRoles && !isSelf(manualUserId)" type="primary" @click="openManualRoles">
           配置角色
         </a-button>
@@ -530,6 +599,41 @@ function roleColor(code?: string): string {
         </a-descriptions>
       </a-spin>
     </a-modal>
+
+    <a-drawer
+      v-model:open="ipAuditOpen"
+      :title="`IP 历史 - ${ipAuditUserLabel}`"
+      width="900"
+    >
+      <a-table
+        :columns="ipAuditColumns"
+        :data-source="ipAuditItems"
+        :loading="ipAuditLoading"
+        :pagination="{
+          current: ipAuditPage,
+          pageSize: ipAuditLimit,
+          total: ipAuditTotal,
+          showSizeChanger: false,
+          showTotal: (count: number) => `共 ${count} 条`
+        }"
+        row-key="id"
+        :scroll="{ x: 850 }"
+        @change="(pagination: { current?: number }) => changeIPAuditPage(pagination.current ?? 1)"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'created_at'">
+            {{ formatDate(record.created_at) }}
+          </template>
+          <template v-else-if="column.key === 'action'">
+            {{ ipAction(record.action) }}
+            <span v-if="record.entity_id">#{{ record.entity_id }}</span>
+          </template>
+          <template v-else-if="column.key === 'location'">
+            {{ ipLocation(record) }}
+          </template>
+        </template>
+      </a-table>
+    </a-drawer>
 
     <a-modal
       v-model:open="userModalOpen"

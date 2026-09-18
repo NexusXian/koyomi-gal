@@ -405,7 +405,7 @@ func (s *UserProfileService) ListPosts(ctx context.Context, username string, vie
 	rows, total, err := s.profiles.ListPosts(ctx, profile.ID, page, limit)
 	items := make([]dto.ProfilePostData, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, dto.ProfilePostData{ID: row.ID, GalgameID: row.GalgameID, GalgameTitle: row.GalgameTitle, Title: row.Title, Content: row.Content, EditorMode: row.EditorMode, LikeCount: row.LikeCount, CommentCount: row.CommentCount, FavoriteCount: row.FavoriteCount, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt})
+		items = append(items, dto.ProfilePostData{ID: row.ID, GalgameID: row.GalgameID, GalgameTitle: row.GalgameTitle, Title: row.Title, Content: row.Content, EditorMode: row.EditorMode, LikeCount: row.LikeCount, CommentCount: row.CommentCount, FavoriteCount: row.FavoriteCount, IPRegion: row.IPRegion, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt})
 	}
 	return items, total, page, limit, err
 }
@@ -419,7 +419,7 @@ func (s *UserProfileService) ListComments(ctx context.Context, username string, 
 	rows, total, err := s.profiles.ListComments(ctx, profile.ID, page, limit)
 	items := make([]dto.ProfileCommentData, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, dto.ProfileCommentData{ID: row.ID, PostID: row.PostID, PostTitle: row.PostTitle, ParentID: row.ParentID, Content: row.Content, LikeCount: row.LikeCount, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt})
+		items = append(items, dto.ProfileCommentData{ID: row.ID, PostID: row.PostID, PostTitle: row.PostTitle, ParentID: row.ParentID, Content: row.Content, LikeCount: row.LikeCount, IPRegion: row.IPRegion, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt})
 	}
 	return items, total, page, limit, err
 }

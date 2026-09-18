@@ -15,6 +15,7 @@ class PostData {
     this.likeCount = 0,
     this.favoriteCount = 0,
     this.commentCount = 0,
+    this.ipRegion,
     this.createdAt,
     this.updatedAt,
   });
@@ -36,6 +37,7 @@ class PostData {
         likeCount: (map['like_count'] as num?)?.toInt() ?? 0,
         favoriteCount: (map['favorite_count'] as num?)?.toInt() ?? 0,
         commentCount: (map['comment_count'] as num?)?.toInt() ?? 0,
+        ipRegion: map['ip_region'] as String?,
         createdAt: map['created_at'] as String?,
         updatedAt: map['updated_at'] as String?,
       );
@@ -53,6 +55,7 @@ class PostData {
   final int likeCount;
   final int favoriteCount;
   final int commentCount;
+  final String? ipRegion;
   final String? createdAt;
   final String? updatedAt;
 }
@@ -91,6 +94,7 @@ class HomePost {
     this.likeCount = 0,
     this.commentCount = 0,
     this.favoriteCount = 0,
+    this.ipRegion,
     this.createdAt,
   });
 
@@ -107,6 +111,7 @@ class HomePost {
         likeCount: (map['like_count'] as num?)?.toInt() ?? 0,
         commentCount: (map['comment_count'] as num?)?.toInt() ?? 0,
         favoriteCount: (map['favorite_count'] as num?)?.toInt() ?? 0,
+        ipRegion: map['ip_region'] as String?,
         createdAt: map['created_at'] as String?,
       );
 
@@ -117,6 +122,7 @@ class HomePost {
   final int likeCount;
   final int commentCount;
   final int favoriteCount;
+  final String? ipRegion;
   final String? createdAt;
 }
 
@@ -144,6 +150,7 @@ class CommentData {
     this.content,
     this.likeCount = 0,
     this.replyCount = 0,
+    this.ipRegion,
     this.createdAt,
   });
 
@@ -162,6 +169,7 @@ class CommentData {
         content: map['content'] as String?,
         likeCount: (map['like_count'] as num?)?.toInt() ?? 0,
         replyCount: (map['reply_count'] as num?)?.toInt() ?? 0,
+        ipRegion: map['ip_region'] as String?,
         createdAt: map['created_at'] as String?,
       );
 
@@ -173,6 +181,7 @@ class CommentData {
   final String? content;
   final int likeCount;
   final int replyCount;
+  final String? ipRegion;
   final String? createdAt;
 }
 

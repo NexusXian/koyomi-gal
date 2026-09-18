@@ -6,6 +6,7 @@ import (
 	"backend/internal/community/dto"
 	"backend/internal/community/service"
 	"backend/internal/middleware"
+	"backend/internal/requestutil"
 	appErrors "backend/pkg/errors"
 	"backend/pkg/logger"
 	"backend/pkg/response"
@@ -132,8 +133,9 @@ func (h *CommentHandler) ListAdminComments(c *gin.Context) {
 		response.Error(c, appErrors.ErrInternal("查询评论失败"))
 		return
 	}
+	userID, _ := middleware.CurrentUserID(c)
 	response.Ok(c, dto.AdminCommentListData{
-		Items: dto.NewAdminCommentList(comments), Total: total, Page: page, Limit: limit,
+		Items: dto.NewAdminCommentList(comments, h.commentService.CanAuditIP(c.Request.Context(), userID)), Total: total, Page: page, Limit: limit,
 	})
 }
 
@@ -168,7 +170,7 @@ func (h *CommentHandler) CreateComment(c *gin.Context) {
 		response.Error(c, appErrors.ErrAuthExpired())
 		return
 	}
-	comment, err := h.commentService.Create(c.Request.Context(), authorID, postID, &req)
+	comment, err := h.commentService.Create(c.Request.Context(), authorID, postID, &req, requestutil.ClientIP(c))
 	if err != nil {
 		h.respondCommentError(c, err, "create comment")
 		return

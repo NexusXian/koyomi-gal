@@ -436,7 +436,10 @@ class _ProfileListTabState<T> extends ConsumerState<_ProfileListTab<T>> {
           style: const TextStyle(fontSize: 14),
         ),
         subtitle: Text(
-          '${formatRelative(item.createdAt)} · 👍${item.likeCount} 💬${item.commentCount}',
+          [
+            '${formatRelative(item.createdAt)} · 👍${item.likeCount} 💬${item.commentCount}',
+            if (item.ipRegion?.isNotEmpty == true) 'IP属地：${item.ipRegion}',
+          ].join('\n'),
           style: const TextStyle(fontSize: 12),
         ),
         onTap: item.id == null ? null : () => context.push('/posts/${item.id}'),
@@ -451,8 +454,11 @@ class _ProfileListTabState<T> extends ConsumerState<_ProfileListTab<T>> {
           style: const TextStyle(fontSize: 13),
         ),
         subtitle: Text(
-          '评论于 ${item.postTitle ?? ''} · ${formatRelative(item.createdAt)}',
-          maxLines: 1,
+          [
+            '评论于 ${item.postTitle ?? ''} · ${formatRelative(item.createdAt)}',
+            if (item.ipRegion?.isNotEmpty == true) 'IP属地：${item.ipRegion}',
+          ].join('\n'),
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),

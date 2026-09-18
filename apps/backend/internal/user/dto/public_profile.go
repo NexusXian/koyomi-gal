@@ -125,6 +125,7 @@ type ProfilePostData struct {
 	LikeCount     int64     `json:"like_count"`
 	CommentCount  int64     `json:"comment_count"`
 	FavoriteCount int64     `json:"favorite_count"`
+	IPRegion      string    `json:"ip_region,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
@@ -136,6 +137,7 @@ type ProfileCommentData struct {
 	ParentID  *uint     `json:"parent_id"`
 	Content   string    `json:"content"`
 	LikeCount int64     `json:"like_count"`
+	IPRegion  string    `json:"ip_region,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

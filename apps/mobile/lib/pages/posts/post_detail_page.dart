@@ -294,7 +294,11 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                             ],
                           ),
                           Text(
-                            formatDateTime(post.createdAt),
+                            [
+                              formatDateTime(post.createdAt),
+                              if (post.ipRegion?.isNotEmpty == true)
+                                'IP属地：${post.ipRegion}',
+                            ].join(' · '),
                             style: TextStyle(
                               fontSize: 11,
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -676,6 +680,16 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                   style: const TextStyle(fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 4),
+                if (comment.ipRegion?.isNotEmpty == true) ...[
+                  Text(
+                    'IP属地：${comment.ipRegion}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
                 Row(
                   children: [
                     GestureDetector(

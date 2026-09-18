@@ -54,6 +54,7 @@ type PostData struct {
 	LikeCount     int64                 `json:"like_count" example:"10"`
 	CommentCount  int64                 `json:"comment_count" example:"3"`
 	FavoriteCount int64                 `json:"favorite_count" example:"2"`
+	IPRegion      string                `json:"ip_region,omitempty" example:"四川"`
 	CreatedAt     time.Time             `json:"created_at"`
 	UpdatedAt     time.Time             `json:"updated_at"`
 }
@@ -89,6 +90,8 @@ type AdminPostData struct {
 	LikeCount     int64            `json:"like_count" example:"10"`
 	CommentCount  int64            `json:"comment_count" example:"3"`
 	FavoriteCount int64            `json:"favorite_count" example:"2"`
+	IPAddress     string           `json:"ip,omitempty" example:"223.104.1.1"`
+	IPRegion      string           `json:"ip_region,omitempty" example:"四川"`
 	CreatedAt     time.Time        `json:"created_at"`
 	UpdatedAt     time.Time        `json:"updated_at"`
 }
@@ -120,6 +123,7 @@ func NewPostData(post *model.Post) PostData {
 		LikeCount:     post.LikeCount,
 		CommentCount:  post.CommentCount,
 		FavoriteCount: post.FavoriteCount,
+		IPRegion:      post.IPRegion,
 		CreatedAt:     post.CreatedAt,
 		UpdatedAt:     post.UpdatedAt,
 	}
@@ -137,17 +141,23 @@ func NewPostListItems(posts []model.Post) []PostData {
 	return items
 }
 
-func NewAdminPostList(posts []model.Post) []AdminPostData {
+func NewAdminPostList(posts []model.Post, includeIP ...bool) []AdminPostData {
+	revealIP := len(includeIP) > 0 && includeIP[0]
 	items := make([]AdminPostData, 0, len(posts))
 	for i := range posts {
 		post := &posts[i]
-		items = append(items, AdminPostData{
+		item := AdminPostData{
 			ID: post.ID, AuthorID: post.AuthorID, AuthorName: post.AuthorName,
 			GalgameID: post.GalgameID, GalgameTitle: post.GalgameTitle,
 			Title: post.Title, Content: post.Content, EditorMode: post.EditorMode,
 			LikeCount: post.LikeCount, CommentCount: post.CommentCount,
 			FavoriteCount: post.FavoriteCount, CreatedAt: post.CreatedAt, UpdatedAt: post.UpdatedAt,
-		})
+			IPRegion: post.IPRegion,
+		}
+		if revealIP {
+			item.IPAddress = post.IPAddress
+		}
+		items = append(items, item)
 	}
 	return items
 }

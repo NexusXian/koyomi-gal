@@ -381,6 +381,20 @@ class _MyPageState extends ConsumerState<MyPage> {
   }
 
   Widget _buildMenuCard() {
+    final permissions = ref.watch(mePermissionsProvider).maybeWhen(
+          data: (value) => value,
+          orElse: () => null,
+        );
+    final canManageCommunity = permissions?.hasAny([
+          'post:moderate',
+          'comment:moderate',
+        ]) ??
+        false;
+    final canManageUsers = permissions?.hasAny([
+          'user:list',
+          'ip_audit:read',
+        ]) ??
+        false;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -441,6 +455,24 @@ class _MyPageState extends ConsumerState<MyPage> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/experience'),
           ),
+          if (canManageCommunity) ...[
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            ListTile(
+              leading: const Icon(Icons.forum_outlined),
+              title: const Text('社区管理'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/admin/community'),
+            ),
+          ],
+          if (canManageUsers) ...[
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings_outlined),
+              title: const Text('用户与 IP 审计'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/admin/users'),
+            ),
+          ],
           const Divider(height: 1, indent: 16, endIndent: 16),
           ListTile(
             leading: const Icon(Icons.feedback_outlined),

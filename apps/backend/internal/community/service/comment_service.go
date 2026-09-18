@@ -9,6 +9,7 @@ import (
 	"backend/internal/community/dto"
 	"backend/internal/community/model"
 	"backend/internal/community/repository"
+	"backend/internal/ipgeo"
 	leveldto "backend/internal/level/dto"
 	levelModel "backend/internal/level/model"
 	levelService "backend/internal/level/service"
@@ -47,6 +48,8 @@ type CommentService struct {
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
 	experiences   *levelService.ExperienceService
+	ipResolver    *ipgeo.Service
+	ipLogs        IPLogEnqueuer
 }
 
 func (s *CommentService) SetActivityRecorder(recorder userService.ActivityRecorder) {
@@ -55,6 +58,11 @@ func (s *CommentService) SetActivityRecorder(recorder userService.ActivityRecord
 
 func (s *CommentService) SetExperienceService(experiences *levelService.ExperienceService) {
 	s.experiences = experiences
+}
+
+func (s *CommentService) SetIPDependencies(resolver *ipgeo.Service, logs IPLogEnqueuer) {
+	s.ipResolver = resolver
+	s.ipLogs = logs
 }
 
 func NewCommentService(
@@ -78,6 +86,7 @@ func (s *CommentService) Create(
 	ctx context.Context,
 	authorID, postID uint,
 	req *dto.CreateCommentRequest,
+	clientIP ...string,
 ) (*model.Comment, error) {
 	content := strings.TrimSpace(req.Content)
 	if content == "" {
@@ -126,12 +135,19 @@ func (s *CommentService) Create(
 		}
 	}
 
+	var requestIP string
+	if len(clientIP) > 0 {
+		requestIP = clientIP[0]
+	}
+	ipAddress, ipLocation := resolveContentIP(ctx, s.ipResolver, requestIP)
 	comment := &model.Comment{
 		PostID:        postID,
 		AuthorID:      &authorID,
 		ParentID:      req.ParentID,
 		ReplyToUserID: replyToUserID,
 		Content:       content,
+		IPAddress:     ipAddress,
+		IPRegion:      ipLocation.DisplayRegion,
 	}
 	err = s.comments.Transaction(ctx, func(tx *repository.CommentRepository) error {
 		if err := tx.Create(ctx, comment); err != nil {
@@ -162,7 +178,19 @@ func (s *CommentService) Create(
 			logger.Error("grant comment experience", zap.Uint("comment_id", created.ID), zap.Error(err))
 		}
 	}
+	if created != nil {
+		enqueueContentIPLog(ctx, s.ipLogs, authorID, "comment", created.ID, ipAddress, ipLocation, created.CreatedAt)
+	}
 	return created, nil
+}
+
+func (s *CommentService) CanAuditIP(ctx context.Context, userID uint) bool {
+	allowed, err := s.rbac.HasPermission(ctx, userID, PermissionIPAuditRead)
+	if err != nil {
+		logger.Error("check IP audit permission", zap.Uint("user_id", userID), zap.Error(err))
+		return false
+	}
+	return allowed
 }
 
 // ListByPost returns one page of top-level comments and their reply counts.

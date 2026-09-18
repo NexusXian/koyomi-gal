@@ -15,6 +15,7 @@ export interface DtoPost {
   favorite_count?: number;
   galgame?: DtoPostGalgame;
   id?: number;
+  ip_region?: string;
   like_count?: number;
   title?: string;
 }

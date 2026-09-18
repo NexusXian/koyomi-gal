@@ -25,6 +25,16 @@ type Config struct {
 	R2             *R2
 	Classification *Classification
 	GitHub         *GitHub
+	GeoIP          *GeoIP
+}
+
+type GeoIP struct {
+	Enabled          bool
+	DisplayLevel     string
+	CityDatabasePath string
+	ASNDatabasePath  string
+	CacheTTL         time.Duration
+	QueueConcurrency int
 }
 
 // GitHub configures the GitHub Releases integration used to resolve official
@@ -221,6 +231,10 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	geoIPConfig, err := loadGeoIP()
+	if err != nil {
+		return nil, err
+	}
 
 	return &Config{
 		Postgres: &Postgres{
@@ -256,6 +270,49 @@ func Load() (*Config, error) {
 		R2:             r2Config,
 		Classification: classificationConfig,
 		GitHub:         githubConfig,
+		GeoIP:          geoIPConfig,
+	}, nil
+}
+
+func loadGeoIP() (*GeoIP, error) {
+	enabledValue := strings.TrimSpace(os.Getenv("IP_DISPLAY_ENABLED"))
+	enabled := false
+	var err error
+	if enabledValue != "" {
+		enabled, err = strconv.ParseBool(enabledValue)
+		if err != nil {
+			return nil, errors.New("IP_DISPLAY_ENABLED must be a boolean")
+		}
+	}
+	displayLevel := strings.ToLower(strings.TrimSpace(os.Getenv("IP_DISPLAY_LEVEL")))
+	if displayLevel == "" {
+		displayLevel = "region"
+	}
+	switch displayLevel {
+	case "country", "region", "city":
+	default:
+		return nil, errors.New("IP_DISPLAY_LEVEL must be one of country, region, or city")
+	}
+	cityPath := strings.TrimSpace(os.Getenv("GEOIP_CITY_DB_PATH"))
+	if enabled && cityPath == "" {
+		return nil, errors.New("GEOIP_CITY_DB_PATH is required when IP_DISPLAY_ENABLED is true")
+	}
+	cacheTTL := 30 * 24 * time.Hour
+	if value := strings.TrimSpace(os.Getenv("IP_GEO_CACHE_TTL")); value != "" {
+		cacheTTL, err = time.ParseDuration(value)
+		if err != nil || cacheTTL <= 0 {
+			return nil, errors.New("IP_GEO_CACHE_TTL must be a positive duration")
+		}
+	}
+	queueConcurrency, err := parsePositiveIntWithDefault("IP_AUDIT_QUEUE_CONCURRENCY", 2)
+	if err != nil {
+		return nil, err
+	}
+	return &GeoIP{
+		Enabled: enabled, DisplayLevel: displayLevel,
+		CityDatabasePath: cityPath,
+		ASNDatabasePath:  strings.TrimSpace(os.Getenv("GEOIP_ASN_DB_PATH")),
+		CacheTTL:         cacheTTL, QueueConcurrency: queueConcurrency,
 	}, nil
 }
 

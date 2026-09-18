@@ -325,6 +325,7 @@ class ProfilePostData {
     this.likeCount = 0,
     this.commentCount = 0,
     this.favoriteCount = 0,
+    this.ipRegion,
     this.createdAt,
   });
 
@@ -338,6 +339,7 @@ class ProfilePostData {
         likeCount: (map['like_count'] as num?)?.toInt() ?? 0,
         commentCount: (map['comment_count'] as num?)?.toInt() ?? 0,
         favoriteCount: (map['favorite_count'] as num?)?.toInt() ?? 0,
+        ipRegion: map['ip_region'] as String?,
         createdAt: map['created_at'] as String?,
       );
 
@@ -349,6 +351,7 @@ class ProfilePostData {
   final int likeCount;
   final int commentCount;
   final int favoriteCount;
+  final String? ipRegion;
   final String? createdAt;
 }
 
@@ -360,6 +363,7 @@ class ProfileCommentData {
     this.content,
     this.likeCount = 0,
     this.parentId,
+    this.ipRegion,
     this.createdAt,
   });
 
@@ -371,6 +375,7 @@ class ProfileCommentData {
         content: map['content'] as String?,
         likeCount: (map['like_count'] as num?)?.toInt() ?? 0,
         parentId: (map['parent_id'] as num?)?.toInt(),
+        ipRegion: map['ip_region'] as String?,
         createdAt: map['created_at'] as String?,
       );
 
@@ -380,6 +385,7 @@ class ProfileCommentData {
   final String? content;
   final int likeCount;
   final int? parentId;
+  final String? ipRegion;
   final String? createdAt;
 }
 

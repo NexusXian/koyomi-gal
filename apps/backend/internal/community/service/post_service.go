@@ -10,6 +10,7 @@ import (
 	"backend/internal/community/model"
 	"backend/internal/community/repository"
 	galgameRepository "backend/internal/galgame/repository"
+	"backend/internal/ipgeo"
 	notificationModel "backend/internal/notification/model"
 	notificationService "backend/internal/notification/service"
 	rbacService "backend/internal/rbac/service"
@@ -36,10 +37,17 @@ type PostService struct {
 	rbac          *rbacService.RBACService
 	notifications *notificationService.NotificationService
 	activities    userService.ActivityRecorder
+	ipResolver    *ipgeo.Service
+	ipLogs        IPLogEnqueuer
 }
 
 func (s *PostService) SetActivityRecorder(recorder userService.ActivityRecorder) {
 	s.activities = recorder
+}
+
+func (s *PostService) SetIPDependencies(resolver *ipgeo.Service, logs IPLogEnqueuer) {
+	s.ipResolver = resolver
+	s.ipLogs = logs
 }
 
 func NewPostService(
@@ -61,6 +69,7 @@ func (s *PostService) Create(
 	ctx context.Context,
 	authorID uint,
 	req *dto.CreatePostRequest,
+	clientIP ...string,
 ) (*model.Post, error) {
 	title := strings.TrimSpace(req.Title)
 	content := strings.TrimSpace(req.Content)
@@ -80,12 +89,19 @@ func (s *PostService) Create(
 		}
 	}
 
+	var requestIP string
+	if len(clientIP) > 0 {
+		requestIP = clientIP[0]
+	}
+	ipAddress, ipLocation := resolveContentIP(ctx, s.ipResolver, requestIP)
 	post := &model.Post{
 		GalgameID:  req.GalgameID,
 		AuthorID:   &authorID,
 		Title:      title,
 		Content:    content,
 		EditorMode: editorMode,
+		IPAddress:  ipAddress,
+		IPRegion:   ipLocation.DisplayRegion,
 	}
 	err := s.posts.Transaction(ctx, func(tx *repository.PostRepository) error {
 		if err := tx.Create(ctx, post); err != nil {
@@ -114,7 +130,17 @@ func (s *PostService) Create(
 			logger.Error("record post activity", zap.Uint("post_id", created.ID), zap.Error(recordErr))
 		}
 	}
+	enqueueContentIPLog(ctx, s.ipLogs, authorID, "post", created.ID, ipAddress, ipLocation, created.CreatedAt)
 	return created, nil
+}
+
+func (s *PostService) CanAuditIP(ctx context.Context, userID uint) bool {
+	allowed, err := s.rbac.HasPermission(ctx, userID, PermissionIPAuditRead)
+	if err != nil {
+		logger.Error("check IP audit permission", zap.Uint("user_id", userID), zap.Error(err))
+		return false
+	}
+	return allowed
 }
 
 func (s *PostService) Get(ctx context.Context, id uint) (*model.Post, error) {

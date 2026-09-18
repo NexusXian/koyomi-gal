@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import 'providers/app_providers.dart';
 import 'models/message_models.dart';
+import 'pages/admin/admin_community_page.dart';
+import 'pages/admin/admin_users_page.dart';
+import 'pages/admin/user_ip_history_page.dart';
 import 'pages/articles/article_detail_page.dart';
 import 'pages/articles/article_list_page.dart';
 import 'pages/auth/forgot_password_page.dart';
@@ -41,6 +44,7 @@ final _protectedPrefixes = [
   '/notifications',
   '/messages',
   '/settings',
+  '/admin',
   '/galgames/new',
   '/posts/new',
   '/novels/new',
@@ -244,6 +248,24 @@ GoRouter buildRouter() {
           conversation: state.extra is Conversation
               ? state.extra as Conversation
               : null,
+        ),
+      ),
+      GoRoute(
+        path: '/admin/community',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AdminCommunityPage(),
+      ),
+      GoRoute(
+        path: '/admin/users',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AdminUsersPage(),
+      ),
+      GoRoute(
+        path: '/admin/users/:id/ip-logs',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => UserIPHistoryPage(
+          userId: int.parse(state.pathParameters['id']!),
+          username: state.uri.queryParameters['name'],
         ),
       ),
       GoRoute(

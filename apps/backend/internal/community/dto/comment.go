@@ -38,6 +38,7 @@ type CommentData struct {
 	Content       string                `json:"content" example:"同感！"`
 	LikeCount     int64                 `json:"like_count" example:"5"`
 	ReplyCount    int64                 `json:"reply_count" example:"3"`
+	IPRegion      string                `json:"ip_region,omitempty" example:"四川"`
 	CreatedAt     time.Time             `json:"created_at"`
 	UpdatedAt     time.Time             `json:"updated_at"`
 }
@@ -71,6 +72,8 @@ type AdminCommentData struct {
 	ReplyToUserID *uint     `json:"reply_to_user_id" example:"2"`
 	Content       string    `json:"content" example:"同感！"`
 	LikeCount     int64     `json:"like_count" example:"5"`
+	IPAddress     string    `json:"ip,omitempty" example:"223.104.1.1"`
+	IPRegion      string    `json:"ip_region,omitempty" example:"四川"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
@@ -133,6 +136,7 @@ func NewCommentData(comment *model.Comment, replyCount int64) CommentData {
 		Content:       comment.Content,
 		LikeCount:     comment.LikeCount,
 		ReplyCount:    replyCount,
+		IPRegion:      comment.IPRegion,
 		CreatedAt:     comment.CreatedAt,
 		UpdatedAt:     comment.UpdatedAt,
 	}
@@ -145,17 +149,23 @@ func NewCommentData(comment *model.Comment, replyCount int64) CommentData {
 	return data
 }
 
-func NewAdminCommentList(comments []model.Comment) []AdminCommentData {
+func NewAdminCommentList(comments []model.Comment, includeIP ...bool) []AdminCommentData {
+	revealIP := len(includeIP) > 0 && includeIP[0]
 	items := make([]AdminCommentData, 0, len(comments))
 	for i := range comments {
 		comment := &comments[i]
-		items = append(items, AdminCommentData{
+		item := AdminCommentData{
 			ID: comment.ID, PostID: comment.PostID, PostTitle: comment.PostTitle,
 			AuthorID: comment.AuthorID, AuthorName: comment.AuthorName,
 			ParentID: comment.ParentID, ReplyToUserID: comment.ReplyToUserID,
 			Content: comment.Content, LikeCount: comment.LikeCount,
 			CreatedAt: comment.CreatedAt, UpdatedAt: comment.UpdatedAt,
-		})
+			IPRegion: comment.IPRegion,
+		}
+		if revealIP {
+			item.IPAddress = comment.IPAddress
+		}
+		items = append(items, item)
 	}
 	return items
 }

@@ -442,12 +442,29 @@ class _HomePageState extends ConsumerState<HomePage> {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
-          subtitle: post.galgame?.title != null
-              ? Text(
-                  '讨论：${post.galgame!.title}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12),
+          subtitle: post.galgame?.title != null ||
+                  post.ipRegion?.isNotEmpty == true
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (post.galgame?.title != null)
+                      Text(
+                        '讨论：${post.galgame!.title}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    if (post.ipRegion?.isNotEmpty == true)
+                      Text(
+                        'IP属地：${post.ipRegion}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
                 )
               : null,
           trailing: Wrap(

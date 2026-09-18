@@ -163,6 +163,9 @@ function openPost(id?: number): void {
               <KunIcon name="lucide:calendar" />
               {{ formatDate(post.created_at) }}
             </span>
+            <span v-if="post.ip_region" class="post-item">
+              IP属地：{{ post.ip_region }}
+            </span>
             <span class="post-item">
               <KunIcon name="lucide:message-circle" />
               {{ post.comment_count ?? 0 }}

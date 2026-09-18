@@ -33,6 +33,7 @@ onMounted(async () => {
       'resource:review',
       'post:moderate',
       'comment:moderate',
+      'ip_audit:read',
       'galgame:update',
       'role:list',
       'role:create',

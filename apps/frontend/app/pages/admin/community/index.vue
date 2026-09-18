@@ -20,6 +20,7 @@ useSeoMeta({ title: '社区管理 - Koyomi' })
 const { has, load: loadPermissions } = usePermissions()
 const canModeratePosts = computed(() => has('post:moderate'))
 const canModerateComments = computed(() => has('comment:moderate'))
+const canViewIPAudit = computed(() => has('ip_audit:read'))
 const activeTab = ref<'posts' | 'comments'>('posts')
 const limit = 20
 
@@ -35,24 +36,26 @@ const commentTotal = ref(0)
 const commentsLoading = ref(false)
 const deletingCommentId = ref<number | null>(null)
 
-const postColumns: TableColumnsType = [
+const postColumns = computed<TableColumnsType>(() => [
   { title: 'ID', dataIndex: 'id', width: 70 },
   { title: '帖子', key: 'post', ellipsis: true },
   { title: '内容摘要', key: 'excerpt', ellipsis: true },
   { title: '作者', key: 'author', width: 140, ellipsis: true },
+  ...(canViewIPAudit.value ? [{ title: 'IP / 属地', key: 'ip', width: 190 }] : []),
   { title: '评论', dataIndex: 'comment_count', width: 75 },
   { title: '发布时间', dataIndex: 'created_at', width: 170 },
   { title: '操作', key: 'actions', width: 190 }
-]
+])
 
-const commentColumns: TableColumnsType = [
+const commentColumns = computed<TableColumnsType>(() => [
   { title: 'ID', dataIndex: 'id', width: 70 },
   { title: '评论内容', key: 'content', ellipsis: true },
   { title: '作者', key: 'author', width: 140, ellipsis: true },
   { title: '所属帖子', key: 'post', ellipsis: true },
+  ...(canViewIPAudit.value ? [{ title: 'IP / 属地', key: 'ip', width: 190 }] : []),
   { title: '发布时间', dataIndex: 'created_at', width: 170 },
   { title: '操作', key: 'actions', width: 120 }
-]
+])
 
 function plainExcerpt(content: string, length = 120): string {
   const normalized = content.replace(/\s+/g, ' ').trim()
@@ -245,6 +248,10 @@ async function removeComment(comment: DtoAdminCommentData): Promise<void> {
             <template v-else-if="column.key === 'author'">
               {{ record.author_name || (record.author_id ? `用户 #${record.author_id}` : '-') }}
             </template>
+            <template v-else-if="column.key === 'ip'">
+              <div>{{ record.ip || '-' }}</div>
+              <div class="secondary-text">{{ record.ip_region || '未知属地' }}</div>
+            </template>
             <template v-else-if="column.dataIndex === 'created_at'">
               {{ formatDate(record.created_at) }}
             </template>
@@ -303,6 +310,10 @@ async function removeComment(comment: DtoAdminCommentData): Promise<void> {
               <NuxtLink :to="`/posts/${record.post_id}`" class="primary-link">
                 {{ record.post_title || `帖子 #${record.post_id}` }}
               </NuxtLink>
+            </template>
+            <template v-else-if="column.key === 'ip'">
+              <div>{{ record.ip || '-' }}</div>
+              <div class="secondary-text">{{ record.ip_region || '未知属地' }}</div>
             </template>
             <template v-else-if="column.dataIndex === 'created_at'">
               {{ formatDate(record.created_at) }}

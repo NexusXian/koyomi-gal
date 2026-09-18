@@ -9,11 +9,11 @@ import {
   listUserRatings
 } from '~/api/generated/users/users'
 import type {
-  DtoProfileCommentData,
   DtoProfileGalgameData,
-  DtoProfilePostData,
   DtoPublicUserProfile,
-  DtoUserActivityData
+  DtoUserActivityData,
+  UserdtoProfileCommentData,
+  UserdtoProfilePostData
 } from '~/api/generated/models'
 import { formatDate } from '~/constants/domain'
 
@@ -27,8 +27,8 @@ const profile = ref<DtoPublicUserProfile | null>(null)
 const profileLoading = ref(true)
 const profileError = ref('')
 const contentLoading = ref(false)
-const posts = ref<DtoProfilePostData[]>([])
-const comments = ref<DtoProfileCommentData[]>([])
+const posts = ref<UserdtoProfilePostData[]>([])
+const comments = ref<UserdtoProfileCommentData[]>([])
 const galgames = ref<DtoProfileGalgameData[]>([])
 const activities = ref<DtoUserActivityData[]>([])
 const total = ref(0)
@@ -197,6 +197,7 @@ watch([activeTab, page, profile], () => void loadContent())
                 <p>{{ post.content }}</p>
                 <div class="row-meta">
                   <span>{{ formatDate(post.created_at) }}</span>
+                  <span v-if="post.ip_region">IP属地：{{ post.ip_region }}</span>
                   <span><KunIcon name="lucide:thumbs-up" />{{ post.like_count ?? 0 }}</span>
                   <span><KunIcon name="lucide:message-circle" />{{ post.comment_count ?? 0 }}</span>
                   <span><KunIcon name="lucide:heart" />{{ post.favorite_count ?? 0 }}</span>
@@ -211,7 +212,7 @@ watch([activeTab, page, profile], () => void loadContent())
               <NuxtLink :to="`/posts/${comment.post_id}`" class="content-row">
                 <span class="context-title">评论于 {{ comment.post_title || `帖子 #${comment.post_id}` }}</span>
                 <p>{{ comment.content }}</p>
-                <div class="row-meta"><span>{{ formatDate(comment.created_at) }}</span><span><KunIcon name="lucide:thumbs-up" />{{ comment.like_count ?? 0 }}</span></div>
+                <div class="row-meta"><span>{{ formatDate(comment.created_at) }}</span><span v-if="comment.ip_region">IP属地：{{ comment.ip_region }}</span><span><KunIcon name="lucide:thumbs-up" />{{ comment.like_count ?? 0 }}</span></div>
               </NuxtLink>
             </KunCard>
           </section>

@@ -15,6 +15,7 @@ export interface UserdtoProfilePostData {
   galgame_id?: number;
   galgame_title?: string;
   id?: number;
+  ip_region?: string;
   like_count?: number;
   title?: string;
   updated_at?: string;

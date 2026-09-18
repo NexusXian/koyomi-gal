@@ -7113,6 +7113,79 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/users/{id}/ip-logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回用户发帖和评论时记录的完整 IP 与属地；需要 ip_audit:read 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "查询用户 IP 历史",
+                "operationId": "listUserIPLogs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量，最大 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "IP 历史",
+                        "schema": {
+                            "$ref": "#/definitions/ipgeo.UserIPLogListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "查询 IP 历史失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/users/{id}/roles": {
             "get": {
                 "security": [
@@ -15049,6 +15122,14 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "ip": {
+                    "type": "string",
+                    "example": "223.104.1.1"
+                },
+                "ip_region": {
+                    "type": "string",
+                    "example": "四川"
+                },
                 "like_count": {
                     "type": "integer",
                     "example": 5
@@ -15213,6 +15294,14 @@ const docTemplate = `{
                 "id": {
                     "type": "integer",
                     "example": 1
+                },
+                "ip": {
+                    "type": "string",
+                    "example": "223.104.1.1"
+                },
+                "ip_region": {
+                    "type": "string",
+                    "example": "四川"
                 },
                 "like_count": {
                     "type": "integer",
@@ -17003,6 +17092,10 @@ const docTemplate = `{
                 "id": {
                     "type": "integer",
                     "example": 1
+                },
+                "ip_region": {
+                    "type": "string",
+                    "example": "四川"
                 },
                 "like_count": {
                     "type": "integer",
@@ -20957,6 +21050,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "ip_region": {
+                    "type": "string",
+                    "example": "四川"
+                },
                 "like_count": {
                     "type": "integer",
                     "example": 10
@@ -21019,6 +21116,10 @@ const docTemplate = `{
                 "id": {
                     "type": "integer",
                     "example": 1
+                },
+                "ip_region": {
+                    "type": "string",
+                    "example": "四川"
                 },
                 "like_count": {
                     "type": "integer",
@@ -23103,6 +23204,75 @@ const docTemplate = `{
                 }
             }
         },
+        "ipgeo.UserIPLog": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "entity_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "isp": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ipgeo.UserIPLogListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ipgeo.UserIPLog"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ipgeo.UserIPLogListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/ipgeo.UserIPLogListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
         "leveldto.AdjustExperienceRequest": {
             "type": "object",
             "required": [
@@ -24228,6 +24398,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "ip_region": {
+                    "type": "string"
+                },
                 "like_count": {
                     "type": "integer"
                 },
@@ -24368,6 +24541,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "ip_region": {
+                    "type": "string"
                 },
                 "like_count": {
                     "type": "integer"

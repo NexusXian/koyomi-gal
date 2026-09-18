@@ -58,6 +58,7 @@ import (
 	mailInfrastructure "backend/internal/infrastructures/mail"
 	"backend/internal/infrastructures/queue"
 	"backend/internal/infrastructures/storage"
+	"backend/internal/ipgeo"
 	levelHandler "backend/internal/level/handler"
 	levelRepo "backend/internal/level/repository"
 	levelService "backend/internal/level/service"
@@ -102,9 +103,12 @@ type App struct {
 	Queue                 *queue.VerificationClient
 	ImportQueue           *queue.ImportClient
 	ClassificationQueue   *queue.ClassificationClient
+	IPLogQueue            *queue.IPLogClient
 	MailWorker            *asynq.Server
 	ImportWorker          *asynq.Server
 	ClassificationWorker  *asynq.Server
+	IPAuditWorker         *asynq.Server
+	GeoIPResolver         *ipgeo.MaxMindResolver
 	UserAuthHandler       *userHandler.UserAuthHandler
 	UserAuthRepository    *userRepo.UserAuthRepository
 	VerificationHandler   *userHandler.VerificationHandler
@@ -129,6 +133,7 @@ type App struct {
 	ClassificationHandler *classificationHandler.ClassificationHandler
 	PostHandler           *communityHandler.PostHandler
 	CommentHandler        *communityHandler.CommentHandler
+	IPAuditHandler        *ipgeo.Handler
 	InteractionHandler    *communityHandler.InteractionHandler
 	BannerHandler         *bannerHandler.BannerHandler
 	BackgroundHandler     *backgroundHandler.BackgroundPresetHandler
@@ -169,6 +174,22 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		}
 		return nil, err
 	}
+	var geoIPResolver *ipgeo.MaxMindResolver
+	if cfg.GeoIP.Enabled {
+		geoIPResolver, err = ipgeo.NewMaxMindResolver(cfg.GeoIP.CityDatabasePath, cfg.GeoIP.ASNDatabasePath)
+		if err != nil {
+			_ = redisClient.Close()
+			_ = sqlDB.Close()
+			return nil, err
+		}
+	}
+	geoIPService := ipgeo.NewService(
+		cfg.GeoIP.Enabled, cfg.GeoIP.DisplayLevel, geoIPResolver, redisClient, cfg.GeoIP.CacheTTL,
+	)
+	ipLogRepository := ipgeo.NewLogRepository(postgresDB)
+	ipAuditService := ipgeo.NewAuditService(ipLogRepository)
+	ipLogQueueClient := queue.NewIPLogClient(cfg.Redis, cfg.Verification.Secret)
+	ipLogEnqueuer := ipgeo.NewReliableEnqueuer(ipLogQueueClient, ipAuditService)
 	// Init Health Service module
 	healthService := healthService.NewHealthService()
 
@@ -182,12 +203,12 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	rbacSvc := rbacService.NewRBACService(rbacRepository)
 	bootstrapCtx := context.Background()
 	if err := rbacSvc.SeedDefaults(bootstrapCtx); err != nil {
-		app := &App{Config: cfg, Postgres: postgresDB, Redis: redisClient}
+		app := &App{Config: cfg, Postgres: postgresDB, Redis: redisClient, IPLogQueue: ipLogQueueClient, GeoIPResolver: geoIPResolver}
 		app.Close()
 		return nil, fmt.Errorf("seed rbac defaults: %w", err)
 	}
 	if err := bootstrapSuperAdmin(bootstrapCtx, cfg.RBAC.SuperAdminAccount, userAuthRepository, rbacSvc); err != nil {
-		app := &App{Config: cfg, Postgres: postgresDB, Redis: redisClient}
+		app := &App{Config: cfg, Postgres: postgresDB, Redis: redisClient, IPLogQueue: ipLogQueueClient, GeoIPResolver: geoIPResolver}
 		app.Close()
 		return nil, err
 	}
@@ -264,6 +285,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	commentRepository := communityRepo.NewCommentRepository(postgresDB, cfg.R2.PublicURL)
 	postService := communityService.NewPostService(postRepository, galgameRepository, rbacSvc, notificationSvc)
 	commentService := communityService.NewCommentService(commentRepository, postRepository, rbacSvc, notificationSvc)
+	postService.SetIPDependencies(geoIPService, ipLogEnqueuer)
+	commentService.SetIPDependencies(geoIPService, ipLogEnqueuer)
 	interactionService := communityService.NewInteractionService(postRepository, commentRepository, notificationSvc)
 	commentService.SetExperienceService(experienceService)
 	interactionService.SetExperienceService(experienceService)
@@ -289,6 +312,11 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 
 	r2Storage, err := storage.NewR2(cfg.R2)
 	if err != nil {
+		_ = ipLogQueueClient.Close()
+		if geoIPResolver != nil {
+			_ = geoIPResolver.Close()
+		}
+		_ = redisClient.Close()
 		if sqlDB, dbErr := postgresDB.DB(); dbErr == nil {
 			_ = sqlDB.Close()
 		}
@@ -334,6 +362,11 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		vndbClient,
 	)
 	if agentErr != nil && !errors.Is(agentErr, classificationAgent.ErrAgentDisabled) {
+		_ = ipLogQueueClient.Close()
+		if geoIPResolver != nil {
+			_ = geoIPResolver.Close()
+		}
+		_ = redisClient.Close()
 		if sqlDB, dbErr := postgresDB.DB(); dbErr == nil {
 			_ = sqlDB.Close()
 		}
@@ -395,10 +428,12 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	userAdminService := userService.NewUserAdminService(userAdminRepository, rbacSvc)
 	realtimeHub := realtime.NewHub(redisClient)
 	app := &App{
-		Config:   cfg,
-		Postgres: postgresDB,
-		Redis:    redisClient,
-		Queue:    verificationQueue,
+		Config:        cfg,
+		Postgres:      postgresDB,
+		Redis:         redisClient,
+		Queue:         verificationQueue,
+		IPLogQueue:    ipLogQueueClient,
+		GeoIPResolver: geoIPResolver,
 		UserAuthHandler: userHandler.NewUserAuthHandler(
 			userAuthService,
 			cfg.Auth.RefreshTokenTTL,
@@ -431,6 +466,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		ClassificationHandler: classificationHandler.NewClassificationHandler(classificationSvc),
 		PostHandler:           communityHandler.NewPostHandler(postService, experienceService),
 		CommentHandler:        communityHandler.NewCommentHandler(commentService, experienceService),
+		IPAuditHandler:        ipgeo.NewHandler(ipAuditService),
 		InteractionHandler:    communityHandler.NewInteractionHandler(interactionService),
 		BannerHandler:         bannerHandler.NewBannerHandler(bannerSvc),
 		BackgroundHandler:     backgroundHandler.NewBackgroundPresetHandler(backgroundPresetSvc),
@@ -481,6 +517,15 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	app.ImportQueue = importQueueClient
 	app.ClassificationQueue = classificationQueueClient
 
+	ipAuditWorker := queue.NewIPLogServer(cfg.Redis, cfg.GeoIP.QueueConcurrency)
+	ipAuditMux := asynq.NewServeMux()
+	queue.RegisterIPLogTasks(ipAuditMux, ipAuditService, cfg.Verification.Secret)
+	if err := ipAuditWorker.Start(ipAuditMux); err != nil {
+		app.Close()
+		return nil, fmt.Errorf("start IP audit worker: %w", err)
+	}
+	app.IPAuditWorker = ipAuditWorker
+
 	if cfg.Classification.Enabled && classificationSvc.Enabled() {
 		classificationWorker := queue.NewClassificationServer(
 			cfg.Redis, cfg.Classification.QueueConcurrency,
@@ -507,6 +552,9 @@ func (app *App) Close() {
 	if app.ClassificationWorker != nil {
 		app.ClassificationWorker.Shutdown()
 	}
+	if app.IPAuditWorker != nil {
+		app.IPAuditWorker.Shutdown()
+	}
 	if app.MailWorker != nil {
 		app.MailWorker.Shutdown()
 	}
@@ -518,6 +566,12 @@ func (app *App) Close() {
 	}
 	if app.ClassificationQueue != nil {
 		_ = app.ClassificationQueue.Close()
+	}
+	if app.IPLogQueue != nil {
+		_ = app.IPLogQueue.Close()
+	}
+	if app.GeoIPResolver != nil {
+		_ = app.GeoIPResolver.Close()
 	}
 	if app.RealtimeHub != nil {
 		app.RealtimeHub.Close()

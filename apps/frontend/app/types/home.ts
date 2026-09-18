@@ -59,6 +59,7 @@ export interface HomePost {
   like_count: number
   comment_count: number
   favorite_count: number
+  ip_region?: string
   created_at: string
 }
 

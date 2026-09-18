@@ -14,6 +14,7 @@ import '../core/startup/startup_prompt_coordinator.dart';
 import '../features/announcement/services/announcement_service.dart';
 import '../features/update/services/update_service.dart';
 import '../models/auth_models.dart';
+import '../services/admin_service.dart';
 import '../services/article_service.dart';
 import '../services/auth_service.dart';
 import '../services/galgame_service.dart';
@@ -221,6 +222,9 @@ final postServiceProvider =
 
 final commentServiceProvider = Provider<CommentService>(
     (ref) => CommentService(ref.watch(apiClientProvider)));
+
+final adminServiceProvider = Provider<AdminService>(
+    (ref) => AdminService(ref.watch(apiClientProvider)));
 
 final novelServiceProvider =
     Provider<NovelService>((ref) => NovelService(ref.watch(apiClientProvider)));

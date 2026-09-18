@@ -1000,7 +1000,11 @@ class _RelatedPostsTabState extends ConsumerState<_RelatedPostsTab> {
                 style: const TextStyle(fontSize: 14),
               ),
               subtitle: Text(
-                '${post.author?.displayName ?? post.authorName ?? ''} · ${formatRelative(post.createdAt)}',
+                [
+                  '${post.author?.displayName ?? post.authorName ?? ''} · ${formatRelative(post.createdAt)}',
+                  if (post.ipRegion?.isNotEmpty == true)
+                    'IP属地：${post.ipRegion}',
+                ].join('\n'),
                 style: const TextStyle(fontSize: 12),
               ),
               trailing: StatRow(

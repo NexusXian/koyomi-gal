@@ -179,7 +179,8 @@ const items: AdminNavItem[] = [
       'user:create',
       'user:update',
       'user:delete',
-      'role:assign'
+      'role:assign',
+      'ip_audit:read'
     ]
   },
   {

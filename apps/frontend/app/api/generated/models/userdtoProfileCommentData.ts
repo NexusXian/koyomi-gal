@@ -10,6 +10,7 @@ export interface UserdtoProfileCommentData {
   content?: string;
   created_at?: string;
   id?: number;
+  ip_region?: string;
   like_count?: number;
   parent_id?: number;
   post_id?: number;

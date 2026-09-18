@@ -150,6 +150,7 @@ type ProfilePost struct {
 	LikeCount     int64
 	CommentCount  int64
 	FavoriteCount int64
+	IPRegion      string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -161,6 +162,7 @@ type ProfileComment struct {
 	ParentID  *uint
 	Content   string
 	LikeCount int64
+	IPRegion  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

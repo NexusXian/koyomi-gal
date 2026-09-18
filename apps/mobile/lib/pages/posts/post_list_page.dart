@@ -206,6 +206,18 @@ class _PostListPageState extends ConsumerState<PostListPage> {
                           icon: Icons.chat_bubble_outline,
                           label: formatCount(post.commentCount),
                         ),
+                        if (post.ipRegion?.isNotEmpty == true) ...[
+                          const Spacer(),
+                          Text(
+                            'IP属地：${post.ipRegion}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],

@@ -224,6 +224,7 @@ async function removeComment(): Promise<void> {
             />
           </template>
           <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
+          <span v-if="comment.ip_region" class="comment-time">IP属地：{{ comment.ip_region }}</span>
         </div>
 
         <template v-if="editing">

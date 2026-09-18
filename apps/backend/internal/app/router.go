@@ -224,6 +224,7 @@ func (app *App) setupRoutes() {
 		admin.DELETE("/images/:id", requirePermission("image:delete"), app.ImageHandler.DeleteAdminImage)
 		admin.GET("/posts", requirePermission("post:moderate"), app.PostHandler.ListAdminPosts)
 		admin.GET("/comments", requirePermission("comment:moderate"), app.CommentHandler.ListAdminComments)
+		admin.GET("/users/:id/ip-logs", requirePermission("ip_audit:read"), app.IPAuditHandler.ListUserIPLogs)
 		admin.GET("/users", requirePermission("user:list"), app.UserAdminHandler.List)
 		admin.GET("/users/:id", requirePermission("user:read"), app.UserAdminHandler.Get)
 		admin.POST("/users", requirePermission("user:create"), app.UserAdminHandler.Create)

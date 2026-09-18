@@ -30,6 +30,8 @@ type Post struct {
 	LikeCount     int64      `gorm:"not null" json:"like_count"`
 	CommentCount  int64      `gorm:"not null" json:"comment_count"`
 	FavoriteCount int64      `gorm:"not null" json:"favorite_count"`
+	IPAddress     string     `gorm:"column:ip_address;size:45;not null" json:"-"`
+	IPRegion      string     `gorm:"column:ip_region;size:100;not null" json:"ip_region"`
 	CreatedAt     time.Time  `json:"created_at"`
 	UpdatedAt     time.Time  `json:"updated_at"`
 	// Filled by repository joins, never written to the database.
@@ -51,6 +53,8 @@ type Comment struct {
 	ReplyToUserID *uint     `json:"reply_to_user_id"`
 	Content       string    `gorm:"not null" json:"content"`
 	LikeCount     int64     `gorm:"not null" json:"like_count"`
+	IPAddress     string    `gorm:"column:ip_address;size:45;not null" json:"-"`
+	IPRegion      string    `gorm:"column:ip_region;size:100;not null" json:"ip_region"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	// Filled by repository joins, never written to the database.

@@ -7,6 +7,7 @@ import (
 	"backend/internal/community/dto"
 	"backend/internal/community/service"
 	"backend/internal/middleware"
+	"backend/internal/requestutil"
 	appErrors "backend/pkg/errors"
 	"backend/pkg/logger"
 	"backend/pkg/response"
@@ -89,8 +90,9 @@ func (h *PostHandler) ListAdminPosts(c *gin.Context) {
 		response.Error(c, appErrors.ErrInternal("查询帖子失败"))
 		return
 	}
+	userID, _ := middleware.CurrentUserID(c)
 	response.Ok(c, dto.AdminPostListData{
-		Items: dto.NewAdminPostList(posts), Total: total, Page: page, Limit: limit,
+		Items: dto.NewAdminPostList(posts, h.postService.CanAuditIP(c.Request.Context(), userID)), Total: total, Page: page, Limit: limit,
 	})
 }
 
@@ -147,7 +149,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		response.Error(c, appErrors.ErrAuthExpired())
 		return
 	}
-	post, err := h.postService.Create(c.Request.Context(), authorID, &req)
+	post, err := h.postService.Create(c.Request.Context(), authorID, &req, requestutil.ClientIP(c))
 	if err != nil {
 		h.respondPostError(c, err, "create post")
 		return

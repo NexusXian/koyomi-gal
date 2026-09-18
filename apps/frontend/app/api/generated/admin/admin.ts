@@ -73,6 +73,7 @@ import type {
   DtoUpdateGalgameCharacterRequest,
   DtoUpdateGalleryImageRequest,
   DtoVolumeDataResponse,
+  IpgeoUserIPLogListResponse,
   LeveldtoAdjustExperienceRequest,
   LeveldtoCreateLevelConfigRequest,
   LeveldtoExperienceRuleDataResponse,
@@ -99,6 +100,7 @@ import type {
   ListAdminSiteChangelogsParams,
   ListGalleryReviewsParams,
   ListResourceReportsParams,
+  ListUserIPLogsParams,
   ResponseMessageResponse,
   SearchAdminCharactersParams
 } from '../models';
@@ -2389,6 +2391,39 @@ return apiMutator<LeveldtoUserLevelResponse>(getAdjustUserExperienceUrl(id),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(leveldtoAdjustExperienceRequest)
+  }
+);}
+
+
+export const getListUserIPLogsUrl = (id: number,
+    params?: ListUserIPLogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/users/${id}/ip-logs?${stringifiedParams}` : `/api/v1/admin/users/${id}/ip-logs`
+}
+
+/**
+ * 返回用户发帖和评论时记录的完整 IP 与属地；需要 ip_audit:read 权限
+ * @summary 查询用户 IP 历史
+ */
+export const listUserIPLogs = async (id: number,
+    params?: ListUserIPLogsParams, options?: Parameters<typeof apiMutator>[1]): Promise<IpgeoUserIPLogListResponse> => {
+
+  return apiMutator<IpgeoUserIPLogListResponse>(getListUserIPLogsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 

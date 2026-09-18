@@ -263,6 +263,7 @@ onMounted(() => {
             <KunIcon name="lucide:calendar" />
             {{ formatDate(post?.created_at) }}
           </span>
+          <span v-if="post?.ip_region">IP属地：{{ post.ip_region }}</span>
           <span v-if="post?.galgame_id">
             <KunIcon name="lucide:gamepad-2" />
             <NuxtLink :to="`/galgames/${post.galgame_id}`">

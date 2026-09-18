@@ -47,6 +47,7 @@ function openPost(): void {
     </div>
     <div class="post-meta">
       <span :title="formatDate(post.created_at)">{{ formatDate(post.created_at) }}</span>
+      <span v-if="post.ip_region">IP属地：{{ post.ip_region }}</span>
       <span><KunIcon name="lucide:thumbs-up" /> {{ post.like_count ?? 0 }}</span>
       <span><KunIcon name="lucide:message-circle" /> {{ post.comment_count ?? 0 }}</span>
       <span><KunIcon name="lucide:heart" /> {{ post.favorite_count ?? 0 }}</span>
