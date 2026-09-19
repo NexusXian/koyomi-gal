@@ -3,12 +3,10 @@ import { message } from 'ant-design-vue'
 import {
   addGalgameFavorite,
   deleteGalgame,
-  deleteGalgameRating,
   deleteGalgameUserState,
   getGalgame,
   getMyGalgameRelation,
   removeGalgameFavorite,
-  upsertGalgameRating,
   upsertGalgameUserState
 } from '~/api/generated/galgames/galgames'
 import {
@@ -77,7 +75,6 @@ const relatedPosts = ref<DtoPostListData['items']>([])
 const relationLoaded = ref(false)
 const favorited = ref(false)
 const favoritePending = ref(false)
-const myScore = ref(0)
 const myState = ref<number | undefined>(undefined)
 const myPlayHours = ref<number>(0)
 const statePending = ref(false)
@@ -209,7 +206,6 @@ async function loadRelation(): Promise<void> {
       await getMyGalgameRelation(galgameId.value)
     )
     favorited.value = Boolean(relation.favorite?.favorited)
-    myScore.value = relation.rating?.score ?? 0
     myState.value = relation.state?.state
     myPlayHours.value = Math.floor(
       (relation.state?.play_time_minutes ?? 0) / 60
@@ -253,41 +249,6 @@ async function toggleFavorite(): Promise<void> {
     message.error(getApiErrorMessage(error, '操作失败'))
   } finally {
     favoritePending.value = false
-  }
-}
-
-async function submitScore(score: number): Promise<void> {
-  if (!isAuthenticated.value) {
-    message.warning('登录后才能评分')
-    return
-  }
-
-  try {
-    if (score === myScore.value) {
-      return
-    }
-
-    const data = unwrapApiData(
-      await upsertGalgameRating(galgameId.value, {
-        score: score as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
-      })
-    )
-    myScore.value = data.score ?? score
-    message.success(`已评分 ${score} 分`)
-    void refreshNuxtData(`galgame-${galgameId.value}`)
-  } catch (error) {
-    message.error(getApiErrorMessage(error, '评分失败'))
-  }
-}
-
-async function clearScore(): Promise<void> {
-  try {
-    await deleteGalgameRating(galgameId.value)
-    myScore.value = 0
-    message.success('已删除评分')
-    void refreshNuxtData(`galgame-${galgameId.value}`)
-  } catch (error) {
-    message.error(getApiErrorMessage(error, '删除评分失败'))
   }
 }
 
@@ -477,6 +438,8 @@ onMounted(() => {
       </div>
     </KunCard>
 
+    <GalgameRatings :galgame-id="galgameId" />
+
     <GalgameCharacters :key="galgameId" :galgame-id="galgameId" />
 
     <GalgameGallery :galgame-id="galgameId" :game-title="galgame?.title" />
@@ -489,36 +452,6 @@ onMounted(() => {
 
     <div class="side-grid">
       <KunCard padding="lg" class-name="relation-card">
-        <KunHeader name="我的评分" scale="h3" class="section-heading" />
-        <template v-if="isAuthenticated">
-          <div class="rating-row">
-            <KunRating
-              :model-value="myScore"
-              :max="10"
-              :readonly="false"
-              @set="submitScore"
-            />
-            <span class="rating-current">
-              {{ myScore > 0 ? `${myScore} 分` : '未评分' }}
-            </span>
-          </div>
-          <a-button
-            v-if="myScore > 0"
-            type="link"
-            size="small"
-            danger
-            @click="clearScore"
-          >
-            删除评分
-          </a-button>
-        </template>
-        <p v-else class="login-hint">
-          <NuxtLink to="/login">登录</NuxtLink>
-          后即可评分
-        </p>
-
-        <KunDivider />
-
         <KunHeader name="游玩状态" scale="h3" class="section-heading" />
         <template v-if="isAuthenticated && relationLoaded">
           <div class="state-form">
@@ -949,18 +882,6 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   color: var(--color-primary);
-  font-size: 14px;
-}
-
-.rating-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 10px 0 4px;
-}
-
-.rating-current {
-  color: var(--color-default-600);
   font-size: 14px;
 }
 

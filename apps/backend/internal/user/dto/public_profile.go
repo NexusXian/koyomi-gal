@@ -149,6 +149,17 @@ type ProfileGalgameData struct {
 	CoverURL       string    `json:"cover_url"`
 	CoverSensitive bool      `json:"cover_sensitive"`
 	Score          *int16    `json:"score,omitempty"`
+	Visual         *int16    `json:"visual,omitempty" extensions:"x-nullable"`
+	Story          *int16    `json:"story,omitempty" extensions:"x-nullable"`
+	Music          *int16    `json:"music,omitempty" extensions:"x-nullable"`
+	Character      *int16    `json:"character,omitempty" extensions:"x-nullable"`
+	Branch         *int16    `json:"branch,omitempty" extensions:"x-nullable"`
+	System         *int16    `json:"system,omitempty" extensions:"x-nullable"`
+	Voice          *int16    `json:"voice,omitempty" extensions:"x-nullable"`
+	Replay         *int16    `json:"replay,omitempty" extensions:"x-nullable"`
+	Recommendation *int16    `json:"recommendation,omitempty" extensions:"x-nullable" enums:"-1,0,1,2"`
+	ReviewText     *string   `json:"review_text,omitempty" extensions:"x-nullable"`
+	SpoilerLevel   *int16    `json:"spoiler_level,omitempty" extensions:"x-nullable" enums:"0,1,2"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }

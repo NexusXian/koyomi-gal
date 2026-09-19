@@ -4541,12 +4541,116 @@ definitions:
       createAnnouncement:
         type: boolean
     type: object
+  dto.PutRatingRequest:
+    properties:
+      branch:
+        example: 7
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      character:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      music:
+        example: 10
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      overall:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+      recommendation:
+        enum:
+        - -1
+        - 0
+        - 1
+        - 2
+        example: 1
+        type: integer
+        x-nullable: true
+      replay:
+        example: 7
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      review_text:
+        example: A strong story with excellent music.
+        type: string
+        x-nullable: true
+      spoiler_level:
+        enum:
+        - 0
+        - 1
+        - 2
+        example: 0
+        type: integer
+      story:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      system:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      visual:
+        example: 9
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      voice:
+        example: 9
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+    required:
+    - overall
+    type: object
   dto.RatingData:
     properties:
       created_at:
         type: string
+      dimensions:
+        $ref: '#/definitions/dto.RatingDimensions'
+      like_count:
+        example: 12
+        type: integer
+      overall:
+        example: 8
+        type: integer
+      recommendation:
+        enum:
+        - -1
+        - 0
+        - 1
+        - 2
+        type: integer
+        x-nullable: true
+      review_text:
+        type: string
+        x-nullable: true
       score:
         example: 8
+        type: integer
+      spoiler_level:
+        enum:
+        - 0
+        - 1
+        - 2
+        example: 0
         type: integer
       updated_at:
         type: string
@@ -4562,6 +4666,183 @@ definitions:
         example: success
         type: string
     type: object
+  dto.RatingDimensionSummaryData:
+    properties:
+      average:
+        example: 8.25
+        type: number
+        x-nullable: true
+      count:
+        example: 12
+        type: integer
+    type: object
+  dto.RatingDimensions:
+    properties:
+      branch:
+        example: 7
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      character:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      music:
+        example: 10
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      replay:
+        example: 7
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      story:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      system:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      visual:
+        example: 9
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+      voice:
+        example: 9
+        maximum: 10
+        minimum: 1
+        type: integer
+        x-nullable: true
+    type: object
+  dto.RatingLikeData:
+    properties:
+      like_count:
+        example: 12
+        type: integer
+      liked:
+        example: true
+        type: boolean
+      rating_id:
+        example: 101
+        type: integer
+    type: object
+  dto.RatingLikeResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.RatingLikeData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.RatingListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.RatingRecordData'
+        type: array
+      page:
+        example: 1
+        type: integer
+      page_size:
+        example: 20
+        type: integer
+      total:
+        example: 42
+        type: integer
+    type: object
+  dto.RatingListResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.RatingListData'
+      msg:
+        example: success
+        type: string
+    type: object
+  dto.RatingRecordData:
+    properties:
+      created_at:
+        type: string
+      dimensions:
+        $ref: '#/definitions/dto.RatingDimensions'
+      galgame_id:
+        example: 10
+        type: integer
+      id:
+        example: 101
+        type: integer
+      like_count:
+        example: 12
+        type: integer
+      liked:
+        example: true
+        type: boolean
+      overall:
+        example: 8
+        type: integer
+      play_status:
+        enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        type: integer
+        x-nullable: true
+      recommendation:
+        enum:
+        - -1
+        - 0
+        - 1
+        - 2
+        type: integer
+        x-nullable: true
+      review_text:
+        type: string
+        x-nullable: true
+      spoiler_level:
+        enum:
+        - 0
+        - 1
+        - 2
+        example: 0
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/userdto.PublicUserSummary'
+    type: object
+  dto.RatingRecordResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/dto.RatingRecordData'
+        x-nullable: true
+      msg:
+        example: success
+        type: string
+    type: object
   dto.RatingSummary:
     properties:
       average:
@@ -4570,6 +4851,48 @@ definitions:
       count:
         example: 120
         type: integer
+    type: object
+  dto.RatingSummaryData:
+    properties:
+      count:
+        example: 42
+        type: integer
+      dimensions:
+        $ref: '#/definitions/dto.RatingSummaryDimensionsData'
+      overall:
+        example: 8.32
+        type: number
+        x-nullable: true
+    type: object
+  dto.RatingSummaryDimensionsData:
+    properties:
+      branch:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+      character:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+      music:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+      replay:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+      story:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+      system:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+      visual:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+      voice:
+        $ref: '#/definitions/dto.RatingDimensionSummaryData'
+    type: object
+  dto.RatingSummaryResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.RatingSummaryData'
+      msg:
+        example: success
+        type: string
     type: object
   dto.RelatedNovelData:
     properties:
@@ -6361,6 +6684,7 @@ definitions:
     - comment_replied
     - post_liked
     - comment_liked
+    - rating_liked
     - galgame_submitted
     - galgame_approved
     - galgame_rejected
@@ -6387,6 +6711,7 @@ definitions:
     - TypeCommentReplied
     - TypePostLiked
     - TypeCommentLiked
+    - TypeRatingLiked
     - TypeGalgameSubmitted
     - TypeGalgameApproved
     - TypeGalgameRejected
@@ -6778,6 +7103,12 @@ definitions:
     type: object
   userdto.ProfileGalgameData:
     properties:
+      branch:
+        type: integer
+        x-nullable: true
+      character:
+        type: integer
+        x-nullable: true
       cover_sensitive:
         type: boolean
       cover_url:
@@ -6786,14 +7117,50 @@ definitions:
         type: string
       id:
         type: integer
+      music:
+        type: integer
+        x-nullable: true
+      recommendation:
+        enum:
+        - -1
+        - 0
+        - 1
+        - 2
+        type: integer
+        x-nullable: true
+      replay:
+        type: integer
+        x-nullable: true
+      review_text:
+        type: string
+        x-nullable: true
       score:
         type: integer
       slug:
         type: string
+      spoiler_level:
+        enum:
+        - 0
+        - 1
+        - 2
+        type: integer
+        x-nullable: true
+      story:
+        type: integer
+        x-nullable: true
+      system:
+        type: integer
+        x-nullable: true
       title:
         type: string
       updated_at:
         type: string
+      visual:
+        type: integer
+        x-nullable: true
+      voice:
+        type: integer
+        x-nullable: true
     type: object
   userdto.ProfileGalgameListData:
     properties:
@@ -13374,6 +13741,187 @@ paths:
       summary: 评分 Galgame
       tags:
       - galgames
+  /api/v1/galgames/{id}/ratings:
+    get:
+      description: 支持 newest、highest、lowest、popular 排序；已登录时返回当前用户的 liked 状态
+      operationId: listGalgameRatings
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        maximum: 100
+        name: page_size
+        type: integer
+      - description: 兼容的每页数量参数
+        in: query
+        maximum: 100
+        name: limit
+        type: integer
+      - default: newest
+        description: 排序
+        enum:
+        - newest
+        - highest
+        - lowest
+        - popular
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评价列表
+          schema:
+            $ref: '#/definitions/dto.RatingListResponse'
+        "400":
+          description: 查询参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查询 Galgame 评价列表
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/ratings/me:
+    delete:
+      operationId: deleteMyGalgameRating
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评价已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 或评价不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除当前用户的 Galgame 评价
+      tags:
+      - galgames
+    get:
+      operationId: getMyGalgameRating
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评价详情；未评分时 data 为 null
+          schema:
+            $ref: '#/definitions/dto.RatingRecordResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询当前用户的 Galgame 评价
+      tags:
+      - galgames
+    put:
+      consumes:
+      - application/json
+      description: 使用扁平字段完整替换可编辑评价；overall 使用现有 score 存储；未提供的可空字段保存为 null；维度评分范围均为
+        1-10；recommendation 为 -1/0/1/2；spoiler_level 为 0/1/2
+      operationId: putMyGalgameRating
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 多维评价
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PutRatingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评价详情
+          schema:
+            $ref: '#/definitions/dto.RatingRecordResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 保存评价失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建或更新当前用户的 Galgame 评价
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/ratings/summary:
+    get:
+      description: overall 和每个维度均从数据库评价聚合；无评价的平均值为 null，维度附带各自有效评分数
+      operationId: getGalgameRatingSummary
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 评价汇总
+          schema:
+            $ref: '#/definitions/dto.RatingSummaryResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 查询 Galgame 评价汇总
+      tags:
+      - galgames
   /api/v1/galgames/{id}/state:
     delete:
       description: 删除当前用户对 Galgame 的游玩状态
@@ -13455,6 +14003,65 @@ paths:
       security:
       - BearerAuth: []
       summary: 设置 Galgame 游玩状态
+      tags:
+      - galgames
+  /api/v1/game-ratings/{rating_id}/like:
+    delete:
+      description: 幂等操作，未点赞时仍返回成功
+      operationId: unlikeGalgameRating
+      parameters:
+      - description: 评价 ID
+        in: path
+        name: rating_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 点赞状态
+          schema:
+            $ref: '#/definitions/dto.RatingLikeResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评价不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 取消评价点赞
+      tags:
+      - galgames
+    post:
+      description: 幂等操作，重复点赞仍返回成功
+      operationId: likeGalgameRating
+      parameters:
+      - description: 评价 ID
+        in: path
+        name: rating_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 点赞状态
+          schema:
+            $ref: '#/definitions/dto.RatingLikeResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评价不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 点赞评价
       tags:
       - galgames
   /api/v1/home:

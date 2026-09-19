@@ -261,8 +261,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	novelRelationSvc := novelService.NewRelationService(relationRepository, novelRepository, galgameRepository)
 	novelRelationSvc.SetContributionService(contributionSvc)
 
-	userRelationRepository := galgameRepo.NewUserRelationRepository(postgresDB)
-	ratingService := galgameService.NewRatingService(galgameRepository, userRelationRepository)
+	userRelationRepository := galgameRepo.NewUserRelationRepository(postgresDB, cfg.R2.PublicURL)
+	ratingService := galgameService.NewRatingService(galgameRepository, userRelationRepository, redisClient)
 	favoriteService := galgameService.NewFavoriteService(galgameRepository, userRelationRepository)
 	userStateService := galgameService.NewUserStateService(galgameRepository, userRelationRepository)
 	userRelationService := galgameService.NewUserRelationService(galgameRepository, userRelationRepository)
@@ -412,6 +412,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	postService.SetActivityRecorder(userActivityService)
 	commentService.SetActivityRecorder(userActivityService)
 	ratingService.SetActivityRecorder(userActivityService)
+	ratingService.SetNotificationService(notificationSvc)
 	favoriteService.SetActivityRecorder(userActivityService)
 	resourceSvc.SetActivityRecorder(userActivityService)
 	catalogService.SetActivityRecorder(userActivityService)

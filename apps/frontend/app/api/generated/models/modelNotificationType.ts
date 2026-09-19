@@ -14,6 +14,7 @@ export const ModelNotificationType = {
   TypeCommentReplied: 'comment_replied',
   TypePostLiked: 'post_liked',
   TypeCommentLiked: 'comment_liked',
+  TypeRatingLiked: 'rating_liked',
   TypeGalgameSubmitted: 'galgame_submitted',
   TypeGalgameApproved: 'galgame_approved',
   TypeGalgameRejected: 'galgame_rejected',

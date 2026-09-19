@@ -5,9 +5,18 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoRatingDataRecommendation } from './dtoRatingDataRecommendation';
+import type { DtoRatingDataSpoilerLevel } from './dtoRatingDataSpoilerLevel';
+import type { DtoRatingDimensions } from './dtoRatingDimensions';
 
 export interface DtoRatingData {
   created_at?: string;
+  dimensions?: DtoRatingDimensions;
+  like_count?: number;
+  overall?: number;
+  recommendation?: DtoRatingDataRecommendation;
+  review_text?: string;
   score?: number;
+  spoiler_level?: DtoRatingDataSpoilerLevel;
   updated_at?: string;
 }

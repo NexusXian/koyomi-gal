@@ -2,11 +2,11 @@ class LevelSummary {
   const LevelSummary({this.level, this.name, this.color, this.iconUrl});
 
   factory LevelSummary.fromMap(Map<String, dynamic> map) => LevelSummary(
-        level: (map['level'] as num?)?.toInt(),
-        name: map['name'] as String?,
-        color: map['color'] as String?,
-        iconUrl: map['icon_url'] as String?,
-      );
+    level: (map['level'] as num?)?.toInt(),
+    name: map['name'] as String?,
+    color: map['color'] as String?,
+    iconUrl: map['icon_url'] as String?,
+  );
 
   final int? level;
   final String? name;
@@ -54,15 +54,15 @@ class ProfileAccess {
   });
 
   factory ProfileAccess.fromMap(Map<String, dynamic> map) => ProfileAccess(
-        canViewProfile: map['can_view_profile'] as bool? ?? false,
-        canViewPosts: map['can_view_posts'] as bool? ?? false,
-        canViewComments: map['can_view_comments'] as bool? ?? false,
-        canViewRatings: map['can_view_ratings'] as bool? ?? false,
-        canViewFavorites: map['can_view_favorites'] as bool? ?? false,
-        canViewActivity: map['can_view_activity'] as bool? ?? false,
-        canViewBirthday: map['can_view_birthday'] as bool? ?? false,
-        canViewLocation: map['can_view_location'] as bool? ?? false,
-      );
+    canViewProfile: map['can_view_profile'] as bool? ?? false,
+    canViewPosts: map['can_view_posts'] as bool? ?? false,
+    canViewComments: map['can_view_comments'] as bool? ?? false,
+    canViewRatings: map['can_view_ratings'] as bool? ?? false,
+    canViewFavorites: map['can_view_favorites'] as bool? ?? false,
+    canViewActivity: map['can_view_activity'] as bool? ?? false,
+    canViewBirthday: map['can_view_birthday'] as bool? ?? false,
+    canViewLocation: map['can_view_location'] as bool? ?? false,
+  );
 
   final bool canViewProfile;
   final bool canViewPosts;
@@ -166,20 +166,20 @@ class UserLevelData {
   });
 
   factory UserLevelData.fromMap(Map<String, dynamic> map) => UserLevelData(
-        level: (map['level'] as num?)?.toInt(),
-        levelName: map['level_name'] as String?,
-        color: map['color'] as String?,
-        totalExp: (map['total_exp'] as num?)?.toInt(),
-        currentLevelExp: (map['current_level_exp'] as num?)?.toInt(),
-        nextLevel: (map['next_level'] as num?)?.toInt(),
-        nextLevelName: map['next_level_name'] as String?,
-        nextLevelExp: (map['next_level_exp'] as num?)?.toInt(),
-        remainingExp: (map['remaining_exp'] as num?)?.toInt(),
-        progress: (map['progress'] as num?)?.toDouble(),
-        isMaxLevel: map['is_max_level'] as bool? ?? false,
-        checkedInToday: map['checked_in_today'] as bool? ?? false,
-        consecutiveDays: (map['consecutive_days'] as num?)?.toInt(),
-      );
+    level: (map['level'] as num?)?.toInt(),
+    levelName: map['level_name'] as String?,
+    color: map['color'] as String?,
+    totalExp: (map['total_exp'] as num?)?.toInt(),
+    currentLevelExp: (map['current_level_exp'] as num?)?.toInt(),
+    nextLevel: (map['next_level'] as num?)?.toInt(),
+    nextLevelName: map['next_level_name'] as String?,
+    nextLevelExp: (map['next_level_exp'] as num?)?.toInt(),
+    remainingExp: (map['remaining_exp'] as num?)?.toInt(),
+    progress: (map['progress'] as num?)?.toDouble(),
+    isMaxLevel: map['is_max_level'] as bool? ?? false,
+    checkedInToday: map['checked_in_today'] as bool? ?? false,
+    consecutiveDays: (map['consecutive_days'] as num?)?.toInt(),
+  );
 
   final int? level;
   final String? levelName;
@@ -329,19 +329,18 @@ class ProfilePostData {
     this.createdAt,
   });
 
-  factory ProfilePostData.fromMap(Map<String, dynamic> map) =>
-      ProfilePostData(
-        id: (map['id'] as num?)?.toInt(),
-        title: map['title'] as String?,
-        content: map['content'] as String?,
-        galgameId: (map['galgame_id'] as num?)?.toInt(),
-        galgameTitle: map['galgame_title'] as String?,
-        likeCount: (map['like_count'] as num?)?.toInt() ?? 0,
-        commentCount: (map['comment_count'] as num?)?.toInt() ?? 0,
-        favoriteCount: (map['favorite_count'] as num?)?.toInt() ?? 0,
-        ipRegion: map['ip_region'] as String?,
-        createdAt: map['created_at'] as String?,
-      );
+  factory ProfilePostData.fromMap(Map<String, dynamic> map) => ProfilePostData(
+    id: (map['id'] as num?)?.toInt(),
+    title: map['title'] as String?,
+    content: map['content'] as String?,
+    galgameId: (map['galgame_id'] as num?)?.toInt(),
+    galgameTitle: map['galgame_title'] as String?,
+    likeCount: (map['like_count'] as num?)?.toInt() ?? 0,
+    commentCount: (map['comment_count'] as num?)?.toInt() ?? 0,
+    favoriteCount: (map['favorite_count'] as num?)?.toInt() ?? 0,
+    ipRegion: map['ip_region'] as String?,
+    createdAt: map['created_at'] as String?,
+  );
 
   final int? id;
   final String? title;
@@ -397,6 +396,17 @@ class ProfileGalgameData {
     this.coverUrl,
     this.coverSensitive = false,
     this.score,
+    this.visual,
+    this.story,
+    this.music,
+    this.character,
+    this.branch,
+    this.system,
+    this.voice,
+    this.replay,
+    this.recommendation,
+    this.reviewText,
+    this.spoilerLevel,
     this.createdAt,
   });
 
@@ -408,6 +418,17 @@ class ProfileGalgameData {
         coverUrl: map['cover_url'] as String?,
         coverSensitive: map['cover_sensitive'] as bool? ?? false,
         score: (map['score'] as num?)?.toInt(),
+        visual: (map['visual'] as num?)?.toInt(),
+        story: (map['story'] as num?)?.toInt(),
+        music: (map['music'] as num?)?.toInt(),
+        character: (map['character'] as num?)?.toInt(),
+        branch: (map['branch'] as num?)?.toInt(),
+        system: (map['system'] as num?)?.toInt(),
+        voice: (map['voice'] as num?)?.toInt(),
+        replay: (map['replay'] as num?)?.toInt(),
+        recommendation: (map['recommendation'] as num?)?.toInt(),
+        reviewText: map['review_text'] as String?,
+        spoilerLevel: (map['spoiler_level'] as num?)?.toInt(),
         createdAt: map['created_at'] as String?,
       );
 
@@ -417,7 +438,29 @@ class ProfileGalgameData {
   final String? coverUrl;
   final bool coverSensitive;
   final int? score;
+  final int? visual;
+  final int? story;
+  final int? music;
+  final int? character;
+  final int? branch;
+  final int? system;
+  final int? voice;
+  final int? replay;
+  final int? recommendation;
+  final String? reviewText;
+  final int? spoilerLevel;
   final String? createdAt;
+
+  bool get hasDetailedRating =>
+      visual != null ||
+      story != null ||
+      music != null ||
+      character != null ||
+      branch != null ||
+      system != null ||
+      voice != null ||
+      replay != null ||
+      (reviewText?.isNotEmpty ?? false);
 }
 
 class UserActivityData {

@@ -14,13 +14,19 @@ import type {
   DtoGalgameListResponse,
   DtoGalgameUserRelationResponse,
   DtoGalleryListResponse,
+  DtoPutRatingRequest,
   DtoRatingDataResponse,
+  DtoRatingLikeResponse,
+  DtoRatingListResponse,
+  DtoRatingRecordResponse,
+  DtoRatingSummaryResponse,
   DtoUpdateGalgameRequest,
   DtoUpsertRatingRequest,
   DtoUpsertUserStateRequest,
   DtoUserStateDataResponse,
   ListGalgameCharactersParams,
   ListGalgameContributorsParams,
+  ListGalgameRatingsParams,
   ListGalgamesParams,
   ResponseMessageResponse
 } from '../models';
@@ -384,6 +390,140 @@ export const deleteGalgameRating = async (id: number, options?: Parameters<typeo
 );}
 
 
+export const getListGalgameRatingsUrl = (id: number,
+    params?: ListGalgameRatingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/galgames/${id}/ratings?${stringifiedParams}` : `/api/v1/galgames/${id}/ratings`
+}
+
+/**
+ * 支持 newest、highest、lowest、popular 排序；已登录时返回当前用户的 liked 状态
+ * @summary 查询 Galgame 评价列表
+ */
+export const listGalgameRatings = async (id: number,
+    params?: ListGalgameRatingsParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoRatingListResponse> => {
+
+  return apiMutator<DtoRatingListResponse>(getListGalgameRatingsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getGetMyGalgameRatingUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/galgames/${id}/ratings/me`
+}
+
+/**
+ * @summary 查询当前用户的 Galgame 评价
+ */
+export const getMyGalgameRating = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoRatingRecordResponse> => {
+
+  return apiMutator<DtoRatingRecordResponse>(getGetMyGalgameRatingUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getPutMyGalgameRatingUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/galgames/${id}/ratings/me`
+}
+
+/**
+ * 使用扁平字段完整替换可编辑评价；overall 使用现有 score 存储；未提供的可空字段保存为 null；维度评分范围均为 1-10；recommendation 为 -1/0/1/2；spoiler_level 为 0/1/2
+ * @summary 创建或更新当前用户的 Galgame 评价
+ */
+export const putMyGalgameRating = async (id: number,
+    dtoPutRatingRequest: DtoPutRatingRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoRatingRecordResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoRatingRecordResponse>(getPutMyGalgameRatingUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoPutRatingRequest)
+  }
+);}
+
+
+export const getDeleteMyGalgameRatingUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/galgames/${id}/ratings/me`
+}
+
+/**
+ * @summary 删除当前用户的 Galgame 评价
+ */
+export const deleteMyGalgameRating = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteMyGalgameRatingUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getGetGalgameRatingSummaryUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/galgames/${id}/ratings/summary`
+}
+
+/**
+ * overall 和每个维度均从数据库评价聚合；无评价的平均值为 null，维度附带各自有效评分数
+ * @summary 查询 Galgame 评价汇总
+ */
+export const getGalgameRatingSummary = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoRatingSummaryResponse> => {
+
+  return apiMutator<DtoRatingSummaryResponse>(getGetGalgameRatingSummaryUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
 export const getUpsertGalgameUserStateUrl = (id: number,) => {
 
 
@@ -430,6 +570,54 @@ export const getDeleteGalgameUserStateUrl = (id: number,) => {
 export const deleteGalgameUserState = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
 
   return apiMutator<ResponseMessageResponse>(getDeleteGalgameUserStateUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getLikeGalgameRatingUrl = (ratingId: number,) => {
+
+
+
+
+  return `/api/v1/game-ratings/${ratingId}/like`
+}
+
+/**
+ * 幂等操作，重复点赞仍返回成功
+ * @summary 点赞评价
+ */
+export const likeGalgameRating = async (ratingId: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoRatingLikeResponse> => {
+
+  return apiMutator<DtoRatingLikeResponse>(getLikeGalgameRatingUrl(ratingId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export const getUnlikeGalgameRatingUrl = (ratingId: number,) => {
+
+
+
+
+  return `/api/v1/game-ratings/${ratingId}/like`
+}
+
+/**
+ * 幂等操作，未点赞时仍返回成功
+ * @summary 取消评价点赞
+ */
+export const unlikeGalgameRating = async (ratingId: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoRatingLikeResponse> => {
+
+  return apiMutator<DtoRatingLikeResponse>(getUnlikeGalgameRatingUrl(ratingId),
   {
     ...options,
     method: 'DELETE'

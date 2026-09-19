@@ -9385,6 +9385,278 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/galgames/{id}/ratings": {
+            "get": {
+                "description": "支持 newest、highest、lowest、popular 排序；已登录时返回当前用户的 liked 状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "查询 Galgame 评价列表",
+                "operationId": "listGalgameRatings",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "description": "兼容的每页数量参数",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "newest",
+                            "highest",
+                            "lowest",
+                            "popular"
+                        ],
+                        "type": "string",
+                        "default": "newest",
+                        "description": "排序",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "评价列表",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RatingListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/galgames/{id}/ratings/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "查询当前用户的 Galgame 评价",
+                "operationId": "getMyGalgameRating",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "评价详情；未评分时 data 为 null",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RatingRecordResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "使用扁平字段完整替换可编辑评价；overall 使用现有 score 存储；未提供的可空字段保存为 null；维度评分范围均为 1-10；recommendation 为 -1/0/1/2；spoiler_level 为 0/1/2",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "创建或更新当前用户的 Galgame 评价",
+                "operationId": "putMyGalgameRating",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "多维评价",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PutRatingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "评价详情",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RatingRecordResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "保存评价失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "删除当前用户的 Galgame 评价",
+                "operationId": "deleteMyGalgameRating",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "评价已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 或评价不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/galgames/{id}/ratings/summary": {
+            "get": {
+                "description": "overall 和每个维度均从数据库评价聚合；无评价的平均值为 null，维度附带各自有效评分数",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "查询 Galgame 评价汇总",
+                "operationId": "getGalgameRatingSummary",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "评价汇总",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RatingSummaryResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/galgames/{id}/state": {
             "put": {
                 "security": [
@@ -9506,6 +9778,98 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "删除游玩状态失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/game-ratings/{rating_id}/like": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "幂等操作，重复点赞仍返回成功",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "点赞评价",
+                "operationId": "likeGalgameRating",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "评价 ID",
+                        "name": "rating_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "点赞状态",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RatingLikeResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "评价不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "幂等操作，未点赞时仍返回成功",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "取消评价点赞",
+                "operationId": "unlikeGalgameRating",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "评价 ID",
+                        "name": "rating_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "点赞状态",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RatingLikeResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "评价不存在",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -21348,15 +21712,144 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PutRatingRequest": {
+            "type": "object",
+            "required": [
+                "overall"
+            ],
+            "properties": {
+                "branch": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 7
+                },
+                "character": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 8
+                },
+                "music": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 10
+                },
+                "overall": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "example": 8
+                },
+                "recommendation": {
+                    "type": "integer",
+                    "enum": [
+                        -1,
+                        0,
+                        1,
+                        2
+                    ],
+                    "x-nullable": true,
+                    "example": 1
+                },
+                "replay": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 7
+                },
+                "review_text": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": "A strong story with excellent music."
+                },
+                "spoiler_level": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "example": 0
+                },
+                "story": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 8
+                },
+                "system": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 8
+                },
+                "visual": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 9
+                },
+                "voice": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 9
+                }
+            }
+        },
         "dto.RatingData": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string"
                 },
+                "dimensions": {
+                    "$ref": "#/definitions/dto.RatingDimensions"
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "overall": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "recommendation": {
+                    "type": "integer",
+                    "enum": [
+                        -1,
+                        0,
+                        1,
+                        2
+                    ],
+                    "x-nullable": true
+                },
+                "review_text": {
+                    "type": "string",
+                    "x-nullable": true
+                },
                 "score": {
                     "type": "integer",
                     "example": 8
+                },
+                "spoiler_level": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "example": 0
                 },
                 "updated_at": {
                     "type": "string"
@@ -21379,6 +21872,245 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RatingDimensionSummaryData": {
+            "type": "object",
+            "properties": {
+                "average": {
+                    "type": "number",
+                    "x-nullable": true,
+                    "example": 8.25
+                },
+                "count": {
+                    "type": "integer",
+                    "example": 12
+                }
+            }
+        },
+        "dto.RatingDimensions": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 7
+                },
+                "character": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 8
+                },
+                "music": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 10
+                },
+                "replay": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 7
+                },
+                "story": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 8
+                },
+                "system": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 8
+                },
+                "visual": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 9
+                },
+                "voice": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "x-nullable": true,
+                    "example": 9
+                }
+            }
+        },
+        "dto.RatingLikeData": {
+            "type": "object",
+            "properties": {
+                "like_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "liked": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "rating_id": {
+                    "type": "integer",
+                    "example": 101
+                }
+            }
+        },
+        "dto.RatingLikeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.RatingLikeData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.RatingListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RatingRecordData"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 42
+                }
+            }
+        },
+        "dto.RatingListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.RatingListData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "dto.RatingRecordData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "dimensions": {
+                    "$ref": "#/definitions/dto.RatingDimensions"
+                },
+                "galgame_id": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 101
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "liked": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "overall": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "play_status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "x-nullable": true
+                },
+                "recommendation": {
+                    "type": "integer",
+                    "enum": [
+                        -1,
+                        0,
+                        1,
+                        2
+                    ],
+                    "x-nullable": true
+                },
+                "review_text": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "spoiler_level": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "example": 0
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/userdto.PublicUserSummary"
+                }
+            }
+        },
+        "dto.RatingRecordResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.RatingRecordData"
+                        }
+                    ],
+                    "x-nullable": true
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.RatingSummary": {
             "type": "object",
             "properties": {
@@ -21389,6 +22121,68 @@ const docTemplate = `{
                 "count": {
                     "type": "integer",
                     "example": 120
+                }
+            }
+        },
+        "dto.RatingSummaryData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "dimensions": {
+                    "$ref": "#/definitions/dto.RatingSummaryDimensionsData"
+                },
+                "overall": {
+                    "type": "number",
+                    "x-nullable": true,
+                    "example": 8.32
+                }
+            }
+        },
+        "dto.RatingSummaryDimensionsData": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                },
+                "character": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                },
+                "music": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                },
+                "replay": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                },
+                "story": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                },
+                "system": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                },
+                "visual": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                },
+                "voice": {
+                    "$ref": "#/definitions/dto.RatingDimensionSummaryData"
+                }
+            }
+        },
+        "dto.RatingSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.RatingSummaryData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -23868,6 +24662,7 @@ const docTemplate = `{
                 "comment_replied",
                 "post_liked",
                 "comment_liked",
+                "rating_liked",
                 "galgame_submitted",
                 "galgame_approved",
                 "galgame_rejected",
@@ -23894,6 +24689,7 @@ const docTemplate = `{
                 "TypeCommentReplied",
                 "TypePostLiked",
                 "TypeCommentLiked",
+                "TypeRatingLiked",
                 "TypeGalgameSubmitted",
                 "TypeGalgameApproved",
                 "TypeGalgameRejected",
@@ -24455,6 +25251,14 @@ const docTemplate = `{
         "userdto.ProfileGalgameData": {
             "type": "object",
             "properties": {
+                "branch": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "character": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
                 "cover_sensitive": {
                     "type": "boolean"
                 },
@@ -24467,17 +25271,64 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "music": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "recommendation": {
+                    "type": "integer",
+                    "enum": [
+                        -1,
+                        0,
+                        1,
+                        2
+                    ],
+                    "x-nullable": true
+                },
+                "replay": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "review_text": {
+                    "type": "string",
+                    "x-nullable": true
+                },
                 "score": {
                     "type": "integer"
                 },
                 "slug": {
                     "type": "string"
                 },
+                "spoiler_level": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "x-nullable": true
+                },
+                "story": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "system": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
                 "title": {
                     "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "visual": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "voice": {
+                    "type": "integer",
+                    "x-nullable": true
                 }
             }
         },

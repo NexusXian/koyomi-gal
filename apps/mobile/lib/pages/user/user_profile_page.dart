@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/utils/format.dart';
+import '../../features/game_ratings/models/game_rating_models.dart';
 import '../../models/message_models.dart';
 import '../../models/pagination.dart';
 import '../../models/user_models.dart';
@@ -62,8 +63,9 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
       _error = null;
     });
     try {
-      final profile =
-          await ref.read(userServiceProvider).profile(widget.username);
+      final profile = await ref
+          .read(userServiceProvider)
+          .profile(widget.username);
       if (!mounted) {
         return;
       }
@@ -110,9 +112,8 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
         _TabDef('帖子', profile.postCount),
         _ProfileListTab<ProfilePostData>(
           username: widget.username,
-          fetch: (page) => ref
-              .read(userServiceProvider)
-              .posts(widget.username, page: page),
+          fetch: (page) =>
+              ref.read(userServiceProvider).posts(widget.username, page: page),
         ),
       ));
     }
@@ -132,8 +133,9 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
         _TabDef('评分', profile.ratingCount),
         _ProfileListTab<ProfileGalgameData>(
           username: widget.username,
-          fetch: (page) =>
-              ref.read(userServiceProvider).ratings(widget.username, page: page),
+          fetch: (page) => ref
+              .read(userServiceProvider)
+              .ratings(widget.username, page: page),
         ),
       ));
     }
@@ -167,9 +169,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
         ],
         body: tabs.isEmpty
             ? const EmptyView(hint: '暂无公开内容')
-            : TabBarView(
-                children: [for (final tab in tabs) tab.$2],
-              ),
+            : TabBarView(children: [for (final tab in tabs) tab.$2]),
       ),
     );
   }
@@ -200,7 +200,10 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
               const SizedBox(height: 8),
               Text(
                 profile.displayName ?? profile.username ?? '',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               Text(
                 '@${profile.username}',
@@ -232,7 +235,9 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                     _MetaChip(icon: Icons.wc_outlined, label: profile.gender!),
                   if (profile.location?.isNotEmpty == true)
                     _MetaChip(
-                        icon: Icons.place_outlined, label: profile.location!),
+                      icon: Icons.place_outlined,
+                      label: profile.location!,
+                    ),
                   _MetaChip(
                     icon: Icons.cake_outlined,
                     label: '加入于 ${formatDate(profile.registeredAt)}',
@@ -261,10 +266,12 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
   }
 
   Widget _buildMessageAction(PublicUserProfile profile) {
-    final auth = ref.watch(authControllerProvider.select(
-      (controller) => controller.status,
-    ));
-    if (auth != AuthStatus.authenticated || profile.isSelf || profile.id == null) {
+    final auth = ref.watch(
+      authControllerProvider.select((controller) => controller.status),
+    );
+    if (auth != AuthStatus.authenticated ||
+        profile.isSelf ||
+        profile.id == null) {
       return const SizedBox.shrink();
     }
     return OutlinedButton.icon(
@@ -286,6 +293,36 @@ class _TabDef {
 
   final String label;
   final int count;
+}
+
+class _TileChip extends StatelessWidget {
+  const _TileChip({required this.label, this.warning = false});
+
+  final String label;
+  final bool warning;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: warning
+            ? theme.colorScheme.errorContainer.withValues(alpha: 0.6)
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: warning
+              ? theme.colorScheme.onErrorContainer
+              : theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
 }
 
 class _MetaChip extends StatelessWidget {
@@ -315,10 +352,7 @@ class _MetaChip extends StatelessWidget {
 }
 
 class _ProfileListTab<T> extends ConsumerStatefulWidget {
-  const _ProfileListTab({
-    required this.username,
-    required this.fetch,
-  });
+  const _ProfileListTab({required this.username, required this.fetch});
 
   final String username;
   final Future<Paginated<T>> Function(int page) fetch;
@@ -462,8 +496,9 @@ class _ProfileListTabState<T> extends ConsumerState<_ProfileListTab<T>> {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
-        onTap:
-            item.postId == null ? null : () => context.push('/posts/${item.postId}'),
+        onTap: item.postId == null
+            ? null
+            : () => context.push('/posts/${item.postId}'),
       );
     }
     if (item is ProfileGalgameData) {
@@ -481,12 +516,89 @@ class _ProfileListTabState<T> extends ConsumerState<_ProfileListTab<T>> {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 14),
         ),
-        subtitle: item.score != null
-            ? Text('评分 ${item.score}', style: const TextStyle(fontSize: 12))
-            : null,
-        onTap: item.id == null ? null : () => context.push('/galgames/${item.id}'),
+        subtitle: _buildGalgameTileSubtitle(item),
+        onTap: item.id == null
+            ? null
+            : () => context.push('/galgames/${item.id}'),
       );
     }
     return const SizedBox.shrink();
+  }
+
+  Widget _buildGalgameTileSubtitle(ProfileGalgameData item) {
+    if (!item.hasDetailedRating) {
+      return item.score != null
+          ? Text('评分 ${item.score}', style: const TextStyle(fontSize: 12))
+          : const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    final dimensionLabels = <String>[];
+    void addDimension(String label, int? value) {
+      if (value != null) {
+        dimensionLabels.add('$label $value');
+      }
+    }
+
+    addDimension('画面', item.visual);
+    addDimension('剧情', item.story);
+    addDimension('音乐', item.music);
+    addDimension('角色', item.character);
+    addDimension('分支', item.branch);
+    addDimension('系统', item.system);
+    addDimension('配音', item.voice);
+    addDimension('重玩', item.replay);
+
+    final spoiler =
+        RatingSpoilerLevel.fromValue(item.spoilerLevel) ??
+        RatingSpoilerLevel.none;
+    final severe = spoiler == RatingSpoilerLevel.severe;
+    final review = item.reviewText ?? '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 2),
+        Wrap(
+          spacing: 8,
+          runSpacing: 2,
+          children: [
+            if (item.score != null)
+              Text('评分 ${item.score}', style: const TextStyle(fontSize: 12)),
+            for (final label in dimensionLabels)
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
+        if (review.isNotEmpty && !severe) ...[
+          const SizedBox(height: 3),
+          Text(
+            review,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+        const SizedBox(height: 3),
+        Wrap(
+          spacing: 6,
+          children: [
+            if (RatingRecommendation.fromValue(item.recommendation) != null)
+              _TileChip(
+                label: RatingRecommendation.fromValue(item.recommendation)!
+                    .label,
+              ),
+            _TileChip(label: spoiler.label, warning: severe),
+          ],
+        ),
+      ],
+    );
   }
 }

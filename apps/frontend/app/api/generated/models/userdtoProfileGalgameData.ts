@@ -5,14 +5,27 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { UserdtoProfileGalgameDataRecommendation } from './userdtoProfileGalgameDataRecommendation';
+import type { UserdtoProfileGalgameDataSpoilerLevel } from './userdtoProfileGalgameDataSpoilerLevel';
 
 export interface UserdtoProfileGalgameData {
+  branch?: number;
+  character?: number;
   cover_sensitive?: boolean;
   cover_url?: string;
   created_at?: string;
   id?: number;
+  music?: number;
+  recommendation?: UserdtoProfileGalgameDataRecommendation;
+  replay?: number;
+  review_text?: string;
   score?: number;
   slug?: string;
+  spoiler_level?: UserdtoProfileGalgameDataSpoilerLevel;
+  story?: number;
+  system?: number;
   title?: string;
   updated_at?: string;
+  visual?: number;
+  voice?: number;
 }

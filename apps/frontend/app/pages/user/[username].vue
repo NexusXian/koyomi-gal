@@ -9,10 +9,10 @@ import {
   listUserRatings
 } from '~/api/generated/users/users'
 import type {
-  DtoProfileGalgameData,
   DtoPublicUserProfile,
   DtoUserActivityData,
   UserdtoProfileCommentData,
+  UserdtoProfileGalgameData,
   UserdtoProfilePostData
 } from '~/api/generated/models'
 import { formatDate } from '~/constants/domain'
@@ -29,7 +29,7 @@ const profileError = ref('')
 const contentLoading = ref(false)
 const posts = ref<UserdtoProfilePostData[]>([])
 const comments = ref<UserdtoProfileCommentData[]>([])
-const galgames = ref<DtoProfileGalgameData[]>([])
+const galgames = ref<UserdtoProfileGalgameData[]>([])
 const activities = ref<DtoUserActivityData[]>([])
 const total = ref(0)
 const limit = 12
@@ -217,8 +217,13 @@ watch([activeTab, page, profile], () => void loadContent())
             </KunCard>
           </section>
 
-          <section v-else-if="activeTab === 'ratings' || activeTab === 'favorites'" class="galgame-grid">
-            <KunNull v-if="!contentLoading && galgames.length === 0" :message="activeTab === 'ratings' ? '暂无公开评分' : '暂无公开收藏'" />
+          <section v-if="activeTab === 'ratings'" class="galgame-grid">
+            <KunNull v-if="!contentLoading && galgames.length === 0" message="暂无公开评分" />
+            <UserRatingGameCard v-for="game in galgames" :key="game.id" :rating="game" />
+          </section>
+
+          <section v-else-if="activeTab === 'favorites'" class="galgame-grid">
+            <KunNull v-if="!contentLoading && galgames.length === 0" message="暂无公开收藏" />
             <NuxtLink v-for="game in galgames" :key="game.id" :to="`/galgames/${game.id}`" class="galgame-row">
               <div class="game-cover">
                 <SensitiveImage

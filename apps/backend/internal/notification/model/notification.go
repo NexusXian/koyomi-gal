@@ -15,6 +15,7 @@ const (
 	TypeCommentReplied       NotificationType = "comment_replied"
 	TypePostLiked            NotificationType = "post_liked"
 	TypeCommentLiked         NotificationType = "comment_liked"
+	TypeRatingLiked          NotificationType = "rating_liked"
 	TypeGalgameSubmitted     NotificationType = "galgame_submitted"
 	TypeGalgameApproved      NotificationType = "galgame_approved"
 	TypeGalgameRejected      NotificationType = "galgame_rejected"
@@ -121,6 +122,7 @@ func IsValidType(notificationType NotificationType) bool {
 		TypeCommentReplied,
 		TypePostLiked,
 		TypeCommentLiked,
+		TypeRatingLiked,
 		TypeGalgameSubmitted,
 		TypeGalgameApproved,
 		TypeGalgameRejected,

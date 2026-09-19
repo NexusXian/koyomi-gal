@@ -26,6 +26,7 @@ const icon = computed(() => {
       return 'lucide:message-circle'
     case 'post_liked':
     case 'comment_liked':
+    case 'rating_liked':
       return 'lucide:thumbs-up'
     case 'galgame_submitted':
     case 'resource_submitted':

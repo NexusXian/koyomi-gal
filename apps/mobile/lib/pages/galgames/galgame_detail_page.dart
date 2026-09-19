@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/constants/domain.dart';
 import '../../core/utils/format.dart';
+import '../../features/game_ratings/widgets/game_rating_widgets.dart';
 import '../../models/galgame_models.dart';
 import '../../models/post_models.dart';
 import '../../providers/app_providers.dart';
@@ -99,29 +100,6 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
     } catch (_) {}
   }
 
-  Future<void> _rate() async {
-    final current = _relation?.rating?.score;
-    final score = await showModalBottomSheet<int>(
-      context: context,
-      builder: (context) => _RatingSheet(currentScore: current),
-    );
-    if (score == null) {
-      return;
-    }
-    try {
-      if (score == 0) {
-        await ref.read(galgameServiceProvider).deleteRating(widget.id);
-      } else {
-        await ref.read(galgameServiceProvider).upsertRating(widget.id, score);
-      }
-      await _load();
-    } catch (error) {
-      if (mounted) {
-        showAppSnackBar(context, apiErrorMessage(error), error: true);
-      }
-    }
-  }
-
   Future<void> _setState_(int state) async {
     try {
       if (state == 0) {
@@ -161,7 +139,7 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
 
     final relation = _relation;
     return DefaultTabController(
-      length: 6,
+      length: 7,
       child: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
@@ -180,6 +158,7 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
           ),
           SliverToBoxAdapter(child: _buildHeaderCard(detail, relation)),
           SliverToBoxAdapter(child: _buildDescription(detail)),
+          SliverToBoxAdapter(child: GameRatingOverview(galgameId: widget.id)),
           SliverToBoxAdapter(
             child: Column(
               children: [
@@ -188,6 +167,7 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
                   tabAlignment: TabAlignment.start,
                   tabs: [
                     const Tab(text: '角色'),
+                    const Tab(text: '评分'),
                     const Tab(text: '画廊'),
                     Tab(text: '资源 ${detail.statistics?.resourceCount ?? 0}'),
                     Tab(text: '帖子 ${detail.statistics?.postCount ?? 0}'),
@@ -202,6 +182,7 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
         body: TabBarView(
           children: [
             _CharactersTab(galgameId: widget.id),
+            GameRatingList(galgameId: widget.id),
             _GalleryTab(galgameId: widget.id),
             _ResourcesTab(galgameId: widget.id),
             _RelatedPostsTab(galgameId: widget.id),
@@ -266,32 +247,9 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            if (detail.rating?.average != null)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 12),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.star,
-                                        size: 16,
-                                        color: Colors.amber.shade700),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      '${detail.rating!.average!.toStringAsFixed(1)} (${detail.rating!.count ?? 0})',
-                                      style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            StatRow(
-                              icon: Icons.favorite_outline,
-                              label:
-                                  formatCount(detail.statistics?.favoriteCount),
-                            ),
-                          ],
+                        StatRow(
+                          icon: Icons.favorite_outline,
+                          label: formatCount(detail.statistics?.favoriteCount),
                         ),
                         if (detail.tags.isNotEmpty)
                           Padding(
@@ -337,14 +295,13 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
           TextButton.icon(
             onPressed: () => context.push('/login'),
             icon: const Icon(Icons.login),
-            label: const Text('登录后收藏 / 评分'),
+            label: const Text('登录后收藏'),
           ),
         ],
       );
     }
 
     final favorited = relation?.favorite?.favorited ?? false;
-    final myScore = relation?.rating?.score;
     final myState = relation?.state?.state;
 
     return Column(
@@ -357,13 +314,6 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
               label: favorited ? '已收藏' : '收藏',
               active: favorited,
               onTap: _toggleFavorite,
-            ),
-            const SizedBox(width: 8),
-            _ActionChip(
-              icon: Icons.star_outline,
-              label: myScore != null ? '我的评分 $myScore' : '评分',
-              active: myScore != null,
-              onTap: _rate,
             ),
           ],
         ),
@@ -466,46 +416,6 @@ class _StateChip extends StatelessWidget {
       label: Text(label),
       selected: selected,
       onSelected: (_) => onSelect(value),
-    );
-  }
-}
-
-class _RatingSheet extends StatelessWidget {
-  const _RatingSheet({this.currentScore});
-
-  final int? currentScore;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('评分', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (var score = 1; score <= 10; score++)
-                ChoiceChip(
-                  label: Text('$score'),
-                  selected: currentScore == score,
-                  onSelected: (_) => Navigator.of(context).pop(score),
-                ),
-              if (currentScore != null)
-                ActionChip(
-                  label: const Text('删除评分'),
-                  avatar: const Icon(Icons.delete_outline, size: 16),
-                  onPressed: () => Navigator.of(context).pop(0),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
     );
   }
 }

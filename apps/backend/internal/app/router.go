@@ -55,6 +55,14 @@ func (app *App) setupRoutes() {
 	v1.GET("/developers/:id", app.CatalogHandler.GetDeveloper)
 	v1.GET("/tags", app.CatalogHandler.ListTags)
 	v1.GET("/tags/:id", app.CatalogHandler.GetTag)
+	publicRatings := v1.Group("/galgames/:id/ratings", middleware.OptionalAuthWithUserChecker(
+		app.Config.Auth.AccessTokenSecret,
+		app.UserAuthRepository,
+	))
+	{
+		publicRatings.GET("", app.UserRelationHandler.ListRatings)
+		publicRatings.GET("/summary", app.UserRelationHandler.GetRatingSummary)
+	}
 	v2.GET("/galgames/:id/resources", app.ResourceHandler.ListGalgameResources)
 	v2.GET("/novels/:id/resources", app.ResourceHandler.ListNovelResources)
 	v2.GET("/posts/:id/comments", app.CommentHandler.ListPostComments)
@@ -107,12 +115,17 @@ func (app *App) setupRoutes() {
 	{
 		galgameRelations.PUT("/rating", app.UserRelationHandler.UpsertRating)
 		galgameRelations.DELETE("/rating", app.UserRelationHandler.DeleteRating)
+		galgameRelations.GET("/ratings/me", app.UserRelationHandler.GetMyRating)
+		galgameRelations.PUT("/ratings/me", app.UserRelationHandler.PutMyRating)
+		galgameRelations.DELETE("/ratings/me", app.UserRelationHandler.DeleteMyRating)
 		galgameRelations.POST("/favorite", app.UserRelationHandler.AddFavorite)
 		galgameRelations.DELETE("/favorite", app.UserRelationHandler.RemoveFavorite)
 		galgameRelations.PUT("/state", app.UserRelationHandler.UpsertState)
 		galgameRelations.DELETE("/state", app.UserRelationHandler.DeleteState)
 		galgameRelations.GET("/me", app.UserRelationHandler.GetMyRelation)
 	}
+	protected.POST("/game-ratings/:rating_id/like", app.UserRelationHandler.LikeRating)
+	protected.DELETE("/game-ratings/:rating_id/like", app.UserRelationHandler.UnlikeRating)
 
 	resources := protected.Group("/resources")
 	{

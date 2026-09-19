@@ -161,7 +161,7 @@ func (r *UserProfileRepository) ListRatings(ctx context.Context, userID uint, pa
 		return nil, 0, fmt.Errorf("count user ratings: %w", err)
 	}
 	items := make([]model.ProfileGalgameItem, 0)
-	err := base.Select("galgames.id, galgames.title, galgames.slug, galgames.cover_url, galgames.cover_sensitive, relations.score, relations.created_at, relations.updated_at").
+	err := base.Select("galgames.id, galgames.title, galgames.slug, galgames.cover_url, galgames.cover_sensitive, relations.score, relations.visual, relations.story, relations.music, relations.character, relations.branch, relations.system, relations.voice, relations.replay, relations.recommendation, relations.review_text, relations.spoiler_level, relations.created_at, relations.updated_at").
 		Order("relations.updated_at DESC").Order("relations.id DESC").Offset((page - 1) * limit).Limit(limit).Scan(&items).Error
 	if err != nil {
 		return nil, 0, fmt.Errorf("list user ratings: %w", err)

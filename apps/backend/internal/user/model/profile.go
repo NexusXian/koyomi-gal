@@ -174,6 +174,17 @@ type ProfileGalgameItem struct {
 	CoverURL       string
 	CoverSensitive bool
 	Score          *int16
+	Visual         *int16
+	Story          *int16
+	Music          *int16
+	Character      *int16
+	Branch         *int16
+	System         *int16
+	Voice          *int16
+	Replay         *int16
+	Recommendation *int16
+	ReviewText     *string
+	SpoilerLevel   *int16
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

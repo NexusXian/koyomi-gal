@@ -453,7 +453,14 @@ func (s *UserProfileService) listGalgames(ctx context.Context, username string, 
 	}
 	items := make([]dto.ProfileGalgameData, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, dto.ProfileGalgameData{ID: row.ID, Title: row.Title, Slug: row.Slug, CoverURL: row.CoverURL, CoverSensitive: row.CoverSensitive, Score: row.Score, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt})
+		items = append(items, dto.ProfileGalgameData{
+			ID: row.ID, Title: row.Title, Slug: row.Slug, CoverURL: row.CoverURL, CoverSensitive: row.CoverSensitive,
+			Score:  row.Score,
+			Visual: row.Visual, Story: row.Story, Music: row.Music, Character: row.Character,
+			Branch: row.Branch, System: row.System, Voice: row.Voice, Replay: row.Replay,
+			Recommendation: row.Recommendation, ReviewText: row.ReviewText, SpoilerLevel: row.SpoilerLevel,
+			CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		})
 	}
 	return items, total, page, limit, err
 }
