@@ -179,17 +179,16 @@ func applyEnrichment(
 		setIfAllowed("title", galgame.Title, strings.TrimSpace(game.Title))
 	}
 	if opts.FillDescription {
-		incoming := normalizeDescription(game.Description)
-		if incoming != galgame.Description &&
-			shouldReplaceDescription(
-				galgame.Description,
-				galgame.DescriptionSource,
-				incoming,
-				game.Source,
-				opts.Force,
-			) {
-			updates["description"] = incoming
-			updates["description_source"] = normalizeDescriptionSource(game.Source)
+		descriptionApplied, err := applyProviderDescription(ctx, tx, galgame, game, opts.Force)
+		if err != nil {
+			return nil, err
+		}
+		if descriptionApplied {
+			// The legacy columns mirror only the Chinese description.
+			if providerDescriptionLanguage(game.Source) == galgameModel.LanguageZhCN {
+				updates["description"] = normalizeDescription(game.Description)
+				updates["description_source"] = descriptionSourceFromProvider(game.Source)
+			}
 			updated = append(updated, EnrichFieldDescription)
 		}
 	}

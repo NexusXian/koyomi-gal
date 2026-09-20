@@ -16,11 +16,11 @@ import {
 import { listPosts } from '~/api/generated/posts/posts'
 import type {
   DtoGalgameListData,
-  DtoGalgameResponse,
   DtoPostListData,
   DtoResourceData,
   DtoResourceListData
 } from '~/api/generated/models'
+import type { GalgameDetailData } from '~/types/galgame'
 import {
   AGE_RATINGS,
   RESOURCE_STATUS,
@@ -29,6 +29,7 @@ import {
   domainLabel
 } from '~/constants/domain'
 import { stripMarkdownForExcerpt } from '~/utils/markdown'
+import { getBestDescription } from '~/utils/gameDescriptions'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,7 +39,7 @@ const { has } = usePermissions()
 
 const galgameId = computed(() => Number(route.params.id))
 
-const { data: galgame, error } = await useAsyncData<DtoGalgameResponse, Error>(
+const { data: galgame, error } = await useAsyncData<GalgameDetailData, Error>(
   `galgame-${galgameId.value}`,
   async () =>
     unwrapApiData(
@@ -55,11 +56,15 @@ if (error.value || !galgame.value) {
   })
 }
 
+const bestDescription = () =>
+  getBestDescription(galgame.value?.descriptions, 'zh-CN')?.description.content ??
+  galgame.value?.description ??
+  ''
+
 useSeoMeta({
   title: () => `${galgame.value?.title ?? 'Galgame'} - Koyomi`,
   description: () =>
-    stripMarkdownForExcerpt(galgame.value?.description ?? '', 160) ||
-    'Galgame 详情'
+    stripMarkdownForExcerpt(bestDescription(), 160) || 'Galgame 详情'
 })
 
 const resources = ref<DtoResourceData[]>([])
@@ -424,14 +429,7 @@ onMounted(() => {
       </div>
 
       <div class="detail-body">
-        <KunHeader name="简介" scale="h3" class="section-heading" />
-        <PostContent
-          v-if="galgame?.description"
-          class="detail-description-markdown"
-          :content="galgame.description"
-          mode="markdown"
-        />
-        <p v-else class="detail-description">暂无简介</p>
+        <GameDescription :descriptions="galgame?.descriptions" />
         <p v-if="galgame?.aliases?.length" class="detail-aliases">
           别名：{{ galgame.aliases.join('、') }}
         </p>
@@ -840,18 +838,6 @@ onMounted(() => {
 
 .detail-body {
   padding: 0 20px 22px;
-}
-
-.detail-description {
-  margin: 8px 0 0;
-  color: var(--color-default-600);
-  font-size: 15px;
-  line-height: 1.85;
-  white-space: pre-wrap;
-}
-
-.detail-description-markdown {
-  margin-top: 8px;
 }
 
 .detail-aliases {

@@ -240,6 +240,11 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		tagRepository,
 	)
 	catalogService.SetContributionService(contributionSvc)
+	descriptionService := galgameService.NewDescriptionService(
+		galgameRepository,
+		galgameRepo.NewGalgameDescriptionRepository(postgresDB),
+	)
+	descriptionService.SetContributionService(contributionSvc)
 	catalogService.SetNotificationDependencies(rbacSvc, notificationSvc)
 	catalogService.SetRelationRepository(relationRepository)
 	catalogService.SetExperienceService(experienceService)
@@ -428,6 +433,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	)
 	userAdminService := userService.NewUserAdminService(userAdminRepository, rbacSvc)
 	realtimeHub := realtime.NewHub(redisClient)
+	catalogHandler := galgameHandler.NewCatalogHandler(catalogService)
+	catalogHandler.SetDescriptionService(descriptionService)
 	app := &App{
 		Config:        cfg,
 		Postgres:      postgresDB,
@@ -447,7 +454,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		RoleHandler:         rbacHandler.NewRoleHandler(rbacSvc),
 		PermissionHandler:   rbacHandler.NewPermissionHandler(rbacSvc),
 		AssignmentHandler:   rbacHandler.NewAssignmentHandler(rbacSvc),
-		CatalogHandler:      galgameHandler.NewCatalogHandler(catalogService),
+		CatalogHandler:      catalogHandler,
 		ImporterHandler:     importerHandler.NewImporterHandler(importerSvc),
 		ContributionHandler: galgameHandler.NewContributionHandler(contributionSvc, experienceService),
 		NovelHandler:        novelHandler.NewNovelHandler(novelSvc, novelRelationSvc),

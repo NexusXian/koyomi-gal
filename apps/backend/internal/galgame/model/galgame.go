@@ -75,6 +75,9 @@ type Galgame struct {
 	Developer         *Developer                          `gorm:"foreignKey:DeveloperID" json:"developer,omitempty"`
 	Aliases           []Alias                             `gorm:"foreignKey:GalgameID" json:"aliases,omitempty"`
 	Tags              []Tag                               `gorm:"many2many:galgame_tags" json:"tags,omitempty"`
+	// Descriptions holds the per-language description rows; it is preloaded
+	// only by detail queries, never by list queries.
+	Descriptions      []GalgameDescription                `gorm:"foreignKey:GalgameID" json:"-"`
 	Contributors      []contributionModel.WorkContributor `gorm:"-" json:"-"`
 	ContributorCount  int64                               `gorm:"-" json:"-"`
 	RelatedNovels     []relationModel.RelatedWork         `gorm:"-" json:"-"`

@@ -300,13 +300,24 @@ func (s *CatalogService) CreateGalgame(
 	}
 
 	description := strings.TrimSpace(req.Description)
+	descriptionRows := []model.GalgameDescription{}
+	if len(req.Descriptions) > 0 {
+		var err error
+		descriptionRows, err = ValidateDescriptionInputs(req.Descriptions)
+		if err != nil {
+			return nil, err
+		}
+		if zh, ok := descriptionRowForLanguage(descriptionRows, model.LanguageZhCN); ok {
+			description = zh.Content
+		}
+	}
 	galgame := &model.Galgame{
 		Title:             title,
 		OriginalTitle:     strings.TrimSpace(req.OriginalTitle),
 		RomajiTitle:       strings.TrimSpace(req.RomajiTitle),
 		Slug:              slug,
 		Description:       description,
-		DescriptionSource: descriptionSourceForEdit(description),
+		DescriptionSource: descriptionSourceForCreate(req, descriptionRows, description),
 		CoverURL:          strings.TrimSpace(req.CoverURL),
 		BannerURL:         strings.TrimSpace(req.BannerURL),
 		DeveloperID:       req.DeveloperID,
@@ -316,6 +327,7 @@ func (s *CatalogService) CreateGalgame(
 		Status:            req.Status,
 		CreatedBy:         &userID,
 	}
+	descriptionRows = appendLegacyDescriptionRow(descriptionRows, description)
 	aliases := uniqueNonEmptyStrings(req.Aliases)
 	write := func(tx *repository.GalgameRepository, db *gorm.DB) error {
 		if err := tx.Create(ctx, galgame); err != nil {
@@ -326,6 +338,11 @@ func (s *CatalogService) CreateGalgame(
 		}
 		if err := tx.ReplaceTags(ctx, galgame.ID, tagIDs); err != nil {
 			return err
+		}
+		if len(descriptionRows) > 0 {
+			if err := upsertDescriptionsInTx(ctx, tx.DB(), galgame.ID, descriptionRows); err != nil {
+				return err
+			}
 		}
 		if galgame.Status == model.GalgameStatusPublished && s.contributions != nil {
 			sourceType, sourceID := contributionSource(contributionModel.ContributionSourceGalgameCreate, galgame.ID)
@@ -410,18 +427,26 @@ func (s *CatalogService) UpdateGalgame(
 	}
 	oldStatus := galgame.Status
 	aliases := uniqueNonEmptyStrings(req.Aliases)
-	changed, coverOnly := galgameUpdateChanges(galgame, req, title, slug, releaseDate, aliases, tagIDs)
 
-	description := strings.TrimSpace(req.Description)
-	descriptionChanged := galgame.Description != description
+	descriptionRows, descriptionsChanged, err := s.descriptionUpdateRows(galgame, req)
+	if err != nil {
+		return nil, err
+	}
+	changed, coverOnly := galgameUpdateChanges(galgame, req, title, slug, releaseDate, aliases, tagIDs, descriptionsChanged)
 
 	galgame.Title = title
 	galgame.OriginalTitle = strings.TrimSpace(req.OriginalTitle)
 	galgame.RomajiTitle = strings.TrimSpace(req.RomajiTitle)
 	galgame.Slug = slug
-	galgame.Description = description
-	if descriptionChanged {
-		galgame.DescriptionSource = descriptionSourceForEdit(description)
+	galgame.Description = s.updatedLegacyDescription(galgame, req, descriptionRows)
+	if descriptionsChanged {
+		galgame.DescriptionSource = descriptionSourceForEdit(galgame.Description)
+		if len(req.Descriptions) > 0 {
+			// The array path carries an explicit zh-CN source; mirror it.
+			if zh, ok := descriptionRowForLanguage(descriptionRows, model.LanguageZhCN); ok && zh.Content != "" {
+				galgame.DescriptionSource = zh.SourceType
+			}
+		}
 	}
 	galgame.CoverURL = strings.TrimSpace(req.CoverURL)
 	galgame.BannerURL = strings.TrimSpace(req.BannerURL)
@@ -439,6 +464,11 @@ func (s *CatalogService) UpdateGalgame(
 		}
 		if err := tx.ReplaceTags(ctx, id, tagIDs); err != nil {
 			return err
+		}
+		if len(descriptionRows) > 0 {
+			if err := upsertDescriptionsInTx(ctx, tx.DB(), id, descriptionRows); err != nil {
+				return err
+			}
 		}
 		if changed && galgame.Status == model.GalgameStatusPublished && s.contributions != nil {
 			if oldStatus != model.GalgameStatusPublished {
@@ -887,6 +917,118 @@ func descriptionSourceForEdit(description string) string {
 	return model.DescriptionSourceManual
 }
 
+func descriptionRowForLanguage(rows []model.GalgameDescription, language string) (model.GalgameDescription, bool) {
+	for _, row := range rows {
+		if row.Language == language {
+			return row, true
+		}
+	}
+	return model.GalgameDescription{}, false
+}
+
+// legacyZhContent returns the effective zh-CN content: the stored row when
+// present, otherwise the legacy single-description column.
+func legacyZhContent(galgame *model.Galgame) string {
+	if row, ok := descriptionRowForLanguage(galgame.Descriptions, model.LanguageZhCN); ok {
+		return row.Content
+	}
+	return galgame.Description
+}
+
+// descriptionSourceForCreate mirrors the zh-CN source into the legacy
+// description_source column on creation.
+func descriptionSourceForCreate(
+	req *dto.CreateGalgameRequest,
+	rows []model.GalgameDescription,
+	description string,
+) string {
+	if len(req.Descriptions) > 0 {
+		if zh, ok := descriptionRowForLanguage(rows, model.LanguageZhCN); ok && description != "" {
+			return zh.SourceType
+		}
+	}
+	return descriptionSourceForEdit(description)
+}
+
+// appendLegacyDescriptionRow keeps old single-description clients working:
+// when no zh-CN row was submitted, the legacy field seeds one.
+func appendLegacyDescriptionRow(
+	rows []model.GalgameDescription,
+	description string,
+) []model.GalgameDescription {
+	if description == "" {
+		return rows
+	}
+	if _, ok := descriptionRowForLanguage(rows, model.LanguageZhCN); ok {
+		return rows
+	}
+	return append(rows, model.GalgameDescription{
+		Language:   model.LanguageZhCN,
+		Content:    description,
+		SourceType: model.DescriptionSourceManual,
+		SourceName: model.DefaultDescriptionSourceName(model.DescriptionSourceManual),
+	})
+}
+
+// descriptionUpdateRows computes the rows the update should write and
+// whether any description actually changed. The modern path upserts exactly
+// the submitted languages; the legacy single-field path only touches the
+// zh-CN row so other languages are never clobbered.
+func (s *CatalogService) descriptionUpdateRows(
+	galgame *model.Galgame,
+	req *dto.UpdateGalgameRequest,
+) ([]model.GalgameDescription, bool, error) {
+	if len(req.Descriptions) > 0 {
+		rows, err := ValidateDescriptionInputs(req.Descriptions)
+		if err != nil {
+			return nil, false, err
+		}
+		return rows, descriptionsChanged(galgame.Descriptions, rows), nil
+	}
+
+	description := strings.TrimSpace(req.Description)
+	if description == legacyZhContent(galgame) {
+		return nil, false, nil
+	}
+	if existing, ok := descriptionRowForLanguage(galgame.Descriptions, model.LanguageZhCN); ok {
+		existing.Content = description
+		if description != "" {
+			// A human edit flips the row to manual so enrichment backs off.
+			existing.SourceType = model.DescriptionSourceManual
+			existing.SourceName = model.DefaultDescriptionSourceName(model.DescriptionSourceManual)
+			existing.SourceURL = ""
+			existing.IsOfficial = false
+		}
+		return []model.GalgameDescription{existing}, true, nil
+	}
+	rows := appendLegacyDescriptionRow(nil, description)
+	if len(rows) == 0 {
+		return nil, false, nil
+	}
+	return rows, true, nil
+}
+
+// updatedLegacyDescription mirrors the zh-CN row into the legacy
+// description column for old clients; unrelated languages never leak in.
+func (s *CatalogService) updatedLegacyDescription(
+	galgame *model.Galgame,
+	req *dto.UpdateGalgameRequest,
+	rows []model.GalgameDescription,
+) string {
+	if len(req.Descriptions) > 0 {
+		if zh, ok := descriptionRowForLanguage(rows, model.LanguageZhCN); ok {
+			return zh.Content
+		}
+		return galgame.Description
+	}
+	if len(rows) > 0 {
+		if zh, ok := descriptionRowForLanguage(rows, model.LanguageZhCN); ok {
+			return zh.Content
+		}
+	}
+	return galgame.Description
+}
+
 func galgameUpdateChanges(
 	galgame *model.Galgame,
 	req *dto.UpdateGalgameRequest,
@@ -894,6 +1036,7 @@ func galgameUpdateChanges(
 	releaseDate *time.Time,
 	aliases []string,
 	tagIDs []uint,
+	descriptionsChanged bool,
 ) (bool, bool) {
 	coverChanged := galgame.CoverURL != strings.TrimSpace(req.CoverURL) ||
 		galgame.BannerURL != strings.TrimSpace(req.BannerURL)
@@ -901,7 +1044,7 @@ func galgameUpdateChanges(
 		galgame.OriginalTitle != strings.TrimSpace(req.OriginalTitle) ||
 		galgame.RomajiTitle != strings.TrimSpace(req.RomajiTitle) ||
 		galgame.Slug != slug ||
-		galgame.Description != strings.TrimSpace(req.Description) ||
+		descriptionsChanged ||
 		!equalUintPointers(galgame.DeveloperID, req.DeveloperID) ||
 		!equalTimePointers(galgame.ReleaseDate, releaseDate) ||
 		galgame.AgeRating != *req.AgeRating ||

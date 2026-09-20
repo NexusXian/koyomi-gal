@@ -9,10 +9,13 @@ import (
 // descriptionSourcePriority ranks description sources for automatic
 // enrichment. Unknown sources are treated as the lowest priority.
 var descriptionSourcePriority = map[string]int{
-	galgameModel.DescriptionSourceUnknown: 0,
-	galgameModel.DescriptionSourceVNDB:    10,
-	galgameModel.DescriptionSourceBangumi: 20,
-	galgameModel.DescriptionSourceManual:  100,
+	galgameModel.DescriptionSourceUnknown:  0,
+	galgameModel.DescriptionSourceVNDB:     10,
+	galgameModel.DescriptionSourceSteam:    15,
+	galgameModel.DescriptionSourceBangumi:  20,
+	galgameModel.DescriptionSourceNextMoe:  30,
+	galgameModel.DescriptionSourceOfficial: 90,
+	galgameModel.DescriptionSourceManual:   100,
 }
 
 // normalizeDescriptionSource maps a provider/model source value onto the
@@ -23,6 +26,12 @@ func normalizeDescriptionSource(source string) string {
 		return galgameModel.DescriptionSourceVNDB
 	case galgameModel.DescriptionSourceBangumi:
 		return galgameModel.DescriptionSourceBangumi
+	case galgameModel.DescriptionSourceNextMoe:
+		return galgameModel.DescriptionSourceNextMoe
+	case galgameModel.DescriptionSourceOfficial:
+		return galgameModel.DescriptionSourceOfficial
+	case galgameModel.DescriptionSourceSteam:
+		return galgameModel.DescriptionSourceSteam
 	case galgameModel.DescriptionSourceManual:
 		return galgameModel.DescriptionSourceManual
 	default:

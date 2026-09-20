@@ -21,6 +21,10 @@ import {
 } from '~/api/generated/admin/admin'
 import { updateGalgame } from '~/api/generated/galgames/galgames'
 import type {
+  GalgameDetailData,
+  GalgameUpdatePayload
+} from '~/types/galgame'
+import type {
   DtoBatchData,
   DtoClassificationDetailData,
   DtoGalgameListItem,
@@ -311,7 +315,19 @@ async function changeStatus(
       return
     }
     const detail = unwrapApiData(await getAdminGalgame(item.id))
-    await updateGalgame(item.id, {
+    // 转发完整多语言简介，避免全量更新时只靠旧版 description 字段回传。
+    const { descriptions } = detail as GalgameDetailData
+    const descriptionPayload = descriptions
+      ? Object.values(descriptions).map((row) => ({
+          language: row.language,
+          content: row.content ?? '',
+          source_type: row.source?.type ?? '',
+          source_name: row.source?.name ?? '',
+          source_url: row.source?.url ?? '',
+          is_official: row.source?.official ?? false
+        }))
+      : undefined
+    const payload: GalgameUpdatePayload = {
       title: detail.title ?? '',
       slug: detail.slug ?? '',
       romaji_title: detail.romaji_title || undefined,
@@ -327,8 +343,10 @@ async function changeStatus(
       aliases: detail.aliases ?? [],
       cover_url: detail.cover_url || undefined,
       banner_url: detail.banner_url || undefined,
+      descriptions: descriptionPayload,
       description: detail.description || undefined
-    })
+    }
+    await updateGalgame(item.id, payload)
     message.success(
       `「${item.title ?? item.id}」状态已更新为「${GALGAME_STATUS_OPTIONS.find((option) => option.value === status)?.label}」`
     )

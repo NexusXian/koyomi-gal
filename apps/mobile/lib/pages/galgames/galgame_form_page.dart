@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/constants/domain.dart';
+import '../../models/galgame_models.dart';
 import '../../providers/app_providers.dart';
 import '../../services/galgame_service.dart';
 import '../../widgets/app_image.dart';
@@ -29,8 +30,49 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
   final _originalTitleController = TextEditingController();
   final _slugController = TextEditingController();
   final _releaseDateController = TextEditingController();
-  final _descriptionController = TextEditingController();
   final _aliasesController = TextEditingController();
+
+  static const _descriptionLocales = [
+    ('zh-CN', '中文'),
+    ('en-US', 'English'),
+    ('ja-JP', '日本語'),
+  ];
+
+  static const _sourceTypeOptions = [
+    ('nextmoe', 'NextMoe', 'NextMoe 资料库'),
+    ('vndb', 'VNDB', 'VNDB'),
+    ('official', '游戏官网', '游戏官网'),
+    ('bangumi', 'Bangumi', 'Bangumi'),
+    ('steam', 'Steam', 'Steam'),
+    ('manual', '手动录入', '手动录入'),
+    ('unknown', '其他', '未知来源'),
+  ];
+
+  // 每种语言的简介相互独立，分别保存内容与来源信息。
+  final Map<String, TextEditingController> _descriptionControllers = {
+    for (final (locale, _) in _descriptionLocales)
+      locale: TextEditingController(),
+  };
+  final Map<String, TextEditingController> _sourceNameControllers = {
+    for (final (locale, _) in _descriptionLocales)
+      locale: TextEditingController(),
+  };
+  final Map<String, TextEditingController> _sourceUrlControllers = {
+    for (final (locale, _) in _descriptionLocales)
+      locale: TextEditingController(),
+  };
+  final Map<String, String> _sourceTypes = {
+    for (final (locale, _) in _descriptionLocales)
+      locale: locale == 'zh-CN'
+          ? 'nextmoe'
+          : locale == 'en-US'
+              ? 'vndb'
+              : 'official',
+  };
+  final Map<String, bool> _sourceOfficial = {
+    for (final (locale, _) in _descriptionLocales) locale: locale == 'ja-JP',
+  };
+  String _descriptionLocale = 'zh-CN';
 
   int _ageRating = 0;
   int _status = 0;
@@ -65,9 +107,56 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
     _originalTitleController.dispose();
     _slugController.dispose();
     _releaseDateController.dispose();
-    _descriptionController.dispose();
     _aliasesController.dispose();
+    for (final controller in _descriptionControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _sourceNameControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _sourceUrlControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  void _loadDescriptionDrafts(GalgameDetail detail) {
+    for (final (locale, _) in _descriptionLocales) {
+      final stored = detail.descriptions[locale];
+      if (stored == null) {
+        continue;
+      }
+      _descriptionControllers[locale]!.text = stored.content;
+      if (stored.source.type != 'unknown') {
+        _sourceTypes[locale] = stored.source.type;
+        _sourceNameControllers[locale]!.text = stored.source.name;
+        _sourceUrlControllers[locale]!.text = stored.source.url ?? '';
+        _sourceOfficial[locale] = stored.source.official;
+      }
+    }
+  }
+
+  void _onSourceTypeChanged(String locale, String sourceType) {
+    setState(() {
+      _sourceTypes[locale] = sourceType;
+      _sourceOfficial[locale] = sourceType == 'official';
+      _sourceNameControllers[locale]!.text =
+          _sourceTypeOptions.firstWhere((option) => option.$1 == sourceType).$3;
+    });
+  }
+
+  List<Map<String, dynamic>> _descriptionPayload() {
+    return [
+      for (final (locale, _) in _descriptionLocales)
+        {
+          'language': locale,
+          'content': _descriptionControllers[locale]!.text.trim(),
+          'source_type': _sourceTypes[locale],
+          'source_name': _sourceNameControllers[locale]!.text.trim(),
+          'source_url': _sourceUrlControllers[locale]!.text.trim(),
+          'is_official': _sourceOfficial[locale] ?? false,
+        },
+    ];
   }
 
   Future<void> _loadMeta() async {
@@ -109,7 +198,7 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
         _originalTitleController.text = detail.originalTitle ?? '';
         _slugController.text = detail.slug ?? '';
         _releaseDateController.text = _dateOnly(detail.releaseDate);
-        _descriptionController.text = detail.description ?? '';
+        _loadDescriptionDrafts(detail);
         _aliasesController.text = (detail.aliases ?? const []).join('\n');
         _ageRating = detail.ageRating ?? 0;
         _status = detail.status ?? 0;
@@ -214,7 +303,9 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
       'romaji_title': _romajiController.text.trim(),
       'original_title': _originalTitleController.text.trim(),
       'release_date': _releaseDateController.text.trim(),
-      'description': _descriptionController.text.trim(),
+      // 三种语言相互独立，同时保留旧字段兼容旧版后端。
+      'descriptions': _descriptionPayload(),
+      'description': _descriptionControllers['zh-CN']!.text.trim(),
       'aliases': _aliasesController.text
           .split('\n')
           .map((line) => line.trim())
@@ -395,14 +486,7 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
             onChanged: (value) => setState(() => _coverSensitive = value),
           ),
           const SizedBox(height: 8),
-          TextFormField(
-            controller: _descriptionController,
-            decoration: const InputDecoration(
-              labelText: '简介（支持 Markdown）',
-            ),
-            minLines: 4,
-            maxLines: 10,
-          ),
+          _buildDescriptionEditor(),
           const SizedBox(height: 12),
           TextFormField(
             controller: _aliasesController,
@@ -448,6 +532,76 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDescriptionEditor() {
+    final locale = _descriptionLocale;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('多语言简介（支持 Markdown）'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final (value, label) in _descriptionLocales)
+              ChoiceChip(
+                label: Text(label),
+                selected: locale == value,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() => _descriptionLocale = value);
+                  }
+                },
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _descriptionControllers[locale],
+          decoration: const InputDecoration(labelText: '简介内容'),
+          minLines: 4,
+          maxLines: 10,
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          isExpanded: true,
+          value: _sourceTypes[locale],
+          decoration: const InputDecoration(labelText: '来源类型'),
+          items: [
+            for (final (value, label, _) in _sourceTypeOptions)
+              DropdownMenuItem(value: value, child: Text(label)),
+          ],
+          onChanged: (value) =>
+              _onSourceTypeChanged(locale, value ?? 'unknown'),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _sourceNameControllers[locale],
+          decoration: const InputDecoration(labelText: '来源名称'),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _sourceUrlControllers[locale],
+          decoration: const InputDecoration(
+            labelText: '来源链接',
+            hintText: 'https://',
+          ),
+          keyboardType: TextInputType.url,
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('官方来源'),
+          value: _sourceOfficial[locale] ?? false,
+          onChanged: (value) => setState(() => _sourceOfficial[locale] = value),
+        ),
+        const Text(
+          '清空内容会保留记录与来源信息；三种语言的简介互不影响。',
+          style: TextStyle(fontSize: 12),
+        ),
+      ],
     );
   }
 

@@ -73,12 +73,25 @@ func TestUpdateGalgameMarksDescriptionSource(t *testing.T) {
 	}
 
 	// An imported (vndb) description that is not edited by a human must keep
-	// its source even when other fields change.
+	// its source even when other fields change. Post-migration state: the
+	// English text lives in the en-US row and no zh-CN row exists.
 	if err := db.Model(&model.Galgame{}).Where("id = ?", galgame.ID).Updates(map[string]any{
 		"description":        "English VNDB text",
 		"description_source": model.DescriptionSourceVNDB,
 	}).Error; err != nil {
 		t.Fatalf("seed vndb source: %v", err)
+	}
+	if err := db.Where("galgame_id = ?", galgame.ID).Delete(&model.GalgameDescription{}).Error; err != nil {
+		t.Fatalf("clear description rows: %v", err)
+	}
+	if err := db.Create(&model.GalgameDescription{
+		GalgameID:  galgame.ID,
+		Language:   model.LanguageEnUS,
+		Content:    "English VNDB text",
+		SourceType: model.DescriptionSourceVNDB,
+		SourceName: "VNDB",
+	}).Error; err != nil {
+		t.Fatalf("seed vndb description row: %v", err)
 	}
 	current = reload()
 	otherFields := updateRequestFor(&current, current.Description)

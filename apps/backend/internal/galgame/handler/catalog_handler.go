@@ -17,11 +17,16 @@ import (
 )
 
 type CatalogHandler struct {
-	catalogService *service.CatalogService
+	catalogService     *service.CatalogService
+	descriptionService *service.DescriptionService
 }
 
 func NewCatalogHandler(catalogService *service.CatalogService) *CatalogHandler {
 	return &CatalogHandler{catalogService: catalogService}
+}
+
+func (h *CatalogHandler) SetDescriptionService(descriptionService *service.DescriptionService) {
+	h.descriptionService = descriptionService
 }
 
 // ListGalgames godoc
@@ -454,6 +459,85 @@ func (h *CatalogHandler) BatchDeleteGalgames(c *gin.Context) {
 	response.Ok(c, dto.BatchDeleteGalgameData{Deleted: deleted})
 }
 
+// UpdateGalgameDescriptions godoc
+// @Summary      更新多语言简介
+// @Description  按语言批量新增或更新 Galgame 简介；语言之间相互独立，content 为空时保留记录与来源信息；需要 galgame:update 权限
+// @ID           updateGalgameDescriptions
+// @Tags         galgames
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Galgame ID"
+// @Param        request body dto.UpdateGalgameDescriptionsRequest true "多语言简介请求"
+// @Success      200 {object} dto.GalgameDescriptionsResponse "按语言索引的简介"
+// @Failure      400 {object} response.ErrorResponse "请求参数格式不正确"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      404 {object} response.ErrorResponse "Galgame 不存在"
+// @Failure      500 {object} response.ErrorResponse "保存简介失败"
+// @Security     BearerAuth
+// @Router       /api/v1/galgames/{id}/descriptions [put]
+func (h *CatalogHandler) UpdateGalgameDescriptions(c *gin.Context) {
+	id, ok := parseID(c, "Galgame")
+	if !ok {
+		return
+	}
+	var req dto.UpdateGalgameDescriptionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, appErrors.ErrValidation("请求参数格式不正确"))
+		return
+	}
+	actorID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, appErrors.ErrAuthExpired())
+		return
+	}
+	descriptions, err := h.descriptionService.UpsertGameDescriptions(c.Request.Context(), id, req.Descriptions, actorID)
+	if err != nil {
+		h.respondCatalogError(c, err, "update galgame descriptions")
+		return
+	}
+	response.Ok(c, dto.GalgameDescriptionsData{
+		Descriptions: dto.NewGalgameDescriptionResponses(descriptions),
+	})
+}
+
+// DeleteGalgameDescription godoc
+// @Summary      删除单语言简介
+// @Description  彻底删除某一语言的简介记录；需要 galgame:update 权限
+// @ID           deleteGalgameDescription
+// @Tags         galgames
+// @Produce      json
+// @Param        id path int true "Galgame ID"
+// @Param        language path string true "语言：zh-CN、en-US、ja-JP"
+// @Success      200 {object} response.MessageResponse "简介已删除"
+// @Failure      400 {object} response.ErrorResponse "语言不受支持"
+// @Failure      401 {object} response.ErrorResponse "用户登录失效"
+// @Failure      403 {object} response.ErrorResponse "没有执行该操作的权限"
+// @Failure      404 {object} response.ErrorResponse "Galgame 或简介不存在"
+// @Failure      500 {object} response.ErrorResponse "删除简介失败"
+// @Security     BearerAuth
+// @Router       /api/v1/galgames/{id}/descriptions/{language} [delete]
+func (h *CatalogHandler) DeleteGalgameDescription(c *gin.Context) {
+	id, ok := parseID(c, "Galgame")
+	if !ok {
+		return
+	}
+	language := strings.TrimSpace(c.Param("language"))
+	if err := h.descriptionService.DeleteGameDescription(c.Request.Context(), id, language, 0); err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidDescriptionLanguage):
+			response.Error(c, appErrors.ErrValidation("简介语言不受支持"))
+		case errors.Is(err, service.ErrGalgameNotFound):
+			response.Error(c, appErrors.ErrNotFound("Galgame 或简介不存在"))
+		default:
+			logger.Error("delete galgame description", zap.Uint("galgame_id", id), zap.String("language", language), zap.Error(err))
+			response.Error(c, appErrors.ErrInternal("删除简介失败"))
+		}
+		return
+	}
+	response.OkWithMsg(c, "简介已删除")
+}
+
 // ListDevelopers godoc
 // @Summary      查看开发商列表
 // @Description  返回全部开发商
@@ -700,6 +784,18 @@ func (h *CatalogHandler) respondCatalogError(c *gin.Context, err error, operatio
 		response.Error(c, appErrors.ErrValidation("Galgame 状态不正确"))
 	case errors.Is(err, service.ErrInvalidCatalogInput):
 		response.Error(c, appErrors.ErrValidation("名称、标题或 slug 不能为空"))
+	case errors.Is(err, service.ErrInvalidDescriptionLanguage):
+		response.Error(c, appErrors.ErrValidation("简介语言不受支持，仅接受 zh-CN、en-US、ja-JP"))
+	case errors.Is(err, service.ErrInvalidDescriptionSource):
+		response.Error(c, appErrors.ErrValidation("简介来源类型不受支持"))
+	case errors.Is(err, service.ErrInvalidDescriptionURL):
+		response.Error(c, appErrors.ErrValidation("简介来源链接必须是 http(s) 地址"))
+	case errors.Is(err, service.ErrDuplicateDescriptionLang):
+		response.Error(c, appErrors.ErrValidation("简介语言重复"))
+	case errors.Is(err, service.ErrDescriptionTooLong):
+		response.Error(c, appErrors.ErrValidation("简介内容超出长度限制"))
+	case errors.Is(err, service.ErrDescriptionNameTooLong):
+		response.Error(c, appErrors.ErrValidation("简介来源名称超出长度限制"))
 	default:
 		logger.Error(operation, zap.Error(err))
 		response.Error(c, appErrors.ErrInternal("Galgame Catalog 操作失败"))

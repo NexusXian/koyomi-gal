@@ -91,6 +91,8 @@ func (app *App) setupRoutes() {
 
 	protected.POST("/galgames", requirePermission("galgame:create"), app.CatalogHandler.CreateGalgame)
 	protected.PUT("/galgames/:id", requirePermission("galgame:update"), app.CatalogHandler.UpdateGalgame)
+	protected.PUT("/galgames/:id/descriptions", requirePermission("galgame:update"), app.CatalogHandler.UpdateGalgameDescriptions)
+	protected.DELETE("/galgames/:id/descriptions/:language", requirePermission("galgame:update"), app.CatalogHandler.DeleteGalgameDescription)
 	protected.DELETE("/galgames/:id", requirePermission("galgame:delete"), app.CatalogHandler.DeleteGalgame)
 	protected.POST("/novels", requirePermission("novel:create"), app.NovelHandler.CreateNovel)
 	protected.PUT("/novels/:id", requirePermission("novel:update"), app.NovelHandler.UpdateNovel)

@@ -201,15 +201,14 @@ func (s *Service) importFetched(
 		}, nil
 	}
 
-	// When creating from VNDB, prefer the Bangumi Chinese summary if the
-	// subject matches confidently; merging into existing rows keeps priority.
-	description := game.Description
-	descriptionSource := game.Source
+	// Description plan: the provider's own language row plus, for VNDB
+	// imports, a confidently matched Bangumi Chinese summary. The legacy
+	// single-description column only ever mirrors the Chinese content so
+	// VNDB English text no longer lands in it.
+	ownDescription := newProviderDescription(game)
+	var bangumiSummary *providerDescription
 	if input.DuplicateAction != DuplicateActionLinkExisting {
-		if resolved, ok := s.tryBangumiDescription(ctx, game); ok {
-			description = resolved
-			descriptionSource = galgameModel.DescriptionSourceBangumi
-		}
+		bangumiSummary = s.tryBangumiSummary(ctx, game)
 	}
 
 	var galgameID uint
@@ -240,7 +239,7 @@ func (s *Service) importFetched(
 				}
 			}
 		} else {
-			created, err := createGalgame(ctx, tx, game, description, descriptionSource, input.CreatedBy)
+			created, err := createGalgame(ctx, tx, game, ownDescription, bangumiSummary, input.CreatedBy)
 			if err != nil {
 				return err
 			}
@@ -364,7 +363,7 @@ func createGalgame(
 	ctx context.Context,
 	tx *gorm.DB,
 	game *provider.ExternalGame,
-	description, descriptionSource string,
+	ownDescription, bangumiSummary *providerDescription,
 	createdBy *uint,
 ) (*galgameModel.Galgame, error) {
 	developerID, err := resolveDeveloper(ctx, tx, game.Developer)
@@ -376,14 +375,24 @@ func createGalgame(
 		return nil, err
 	}
 	now := time.Now()
-	description = normalizeDescription(description)
+	// The legacy columns mirror only the Chinese description; the English
+	// text lives exclusively in its per-language row.
+	legacyDescription := ""
+	legacySource := galgameModel.DescriptionSourceUnknown
+	if bangumiSummary != nil {
+		legacyDescription = bangumiSummary.Content
+		legacySource = galgameModel.DescriptionSourceBangumi
+	} else if ownDescription != nil && ownDescription.Language == galgameModel.LanguageZhCN {
+		legacyDescription = ownDescription.Content
+		legacySource = descriptionSourceFromProvider(game.Source)
+	}
 	created := &galgameModel.Galgame{
 		Title:             strings.TrimSpace(game.Title),
 		OriginalTitle:     strings.TrimSpace(game.OriginalTitle),
 		RomajiTitle:       strings.TrimSpace(game.RomajiTitle),
 		Slug:              game.Source + "-" + game.ExternalID,
-		Description:       description,
-		DescriptionSource: descriptionSourceForImport(descriptionSource, description),
+		Description:       legacyDescription,
+		DescriptionSource: legacySource,
 		CoverURL:          strings.TrimSpace(game.CoverURL),
 		DeveloperID:       developerID,
 		ReleaseDate:       game.ReleaseDate,
@@ -409,6 +418,20 @@ func createGalgame(
 	if err := replaceTags(ctx, tx, created.ID, tagIDs); err != nil {
 		return nil, err
 	}
+	for _, description := range []*providerDescription{bangumiSummary, ownDescription} {
+		if description == nil {
+			continue
+		}
+		sourceType := descriptionSourceFromProvider(game.Source)
+		if description == bangumiSummary {
+			sourceType = galgameModel.DescriptionSourceBangumi
+		}
+		if err := upsertDescriptionRow(
+			ctx, tx, created.ID, description.Language, description.Content, sourceType, description.SourceURL,
+		); err != nil {
+			return nil, err
+		}
+	}
 	return created, nil
 }
 
@@ -427,7 +450,6 @@ func updateGalgameMetadata(
 		return err
 	}
 	now := time.Now()
-	description := normalizeDescription(game.Description)
 	updates := map[string]any{
 		"title":               strings.TrimSpace(game.Title),
 		"original_title":      strings.TrimSpace(game.OriginalTitle),
@@ -446,15 +468,16 @@ func updateGalgameMetadata(
 	}
 	// Forced metadata sync still respects description source priority so a
 	// merge never downgrades Bangumi or manually maintained content.
-	if shouldReplaceDescription(
-		existing.Description,
-		existing.DescriptionSource,
-		description,
-		game.Source,
-		false,
-	) {
-		updates["description"] = description
-		updates["description_source"] = descriptionSourceForImport(game.Source, description)
+	descriptionApplied, err := applyProviderDescription(ctx, tx, existing, game, false)
+	if err != nil {
+		return err
+	}
+	if descriptionApplied {
+		language := providerDescriptionLanguage(game.Source)
+		if language == galgameModel.LanguageZhCN {
+			updates["description"] = normalizeDescription(game.Description)
+			updates["description_source"] = descriptionSourceFromProvider(game.Source)
+		}
 	}
 	if err := tx.WithContext(ctx).Model(&galgameModel.Galgame{}).Where("id = ?", existing.ID).Updates(updates).Error; err != nil {
 		return fmt.Errorf("force update galgame metadata: %w", err)
@@ -465,19 +488,19 @@ func updateGalgameMetadata(
 	return replaceTags(ctx, tx, existing.ID, tagIDs)
 }
 
-// tryBangumiDescription looks up the Bangumi counterpart of a VNDB game so
-// new imports can carry the Chinese summary. Only a high-confidence identity
-// match qualifies; failures fall back to the incoming description.
-func (s *Service) tryBangumiDescription(
+// tryBangumiSummary looks up the Bangumi counterpart of a VNDB game so new
+// imports can carry the Chinese summary. Only a high-confidence identity
+// match qualifies; failures leave the provider's own description in place.
+func (s *Service) tryBangumiSummary(
 	ctx context.Context,
 	game *provider.ExternalGame,
-) (string, bool) {
+) *providerDescription {
 	if game == nil || game.Source != galgameModel.DescriptionSourceVNDB {
-		return "", false
+		return nil
 	}
 	bangumi := s.providers["bangumi"]
 	if bangumi == nil {
-		return "", false
+		return nil
 	}
 	input := MatchInput{
 		Title:         game.Title,
@@ -491,7 +514,7 @@ func (s *Service) tryBangumiDescription(
 	}
 	query := input.SearchQuery()
 	if query == "" {
-		return "", false
+		return nil
 	}
 	results, err := bangumi.Search(ctx, query, enrichSearchLimit)
 	if err != nil {
@@ -499,17 +522,21 @@ func (s *Service) tryBangumiDescription(
 			zap.String("vndb_id", game.ExternalID),
 			zap.String("query", query),
 			zap.Error(err))
-		return "", false
+		return nil
 	}
 	matches := MatchBangumiCandidates(input, results)
 	if len(matches) == 0 || matches[0].Confidence < autoMatchThreshold {
-		return "", false
+		return nil
 	}
 	description := normalizeDescription(matches[0].Game.Description)
 	if description == "" {
-		return "", false
+		return nil
 	}
-	return description, true
+	return &providerDescription{
+		Language:  galgameModel.LanguageZhCN,
+		Content:   description,
+		SourceURL: externalSourceURL(matches[0].Game.Source, matches[0].Game.ExternalID),
+	}
 }
 
 func resolveDeveloper(

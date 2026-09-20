@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MarkdownView extends StatelessWidget {
   const MarkdownView({super.key, required this.data, this.selectable = true});
 
   final String data;
   final bool selectable;
+
+  static Future<void> _openLink(String? href) async {
+    if (href == null || href.isEmpty) {
+      return;
+    }
+    final uri = Uri.tryParse(href);
+    if (uri == null ||
+        (uri.scheme != 'https' &&
+            uri.scheme != 'http' &&
+            uri.scheme != 'mailto')) {
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +68,9 @@ class MarkdownView extends StatelessWidget {
         ),
         a: TextStyle(color: theme.colorScheme.primary),
       ),
-      onTapLink: (text, href, title) {},
+      onTapLink: (text, href, title) {
+        _openLink(href);
+      },
     );
   }
 }

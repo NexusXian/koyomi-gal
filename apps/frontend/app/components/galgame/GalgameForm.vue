@@ -15,10 +15,18 @@ import {
 import { getAdminGalgame } from '~/api/generated/admin/admin'
 import type {
   DtoDeveloperSummary,
-  DtoGalgameResponse,
   DtoTagSummary
 } from '~/api/generated/models'
+import type {
+  GameDescriptions,
+  GalgameDetailData,
+  GalgameUpdatePayload
+} from '~/types/galgame'
 import type { ImageAsset } from '~/types/image'
+import {
+  DESCRIPTION_LOCALES,
+  type DescriptionLocale
+} from '~/utils/gameDescriptions'
 
 // Cherry Markdown is heavy; only pull its chunk when the form mounts.
 const MarkdownEditor = defineAsyncComponent(
@@ -30,7 +38,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  submitted: [galgame: DtoGalgameResponse]
+  submitted: [galgame: GalgameDetailData]
 }>()
 
 const router = useRouter()
@@ -51,26 +59,118 @@ const formState = reactive({
   tag_ids: [] as number[],
   aliases: [] as string[],
   cover_url: '',
-  banner_url: '',
-  description: ''
+  banner_url: ''
 })
+
+// Per-language description editor state; languages are fully independent.
+interface DescriptionDraft {
+  content: string
+  source_type: string
+  source_name: string
+  source_url: string
+  is_official: boolean
+}
+
+const LOCALE_TABS: { locale: DescriptionLocale; label: string }[] = [
+  { locale: 'zh-CN', label: '中文' },
+  { locale: 'en-US', label: 'English' },
+  { locale: 'ja-JP', label: '日本語' }
+]
+
+const SOURCE_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'nextmoe', label: 'NextMoe' },
+  { value: 'vndb', label: 'VNDB' },
+  { value: 'official', label: '游戏官网' },
+  { value: 'bangumi', label: 'Bangumi' },
+  { value: 'steam', label: 'Steam' },
+  { value: 'manual', label: '手动录入' },
+  { value: 'unknown', label: '其他' }
+]
+
+const SOURCE_TYPE_DEFAULT_NAMES: Record<string, string> = {
+  nextmoe: 'NextMoe 资料库',
+  vndb: 'VNDB',
+  official: '游戏官网',
+  bangumi: 'Bangumi',
+  steam: 'Steam',
+  manual: '手动录入',
+  unknown: '未知来源'
+}
+
+function defaultDraft(locale: DescriptionLocale): DescriptionDraft {
+  switch (locale) {
+    case 'zh-CN':
+      return {
+        content: '',
+        source_type: 'nextmoe',
+        source_name: 'NextMoe 资料库',
+        source_url: '',
+        is_official: false
+      }
+    case 'en-US':
+      return {
+        content: '',
+        source_type: 'vndb',
+        source_name: 'VNDB',
+        source_url: '',
+        is_official: false
+      }
+    default:
+      return {
+        content: '',
+        source_type: 'official',
+        source_name: '游戏官网',
+        source_url: '',
+        is_official: true
+      }
+  }
+}
+
+interface DescriptionDrafts {
+  'zh-CN': DescriptionDraft
+  'en-US': DescriptionDraft
+  'ja-JP': DescriptionDraft
+}
+
+const descriptionDrafts = reactive<DescriptionDrafts>({
+  'zh-CN': defaultDraft('zh-CN'),
+  'en-US': defaultDraft('en-US'),
+  'ja-JP': defaultDraft('ja-JP')
+})
+const activeDescriptionTab = ref<DescriptionLocale>('zh-CN')
+
+function applyDescriptionSourceType(
+  locale: DescriptionLocale,
+  sourceType: string
+): void {
+  const draft = descriptionDrafts[locale]
+  draft.source_type = sourceType
+  draft.source_name = SOURCE_TYPE_DEFAULT_NAMES[sourceType] ?? ''
+  draft.is_official = sourceType === 'official'
+}
+
+function loadDescriptionDrafts(descriptions?: GameDescriptions): void {
+  for (const locale of DESCRIPTION_LOCALES) {
+    const stored = descriptions?.[locale]
+    const draft = defaultDraft(locale)
+    if (stored) {
+      draft.content = stored.content ?? ''
+      if (stored.source?.type) {
+        draft.source_type = stored.source.type
+        draft.source_name =
+          stored.source.name ?? SOURCE_TYPE_DEFAULT_NAMES[stored.source.type] ?? ''
+        draft.source_url = stored.source.url ?? ''
+        draft.is_official = stored.source.official ?? false
+      }
+    }
+    Object.assign(descriptionDrafts[locale], draft)
+  }
+}
 
 const developers = ref<DtoDeveloperSummary[]>([])
 const tags = ref<DtoTagSummary[]>([])
 const submitting = ref(false)
 const loading = ref(false)
-
-// Orval 类型尚未包含 description_source，先以宽松方式读取后端新增字段
-const DESCRIPTION_SOURCE_LABELS: Record<string, string> = {
-  manual: '手动编辑',
-  bangumi: 'Bangumi',
-  vndb: 'VNDB',
-  unknown: '未知'
-}
-const descriptionSource = ref('')
-const descriptionSourceLabel = computed(
-  () => DESCRIPTION_SOURCE_LABELS[descriptionSource.value] ?? '未知'
-)
 
 const rules: Record<string, Rule[]> = {
   title: [{ required: true, message: '请输入标题' }],
@@ -142,16 +242,14 @@ async function loadGalgame(): Promise<void> {
 
   loading.value = true
   try {
-    let data: DtoGalgameResponse
+    let data: GalgameDetailData
     try {
       data = unwrapApiData(await getGalgame(props.galgameId))
     } catch {
       // 待审核等未发布条目对公开接口返回 404，回退到管理端接口（需 galgame:review）
       data = unwrapApiData(await getAdminGalgame(props.galgameId))
     }
-    descriptionSource.value =
-      (data as DtoGalgameResponse & { description_source?: string })
-        .description_source ?? ''
+    loadDescriptionDrafts(data.descriptions)
     Object.assign(formState, {
       title: data.title ?? '',
       slug: data.slug ?? '',
@@ -165,8 +263,7 @@ async function loadGalgame(): Promise<void> {
       tag_ids: (data.tags ?? []).map((tag) => tag.id).filter(Boolean),
       aliases: data.aliases ?? [],
       cover_url: data.cover_url ?? '',
-      banner_url: data.banner_url ?? '',
-      description: data.description ?? ''
+      banner_url: data.banner_url ?? ''
     })
   } catch (error) {
     message.error(getApiErrorMessage(error, '加载 Galgame 失败'))
@@ -194,7 +291,19 @@ onMounted(async () => {
 async function submit(): Promise<void> {
   submitting.value = true
 
-  const payload = {
+  const descriptions = DESCRIPTION_LOCALES.map((locale) => {
+    const draft = descriptionDrafts[locale]
+    return {
+      language: locale,
+      content: draft.content.trim(),
+      source_type: draft.source_type,
+      source_name: draft.source_name.trim(),
+      source_url: draft.source_url.trim(),
+      is_official: draft.is_official
+    }
+  })
+
+  const payload: GalgameUpdatePayload = {
     title: formState.title.trim(),
     slug: formState.slug.trim(),
     romaji_title: formState.romaji_title.trim() || undefined,
@@ -208,7 +317,9 @@ async function submit(): Promise<void> {
     aliases: formState.aliases,
     cover_url: formState.cover_url.trim() || undefined,
     banner_url: formState.banner_url.trim() || undefined,
-    description: formState.description.trim() || undefined
+    // 三种语言相互独立，同时保留旧字段兼容旧版后端。
+    descriptions,
+    description: descriptionDrafts['zh-CN'].content.trim() || undefined
   }
 
   try {
@@ -391,28 +502,66 @@ async function submit(): Promise<void> {
           />
         </a-form-item>
 
-        <a-form-item label="简介（支持 Markdown）">
-          <span class="description-source">
-            当前简介来源：{{ descriptionSourceLabel }}
-          </span>
-          <ClientOnly>
-            <MarkdownEditor
-              v-model="formState.description"
-              upload-category="galgames"
-            />
-            <template #fallback>
-              <a-textarea
-                :value="formState.description"
-                :rows="8"
-                placeholder="填写 Galgame 简介，支持 Markdown"
-                @update:value="
-                  (value: string) => {
-                    formState.description = value
-                  }
-                "
-              />
-            </template>
-          </ClientOnly>
+        <a-form-item label="多语言简介（支持 Markdown）">
+          <a-tabs v-model:active-key="activeDescriptionTab">
+            <a-tab-pane
+              v-for="tab in LOCALE_TABS"
+              :key="tab.locale"
+              :tab="tab.label"
+            >
+              <ClientOnly>
+                <MarkdownEditor
+                  v-model="descriptionDrafts[tab.locale].content"
+                  upload-category="galgames"
+                />
+                <template #fallback>
+                  <a-textarea
+                    v-model:value="descriptionDrafts[tab.locale].content"
+                    :rows="8"
+                    placeholder="填写简介，支持 Markdown"
+                  />
+                </template>
+              </ClientOnly>
+
+              <div class="description-source-form">
+                <a-form-item label="来源类型" class="description-source-field">
+                  <a-select
+                    :value="descriptionDrafts[tab.locale].source_type"
+                    :options="
+                      SOURCE_TYPE_OPTIONS.map((item) => ({
+                        value: item.value,
+                        label: item.label
+                      }))
+                    "
+                    @change="
+                      (value: string) =>
+                        applyDescriptionSourceType(tab.locale, value)
+                    "
+                  />
+                </a-form-item>
+                <a-form-item label="来源名称" class="description-source-field">
+                  <a-input
+                    v-model:value="descriptionDrafts[tab.locale].source_name"
+                    :maxlength="128"
+                  />
+                </a-form-item>
+                <a-form-item label="来源链接" class="description-source-field-wide">
+                  <a-input
+                    v-model:value="descriptionDrafts[tab.locale].source_url"
+                    placeholder="https://"
+                  />
+                </a-form-item>
+                <a-form-item label="官方来源" class="description-source-field">
+                  <a-switch
+                    v-model:checked="descriptionDrafts[tab.locale].is_official"
+                  />
+                </a-form-item>
+              </div>
+              <span class="description-source-help">
+                清空内容会保留记录与来源信息；三种语言的简介互不影响。
+              </span>
+            </a-tab-pane>
+          </a-tabs>
         </a-form-item>
 
         <a-form-item>
@@ -470,11 +619,23 @@ async function submit(): Promise<void> {
   line-height: 1.6;
 }
 
-.description-source {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--color-default-500);
+.description-source-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  margin-top: 12px;
+}
+
+.description-source-field :deep(.ant-form-item-label > label) {
   font-size: 13px;
+}
+
+.description-source-help {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-default-500);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .form-actions {

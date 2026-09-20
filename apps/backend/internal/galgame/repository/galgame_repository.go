@@ -42,6 +42,12 @@ func NewGalgameRepository(db *gorm.DB) *GalgameRepository {
 	return &GalgameRepository{db: db}
 }
 
+// DB exposes the underlying handle so services can run sibling-repository
+// writes inside the same transaction.
+func (r *GalgameRepository) DB() *gorm.DB {
+	return r.db
+}
+
 func (r *GalgameRepository) Transaction(ctx context.Context, fn func(tx *GalgameRepository) error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		return fn(&GalgameRepository{db: tx})
@@ -137,7 +143,8 @@ func (r *GalgameRepository) FindPublishedByID(ctx context.Context, id uint) (*mo
 
 func (r *GalgameRepository) findByID(ctx context.Context, id uint, publishedOnly bool) (*model.Galgame, error) {
 	var galgame model.Galgame
-	query := r.withAssociations(r.db.WithContext(ctx))
+	query := r.withAssociations(r.db.WithContext(ctx)).
+		Preload("Descriptions", func(db *gorm.DB) *gorm.DB { return db.Order("language") })
 	if publishedOnly {
 		query = query.Where("status = ?", model.GalgameStatusPublished)
 	}

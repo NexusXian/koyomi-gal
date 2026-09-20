@@ -166,6 +166,51 @@ class RelatedNovelData {
   final int? relationId;
 }
 
+class DescriptionSource {
+  const DescriptionSource({
+    required this.type,
+    required this.name,
+    this.url,
+    required this.official,
+  });
+
+  factory DescriptionSource.fromMap(Map<String, dynamic> map) =>
+      DescriptionSource(
+        type: map['type'] as String? ?? 'unknown',
+        name: map['name'] as String? ?? '',
+        url: map['url'] as String?,
+        official: map['official'] as bool? ?? false,
+      );
+
+  final String type;
+  final String name;
+  final String? url;
+  final bool official;
+}
+
+class GameDescription {
+  const GameDescription({
+    required this.language,
+    required this.content,
+    required this.source,
+  });
+
+  factory GameDescription.fromMap(Map<String, dynamic> map) => GameDescription(
+        language: map['language'] as String? ?? '',
+        content: map['content'] as String? ?? '',
+        source: map['source'] is Map
+            ? DescriptionSource.fromMap(
+                Map<String, dynamic>.from(map['source'] as Map),
+              )
+            : const DescriptionSource(
+                type: 'unknown', name: '', official: false),
+      );
+
+  final String language;
+  final String content;
+  final DescriptionSource source;
+}
+
 class GalgameDetail extends GalgameListItem {
   const GalgameDetail({
     super.id,
@@ -186,6 +231,7 @@ class GalgameDetail extends GalgameListItem {
     this.bannerUrl,
     this.description,
     this.descriptionSource,
+    this.descriptions = const {},
     this.contributorCount,
     this.contributors,
     this.relatedNovels,
@@ -224,6 +270,23 @@ class GalgameDetail extends GalgameListItem {
         bannerUrl: map['banner_url'] as String?,
         description: map['description'] as String?,
         descriptionSource: map['description_source'] as String?,
+        descriptions:
+            (map['descriptions'] as Map<String, dynamic>? ?? const {}).map(
+          (key, value) => MapEntry(
+            key,
+            value is Map
+                ? GameDescription.fromMap(Map<String, dynamic>.from(value))
+                : const GameDescription(
+                    language: '',
+                    content: '',
+                    source: DescriptionSource(
+                      type: 'unknown',
+                      name: '',
+                      official: false,
+                    ),
+                  ),
+          ),
+        ),
         contributorCount: (map['contributor_count'] as num?)?.toInt(),
         contributors: (map['contributors'] as List?)
                 ?.whereType<Map>()
@@ -243,6 +306,7 @@ class GalgameDetail extends GalgameListItem {
   final String? bannerUrl;
   final String? description;
   final String? descriptionSource;
+  final Map<String, GameDescription> descriptions;
   final int? contributorCount;
   final List<ContributorData>? contributors;
   final List<RelatedNovelData>? relatedNovels;

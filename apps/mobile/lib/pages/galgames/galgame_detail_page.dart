@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/constants/domain.dart';
 import '../../core/utils/format.dart';
+import '../../core/utils/game_descriptions.dart';
 import '../../features/game_ratings/widgets/game_rating_widgets.dart';
 import '../../models/galgame_models.dart';
 import '../../models/post_models.dart';
@@ -345,21 +346,127 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
     );
   }
 
-  Widget _buildDescription(GalgameDetail detail) {
-    final description = detail.description;
-    if (description == null || description.isEmpty) {
-      return const SizedBox.shrink();
+  Future<void> _openLink(String? url) async {
+    if (url == null || url.isEmpty) {
+      return;
     }
+    final uri = Uri.tryParse(url);
+    if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http')) {
+      return;
+    }
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      showAppSnackBar(context, '无法打开链接', error: true);
+    }
+  }
+
+  Widget _buildDescription(GalgameDetail detail) {
+    final theme = Theme.of(context);
+    final best = getBestDescription(
+      detail.descriptions,
+      normalizeLocale(View.of(context).platformDispatcher.locale),
+    );
+    if (best == null &&
+        (detail.description == null || detail.description!.isEmpty)) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              '暂无简介',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final content = best?.description.content ?? detail.description!;
+    final source = best?.description.source;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: MarkdownView(data: description, selectable: false),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '游戏简介',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              MarkdownView(data: content, selectable: false),
+              if (best != null && best.isFallback) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '暂无${localeLabels[_normalizedDescriptionLocale(context)] ?? '当前语言'}简介，'
+                  '当前显示${localeLabels[best.locale] ?? best.locale}简介',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (source != null) ...[
+                const SizedBox(height: 10),
+                Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      '来源：',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Flexible(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(4),
+                        onTap: (source.url != null && source.url!.isNotEmpty)
+                            ? () => _openLink(source.url)
+                            : null,
+                        child: Text(
+                          source.url != null && source.url!.isNotEmpty
+                              ? '${source.name} ↗'
+                              : source.name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: source.url != null && source.url!.isNotEmpty
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (source.official)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          '· 官方',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+String _normalizedDescriptionLocale(BuildContext context) {
+  return normalizeLocale(View.of(context).platformDispatcher.locale);
 }
 
 class _ActionChip extends StatelessWidget {

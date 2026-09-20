@@ -122,6 +122,19 @@ func countRows(t *testing.T, db *gorm.DB, model any) int64 {
 	return count
 }
 
+func loadDescriptionRows(t *testing.T, db *gorm.DB, galgameID uint) map[string]galgameModel.GalgameDescription {
+	t.Helper()
+	var rows []galgameModel.GalgameDescription
+	if err := db.Where("galgame_id = ?", galgameID).Find(&rows).Error; err != nil {
+		t.Fatalf("load description rows: %v", err)
+	}
+	byLanguage := make(map[string]galgameModel.GalgameDescription, len(rows))
+	for _, row := range rows {
+		byLanguage[row.Language] = row
+	}
+	return byLanguage
+}
+
 func TestImportNewGame(t *testing.T) {
 	release := time.Date(2018, time.June, 29, 0, 0, 0, 0, time.UTC)
 	svc, db := newTestService(t, []provider.ExternalGame{testExternalGame("v20424", "Summer Pockets", &release)})
@@ -148,8 +161,21 @@ func TestImportNewGame(t *testing.T) {
 	if game.SourceType != galgameModel.GalgameSourceVNDB {
 		t.Errorf("source type = %d, want VNDB", game.SourceType)
 	}
-	if game.DescriptionSource != galgameModel.DescriptionSourceVNDB {
-		t.Errorf("description source = %q, want vndb", game.DescriptionSource)
+	// VNDB English text lives in the en-US description row; the legacy
+	// column only mirrors Chinese content.
+	if game.Description != "" || game.DescriptionSource != galgameModel.DescriptionSourceUnknown {
+		t.Errorf("legacy description = %q/%q, want empty for a VNDB-only import",
+			game.Description, game.DescriptionSource)
+	}
+	descriptions := loadDescriptionRows(t, db, game.ID)
+	en, ok := descriptions[galgameModel.LanguageEnUS]
+	if !ok || en.Content != "description v20424" ||
+		en.SourceType != galgameModel.DescriptionSourceVNDB ||
+		en.SourceURL != "https://vndb.org/v20424" {
+		t.Errorf("en-US description = %+v, want the VNDB English row", en)
+	}
+	if _, ok := descriptions[galgameModel.LanguageZhCN]; ok {
+		t.Error("no Chinese description should exist without a Bangumi match")
 	}
 	if game.OriginalLanguage != "ja" || game.LengthMinutes == nil || *game.LengthMinutes != 1200 {
 		t.Errorf("language/length = %q/%v", game.OriginalLanguage, game.LengthMinutes)
@@ -358,13 +384,29 @@ func TestImportRecordsDescriptionSourceAndPendingStatus(t *testing.T) {
 	}, nil)
 
 	for _, tc := range []struct {
-		provider   string
-		externalID string
-		wantSource string
+		provider    string
+		externalID  string
+		language    string
+		wantSource  string
+		wantContent string
+		// The legacy column only mirrors the Chinese description.
+		wantLegacySource  string
+		wantLegacyContent string
 	}{
-		{"vndb", "v20424", galgameModel.DescriptionSourceVNDB},
-		{"bangumi", "b200763", galgameModel.DescriptionSourceBangumi},
-		{"vndb", "v-empty", galgameModel.DescriptionSourceUnknown},
+		{
+			provider: "vndb", externalID: "v20424",
+			language: galgameModel.LanguageEnUS, wantSource: galgameModel.DescriptionSourceVNDB, wantContent: "description v20424",
+			wantLegacySource: galgameModel.DescriptionSourceUnknown, wantLegacyContent: "",
+		},
+		{
+			provider: "bangumi", externalID: "b200763",
+			language: galgameModel.LanguageZhCN, wantSource: galgameModel.DescriptionSourceBangumi, wantContent: "中文简介",
+			wantLegacySource: galgameModel.DescriptionSourceBangumi, wantLegacyContent: "中文简介",
+		},
+		{
+			provider: "vndb", externalID: "v-empty",
+			wantLegacySource: galgameModel.DescriptionSourceUnknown, wantLegacyContent: "",
+		},
 	} {
 		result, err := svc.Import(context.Background(), ImportInput{
 			Provider:        tc.provider,
@@ -384,13 +426,22 @@ func TestImportRecordsDescriptionSourceAndPendingStatus(t *testing.T) {
 		if game.Status != galgameModel.GalgameStatusPending {
 			t.Errorf("%s/%s: status = %d, want pending", tc.provider, tc.externalID, game.Status)
 		}
-		if game.DescriptionSource != tc.wantSource {
-			t.Errorf("%s/%s: description source = %q, want %q",
-				tc.provider, tc.externalID, game.DescriptionSource, tc.wantSource)
+		rows := loadDescriptionRows(t, db, game.ID)
+		if tc.language == "" {
+			if len(rows) != 0 {
+				t.Errorf("%s/%s: description rows = %+v, want none", tc.provider, tc.externalID, rows)
+			}
+		} else {
+			row, ok := rows[tc.language]
+			if !ok || row.SourceType != tc.wantSource || row.Content != tc.wantContent {
+				t.Errorf("%s/%s: %s description = %+v, want source %q",
+					tc.provider, tc.externalID, tc.language, row, tc.wantSource)
+			}
 		}
-		if tc.wantSource == galgameModel.DescriptionSourceUnknown && game.Description != "" {
-			t.Errorf("%s/%s: description = %q, want blank after normalization",
-				tc.provider, tc.externalID, game.Description)
+		if game.Description != tc.wantLegacyContent || game.DescriptionSource != tc.wantLegacySource {
+			t.Errorf("%s/%s: legacy mirror = %q/%q, want %q/%q",
+				tc.provider, tc.externalID, game.Description, game.DescriptionSource,
+				tc.wantLegacyContent, tc.wantLegacySource)
 		}
 	}
 }
@@ -450,6 +501,19 @@ func TestImportVndbUsesBangumiChineseSummary(t *testing.T) {
 	if game.DescriptionSource != galgameModel.DescriptionSourceBangumi {
 		t.Errorf("description source = %q, want bangumi", game.DescriptionSource)
 	}
+	descriptions := loadDescriptionRows(t, db, game.ID)
+	zh, ok := descriptions[galgameModel.LanguageZhCN]
+	if !ok || zh.Content != "Bangumi 中文简介" ||
+		zh.SourceType != galgameModel.DescriptionSourceBangumi ||
+		zh.SourceURL != "https://bgm.tv/subject/200763" {
+		t.Errorf("zh-CN description = %+v, want the Bangumi row", zh)
+	}
+	en, ok := descriptions[galgameModel.LanguageEnUS]
+	if !ok || en.Content != "English description from VNDB" ||
+		en.SourceType != galgameModel.DescriptionSourceVNDB ||
+		en.SourceURL != "https://vndb.org/v20424" {
+		t.Errorf("en-US description = %+v, want the VNDB row", en)
+	}
 	if game.Slug != "vndb-v20424" || game.SourceType != galgameModel.GalgameSourceVNDB {
 		t.Errorf("identity must stay vndb, got slug %q / source type %d", game.Slug, game.SourceType)
 	}
@@ -487,11 +551,20 @@ func TestImportVndbFallsBackWithoutBangumiMatch(t *testing.T) {
 	if err := db.First(&game, *result.GalgameID).Error; err != nil {
 		t.Fatalf("load imported galgame: %v", err)
 	}
-	if game.Description != "English description from VNDB" {
-		t.Errorf("description = %q, want the VNDB fallback", game.Description)
+	// Without a Bangumi match the VNDB English text only lands in the
+	// en-US row; the legacy column stays empty instead of carrying English.
+	if game.Description != "" || game.DescriptionSource != galgameModel.DescriptionSourceUnknown {
+		t.Errorf("legacy description = %q/%q, want empty",
+			game.Description, game.DescriptionSource)
 	}
-	if game.DescriptionSource != galgameModel.DescriptionSourceVNDB {
-		t.Errorf("description source = %q, want vndb", game.DescriptionSource)
+	descriptions := loadDescriptionRows(t, db, game.ID)
+	en, ok := descriptions[galgameModel.LanguageEnUS]
+	if !ok || en.Content != "English description from VNDB" ||
+		en.SourceType != galgameModel.DescriptionSourceVNDB {
+		t.Errorf("en-US description = %+v, want the VNDB English row", en)
+	}
+	if len(descriptions) != 1 {
+		t.Errorf("descriptions = %+v, want only the en-US row", descriptions)
 	}
 }
 
