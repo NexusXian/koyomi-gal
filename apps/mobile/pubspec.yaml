@@ -2,7 +2,7 @@ name: mobile
 description: "Koyomi Gal mobile client"
 publish_to: 'none'
 
-version: 2.3.0+12
+version: 2.4.0+13
 
 environment:
   sdk: ^3.13.2
