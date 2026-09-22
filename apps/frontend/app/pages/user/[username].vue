@@ -217,7 +217,7 @@ watch([activeTab, page, profile], () => void loadContent())
             </KunCard>
           </section>
 
-          <section v-if="activeTab === 'ratings'" class="galgame-grid">
+          <section v-else-if="activeTab === 'ratings'" class="galgame-grid">
             <KunNull v-if="!contentLoading && galgames.length === 0" message="暂无公开评分" />
             <UserRatingGameCard v-for="game in galgames" :key="game.id" :rating="game" />
           </section>
