@@ -14,6 +14,13 @@ import (
 // Routes should depend on permissions; roles are only an organization unit.
 func RequirePermission(svc *rbacService.RBACService) func(string) gin.HandlerFunc {
 	return func(permission string) gin.HandlerFunc {
+		return RequireAnyPermission(svc)(permission)
+	}
+}
+
+// RequireAnyPermission allows a request when at least one permission is granted.
+func RequireAnyPermission(svc *rbacService.RBACService) func(...string) gin.HandlerFunc {
+	return func(permissions ...string) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			userID, ok := CurrentUserID(c)
 			if !ok {
@@ -22,25 +29,26 @@ func RequirePermission(svc *rbacService.RBACService) func(string) gin.HandlerFun
 				return
 			}
 
-			allowed, err := svc.HasPermission(c.Request.Context(), userID, permission)
-			if err != nil {
-				logger.Error(
-					"check permission",
-					zap.String("permission", permission),
-					zap.Uint("user_id", userID),
-					zap.Error(err),
-				)
-				response.Error(c, appErrors.ErrInternal("权限校验失败"))
-				c.Abort()
-				return
+			for _, permission := range permissions {
+				allowed, err := svc.HasPermission(c.Request.Context(), userID, permission)
+				if err != nil {
+					logger.Error(
+						"check permission",
+						zap.String("permission", permission),
+						zap.Uint("user_id", userID),
+						zap.Error(err),
+					)
+					response.Error(c, appErrors.ErrInternal("权限校验失败"))
+					c.Abort()
+					return
+				}
+				if allowed {
+					c.Next()
+					return
+				}
 			}
-			if !allowed {
-				response.Error(c, appErrors.ErrForbidden("没有执行该操作的权限"))
-				c.Abort()
-				return
-			}
-
-			c.Next()
+			response.Error(c, appErrors.ErrForbidden("没有执行该操作的权限"))
+			c.Abort()
 		}
 	}
 }

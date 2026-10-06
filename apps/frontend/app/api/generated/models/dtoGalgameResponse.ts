@@ -5,24 +5,28 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { BackendInternalGalgameDtoContributorData } from './backendInternalGalgameDtoContributorData';
+import type { BackendInternalGalgameDtoTagSummary } from './backendInternalGalgameDtoTagSummary';
 import type { DtoDeveloperSummary } from './dtoDeveloperSummary';
+import type { DtoGalgameResponseDescriptions } from './dtoGalgameResponseDescriptions';
 import type { DtoGalgameStatistics } from './dtoGalgameStatistics';
+import type { DtoGameCompanyResponse } from './dtoGameCompanyResponse';
 import type { DtoRatingSummary } from './dtoRatingSummary';
 import type { DtoRelatedNovelData } from './dtoRelatedNovelData';
-import type { InternalGalgameDtoContributorData } from './internalGalgameDtoContributorData';
-import type { InternalGalgameDtoTagSummary } from './internalGalgameDtoTagSummary';
 
 export interface DtoGalgameResponse {
   age_rating?: number;
   aliases?: string[];
   banner_url?: string;
+  companies?: DtoGameCompanyResponse[];
   contributor_count?: number;
-  contributors?: InternalGalgameDtoContributorData[];
+  contributors?: BackendInternalGalgameDtoContributorData[];
   cover_sensitive?: boolean;
   cover_url?: string;
   created_at?: string;
   description?: string;
   description_source?: string;
+  descriptions?: DtoGalgameResponseDescriptions;
   developer?: DtoDeveloperSummary;
   id?: number;
   original_title?: string;
@@ -33,7 +37,7 @@ export interface DtoGalgameResponse {
   slug?: string;
   statistics?: DtoGalgameStatistics;
   status?: number;
-  tags?: InternalGalgameDtoTagSummary[];
+  tags?: BackendInternalGalgameDtoTagSummary[];
   title?: string;
   updated_at?: string;
 }

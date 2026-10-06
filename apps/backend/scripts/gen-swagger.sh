@@ -3,13 +3,5 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-SWAG_BIN="$(command -v swag || true)"
-if [[ -z "$SWAG_BIN" && -x "$HOME/go/bin/swag" ]]; then
-  SWAG_BIN="$HOME/go/bin/swag"
-fi
-if [[ -z "$SWAG_BIN" ]]; then
-  echo "error: swag not found, install with: go install github.com/swaggo/swag/cmd/swag@latest" >&2
-  exit 1
-fi
-
-"$SWAG_BIN" init -g cmd/server/main.go --parseInternal -o docs
+SEARCH_DIRS="$(go list -f '{{.Dir}}' ./cmd/server ./internal/... ./pkg/... | paste -sd ',' -)"
+go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g main.go -d "$SEARCH_DIRS" --parseInternal -o docs

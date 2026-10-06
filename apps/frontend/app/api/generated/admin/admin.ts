@@ -36,6 +36,9 @@ import type {
   DtoCharacterDataResponse,
   DtoCharacterRequest,
   DtoCharacterSearchResponse,
+  DtoCompanyDataResponse,
+  DtoCompanyListResponse,
+  DtoCompanyRequest,
   DtoCreateArticleRequest,
   DtoCreateBackgroundPresetRequest,
   DtoCreateBannerRequest,
@@ -51,6 +54,7 @@ import type {
   DtoGalleryListResponse,
   DtoGalleryReviewBatchResponse,
   DtoGalleryReviewListResponse,
+  DtoGameCompaniesDataResponse,
   DtoGitHubReleaseListResponse,
   DtoHandleFeedbackRequest,
   DtoHandleResourceReportRequest,
@@ -59,6 +63,7 @@ import type {
   DtoNovelListResponse,
   DtoPublishReleaseRequest,
   DtoReorderGalleryRequest,
+  DtoReplaceGameCompaniesRequest,
   DtoResourceDataResponse,
   DtoResourceReportDataResponse,
   DtoResourceReportListResponse,
@@ -89,6 +94,7 @@ import type {
   ListAdminBackgroundPresetsParams,
   ListAdminBannersParams,
   ListAdminCommentsParams,
+  ListAdminCompaniesParams,
   ListAdminFeedbackParams,
   ListAdminGalgamesParams,
   ListAdminGitHubReleasesParams,
@@ -1204,6 +1210,146 @@ export const listAdminComments = async (params?: ListAdminCommentsParams, option
 );}
 
 
+export const getListAdminCompaniesUrl = (params?: ListAdminCompaniesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/companies?${stringifiedParams}` : `/api/v1/admin/companies`
+}
+
+/**
+ * Requires company:manage. Counts include games of every status. Sort defaults to created_at descending; name is ascending and game_count descending.
+ * @summary List companies for administration
+ */
+export const listAdminCompanies = async (params?: ListAdminCompaniesParams, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCompanyListResponse> => {
+
+  return apiMutator<DtoCompanyListResponse>(getListAdminCompaniesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateCompanyUrl = () => {
+
+
+
+
+  return `/api/v1/admin/companies`
+}
+
+/**
+ * Requires company:manage. Slugs are trimmed and lowercase; the normalized slug must be nonempty, cannot be '.' or '..', and cannot contain '/' or '\\' or Unicode control characters. Spaces and Unicode characters are allowed for compatibility with existing developer slugs. Aliases are trimmed, deduplicated and empty aliases omitted. Dates must be nullable YYYY-MM-DD, closed_date cannot precede founded_date.
+ * @summary Create company
+ */
+export const createCompany = async (dtoCompanyRequest: DtoCompanyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCompanyDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoCompanyDataResponse>(getCreateCompanyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCompanyRequest)
+  }
+);}
+
+
+export const getGetAdminCompanyUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/companies/${id}`
+}
+
+/**
+ * Requires company:manage. Counts include games of every status.
+ * @summary Get company by ID for administration
+ */
+export const getAdminCompany = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCompanyDataResponse> => {
+
+  return apiMutator<DtoCompanyDataResponse>(getGetAdminCompanyUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateCompanyUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/companies/${id}`
+}
+
+/**
+ * Requires company:manage. Full replacement; omitted optional fields reset. Slugs follow the same rules as creation: trim and lowercase, nonempty, not '.' or '..', no '/' or '\\' or Unicode control characters; spaces and Unicode characters are allowed. Parent must exist and cannot create a cycle. Dates must be nullable YYYY-MM-DD, closed_date cannot precede founded_date.
+ * @summary Replace company metadata and aliases
+ */
+export const updateCompany = async (id: number,
+    dtoCompanyRequest: DtoCompanyRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoCompanyDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoCompanyDataResponse>(getUpdateCompanyUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoCompanyRequest)
+  }
+);}
+
+
+export const getDeleteCompanyUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/companies/${id}`
+}
+
+/**
+ * Requires company:manage. Removes aliases and game associations; children become parentless. Games and legacy developers are preserved.
+ * @summary Delete company
+ */
+export const deleteCompany = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteCompanyUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
 export const getListAdminExperienceRulesUrl = () => {
 
 
@@ -1421,7 +1567,7 @@ export const getGetAdminGalgameUrl = (id: number,) => {
 }
 
 /**
- * 按 ID 返回任意状态 Galgame 详情；需要 galgame:review 权限
+ * Returns Galgame details of any status. Requires galgame:review or company:manage.
  * @summary 管理端查看 Galgame 详情
  */
 export const getAdminGalgame = async (id: number, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameDataResponse> => {
@@ -1869,6 +2015,37 @@ return apiMutator<DtoGalleryDataResponse>(getRejectGalleryImageUrl(id),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(dtoReviewGalleryImageRequest)
+  }
+);}
+
+
+export const getReplaceGameCompaniesUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/admin/games/${id}/companies`
+}
+
+/**
+ * Requires company:manage. Game and all companies must exist. Rejects duplicate company_id/role tuples and invalid roles. An empty companies array clears all associations; multiple distinct roles for one company are allowed.
+ * @summary Atomically replace all company associations of a game
+ */
+export const replaceGameCompanies = async (id: number,
+    dtoReplaceGameCompaniesRequest: DtoReplaceGameCompaniesRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGameCompaniesDataResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGameCompaniesDataResponse>(getReplaceGameCompaniesUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoReplaceGameCompaniesRequest)
   }
 );}
 

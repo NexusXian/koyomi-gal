@@ -12,6 +12,9 @@ import 'pages/articles/article_list_page.dart';
 import 'pages/auth/forgot_password_page.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/auth/register_page.dart';
+import 'pages/companies/company_detail_page.dart';
+import 'pages/companies/company_form_page.dart';
+import 'pages/companies/company_list_page.dart';
 import 'pages/feedback/feedback_page.dart';
 import 'pages/galgames/galgame_detail_page.dart';
 import 'pages/galgames/galgame_form_page.dart';
@@ -92,42 +95,74 @@ GoRouter buildRouter() {
         branches: [
           StatefulShellBranch(
             routes: [
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomePage(),
-            ),
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomePage(),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-            GoRoute(
-              path: '/galgames',
-              builder: (context, state) => const GalgameListPage(),
-            ),
+              GoRoute(
+                path: '/galgames',
+                builder: (context, state) => GalgameListPage(
+                  companyId: int.tryParse(
+                    state.uri.queryParameters['company_id'] ?? '',
+                  ),
+                  companyName: state.uri.queryParameters['company_name'],
+                ),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-            GoRoute(
-              path: '/posts',
-              builder: (context, state) => const PostListPage(),
-            ),
+              GoRoute(
+                path: '/posts',
+                builder: (context, state) => const PostListPage(),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-            GoRoute(
-              path: '/novels',
-              builder: (context, state) => const NovelListPage(),
-            ),
+              GoRoute(
+                path: '/novels',
+                builder: (context, state) => const NovelListPage(),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(path: '/my', builder: (context, state) => const MyPage()),
             ],
-            ),
+          ),
         ],
+      ),
+      GoRoute(
+        path: '/companies',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const CompanyListPage(),
+      ),
+      GoRoute(
+        path: '/companies/:slug',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            CompanyDetailPage(slug: state.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/admin/companies',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const CompanyListPage(admin: true),
+      ),
+      GoRoute(
+        path: '/admin/companies/new',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const CompanyFormPage(),
+      ),
+      GoRoute(
+        path: '/admin/companies/:id/edit',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            CompanyFormPage(editId: int.parse(state.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/galgames/new',

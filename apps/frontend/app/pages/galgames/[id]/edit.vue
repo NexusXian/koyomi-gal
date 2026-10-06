@@ -31,8 +31,9 @@ useSeoMeta({
   >
     <a-spin v-if="!ready" tip="正在加载编辑权限..." />
     <template v-else>
-      <a-alert v-if="!hasAny(['galgame:update', 'character:manage', 'galgame_gallery:manage'])" type="warning" show-icon message="没有编辑此条目的权限" />
-      <GalgameForm v-if="has('galgame:update')" :galgame-id="galgameId" />
+      <a-alert v-if="!hasAny(['galgame:update', 'character:manage', 'galgame_gallery:manage', 'company:manage'])" type="warning" show-icon message="没有编辑此条目的权限" />
+      <GalgameForm v-if="has('galgame:update')" :key="galgameId" :galgame-id="galgameId" />
+      <GalgameCompanyManager v-if="has('company:manage')" :key="`companies-${galgameId}`" :galgame-id="galgameId" />
       <GalgameCharacterManager v-if="has('character:manage')" :key="galgameId" :galgame-id="galgameId" />
       <GalgameGalleryManager v-if="has('galgame_gallery:manage')" :galgame-id="galgameId" />
     </template>

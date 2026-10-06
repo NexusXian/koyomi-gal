@@ -5,17 +5,17 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { BackendInternalNovelDtoContributorData } from './backendInternalNovelDtoContributorData';
+import type { BackendInternalNovelDtoTagSummary } from './backendInternalNovelDtoTagSummary';
 import type { DtoNovelStatistics } from './dtoNovelStatistics';
 import type { DtoRelatedWorkData } from './dtoRelatedWorkData';
 import type { DtoVolumeSummary } from './dtoVolumeSummary';
-import type { InternalNovelDtoContributorData } from './internalNovelDtoContributorData';
-import type { InternalNovelDtoTagSummary } from './internalNovelDtoTagSummary';
 
 export interface DtoNovelResponse {
   age_rating?: number;
   author?: string;
   contributor_count?: number;
-  contributors?: InternalNovelDtoContributorData[];
+  contributors?: BackendInternalNovelDtoContributorData[];
   cover_url?: string;
   created_at?: string;
   first_release_date?: string;
@@ -36,7 +36,7 @@ export interface DtoNovelResponse {
   statistics?: DtoNovelStatistics;
   status?: number;
   summary?: string;
-  tags?: InternalNovelDtoTagSummary[];
+  tags?: BackendInternalNovelDtoTagSummary[];
   title?: string;
   updated_at?: string;
   volumes?: DtoVolumeSummary[];

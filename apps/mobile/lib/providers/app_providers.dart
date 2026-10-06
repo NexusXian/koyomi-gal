@@ -17,6 +17,7 @@ import '../models/auth_models.dart';
 import '../services/admin_service.dart';
 import '../services/article_service.dart';
 import '../services/auth_service.dart';
+import '../services/company_service.dart';
 import '../services/galgame_service.dart';
 import '../services/home_service.dart';
 import '../services/notification_service.dart';
@@ -194,49 +195,69 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 
 final dioProvider = Provider<Dio>((ref) => ref.watch(apiClientProvider).dio);
 
-final authServiceProvider = Provider<AuthService>((ref) =>
-    AuthService(ref.watch(apiClientProvider)));
+final authServiceProvider = Provider<AuthService>(
+  (ref) => AuthService(ref.watch(apiClientProvider)),
+);
 
 final galgameServiceProvider = Provider<GalgameService>(
-    (ref) => GalgameService(ref.watch(apiClientProvider)));
+  (ref) => GalgameService(ref.watch(apiClientProvider)),
+);
 
-final tagServiceProvider =
-    Provider<TagService>((ref) => TagService(ref.watch(apiClientProvider)));
+final companyServiceProvider = Provider<CompanyService>(
+  (ref) => CompanyService(ref.watch(apiClientProvider)),
+);
+
+final tagServiceProvider = Provider<TagService>(
+  (ref) => TagService(ref.watch(apiClientProvider)),
+);
 
 final developerServiceProvider = Provider<DeveloperService>(
-    (ref) => DeveloperService(ref.watch(apiClientProvider)));
+  (ref) => DeveloperService(ref.watch(apiClientProvider)),
+);
 
 final resourceServiceProvider = Provider<ResourceService>(
-    (ref) => ResourceService(ref.watch(apiClientProvider)));
+  (ref) => ResourceService(ref.watch(apiClientProvider)),
+);
 
-final imageServiceProvider = Provider<ImageService>((ref) => ImageService(
-      ref.watch(apiClientProvider),
-      Dio(BaseOptions(
+final imageServiceProvider = Provider<ImageService>(
+  (ref) => ImageService(
+    ref.watch(apiClientProvider),
+    Dio(
+      BaseOptions(
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 60),
-      )),
-    ));
+      ),
+    ),
+  ),
+);
 
-final postServiceProvider =
-    Provider<PostService>((ref) => PostService(ref.watch(apiClientProvider)));
+final postServiceProvider = Provider<PostService>(
+  (ref) => PostService(ref.watch(apiClientProvider)),
+);
 
 final commentServiceProvider = Provider<CommentService>(
-    (ref) => CommentService(ref.watch(apiClientProvider)));
+  (ref) => CommentService(ref.watch(apiClientProvider)),
+);
 
 final adminServiceProvider = Provider<AdminService>(
-    (ref) => AdminService(ref.watch(apiClientProvider)));
+  (ref) => AdminService(ref.watch(apiClientProvider)),
+);
 
-final novelServiceProvider =
-    Provider<NovelService>((ref) => NovelService(ref.watch(apiClientProvider)));
+final novelServiceProvider = Provider<NovelService>(
+  (ref) => NovelService(ref.watch(apiClientProvider)),
+);
 
 final articleServiceProvider = Provider<ArticleService>(
-    (ref) => ArticleService(ref.watch(apiClientProvider)));
+  (ref) => ArticleService(ref.watch(apiClientProvider)),
+);
 
-final userServiceProvider =
-    Provider<UserService>((ref) => UserService(ref.watch(apiClientProvider)));
+final userServiceProvider = Provider<UserService>(
+  (ref) => UserService(ref.watch(apiClientProvider)),
+);
 
-final meServiceProvider =
-    Provider<MeService>((ref) => MeService(ref.watch(apiClientProvider)));
+final meServiceProvider = Provider<MeService>(
+  (ref) => MeService(ref.watch(apiClientProvider)),
+);
 
 final mePermissionsProvider = FutureProvider<MePermissions>((ref) async {
   final auth = ref.watch(authControllerProvider);
@@ -247,21 +268,28 @@ final mePermissionsProvider = FutureProvider<MePermissions>((ref) async {
 });
 
 final notificationServiceProvider = Provider<NotificationService>(
-    (ref) => NotificationService(ref.watch(apiClientProvider)));
+  (ref) => NotificationService(ref.watch(apiClientProvider)),
+);
 
-final homeServiceProvider =
-    Provider<HomeService>((ref) => HomeService(ref.watch(apiClientProvider)));
+final homeServiceProvider = Provider<HomeService>(
+  (ref) => HomeService(ref.watch(apiClientProvider)),
+);
 
 final feedbackServiceProvider = Provider<FeedbackService>(
-    (ref) => FeedbackService(ref.watch(apiClientProvider)));
+  (ref) => FeedbackService(ref.watch(apiClientProvider)),
+);
 
 final updateServiceProvider = Provider<UpdateService>(
-    (ref) => UpdateService(ref.watch(apiClientProvider)));
+  (ref) => UpdateService(ref.watch(apiClientProvider)),
+);
 
 final announcementServiceProvider = Provider<AnnouncementService>(
-    (ref) => AnnouncementService(ref.watch(apiClientProvider)));
+  (ref) => AnnouncementService(ref.watch(apiClientProvider)),
+);
 
-final startupPromptCoordinatorProvider = Provider<StartupPromptCoordinator>((ref) {
+final startupPromptCoordinatorProvider = Provider<StartupPromptCoordinator>((
+  ref,
+) {
   final platform = switch (defaultTargetPlatform) {
     TargetPlatform.android => 'android',
     TargetPlatform.iOS => 'ios',
@@ -331,14 +359,16 @@ class UnreadNotifications extends ChangeNotifier {
   }
 }
 
-final unreadNotificationsProvider =
-    ChangeNotifierProvider<UnreadNotifications>((ref) {
-  ref.watch(authControllerProvider);
-  return UnreadNotifications(ref);
-});
+final unreadNotificationsProvider = ChangeNotifierProvider<UnreadNotifications>(
+  (ref) {
+    ref.watch(authControllerProvider);
+    return UnreadNotifications(ref);
+  },
+);
 
-final themeControllerProvider =
-    ChangeNotifierProvider<ThemeController>((ref) => ThemeController());
+final themeControllerProvider = ChangeNotifierProvider<ThemeController>(
+  (ref) => ThemeController(),
+);
 
 class ThemeController extends ChangeNotifier {
   ThemeMode mode = ThemeMode.light;
@@ -362,6 +392,7 @@ class ThemeController extends ChangeNotifier {
 /// Called before runApp, so no listeners exist yet; no notify needed.
 Future<void> loadThemePreference(ThemeController controller) async {
   final prefs = await SharedPreferences.getInstance();
-  controller.mode =
-      prefs.getBool('koyomi-dark-mode') == true ? ThemeMode.dark : ThemeMode.light;
+  controller.mode = prefs.getBool('koyomi-dark-mode') == true
+      ? ThemeMode.dark
+      : ThemeMode.light;
 }

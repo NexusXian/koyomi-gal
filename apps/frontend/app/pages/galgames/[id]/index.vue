@@ -29,6 +29,7 @@ import {
   domainLabel
 } from '~/constants/domain'
 import { stripMarkdownForExcerpt } from '~/utils/markdown'
+import { companyRoleLabel } from '~/constants/company'
 import { getBestDescription } from '~/utils/gameDescriptions'
 
 const route = useRoute()
@@ -348,9 +349,13 @@ onMounted(() => {
           </p>
 
           <dl class="detail-meta">
+            <div v-for="company in galgame?.companies ?? []" :key="`${company.id}:${company.role}`" class="meta-row">
+              <dt><KunIcon name="lucide:building-2" />{{ companyRoleLabel(company.role) }}</dt>
+              <dd><NuxtLink :to="`/companies/${encodeURIComponent(company.slug ?? '')}`">{{ company.name }}</NuxtLink></dd>
+            </div>
             <div v-if="galgame?.developer?.name" class="meta-row">
               <dt><KunIcon name="lucide:building-2" />开发商</dt>
-              <dd>{{ galgame.developer.name }}</dd>
+              <dd><NuxtLink :to="`/galgames?developer=${galgame.developer.id}`">{{ galgame.developer.name }}</NuxtLink></dd>
             </div>
             <div v-if="galgame?.release_date" class="meta-row">
               <dt><KunIcon name="lucide:calendar" />发行日期</dt>
@@ -399,7 +404,7 @@ onMounted(() => {
             </KunButton>
 
             <KunButton
-              v-if="has('galgame:update') || has('character:manage')"
+              v-if="has('galgame:update') || has('character:manage') || has('company:manage')"
               color="default"
               variant="bordered"
               :href="`/galgames/${galgameId}/edit`"

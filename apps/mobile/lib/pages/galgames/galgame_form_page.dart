@@ -9,10 +9,12 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/constants/domain.dart';
 import '../../models/galgame_models.dart';
+import '../../models/company_models.dart';
 import '../../providers/app_providers.dart';
 import '../../services/galgame_service.dart';
 import '../../widgets/app_image.dart';
 import '../../widgets/common_views.dart';
+import '../companies/widgets.dart';
 
 class GalgameFormPage extends ConsumerStatefulWidget {
   const GalgameFormPage({super.key, this.editId});
@@ -66,8 +68,8 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
       locale: locale == 'zh-CN'
           ? 'nextmoe'
           : locale == 'en-US'
-              ? 'vndb'
-              : 'official',
+          ? 'vndb'
+          : 'official',
   };
   final Map<String, bool> _sourceOfficial = {
     for (final (locale, _) in _descriptionLocales) locale: locale == 'ja-JP',
@@ -84,6 +86,11 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
   List<TagDataLite> _tags = [];
   List<DeveloperDataLite> _developers = [];
   final List<int> _selectedTagIds = [];
+  List<GameCompany> _companies = [];
+  bool _companiesDirty = false;
+  int? _savedNewGameId;
+  int? _savedNewGameStatus;
+  String? _editingTitle;
 
   bool _loading = false;
   bool _saving = false;
@@ -140,8 +147,9 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
     setState(() {
       _sourceTypes[locale] = sourceType;
       _sourceOfficial[locale] = sourceType == 'official';
-      _sourceNameControllers[locale]!.text =
-          _sourceTypeOptions.firstWhere((option) => option.$1 == sourceType).$3;
+      _sourceNameControllers[locale]!.text = _sourceTypeOptions
+          .firstWhere((option) => option.$1 == sourceType)
+          .$3;
     });
   }
 
@@ -187,13 +195,18 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
       _error = null;
     });
     try {
-      final detail =
-          await ref.read(galgameServiceProvider).get(widget.editId!);
+      final permissions = await ref.read(mePermissionsProvider.future);
+      if (!mounted) return;
+      final service = ref.read(galgameServiceProvider);
+      final detail = permissions.hasAny(['galgame:review', 'company:manage'])
+          ? await service.adminGet(widget.editId!)
+          : await service.get(widget.editId!);
       if (!mounted) {
         return;
       }
       setState(() {
         _titleController.text = detail.title ?? '';
+        _editingTitle = detail.title;
         _romajiController.text = detail.romajiTitle ?? '';
         _originalTitleController.text = detail.originalTitle ?? '';
         _slugController.text = detail.slug ?? '';
@@ -206,13 +219,15 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
         _coverUrl = detail.coverUrl;
         _bannerUrl = detail.bannerUrl;
         _developerId = detail.developer?.id;
+        _companies = detail.companies;
         if (_developerId != null &&
             _developers.isNotEmpty &&
             !_developers.any((d) => d.id == _developerId)) {
           _developerId = null;
         }
         _selectedTagIds
-            .addAll(detail.tags.map((tag) => tag.id).whereType<int>());
+          ..clear()
+          ..addAll(detail.tags.map((tag) => tag.id).whereType<int>());
         _loading = false;
       });
     } catch (error) {
@@ -243,15 +258,16 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
     );
     if (picked != null) {
       setState(() {
-        _releaseDateController.text =
-            DateFormat('yyyy-MM-dd').format(picked);
+        _releaseDateController.text = DateFormat('yyyy-MM-dd').format(picked);
       });
     }
   }
 
   Future<void> _pickImage({required bool isBanner}) async {
-    final picked = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, maxWidth: 2400);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2400,
+    );
     if (picked == null) {
       return;
     }
@@ -293,7 +309,24 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_saving || _loading || _error != null) {
+      return;
+    }
+    final permissions = ref.read(mePermissionsProvider).asData?.value;
+    if (_savedNewGameId != null ||
+        (isEditing && !(permissions?.has('galgame:update') ?? false))) {
+      await _saveCompanies();
+      return;
+    }
+    if (!(permissions?.has(isEditing ? 'galgame:update' : 'galgame:create') ??
+            false) ||
+        !(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+    if (_companiesDirty &&
+        !(ref.read(mePermissionsProvider).asData?.value.has('company:manage') ??
+            false)) {
+      showAppSnackBar(context, '无法保存公司关联，请确认公司管理权限', error: true);
       return;
     }
     setState(() => _saving = true);
@@ -325,17 +358,41 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
       final detail = isEditing
           ? await service.update(widget.editId!, payload)
           : await service.create(payload);
+      if (!isEditing) {
+        _savedNewGameId = detail.id;
+        _savedNewGameStatus = detail.status;
+      }
+      if (!mounted) return;
+      final canManageCompanies =
+          ref.read(mePermissionsProvider).asData?.value.has('company:manage') ??
+          false;
+      if (_companiesDirty && !canManageCompanies) {
+        showAppSnackBar(context, '游戏已保存，公司关联未保存，请确认公司管理权限后重试', error: true);
+        return;
+      }
+      if (_companiesDirty && canManageCompanies) {
+        final id = detail.id ?? widget.editId;
+        if (id == null) throw StateError('游戏已保存，但未返回 ID，无法关联公司');
+        try {
+          await ref
+              .read(companyServiceProvider)
+              .replaceGameCompanies(id, _companies);
+          _companiesDirty = false;
+        } catch (error) {
+          if (mounted) {
+            showAppSnackBar(
+              context,
+              '游戏已保存，公司关联保存失败，请重试：${apiErrorMessage(error)}',
+              error: true,
+            );
+          }
+          return;
+        }
+      }
       if (!mounted) {
         return;
       }
-      showAppSnackBar(context, isEditing ? '已保存' : '已提交，等待审核');
-      if (isEditing) {
-        context.pop(true);
-      } else if (detail.id != null) {
-        context.pushReplacement('/galgames/${detail.id}');
-      } else {
-        context.pop();
-      }
+      _finishSave();
     } catch (error) {
       if (mounted) {
         showAppSnackBar(context, apiErrorMessage(error), error: true);
@@ -347,29 +404,138 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
     }
   }
 
+  Future<void> _saveCompanies() async {
+    final id = widget.editId ?? _savedNewGameId;
+    if (id == null ||
+        _saving ||
+        _loading ||
+        _error != null ||
+        !_companiesDirty ||
+        !(ref.read(mePermissionsProvider).asData?.value.has('company:manage') ??
+            false)) {
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(companyServiceProvider)
+          .replaceGameCompanies(id, _companies);
+      if (!mounted) return;
+      setState(() => _companiesDirty = false);
+      if (_savedNewGameId != null) {
+        _finishSave();
+      } else {
+        showAppSnackBar(context, '公司关联已保存');
+      }
+    } catch (error) {
+      if (mounted) {
+        showAppSnackBar(context, apiErrorMessage(error), error: true);
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _finishSave() {
+    final published = _savedNewGameStatus == 1;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    showAppSnackBar(
+      context,
+      isEditing
+          ? '已保存'
+          : published
+          ? '已创建'
+          : '已提交，等待审核',
+    );
+    if (isEditing) {
+      context.pop(true);
+    } else if (published && _savedNewGameId != null) {
+      context.pushReplacement('/galgames/$_savedNewGameId');
+    } else {
+      context.go('/galgames');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final permissions = ref.watch(mePermissionsProvider);
+    final canEditMetadata =
+        permissions.asData?.value.has(
+          isEditing ? 'galgame:update' : 'galgame:create',
+        ) ??
+        false;
+    final canManageCompanies =
+        permissions.asData?.value.has('company:manage') ?? false;
+    final relationsOnly =
+        _savedNewGameId != null || (isEditing && !canEditMetadata);
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? '编辑 Galgame' : '新建 Galgame'),
+        title: Text(
+          relationsOnly
+              ? '编辑 Galgame 公司关联'
+              : isEditing
+              ? '编辑 Galgame'
+              : '新建 Galgame',
+        ),
         actions: [
-          TextButton(
-            onPressed: _saving ? null : _submit,
-            child: const Text('保存'),
-          ),
+          if (relationsOnly ? canManageCompanies : canEditMetadata)
+            TextButton(
+              onPressed:
+                  _saving ||
+                      _loading ||
+                      _error != null ||
+                      (relationsOnly && !_companiesDirty)
+                  ? null
+                  : _submit,
+              child: Text(relationsOnly ? '保存公司关联' : '保存'),
+            ),
         ],
       ),
-      body: _buildBody(),
+      body: permissions.when(
+        loading: () => const LoadingView(),
+        error: (error, _) => ErrorView(
+          message: apiErrorMessage(error),
+          onRetry: () {
+            ref.invalidate(mePermissionsProvider);
+            if (isEditing) _loadEditing();
+          },
+        ),
+        data: (_) => _buildBody(
+          relationsOnly: relationsOnly,
+          canEditMetadata: canEditMetadata,
+          canManageCompanies: canManageCompanies,
+        ),
+      ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody({
+    required bool relationsOnly,
+    required bool canEditMetadata,
+    required bool canManageCompanies,
+  }) {
     if (_loading) {
       return const LoadingView();
     }
     if (_error != null) {
       return ErrorView(message: _error!, onRetry: _loadEditing);
     }
+    if (relationsOnly) {
+      if (!canManageCompanies) return const EmptyView(hint: '无权编辑公司关联');
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            '${_editingTitle ?? _titleController.text} · ID ${widget.editId ?? _savedNewGameId}',
+          ),
+          const SizedBox(height: 12),
+          if (_savedNewGameId != null) const Text('游戏已保存，仅需重试公司关联。'),
+          const SizedBox(height: 12),
+          _buildCompanyEditor(),
+        ],
+      );
+    }
+    if (!canEditMetadata) return const EmptyView(hint: '无权编辑游戏');
     return Form(
       key: _formKey,
       child: ListView(
@@ -384,9 +550,7 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _slugController,
-            decoration: const InputDecoration(
-              labelText: 'Slug *（字母、数字、-、_）',
-            ),
+            decoration: const InputDecoration(labelText: 'Slug *（字母、数字、-、_）'),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return '请输入 slug';
@@ -421,8 +585,7 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
                   ),
                 ),
               ],
-              onChanged: (value) =>
-                  setState(() => _developerId = value),
+              onChanged: (value) => setState(() => _developerId = value),
             )
           else
             InputDecorator(
@@ -442,6 +605,10 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
               ),
             ),
           ),
+          if (canManageCompanies) ...[
+            const SizedBox(height: 16),
+            _buildCompanyEditor(),
+          ],
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             isExpanded: true,
@@ -449,10 +616,12 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
             decoration: const InputDecoration(labelText: '年龄等级'),
             items: [
               for (final option in ageRatingOptions)
-                DropdownMenuItem(value: option.value, child: Text(option.label)),
+                DropdownMenuItem(
+                  value: option.value,
+                  child: Text(option.label),
+                ),
             ],
-            onChanged: (value) =>
-                setState(() => _ageRating = value ?? 0),
+            onChanged: (value) => setState(() => _ageRating = value ?? 0),
           ),
           const SizedBox(height: 12),
           if (isEditing)
@@ -462,7 +631,10 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
               decoration: const InputDecoration(labelText: '状态'),
               items: [
                 for (final option in galgameStatusOptions)
-                  DropdownMenuItem(value: option.value, child: Text(option.label)),
+                  DropdownMenuItem(
+                    value: option.value,
+                    child: Text(option.label),
+                  ),
               ],
               onChanged: (value) => setState(() => _status = value ?? 0),
             ),
@@ -490,9 +662,7 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _aliasesController,
-            decoration: const InputDecoration(
-              labelText: '别名（每行一个）',
-            ),
+            decoration: const InputDecoration(labelText: '别名（每行一个）'),
             minLines: 2,
             maxLines: 6,
           ),
@@ -534,6 +704,25 @@ class _GalgameFormPageState extends ConsumerState<GalgameFormPage> {
       ),
     );
   }
+
+  Widget _buildCompanyEditor() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      GameCompanyEditor(
+        companies: _companies,
+        enabled: !_saving,
+        onChanged: (companies) => setState(() {
+          _companies = companies;
+          _companiesDirty = true;
+        }),
+      ),
+      if (widget.editId != null || _savedNewGameId != null)
+        OutlinedButton(
+          onPressed: _saving || !_companiesDirty ? null : _saveCompanies,
+          child: const Text('保存公司关联'),
+        ),
+    ],
+  );
 
   Widget _buildDescriptionEditor() {
     final locale = _descriptionLocale;

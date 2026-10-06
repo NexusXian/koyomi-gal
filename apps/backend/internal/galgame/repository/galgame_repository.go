@@ -15,6 +15,8 @@ import (
 type GalgameListOptions struct {
 	Keyword        string
 	DeveloperID    *uint
+	CompanyID      *uint
+	CompanyRole    string
 	TagIDs         []uint
 	ReleaseFrom    *int
 	ReleaseTo      *int
@@ -144,6 +146,8 @@ func (r *GalgameRepository) FindPublishedByID(ctx context.Context, id uint) (*mo
 func (r *GalgameRepository) findByID(ctx context.Context, id uint, publishedOnly bool) (*model.Galgame, error) {
 	var galgame model.Galgame
 	query := r.withAssociations(r.db.WithContext(ctx)).
+		Preload("Companies", func(db *gorm.DB) *gorm.DB { return db.Order("company_id, role") }).
+		Preload("Companies.Company").
 		Preload("Descriptions", func(db *gorm.DB) *gorm.DB { return db.Order("language") })
 	if publishedOnly {
 		query = query.Where("status = ?", model.GalgameStatusPublished)
@@ -368,6 +372,13 @@ func (r *GalgameRepository) applyListFilters(
 	}
 	if options.DeveloperID != nil {
 		query = query.Where("g.developer_id = ?", *options.DeveloperID)
+	}
+	if options.CompanyID != nil {
+		if options.CompanyRole == "" {
+			query = query.Where("EXISTS (SELECT 1 FROM game_companies gc WHERE gc.game_id = g.id AND gc.company_id = ?)", *options.CompanyID)
+		} else {
+			query = query.Where("EXISTS (SELECT 1 FROM game_companies gc WHERE gc.game_id = g.id AND gc.company_id = ? AND gc.role = ?)", *options.CompanyID, options.CompanyRole)
+		}
 	}
 	if len(options.TagIDs) > 0 {
 		query = query.Where(`g.id IN (

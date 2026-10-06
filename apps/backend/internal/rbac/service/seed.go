@@ -35,6 +35,7 @@ var seedRoles = []seedRole{
 }
 
 var seedPermissions = []seedPermission{
+	{Code: "company:manage", Name: "Manage companies", Description: "Manage companies and game company associations"},
 	{Code: "character:manage", Name: "Manage characters", Description: "Manage shared characters and galgame character associations"},
 	{Code: "user:list", Name: "查看用户列表", Description: "允许查看用户列表"},
 	{Code: "user:read", Name: "查看用户详情", Description: "允许查看用户详情"},
@@ -118,6 +119,7 @@ var seedPermissions = []seedPermission{
 // super_admin additionally receives every permission in the table.
 var seedRolePermissions = map[string][]string{
 	RoleCodeAdmin: {
+		"company:manage",
 		"character:manage",
 		"user:list",
 		"user:read",

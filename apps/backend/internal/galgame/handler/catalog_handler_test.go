@@ -9,9 +9,11 @@ import (
 	"testing"
 
 	"backend/internal/galgame/dto"
+	galgameModel "backend/internal/galgame/model"
 	galgameRepo "backend/internal/galgame/repository"
 	galgameService "backend/internal/galgame/service"
 	"backend/internal/middleware"
+	rbacDTO "backend/internal/rbac/dto"
 	rbacRepo "backend/internal/rbac/repository"
 	rbacService "backend/internal/rbac/service"
 	"backend/internal/testutil"
@@ -41,15 +43,67 @@ func newCatalogAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *galgameSer
 	router.GET("/api/v1/developers/:id", catalogHandler.GetDeveloper)
 	router.GET("/api/v1/tags/:id", catalogHandler.GetTag)
 
-	admin := router.Group("/api/v1/admin",
-		middleware.Auth(testAuthSecret),
-		middleware.RequirePermission(rbacSvc)("galgame:review"),
-	)
+	admin := router.Group("/api/v1/admin", middleware.Auth(testAuthSecret))
 	{
-		admin.GET("/galgames", catalogHandler.ListAdminGalgames)
-		admin.GET("/galgames/:id", catalogHandler.GetAdminGalgame)
+		admin.GET("/galgames", middleware.RequirePermission(rbacSvc)("galgame:review"), catalogHandler.ListAdminGalgames)
+		admin.GET("/galgames/:id", middleware.RequireAnyPermission(rbacSvc)("galgame:review", "company:manage"), catalogHandler.GetAdminGalgame)
+		admin.PUT("/galgames/:id/review", middleware.RequirePermission(rbacSvc)("galgame:review"), catalogHandler.ReviewGalgame)
 	}
 	return router, db, catalog, rbacSvc
+}
+
+func TestCompanyManagerCanReadUnpublishedGameWithoutReviewAccess(t *testing.T) {
+	router, db, _, rbacSvc := newCatalogAdminTestRouter(t)
+	ctx := context.Background()
+	manager := testutil.CreateUser(t, db, "company-manager")
+	plain := testutil.CreateUser(t, db, "company-plain")
+	role, err := rbacSvc.CreateRole(ctx, &rbacDTO.CreateRoleRequest{Name: "Company manager", Code: "company_manager"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var permissionID int64
+	if err := db.Table("permissions").Select("id").Where("code = ?", "company:manage").Scan(&permissionID).Error; err != nil || permissionID == 0 {
+		t.Fatalf("company permission must be seeded: %d %v", permissionID, err)
+	}
+	if err := rbacSvc.SetRolePermissions(ctx, 0, role.ID, []int64{permissionID}); err != nil {
+		t.Fatal(err)
+	}
+	if err := rbacSvc.AssignRoleToUser(ctx, manager, role.ID); err != nil {
+		t.Fatal(err)
+	}
+	game := galgameModel.Galgame{Title: "Draft", Slug: "draft", Status: galgameModel.GalgameStatusPending}
+	if err := db.Create(&game).Error; err != nil {
+		t.Fatal(err)
+	}
+	path := "/api/v1/admin/galgames/" + strconv.FormatUint(uint64(game.ID), 10)
+	for _, tc := range []struct {
+		method string
+		path   string
+		user   uint
+		status int
+	}{
+		{http.MethodGet, path, manager, http.StatusOK},
+		{http.MethodGet, path, plain, http.StatusForbidden},
+		{http.MethodGet, path, 0, http.StatusUnauthorized},
+		{http.MethodGet, "/api/v1/admin/galgames", manager, http.StatusForbidden},
+		{http.MethodPut, path + "/review", manager, http.StatusForbidden},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		if tc.user != 0 {
+			req.Header.Set("Authorization", "Bearer "+accessTokenFor(t, tc.user))
+		}
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+		if res.Code != tc.status {
+			t.Fatalf("%s %s user=%d: want %d, got %d: %s", tc.method, tc.path, tc.user, tc.status, res.Code, res.Body.String())
+		}
+		if tc.status == http.StatusOK {
+			var detail dto.GalgameDataResponse
+			if err := json.Unmarshal(res.Body.Bytes(), &detail); err != nil || detail.Data.ID != game.ID || detail.Data.Status != game.Status || detail.Data.Companies == nil {
+				t.Fatalf("draft detail contract: %+v %v", detail, err)
+			}
+		}
+	}
 }
 
 func TestCatalogDetailAndAdminEndpoints(t *testing.T) {

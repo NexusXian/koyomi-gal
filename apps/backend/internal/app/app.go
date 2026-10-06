@@ -36,6 +36,9 @@ import (
 	communityHandler "backend/internal/community/handler"
 	communityRepo "backend/internal/community/repository"
 	communityService "backend/internal/community/service"
+	companyHandler "backend/internal/company/handler"
+	companyRepo "backend/internal/company/repository"
+	companyService "backend/internal/company/service"
 	contributionRepo "backend/internal/contribution/repository"
 	contributionService "backend/internal/contribution/service"
 	feedbackHandler "backend/internal/feedback/handler"
@@ -119,6 +122,7 @@ type App struct {
 	PermissionHandler     *rbacHandler.PermissionHandler
 	AssignmentHandler     *rbacHandler.AssignmentHandler
 	CatalogHandler        *galgameHandler.CatalogHandler
+	CompanyHandler        *companyHandler.CompanyHandler
 	ImporterHandler       *importerHandler.ImporterHandler
 	ContributionHandler   *galgameHandler.ContributionHandler
 	NovelHandler          *novelHandler.NovelHandler
@@ -225,6 +229,8 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	checkinService := levelService.NewCheckinService(levelRepository, experienceService)
 
 	galgameRepository := galgameRepo.NewGalgameRepository(postgresDB)
+	companyRepository := companyRepo.NewCompanyRepository(postgresDB)
+	companySvc := companyService.NewCompanyService(companyRepository, galgameRepository)
 	contributionRepository := contributionRepo.NewContributionRepository(postgresDB, cfg.R2.PublicURL)
 	contributionSvc := contributionService.NewContributionService(
 		contributionRepository,
@@ -455,6 +461,7 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 		PermissionHandler:   rbacHandler.NewPermissionHandler(rbacSvc),
 		AssignmentHandler:   rbacHandler.NewAssignmentHandler(rbacSvc),
 		CatalogHandler:      catalogHandler,
+		CompanyHandler:      companyHandler.NewCompanyHandler(companySvc),
 		ImporterHandler:     importerHandler.NewImporterHandler(importerSvc),
 		ContributionHandler: galgameHandler.NewContributionHandler(contributionSvc, experienceService),
 		NovelHandler:        novelHandler.NewNovelHandler(novelSvc, novelRelationSvc),

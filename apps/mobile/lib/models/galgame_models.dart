@@ -1,3 +1,5 @@
+import 'company_models.dart';
+
 class DeveloperSummary {
   const DeveloperSummary({this.id, this.name});
 
@@ -15,9 +17,9 @@ class TagSummary {
   const TagSummary({this.id, this.name});
 
   factory TagSummary.fromMap(Map<String, dynamic> map) => TagSummary(
-        id: (map['id'] as num?)?.toInt(),
-        name: map['name'] as String?,
-      );
+    id: (map['id'] as num?)?.toInt(),
+    name: map['name'] as String?,
+  );
 
   final int? id;
   final String? name;
@@ -27,9 +29,9 @@ class RatingSummary {
   const RatingSummary({this.average, this.count});
 
   factory RatingSummary.fromMap(Map<String, dynamic> map) => RatingSummary(
-        average: (map['average'] as num?)?.toDouble(),
-        count: (map['count'] as num?)?.toInt(),
-      );
+    average: (map['average'] as num?)?.toDouble(),
+    count: (map['count'] as num?)?.toInt(),
+  );
 
   final double? average;
   final int? count;
@@ -64,12 +66,12 @@ class ContributorData {
   });
 
   factory ContributorData.fromMap(Map<String, dynamic> map) => ContributorData(
-        userId: (map['user_id'] as num?)?.toInt(),
-        username: map['username'] as String?,
-        avatarUrl: map['avatar_url'] as String?,
-        contributionCount: (map['contribution_count'] as num?)?.toInt(),
-        lastContributedAt: map['last_contributed_at'] as String?,
-      );
+    userId: (map['user_id'] as num?)?.toInt(),
+    username: map['username'] as String?,
+    avatarUrl: map['avatar_url'] as String?,
+    contributionCount: (map['contribution_count'] as num?)?.toInt(),
+    lastContributedAt: map['last_contributed_at'] as String?,
+  );
 
   final int? userId;
   final String? username;
@@ -97,33 +99,34 @@ class GalgameListItem {
   });
 
   factory GalgameListItem.fromMap(Map<String, dynamic> map) => GalgameListItem(
-        id: (map['id'] as num?)?.toInt(),
-        title: map['title'] as String?,
-        originalTitle: map['original_title'] as String?,
-        romajiTitle: map['romaji_title'] as String?,
-        slug: map['slug'] as String?,
-        coverUrl: map['cover_url'] as String?,
-        coverSensitive: map['cover_sensitive'] as bool? ?? false,
-        ageRating: (map['age_rating'] as num?)?.toInt(),
-        status: (map['status'] as num?)?.toInt(),
-        releaseDate: map['release_date'] as String?,
-        developer: map['developer'] is Map
-            ? DeveloperSummary.fromMap(
-                Map<String, dynamic>.from(map['developer']))
-            : null,
-        rating: map['rating'] is Map
-            ? RatingSummary.fromMap(Map<String, dynamic>.from(map['rating']))
-            : null,
-        tags: (map['tags'] as List?)
-                ?.whereType<Map>()
-                .map((e) => TagSummary.fromMap(Map<String, dynamic>.from(e)))
-                .toList() ??
-            const [],
-        statistics: map['statistics'] is Map
-            ? GalgameStatistics.fromMap(
-                Map<String, dynamic>.from(map['statistics']))
-            : null,
-      );
+    id: (map['id'] as num?)?.toInt(),
+    title: map['title'] as String?,
+    originalTitle: map['original_title'] as String?,
+    romajiTitle: map['romaji_title'] as String?,
+    slug: map['slug'] as String?,
+    coverUrl: map['cover_url'] as String?,
+    coverSensitive: map['cover_sensitive'] as bool? ?? false,
+    ageRating: (map['age_rating'] as num?)?.toInt(),
+    status: (map['status'] as num?)?.toInt(),
+    releaseDate: map['release_date'] as String?,
+    developer: map['developer'] is Map
+        ? DeveloperSummary.fromMap(Map<String, dynamic>.from(map['developer']))
+        : null,
+    rating: map['rating'] is Map
+        ? RatingSummary.fromMap(Map<String, dynamic>.from(map['rating']))
+        : null,
+    tags:
+        (map['tags'] as List?)
+            ?.whereType<Map>()
+            .map((e) => TagSummary.fromMap(Map<String, dynamic>.from(e)))
+            .toList() ??
+        const [],
+    statistics: map['statistics'] is Map
+        ? GalgameStatistics.fromMap(
+            Map<String, dynamic>.from(map['statistics']),
+          )
+        : null,
+  );
 
   final int? id;
   final String? title;
@@ -196,15 +199,14 @@ class GameDescription {
   });
 
   factory GameDescription.fromMap(Map<String, dynamic> map) => GameDescription(
-        language: map['language'] as String? ?? '',
-        content: map['content'] as String? ?? '',
-        source: map['source'] is Map
-            ? DescriptionSource.fromMap(
-                Map<String, dynamic>.from(map['source'] as Map),
-              )
-            : const DescriptionSource(
-                type: 'unknown', name: '', official: false),
-      );
+    language: map['language'] as String? ?? '',
+    content: map['content'] as String? ?? '',
+    source: map['source'] is Map
+        ? DescriptionSource.fromMap(
+            Map<String, dynamic>.from(map['source'] as Map),
+          )
+        : const DescriptionSource(type: 'unknown', name: '', official: false),
+  );
 
   final String language;
   final String content;
@@ -237,41 +239,43 @@ class GalgameDetail extends GalgameListItem {
     this.relatedNovels,
     this.createdAt,
     this.updatedAt,
+    this.companies = const [],
   });
 
   factory GalgameDetail.fromMap(Map<String, dynamic> map) => GalgameDetail(
-        id: (map['id'] as num?)?.toInt(),
-        title: map['title'] as String?,
-        originalTitle: map['original_title'] as String?,
-        romajiTitle: map['romaji_title'] as String?,
-        slug: map['slug'] as String?,
-        coverUrl: map['cover_url'] as String?,
-        coverSensitive: map['cover_sensitive'] as bool? ?? false,
-        ageRating: (map['age_rating'] as num?)?.toInt(),
-        status: (map['status'] as num?)?.toInt(),
-        releaseDate: map['release_date'] as String?,
-        developer: map['developer'] is Map
-            ? DeveloperSummary.fromMap(
-                Map<String, dynamic>.from(map['developer']))
-            : null,
-        rating: map['rating'] is Map
-            ? RatingSummary.fromMap(Map<String, dynamic>.from(map['rating']))
-            : null,
-        tags: (map['tags'] as List?)
-                ?.whereType<Map>()
-                .map((e) => TagSummary.fromMap(Map<String, dynamic>.from(e)))
-                .toList() ??
-            const [],
-        statistics: map['statistics'] is Map
-            ? GalgameStatistics.fromMap(
-                Map<String, dynamic>.from(map['statistics']))
-            : null,
-        aliases: (map['aliases'] as List?)?.map((e) => e.toString()).toList(),
-        bannerUrl: map['banner_url'] as String?,
-        description: map['description'] as String?,
-        descriptionSource: map['description_source'] as String?,
-        descriptions:
-            (map['descriptions'] as Map<String, dynamic>? ?? const {}).map(
+    id: (map['id'] as num?)?.toInt(),
+    title: map['title'] as String?,
+    originalTitle: map['original_title'] as String?,
+    romajiTitle: map['romaji_title'] as String?,
+    slug: map['slug'] as String?,
+    coverUrl: map['cover_url'] as String?,
+    coverSensitive: map['cover_sensitive'] as bool? ?? false,
+    ageRating: (map['age_rating'] as num?)?.toInt(),
+    status: (map['status'] as num?)?.toInt(),
+    releaseDate: map['release_date'] as String?,
+    developer: map['developer'] is Map
+        ? DeveloperSummary.fromMap(Map<String, dynamic>.from(map['developer']))
+        : null,
+    rating: map['rating'] is Map
+        ? RatingSummary.fromMap(Map<String, dynamic>.from(map['rating']))
+        : null,
+    tags:
+        (map['tags'] as List?)
+            ?.whereType<Map>()
+            .map((e) => TagSummary.fromMap(Map<String, dynamic>.from(e)))
+            .toList() ??
+        const [],
+    statistics: map['statistics'] is Map
+        ? GalgameStatistics.fromMap(
+            Map<String, dynamic>.from(map['statistics']),
+          )
+        : null,
+    aliases: (map['aliases'] as List?)?.map((e) => e.toString()).toList(),
+    bannerUrl: map['banner_url'] as String?,
+    description: map['description'] as String?,
+    descriptionSource: map['description_source'] as String?,
+    descriptions: (map['descriptions'] as Map<String, dynamic>? ?? const {})
+        .map(
           (key, value) => MapEntry(
             key,
             value is Map
@@ -287,20 +291,26 @@ class GalgameDetail extends GalgameListItem {
                   ),
           ),
         ),
-        contributorCount: (map['contributor_count'] as num?)?.toInt(),
-        contributors: (map['contributors'] as List?)
-                ?.whereType<Map>()
-                .map((e) => ContributorData.fromMap(Map<String, dynamic>.from(e)))
-                .toList() ??
-            const [],
-        relatedNovels: (map['related_novels'] as List?)
-                ?.whereType<Map>()
-                .map((e) => RelatedNovelData.fromMap(Map<String, dynamic>.from(e)))
-                .toList() ??
-            const [],
-        createdAt: map['created_at'] as String?,
-        updatedAt: map['updated_at'] as String?,
-      );
+    contributorCount: (map['contributor_count'] as num?)?.toInt(),
+    contributors:
+        (map['contributors'] as List?)
+            ?.whereType<Map>()
+            .map((e) => ContributorData.fromMap(Map<String, dynamic>.from(e)))
+            .toList() ??
+        const [],
+    relatedNovels:
+        (map['related_novels'] as List?)
+            ?.whereType<Map>()
+            .map((e) => RelatedNovelData.fromMap(Map<String, dynamic>.from(e)))
+            .toList() ??
+        const [],
+    createdAt: map['created_at'] as String?,
+    updatedAt: map['updated_at'] as String?,
+    companies: (map['companies'] as List? ?? const [])
+        .whereType<Map>()
+        .map((e) => GameCompany.fromMap(Map<String, dynamic>.from(e)))
+        .toList(),
+  );
 
   final List<String>? aliases;
   final String? bannerUrl;
@@ -312,6 +322,7 @@ class GalgameDetail extends GalgameListItem {
   final List<RelatedNovelData>? relatedNovels;
   final String? createdAt;
   final String? updatedAt;
+  final List<GameCompany> companies;
 }
 
 class GalgameCharacter {
@@ -376,15 +387,15 @@ class GalleryImage {
   });
 
   factory GalleryImage.fromMap(Map<String, dynamic> map) => GalleryImage(
-        id: (map['id'] as num?)?.toInt(),
-        url: map['url'] as String?,
-        title: map['title'] as String?,
-        description: map['description'] as String?,
-        imageType: (map['image_type'] as num?)?.toInt(),
-        isSpoiler: map['is_spoiler'] as bool? ?? false,
-        width: (map['width'] as num?)?.toInt(),
-        height: (map['height'] as num?)?.toInt(),
-      );
+    id: (map['id'] as num?)?.toInt(),
+    url: map['url'] as String?,
+    title: map['title'] as String?,
+    description: map['description'] as String?,
+    imageType: (map['image_type'] as num?)?.toInt(),
+    isSpoiler: map['is_spoiler'] as bool? ?? false,
+    width: (map['width'] as num?)?.toInt(),
+    height: (map['height'] as num?)?.toInt(),
+  );
 
   final int? id;
   final String? url;
@@ -400,9 +411,9 @@ class FavoriteData {
   const FavoriteData({this.favorited, this.createdAt});
 
   factory FavoriteData.fromMap(Map<String, dynamic> map) => FavoriteData(
-        favorited: map['favorited'] as bool?,
-        createdAt: map['created_at'] as String?,
-      );
+    favorited: map['favorited'] as bool?,
+    createdAt: map['created_at'] as String?,
+  );
 
   final bool? favorited;
   final String? createdAt;
@@ -412,10 +423,10 @@ class RatingData {
   const RatingData({this.score, this.createdAt, this.updatedAt});
 
   factory RatingData.fromMap(Map<String, dynamic> map) => RatingData(
-        score: (map['score'] as num?)?.toInt(),
-        createdAt: map['created_at'] as String?,
-        updatedAt: map['updated_at'] as String?,
-      );
+    score: (map['score'] as num?)?.toInt(),
+    createdAt: map['created_at'] as String?,
+    updatedAt: map['updated_at'] as String?,
+  );
 
   final int? score;
   final String? createdAt;
@@ -426,10 +437,10 @@ class UserStateData {
   const UserStateData({this.state, this.playTimeMinutes, this.updatedAt});
 
   factory UserStateData.fromMap(Map<String, dynamic> map) => UserStateData(
-        state: (map['state'] as num?)?.toInt(),
-        playTimeMinutes: (map['play_time_minutes'] as num?)?.toInt(),
-        updatedAt: map['updated_at'] as String?,
-      );
+    state: (map['state'] as num?)?.toInt(),
+    playTimeMinutes: (map['play_time_minutes'] as num?)?.toInt(),
+    updatedAt: map['updated_at'] as String?,
+  );
 
   final int? state;
   final int? playTimeMinutes;
@@ -477,18 +488,17 @@ class HomeGalgame {
   });
 
   factory HomeGalgame.fromMap(Map<String, dynamic> map) => HomeGalgame(
-        id: (map['id'] as num?)?.toInt(),
-        title: map['title'] as String?,
-        coverUrl: map['cover_url'] as String?,
-        coverSensitive: map['cover_sensitive'] as bool? ?? false,
-        developer: map['developer'] is Map
-            ? DeveloperSummary.fromMap(
-                Map<String, dynamic>.from(map['developer']))
-            : null,
-        ratingAverage: (map['rating_average'] as num?)?.toDouble(),
-        favoriteCount: (map['favorite_count'] as num?)?.toInt(),
-        releaseDate: map['release_date'] as String?,
-      );
+    id: (map['id'] as num?)?.toInt(),
+    title: map['title'] as String?,
+    coverUrl: map['cover_url'] as String?,
+    coverSensitive: map['cover_sensitive'] as bool? ?? false,
+    developer: map['developer'] is Map
+        ? DeveloperSummary.fromMap(Map<String, dynamic>.from(map['developer']))
+        : null,
+    ratingAverage: (map['rating_average'] as num?)?.toDouble(),
+    favoriteCount: (map['favorite_count'] as num?)?.toInt(),
+    releaseDate: map['release_date'] as String?,
+  );
 
   final int? id;
   final String? title;

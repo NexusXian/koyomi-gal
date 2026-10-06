@@ -11,6 +11,7 @@ import type {
   DtoFavoriteDataResponse,
   DtoGalgameCharacterListResponse,
   DtoGalgameDataResponse,
+  DtoGalgameDescriptionsResponse,
   DtoGalgameListResponse,
   DtoGalgameUserRelationResponse,
   DtoGalleryListResponse,
@@ -20,6 +21,7 @@ import type {
   DtoRatingListResponse,
   DtoRatingRecordResponse,
   DtoRatingSummaryResponse,
+  DtoUpdateGalgameDescriptionsRequest,
   DtoUpdateGalgameRequest,
   DtoUpsertRatingRequest,
   DtoUpsertUserStateRequest,
@@ -233,6 +235,63 @@ export const listGalgameContributors = async (id: number,
   {
     ...options,
     method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateGalgameDescriptionsUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/galgames/${id}/descriptions`
+}
+
+/**
+ * 按语言批量新增或更新 Galgame 简介；语言之间相互独立，content 为空时保留记录与来源信息；需要 galgame:update 权限
+ * @summary 更新多语言简介
+ */
+export const updateGalgameDescriptions = async (id: number,
+    dtoUpdateGalgameDescriptionsRequest: DtoUpdateGalgameDescriptionsRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoGalgameDescriptionsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return apiMutator<DtoGalgameDescriptionsResponse>(getUpdateGalgameDescriptionsUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dtoUpdateGalgameDescriptionsRequest)
+  }
+);}
+
+
+export const getDeleteGalgameDescriptionUrl = (id: number,
+    language: string,) => {
+
+
+
+
+  return `/api/v1/galgames/${id}/descriptions/${language}`
+}
+
+/**
+ * 彻底删除某一语言的简介记录；需要 galgame:update 权限
+ * @summary 删除单语言简介
+ */
+export const deleteGalgameDescription = async (id: number,
+    language: string, options?: Parameters<typeof apiMutator>[1]): Promise<ResponseMessageResponse> => {
+
+  return apiMutator<ResponseMessageResponse>(getDeleteGalgameDescriptionUrl(id,language),
+  {
+    ...options,
+    method: 'DELETE'
 
 
   }

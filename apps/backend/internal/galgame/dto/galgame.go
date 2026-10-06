@@ -3,44 +3,45 @@ package dto
 import (
 	"time"
 
+	companyDTO "backend/internal/company/dto"
 	"backend/internal/galgame/model"
 	relationModel "backend/internal/relation/model"
 )
 
 type CreateGalgameRequest struct {
-	Title          string                     `json:"title" binding:"required,max=255" example:"千恋＊万花"`
-	OriginalTitle  string                     `json:"original_title" binding:"max=255" example:"千恋＊万花"`
-	RomajiTitle    string                     `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
-	Slug           string                     `json:"slug" binding:"required,max=255" example:"senren-banka"`
-	Description    string                     `json:"description" example:"作品简介"`
-	CoverURL       string                     `json:"cover_url" example:"https://example.com/cover.jpg"`
-	BannerURL      string                     `json:"banner_url" example:"https://example.com/banner.jpg"`
-	DeveloperID    *uint                      `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
-	ReleaseDate    string                     `json:"release_date" example:"2016-07-29"`
-	AgeRating      int16                      `json:"age_rating" binding:"oneof=0 1 2 3 4 5" example:"3"`
-	CoverSensitive bool                       `json:"cover_sensitive" example:"false"`
-	Status         int16                      `json:"status" binding:"oneof=0 1 2 3" example:"1"`
-	Aliases        []string                   `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
-	TagIDs         []uint                     `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
-	Descriptions   []GalgameDescriptionInput  `json:"descriptions" binding:"max=3,dive"`
+	Title          string                    `json:"title" binding:"required,max=255" example:"千恋＊万花"`
+	OriginalTitle  string                    `json:"original_title" binding:"max=255" example:"千恋＊万花"`
+	RomajiTitle    string                    `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
+	Slug           string                    `json:"slug" binding:"required,max=255" example:"senren-banka"`
+	Description    string                    `json:"description" example:"作品简介"`
+	CoverURL       string                    `json:"cover_url" example:"https://example.com/cover.jpg"`
+	BannerURL      string                    `json:"banner_url" example:"https://example.com/banner.jpg"`
+	DeveloperID    *uint                     `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
+	ReleaseDate    string                    `json:"release_date" example:"2016-07-29"`
+	AgeRating      int16                     `json:"age_rating" binding:"oneof=0 1 2 3 4 5" example:"3"`
+	CoverSensitive bool                      `json:"cover_sensitive" example:"false"`
+	Status         int16                     `json:"status" binding:"oneof=0 1 2 3" example:"1"`
+	Aliases        []string                  `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
+	TagIDs         []uint                    `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
+	Descriptions   []GalgameDescriptionInput `json:"descriptions" binding:"max=3,dive"`
 }
 
 type UpdateGalgameRequest struct {
-	Title          string                     `json:"title" binding:"required,max=255" example:"千恋＊万花"`
-	OriginalTitle  string                     `json:"original_title" binding:"max=255" example:"千恋＊万花"`
-	RomajiTitle    string                     `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
-	Slug           string                     `json:"slug" binding:"required,max=255" example:"senren-banka"`
-	Description    string                     `json:"description" example:"作品简介"`
-	CoverURL       string                     `json:"cover_url" example:"https://example.com/cover.jpg"`
-	BannerURL      string                     `json:"banner_url" example:"https://example.com/banner.jpg"`
-	DeveloperID    *uint                      `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
-	ReleaseDate    string                     `json:"release_date" example:"2016-07-29"`
-	AgeRating      *int16                     `json:"age_rating" binding:"required,oneof=0 1 2 3 4 5" example:"3"`
-	CoverSensitive *bool                      `json:"cover_sensitive" binding:"required" example:"false"`
-	Status         *int16                     `json:"status" binding:"required,oneof=0 1 2 3" example:"1"`
-	Aliases        []string                   `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
-	TagIDs         []uint                     `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
-	Descriptions   []GalgameDescriptionInput  `json:"descriptions" binding:"max=3,dive"`
+	Title          string                    `json:"title" binding:"required,max=255" example:"千恋＊万花"`
+	OriginalTitle  string                    `json:"original_title" binding:"max=255" example:"千恋＊万花"`
+	RomajiTitle    string                    `json:"romaji_title" binding:"max=255" example:"Senren Banka"`
+	Slug           string                    `json:"slug" binding:"required,max=255" example:"senren-banka"`
+	Description    string                    `json:"description" example:"作品简介"`
+	CoverURL       string                    `json:"cover_url" example:"https://example.com/cover.jpg"`
+	BannerURL      string                    `json:"banner_url" example:"https://example.com/banner.jpg"`
+	DeveloperID    *uint                     `json:"developer_id" binding:"omitempty,gt=0" example:"1"`
+	ReleaseDate    string                    `json:"release_date" example:"2016-07-29"`
+	AgeRating      *int16                    `json:"age_rating" binding:"required,oneof=0 1 2 3 4 5" example:"3"`
+	CoverSensitive *bool                     `json:"cover_sensitive" binding:"required" example:"false"`
+	Status         *int16                    `json:"status" binding:"required,oneof=0 1 2 3" example:"1"`
+	Aliases        []string                  `json:"aliases" binding:"max=100,dive,max=255" example:"千恋万花,Senren Banka"`
+	TagIDs         []uint                    `json:"tag_ids" binding:"max=100,dive,gt=0" example:"1,2"`
+	Descriptions   []GalgameDescriptionInput `json:"descriptions" binding:"max=3,dive"`
 }
 
 // BatchUpdateGalgameRequest only allows the whitelisted fields below.
@@ -82,6 +83,7 @@ type ReviewGalgameRequest struct {
 type GalgameQuery struct {
 	Keyword     string `form:"keyword" binding:"max=255"`
 	DeveloperID *uint  `form:"developer_id" binding:"omitempty,gt=0"`
+	CompanyID   *uint  `form:"company_id" binding:"omitempty,gt=0"`
 	TagIDs      []uint `form:"-"`
 	ReleaseFrom *int   `form:"release_from" binding:"omitempty,min=1,max=9999"`
 	ReleaseTo   *int   `form:"release_to" binding:"omitempty,min=1,max=9999"`
@@ -174,30 +176,31 @@ type RelatedNovelData struct {
 }
 
 type GalgameResponse struct {
-	ID                uint                                   `json:"id" example:"1"`
-	Title             string                                 `json:"title" example:"千恋＊万花"`
-	OriginalTitle     string                                 `json:"original_title" example:"千恋＊万花"`
-	RomajiTitle       string                                 `json:"romaji_title" example:"Senren Banka"`
-	Slug              string                                 `json:"slug" example:"senren-banka"`
-	Description       string                                 `json:"description" example:"作品简介"`
-	DescriptionSource string                                 `json:"description_source" example:"bangumi"`
-	Descriptions      map[string]GalgameDescriptionResponse  `json:"descriptions"`
-	CoverURL          string                                 `json:"cover_url" example:"https://example.com/cover.jpg"`
-	BannerURL         string                                 `json:"banner_url" example:"https://example.com/banner.jpg"`
-	ReleaseDate       *string                                `json:"release_date" example:"2016-07-29"`
-	AgeRating         int16                                  `json:"age_rating" example:"3"`
-	CoverSensitive    bool                                   `json:"cover_sensitive" example:"false"`
-	Status            int16                                  `json:"status" example:"1"`
-	Developer         *DeveloperSummary                      `json:"developer"`
-	Aliases           []string                               `json:"aliases"`
-	Tags              []TagSummary                           `json:"tags"`
-	Rating            RatingSummary                          `json:"rating"`
-	Statistics        GalgameStatistics                      `json:"statistics"`
-	Contributors      []ContributorData                      `json:"contributors"`
-	ContributorCount  int64                                  `json:"contributor_count" example:"12"`
-	RelatedNovels     []RelatedNovelData                     `json:"related_novels"`
-	CreatedAt         time.Time                              `json:"created_at"`
-	UpdatedAt         time.Time                              `json:"updated_at"`
+	ID                uint                                  `json:"id" example:"1"`
+	Title             string                                `json:"title" example:"千恋＊万花"`
+	OriginalTitle     string                                `json:"original_title" example:"千恋＊万花"`
+	RomajiTitle       string                                `json:"romaji_title" example:"Senren Banka"`
+	Slug              string                                `json:"slug" example:"senren-banka"`
+	Description       string                                `json:"description" example:"作品简介"`
+	DescriptionSource string                                `json:"description_source" example:"bangumi"`
+	Descriptions      map[string]GalgameDescriptionResponse `json:"descriptions"`
+	CoverURL          string                                `json:"cover_url" example:"https://example.com/cover.jpg"`
+	BannerURL         string                                `json:"banner_url" example:"https://example.com/banner.jpg"`
+	ReleaseDate       *string                               `json:"release_date" example:"2016-07-29"`
+	AgeRating         int16                                 `json:"age_rating" example:"3"`
+	CoverSensitive    bool                                  `json:"cover_sensitive" example:"false"`
+	Status            int16                                 `json:"status" example:"1"`
+	Developer         *DeveloperSummary                     `json:"developer"`
+	Companies         []companyDTO.GameCompanyResponse      `json:"companies"`
+	Aliases           []string                              `json:"aliases"`
+	Tags              []TagSummary                          `json:"tags"`
+	Rating            RatingSummary                         `json:"rating"`
+	Statistics        GalgameStatistics                     `json:"statistics"`
+	Contributors      []ContributorData                     `json:"contributors"`
+	ContributorCount  int64                                 `json:"contributor_count" example:"12"`
+	RelatedNovels     []RelatedNovelData                    `json:"related_novels"`
+	CreatedAt         time.Time                             `json:"created_at"`
+	UpdatedAt         time.Time                             `json:"updated_at"`
 }
 
 type GalgameListData struct {
@@ -268,6 +271,7 @@ func NewGalgameResponse(galgame *model.Galgame) GalgameResponse {
 		CoverSensitive:    galgame.CoverSensitive,
 		Status:            galgame.Status,
 		Developer:         newDeveloperSummary(galgame.Developer),
+		Companies:         companyDTO.NewGameCompanyResponses(galgame.Companies),
 		Aliases:           aliases,
 		Tags:              newTagSummaries(galgame.Tags),
 		Rating:            newRatingSummary(galgame),

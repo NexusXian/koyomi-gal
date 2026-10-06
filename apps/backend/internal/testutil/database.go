@@ -13,6 +13,7 @@ import (
 
 	"backend/internal/migrations"
 
+	"github.com/jackc/pgx/v5"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -44,6 +45,19 @@ func NewPostgres(t *testing.T) *gorm.DB {
 	dsn := PostgresDSN()
 	if dsn == "" {
 		t.Fatalf("%s must be set", dsnEnv)
+	}
+	cfg, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		t.Fatalf("invalid %s", dsnEnv)
+	}
+	dedicated := false
+	for _, part := range strings.FieldsFunc(strings.ToLower(cfg.Database), func(r rune) bool { return r == '_' || r == '-' }) {
+		if part == "test" {
+			dedicated = true
+		}
+	}
+	if !dedicated {
+		t.Fatalf("%s must target a dedicated database with a test name segment", dsnEnv)
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -80,7 +94,7 @@ func NewPostgres(t *testing.T) *gorm.DB {
 func TruncateTables(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	err := db.Exec(
-		"TRUNCATE TABLE user_ip_logs, user_blocks, messages, direct_conversations, conversation_members, conversations, app_releases, announcements, game_classification_evidences, game_classifications, external_match_candidates, import_jobs, galgame_external_sources, notifications, user_activities, user_privacy_settings, user_profiles, user_preferences, image_assets, articles, banners, background_presets, feedback, resource_reports, post_favorites, comment_likes, post_likes, comments, posts, resource_links, resources, external_mappings, work_relations, novel_tags, novel_volumes, novels, work_contributions, user_galgames, galgame_favorites, galgame_rating_likes, galgame_ratings, galgame_gallery_images, galgame_descriptions, galgame_characters, characters, galgame_tags, galgame_aliases, galgames, tags, developers, user_roles, role_permissions, permissions, roles, user_checkins, experience_logs, experience_rules, user_experience, level_configs, users RESTART IDENTITY",
+		"TRUNCATE TABLE user_ip_logs, user_blocks, messages, direct_conversations, conversation_members, conversations, app_releases, announcements, game_classification_evidences, game_classifications, external_match_candidates, import_jobs, galgame_external_sources, notifications, user_activities, user_privacy_settings, user_profiles, user_preferences, image_assets, articles, banners, background_presets, feedback, resource_reports, post_favorites, comment_likes, post_likes, comments, posts, resource_links, resources, external_mappings, work_relations, novel_tags, novel_volumes, novels, work_contributions, user_galgames, galgame_favorites, galgame_rating_likes, galgame_ratings, galgame_gallery_images, galgame_descriptions, galgame_characters, characters, game_companies, company_aliases, companies, galgame_tags, galgame_aliases, galgames, tags, developers, user_roles, role_permissions, permissions, roles, user_checkins, experience_logs, experience_rules, user_experience, level_configs, users RESTART IDENTITY",
 	).Error
 	if err != nil {
 		t.Fatalf("truncate tables: %v", err)

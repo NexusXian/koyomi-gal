@@ -9,6 +9,7 @@ import '../../core/utils/format.dart';
 import '../../core/utils/game_descriptions.dart';
 import '../../features/game_ratings/widgets/game_rating_widgets.dart';
 import '../../models/galgame_models.dart';
+import '../../models/company_models.dart';
 import '../../models/post_models.dart';
 import '../../providers/app_providers.dart';
 import '../../services/galgame_service.dart';
@@ -93,8 +94,9 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
 
   Future<void> _reloadRelation() async {
     try {
-      final relation =
-          await ref.read(galgameServiceProvider).myRelation(widget.id);
+      final relation = await ref
+          .read(galgameServiceProvider)
+          .myRelation(widget.id);
       if (mounted) {
         setState(() => _relation = relation);
       }
@@ -118,24 +120,26 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _buildBody(),
-    );
+    return Scaffold(body: _buildBody());
   }
 
   Widget _buildBody() {
+    final editActions = _editActions();
     if (_loading) {
       return const LoadingView();
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(actions: editActions),
         body: ErrorView(message: _error!, onRetry: _load),
       );
     }
     final detail = _detail;
     if (detail == null) {
-      return Scaffold(appBar: AppBar(), body: const EmptyView());
+      return Scaffold(
+        appBar: AppBar(actions: editActions),
+        body: const EmptyView(),
+      );
     }
 
     final relation = _relation;
@@ -149,13 +153,7 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
             flexibleSpace: FlexibleSpaceBar(
               background: AppImage(url: detail.bannerUrl ?? detail.coverUrl),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: '编辑',
-                onPressed: () => context.push('/galgames/${widget.id}/edit'),
-              ),
-            ],
+            actions: editActions,
           ),
           SliverToBoxAdapter(child: _buildHeaderCard(detail, relation)),
           SliverToBoxAdapter(child: _buildDescription(detail)),
@@ -193,6 +191,23 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
         ),
       ),
     );
+  }
+
+  List<Widget> _editActions() {
+    final permissions = ref.watch(mePermissionsProvider).asData?.value;
+    if (!(permissions?.hasAny(['galgame:update', 'company:manage']) ?? false)) {
+      return [];
+    }
+    return [
+      IconButton(
+        icon: const Icon(Icons.edit_outlined),
+        tooltip: permissions!.has('galgame:update') ? '编辑' : '编辑公司关联',
+        onPressed: () async {
+          await context.push('/galgames/${widget.id}/edit');
+          if (mounted) await _load();
+        },
+      ),
+    ];
   }
 
   Widget _buildHeaderCard(GalgameDetail detail, GalgameUserRelation? relation) {
@@ -277,6 +292,31 @@ class _GalgameDetailPageState extends ConsumerState<GalgameDetailPage> {
                       fontSize: 12,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
+                  ),
+                ),
+              if (detail.companies.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final company in detail.companies)
+                        ActionChip(
+                          avatar: AppImage(
+                            url: company.logoUrl,
+                            width: 24,
+                            height: 24,
+                            fit: BoxFit.contain,
+                          ),
+                          label: Text(
+                            '${company.name} · ${companyRoles[company.role] ?? company.role}',
+                          ),
+                          onPressed: () => context.push(
+                            '/companies/${Uri.encodeComponent(company.slug)}',
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               const Divider(height: 20),
@@ -518,7 +558,8 @@ class _StateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = selectedValue == value && !(value == 0 && selectedValue == null);
+    final selected =
+        selectedValue == value && !(value == 0 && selectedValue == null);
     return ChoiceChip(
       label: Text(label),
       selected: selected,
@@ -548,8 +589,9 @@ class _CharactersTabState extends ConsumerState<_CharactersTab> {
 
   Future<void> _load() async {
     try {
-      final characters =
-          await ref.read(galgameServiceProvider).characters(widget.galgameId);
+      final characters = await ref
+          .read(galgameServiceProvider)
+          .characters(widget.galgameId);
       if (mounted) {
         setState(() => _characters = characters);
       }
@@ -597,7 +639,9 @@ class _CharactersTabState extends ConsumerState<_CharactersTab> {
                       Text(
                         character.name ?? '',
                         style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w600),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       if (character.originalName?.isNotEmpty == true)
                         Text(
@@ -663,8 +707,9 @@ class _GalleryTabState extends ConsumerState<_GalleryTab> {
 
   Future<void> _load() async {
     try {
-      final images =
-          await ref.read(galgameServiceProvider).gallery(widget.galgameId);
+      final images = await ref
+          .read(galgameServiceProvider)
+          .gallery(widget.galgameId);
       if (mounted) {
         setState(() => _images = images);
       }
@@ -702,18 +747,18 @@ class _GalleryTabState extends ConsumerState<_GalleryTab> {
         crossAxisSpacing: 8,
       ),
       itemCount: _images!.length,
-        itemBuilder: (context, index) {
-          final image = _images![index];
-          return GestureDetector(
-            onTap: () => _openViewer(index),
-            child: AppImage(
-              url: image.url,
-              sensitive: image.isSpoiler,
-              borderRadius: BorderRadius.circular(8),
-              maxCacheWidth: 480,
-            ),
-          );
-        },
+      itemBuilder: (context, index) {
+        final image = _images![index];
+        return GestureDetector(
+          onTap: () => _openViewer(index),
+          child: AppImage(
+            url: image.url,
+            sensitive: image.isSpoiler,
+            borderRadius: BorderRadius.circular(8),
+            maxCacheWidth: 480,
+          ),
+        );
+      },
     );
   }
 }
@@ -793,11 +838,9 @@ class _ResourcesTabState extends ConsumerState<_ResourcesTab> {
     }
     setState(() => _loading = true);
     try {
-      final result = await ref.read(resourceServiceProvider).listByGalgame(
-            widget.galgameId,
-            page: _page,
-            limit: _pageSize,
-          );
+      final result = await ref
+          .read(resourceServiceProvider)
+          .listByGalgame(widget.galgameId, page: _page, limit: _pageSize);
       if (!mounted) {
         return;
       }
@@ -853,9 +896,11 @@ class _ResourcesTabState extends ConsumerState<_ResourcesTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                                    resource.title ?? '',
+                    resource.title ?? '',
                     style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     domainLabel(resourceTypeOptions, resource.type),
@@ -941,11 +986,9 @@ class _RelatedPostsTabState extends ConsumerState<_RelatedPostsTab> {
     }
     setState(() => _loading = true);
     try {
-      final result = await ref.read(postServiceProvider).list(
-            galgameId: widget.galgameId,
-            page: _page,
-            limit: _pageSize,
-          );
+      final result = await ref
+          .read(postServiceProvider)
+          .list(galgameId: widget.galgameId, page: _page, limit: _pageSize);
       if (!mounted) {
         return;
       }
@@ -1061,12 +1104,20 @@ class _RelatedNovelsTab extends StatelessWidget {
               height: 60,
               borderRadius: BorderRadius.circular(6),
             ),
-            title: Text(novel.title ?? '',
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(
+              novel.title ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             subtitle: novel.relationType != null
                 ? Text(
-                    domainLabel(novelRelationTypeOptions,
-                        domainValueFromSlug(novelRelationTypeOptions, novel.relationType)),
+                    domainLabel(
+                      novelRelationTypeOptions,
+                      domainValueFromSlug(
+                        novelRelationTypeOptions,
+                        novel.relationType,
+                      ),
+                    ),
                     style: const TextStyle(fontSize: 12),
                   )
                 : null,

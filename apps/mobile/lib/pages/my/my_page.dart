@@ -103,10 +103,7 @@ class _MyPageState extends ConsumerState<MyPage> {
       if (!mounted) {
         return;
       }
-      showAppSnackBar(
-        context,
-        '签到成功，经验 +${result.expGained ?? 0}',
-      );
+      showAppSnackBar(context, '签到成功，经验 +${result.expGained ?? 0}');
       _load();
     } catch (error) {
       if (mounted) {
@@ -166,9 +163,9 @@ class _MyPageState extends ConsumerState<MyPage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authControllerProvider.select(
-      (controller) => controller.status,
-    ));
+    final auth = ref.watch(
+      authControllerProvider.select((controller) => controller.status),
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('我的'),
@@ -374,27 +371,18 @@ class _MyPageState extends ConsumerState<MyPage> {
 
   void _openMyGalgames(String type) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => _MyGalgamesPage(type: type),
-      ),
+      MaterialPageRoute<void>(builder: (_) => _MyGalgamesPage(type: type)),
     );
   }
 
   Widget _buildMenuCard() {
-    final permissions = ref.watch(mePermissionsProvider).maybeWhen(
-          data: (value) => value,
-          orElse: () => null,
-        );
-    final canManageCommunity = permissions?.hasAny([
-          'post:moderate',
-          'comment:moderate',
-        ]) ??
-        false;
-    final canManageUsers = permissions?.hasAny([
-          'user:list',
-          'ip_audit:read',
-        ]) ??
-        false;
+    final permissions = ref
+        .watch(mePermissionsProvider)
+        .maybeWhen(data: (value) => value, orElse: () => null);
+    final canManageCommunity =
+        permissions?.hasAny(['post:moderate', 'comment:moderate']) ?? false;
+    final canManageUsers =
+        permissions?.hasAny(['user:list', 'ip_audit:read']) ?? false;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -403,11 +391,14 @@ class _MyPageState extends ConsumerState<MyPage> {
             leading: const Icon(Icons.notifications_outlined),
             title: const Text('通知'),
             trailing: Badge(
-              isLabelVisible: ref.watch(
+              isLabelVisible:
+                  ref.watch(
                     unreadNotificationsProvider.select((value) => value.count),
                   ) >
                   0,
-              label: Text('${ref.watch(unreadNotificationsProvider.select((value) => value.count))}'),
+              label: Text(
+                '${ref.watch(unreadNotificationsProvider.select((value) => value.count))}',
+              ),
               child: const Icon(Icons.chevron_right),
             ),
             onTap: () => context.push('/notifications'),
@@ -417,11 +408,14 @@ class _MyPageState extends ConsumerState<MyPage> {
             leading: const Icon(Icons.mail_outlined),
             title: const Text('私信'),
             trailing: Badge(
-              isLabelVisible: ref.watch(
+              isLabelVisible:
+                  ref.watch(
                     unreadMessagesProvider.select((value) => value.count),
                   ) >
                   0,
-              label: Text('${ref.watch(unreadMessagesProvider.select((value) => value.count))}'),
+              label: Text(
+                '${ref.watch(unreadMessagesProvider.select((value) => value.count))}',
+              ),
               child: const Icon(Icons.chevron_right),
             ),
             onTap: () => context.push('/messages'),
@@ -471,6 +465,15 @@ class _MyPageState extends ConsumerState<MyPage> {
               title: const Text('用户与 IP 审计'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/admin/users'),
+            ),
+          ],
+          if (permissions?.has('company:manage') ?? false) ...[
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            ListTile(
+              leading: const Icon(Icons.business_outlined),
+              title: const Text('会社管理'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/admin/companies'),
             ),
           ],
           const Divider(height: 1, indent: 16, endIndent: 16),
@@ -558,11 +561,9 @@ class _MyGalgamesPageState extends ConsumerState<_MyGalgamesPage> {
     }
     setState(() => _loading = true);
     try {
-      final result = await ref.read(meServiceProvider).galgames(
-            type: widget.type,
-            page: _page,
-            limit: 20,
-          );
+      final result = await ref
+          .read(meServiceProvider)
+          .galgames(type: widget.type, page: _page, limit: 20);
       if (!mounted) {
         return;
       }
@@ -583,42 +584,43 @@ class _MyGalgamesPageState extends ConsumerState<_MyGalgamesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.type == 'favorite' ? '我收藏的 Galgame' : '我上传的 Galgame'),
+        title: Text(
+          widget.type == 'favorite' ? '我收藏的 Galgame' : '我上传的 Galgame',
+        ),
       ),
       body: _items.isEmpty && _loading
           ? const LoadingView()
           : _items.isEmpty
-              ? const EmptyView(hint: '暂无内容')
-              : ListView.separated(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _items.length + 1,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    if (index >= _items.length) {
-                      return _loading
-                          ? const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink();
-                    }
-                    final galgame = _items[index];
-                    return GalgameCard(
-                      galgame: galgame,
-                      onTap: galgame.id == null
-                          ? null
-                          : () => context.push('/galgames/${galgame.id}'),
-                    );
-                  },
-                ),
+          ? const EmptyView(hint: '暂无内容')
+          : ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: _items.length + 1,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                if (index >= _items.length) {
+                  return _loading
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink();
+                }
+                final galgame = _items[index];
+                return GalgameCard(
+                  galgame: galgame,
+                  onTap: galgame.id == null
+                      ? null
+                      : () => context.push('/galgames/${galgame.id}'),
+                );
+              },
+            ),
     );
   }
 }

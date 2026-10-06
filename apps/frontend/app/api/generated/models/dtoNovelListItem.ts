@@ -5,8 +5,8 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { BackendInternalNovelDtoTagSummary } from './backendInternalNovelDtoTagSummary';
 import type { DtoNovelStatistics } from './dtoNovelStatistics';
-import type { InternalNovelDtoTagSummary } from './internalNovelDtoTagSummary';
 
 export interface DtoNovelListItem {
   age_rating?: number;
@@ -24,7 +24,7 @@ export interface DtoNovelListItem {
   slug?: string;
   statistics?: DtoNovelStatistics;
   status?: number;
-  tags?: InternalNovelDtoTagSummary[];
+  tags?: BackendInternalNovelDtoTagSummary[];
   title?: string;
   updated_at?: string;
 }

@@ -21,7 +21,6 @@ import {
 } from '~/api/generated/admin/admin'
 import { updateGalgame } from '~/api/generated/galgames/galgames'
 import type {
-  GalgameDetailData,
   GalgameUpdatePayload
 } from '~/types/galgame'
 import type {
@@ -31,6 +30,7 @@ import type {
   DtoOverrideClassificationRequest
 } from '~/api/generated/models'
 import { AGE_RATINGS, GALGAME_SORTS, domainLabel, domainSortSlug } from '~/constants/domain'
+import { DESCRIPTION_LOCALES, normalizeDescriptionSourceType } from '~/utils/gameDescriptions'
 
 useSeoMeta({ title: 'Galgame 审核 - Koyomi' })
 
@@ -316,16 +316,19 @@ async function changeStatus(
     }
     const detail = unwrapApiData(await getAdminGalgame(item.id))
     // 转发完整多语言简介，避免全量更新时只靠旧版 description 字段回传。
-    const { descriptions } = detail as GalgameDetailData
+    const { descriptions } = detail
     const descriptionPayload = descriptions
-      ? Object.values(descriptions).map((row) => ({
-          language: row.language,
-          content: row.content ?? '',
-          source_type: row.source?.type ?? '',
-          source_name: row.source?.name ?? '',
-          source_url: row.source?.url ?? '',
-          is_official: row.source?.official ?? false
-        }))
+      ? DESCRIPTION_LOCALES.flatMap((language) => {
+          const row = descriptions[language]
+          return row ? [{
+            language,
+            content: row.content ?? '',
+            source_type: normalizeDescriptionSourceType(row.source?.type),
+            source_name: row.source?.name ?? '',
+            source_url: row.source?.url ?? '',
+            is_official: row.source?.official ?? false
+          }] : []
+        })
       : undefined
     const payload: GalgameUpdatePayload = {
       title: detail.title ?? '',

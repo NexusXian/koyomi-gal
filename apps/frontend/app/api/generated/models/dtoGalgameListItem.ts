@@ -5,10 +5,10 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { BackendInternalGalgameDtoTagSummary } from './backendInternalGalgameDtoTagSummary';
 import type { DtoDeveloperSummary } from './dtoDeveloperSummary';
 import type { DtoGalgameStatistics } from './dtoGalgameStatistics';
 import type { DtoRatingSummary } from './dtoRatingSummary';
-import type { InternalGalgameDtoTagSummary } from './internalGalgameDtoTagSummary';
 
 export interface DtoGalgameListItem {
   age_rating?: number;
@@ -31,6 +31,6 @@ export interface DtoGalgameListItem {
   slug?: string;
   statistics?: DtoGalgameStatistics;
   status?: number;
-  tags?: InternalGalgameDtoTagSummary[];
+  tags?: BackendInternalGalgameDtoTagSummary[];
   title?: string;
 }

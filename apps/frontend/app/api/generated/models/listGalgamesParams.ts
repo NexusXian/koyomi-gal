@@ -16,6 +16,10 @@ keyword?: string;
  */
 developer_id?: number;
 /**
+ * Company ID (any association role)
+ */
+company_id?: number;
+/**
  * Tag ID，逗号分隔
  */
 tag_ids?: string;

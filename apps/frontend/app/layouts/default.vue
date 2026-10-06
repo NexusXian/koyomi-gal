@@ -23,6 +23,7 @@ const navigationItems = computed(() => {
   const items = [
     { label: '首页', icon: 'lucide:house', to: '/' },
     { label: 'galgame', icon: 'lucide:gamepad-2', to: '/galgames' },
+    { label: '会社', icon: 'lucide:building-2', to: '/companies' },
     { label: '小说', icon: 'lucide:book-open', to: '/novels' },
     { label: '帖子', icon: 'lucide:message-square-text', to: '/posts' },
     { label: '资讯', icon: 'lucide:newspaper', to: '/articles' },
@@ -49,6 +50,7 @@ const navigationItems = computed(() => {
       'post:moderate',
       'comment:moderate',
       'galgame:update',
+      'company:manage',
       'role:list',
       'role:create',
       'role:update',
@@ -104,9 +106,11 @@ const navigationItems = computed(() => {
                   ? '/admin/resources'
                   : hasAny(['post:moderate', 'comment:moderate'])
                     ? '/admin/community'
-                    : has('galgame:update')
-                      ? '/admin/tags'
-                      : has('banner:read')
+                     : has('galgame:update')
+                       ? '/admin/tags'
+                       : has('company:manage')
+                         ? '/admin/companies'
+                       : has('banner:read')
                         ? '/admin/banners'
                         : has('background_preset:read')
                           ? '/admin/backgrounds'

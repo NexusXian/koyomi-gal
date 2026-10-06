@@ -37,6 +37,7 @@ func (h *CatalogHandler) SetDescriptionService(descriptionService *service.Descr
 // @Produce      json
 // @Param        keyword query string false "标题或别名关键词"
 // @Param        developer_id query int false "开发商 ID"
+// @Param        company_id query int false "Company ID (any association role)"
 // @Param        tag_ids query string false "Tag ID，逗号分隔" example(1,2)
 // @Param        release_from query int false "最早发行年份"
 // @Param        release_to query int false "最晚发行年份"
@@ -218,7 +219,7 @@ func (h *CatalogHandler) ListAdminGalgames(c *gin.Context) {
 
 // GetAdminGalgame godoc
 // @Summary      管理端查看 Galgame 详情
-// @Description  按 ID 返回任意状态 Galgame 详情；需要 galgame:review 权限
+// @Description  Returns Galgame details of any status. Requires galgame:review or company:manage.
 // @ID           getAdminGalgame
 // @Tags         admin
 // @Produce      json

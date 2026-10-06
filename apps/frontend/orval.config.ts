@@ -3,7 +3,7 @@ import { defineConfig } from 'orval'
 export default defineConfig({
   api: {
     input: {
-      target: 'http://localhost:8080/swagger/doc.json',
+      target: process.env.SWAGGER_INPUT || 'http://localhost:8080/swagger/doc.json',
       // swag only emits Swagger 2.0, which orval 8 rejects under OpenAPI 3 validation
       unsafeDisableValidation: true
     },

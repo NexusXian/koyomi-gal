@@ -5,6 +5,7 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
+import type { DtoGalgameDescriptionInput } from './dtoGalgameDescriptionInput';
 import type { DtoUpdateGalgameRequestAgeRating } from './dtoUpdateGalgameRequestAgeRating';
 import type { DtoUpdateGalgameRequestStatus } from './dtoUpdateGalgameRequestStatus';
 
@@ -16,6 +17,8 @@ export interface DtoUpdateGalgameRequest {
   cover_sensitive: boolean;
   cover_url?: string;
   description?: string;
+  /** @maxItems 3 */
+  descriptions?: DtoGalgameDescriptionInput[];
   developer_id?: number;
   /** @maxLength 255 */
   original_title?: string;

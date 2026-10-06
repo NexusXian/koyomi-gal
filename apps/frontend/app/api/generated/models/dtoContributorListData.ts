@@ -5,10 +5,10 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
-import type { InternalGalgameDtoContributorData } from './internalGalgameDtoContributorData';
+import type { BackendInternalGalgameDtoContributorData } from './backendInternalGalgameDtoContributorData';
 
 export interface DtoContributorListData {
-  items?: InternalGalgameDtoContributorData[];
+  items?: BackendInternalGalgameDtoContributorData[];
   page?: number;
   page_size?: number;
   total?: number;

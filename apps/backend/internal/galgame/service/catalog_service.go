@@ -781,6 +781,7 @@ func (s *CatalogService) ListPublishedGalgames(
 	galgames, total, err := s.galgames.ListPublished(ctx, repository.GalgameListOptions{
 		Keyword:     strings.TrimSpace(query.Keyword),
 		DeveloperID: query.DeveloperID,
+		CompanyID:   query.CompanyID,
 		TagIDs:      uniqueUint(query.TagIDs),
 		ReleaseFrom: query.ReleaseFrom,
 		ReleaseTo:   query.ReleaseTo,

@@ -13,6 +13,7 @@ class GalgameService {
   Future<Paginated<GalgameListItem>> list({
     String? keyword,
     int? developerId,
+    int? companyId,
     List<int>? tagIds,
     int? ageRating,
     String? sort,
@@ -24,6 +25,7 @@ class GalgameService {
       queryParameters: {
         'keyword': keyword,
         'developer_id': developerId,
+        'company_id': companyId,
         'tag_ids': tagIds == null || tagIds.isEmpty ? null : tagIds.join(','),
         'age_rating': ageRating,
         'sort': sort,
@@ -39,6 +41,11 @@ class GalgameService {
 
   Future<GalgameDetail> get(int id) async {
     final data = await _api.get('/api/v1/galgames/$id');
+    return GalgameDetail.fromMap(Map<String, dynamic>.from(data));
+  }
+
+  Future<GalgameDetail> adminGet(int id) async {
+    final data = await _api.get('/api/v1/admin/galgames/$id');
     return GalgameDetail.fromMap(Map<String, dynamic>.from(data));
   }
 
@@ -144,10 +151,10 @@ class TagDataLite {
   const TagDataLite({this.id, this.name, this.slug});
 
   factory TagDataLite.fromMap(Map<String, dynamic> map) => TagDataLite(
-        id: (map['id'] as num?)?.toInt(),
-        name: map['name'] as String?,
-        slug: map['slug'] as String?,
-      );
+    id: (map['id'] as num?)?.toInt(),
+    name: map['name'] as String?,
+    slug: map['slug'] as String?,
+  );
 
   final int? id;
   final String? name;

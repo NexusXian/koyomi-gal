@@ -1,7 +1,12 @@
-import type { GameDescription, GameDescriptions } from '~/types/galgame'
+import { DtoGalgameDescriptionInputSourceType } from '~/api/generated/models'
+import type { GameDescription, GameDescriptions, GalgameDescriptionPayloadItem } from '~/types/galgame'
 
-export const DESCRIPTION_LOCALES = ['zh-CN', 'en-US', 'ja-JP'] as const
-export type DescriptionLocale = (typeof DESCRIPTION_LOCALES)[number]
+export type DescriptionLocale = GalgameDescriptionPayloadItem['language']
+export const DESCRIPTION_LOCALES = ['zh-CN', 'en-US', 'ja-JP'] as const satisfies readonly DescriptionLocale[]
+
+export function normalizeDescriptionSourceType(value: string | undefined): DtoGalgameDescriptionInputSourceType {
+  return Object.values(DtoGalgameDescriptionInputSourceType).find((type) => type === value) ?? 'unknown'
+}
 
 // The site UI is Chinese-only today; the description viewer follows this
 // locale until site-wide i18n exists or a manual switcher is added.
@@ -57,7 +62,7 @@ export function getBestDescription(
   const normalized = normalizeDescriptionLocale(locale)
   for (const language of FALLBACK_CHAINS[normalized]) {
     const candidate = descriptions[language]
-    if (candidate && candidate.content.trim() !== '') {
+    if (candidate?.content?.trim()) {
       return {
         description: candidate,
         locale: language,

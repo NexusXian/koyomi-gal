@@ -5,10 +5,10 @@
  * Koyomi Gal 后端 API
  * OpenAPI spec version: 1.0.0
  */
-import type { InternalNotificationDtoUnreadCountData } from './internalNotificationDtoUnreadCountData';
+import type { BackendInternalNotificationDtoUnreadCountData } from './backendInternalNotificationDtoUnreadCountData';
 
 export interface DtoUnreadCountResponse {
   code?: number;
-  data?: InternalNotificationDtoUnreadCountData;
+  data?: BackendInternalNotificationDtoUnreadCountData;
   msg?: string;
 }

@@ -7,6 +7,7 @@
  */
 import type { DtoCreateGalgameRequestAgeRating } from './dtoCreateGalgameRequestAgeRating';
 import type { DtoCreateGalgameRequestStatus } from './dtoCreateGalgameRequestStatus';
+import type { DtoGalgameDescriptionInput } from './dtoGalgameDescriptionInput';
 
 export interface DtoCreateGalgameRequest {
   age_rating?: DtoCreateGalgameRequestAgeRating;
@@ -16,6 +17,8 @@ export interface DtoCreateGalgameRequest {
   cover_sensitive?: boolean;
   cover_url?: string;
   description?: string;
+  /** @maxItems 3 */
+  descriptions?: DtoGalgameDescriptionInput[];
   developer_id?: number;
   /** @maxLength 255 */
   original_title?: string;

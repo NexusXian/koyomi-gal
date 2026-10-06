@@ -12,19 +12,21 @@ import {
   getGalgame,
   updateGalgame
 } from '~/api/generated/galgames/galgames'
-import { getAdminGalgame } from '~/api/generated/admin/admin'
+import { getAdminGalgame, replaceGameCompanies } from '~/api/generated/admin/admin'
 import type {
   DtoDeveloperSummary,
   DtoTagSummary
 } from '~/api/generated/models'
 import type {
   GameDescriptions,
+  GalgameDescriptionPayloadItem,
   GalgameDetailData,
   GalgameUpdatePayload
 } from '~/types/galgame'
 import type { ImageAsset } from '~/types/image'
 import {
   DESCRIPTION_LOCALES,
+  normalizeDescriptionSourceType,
   type DescriptionLocale
 } from '~/utils/gameDescriptions'
 
@@ -63,13 +65,7 @@ const formState = reactive({
 })
 
 // Per-language description editor state; languages are fully independent.
-interface DescriptionDraft {
-  content: string
-  source_type: string
-  source_name: string
-  source_url: string
-  is_official: boolean
-}
+type DescriptionDraft = Required<Omit<GalgameDescriptionPayloadItem, 'language'>>
 
 const LOCALE_TABS: { locale: DescriptionLocale; label: string }[] = [
   { locale: 'zh-CN', label: '中文' },
@@ -77,7 +73,7 @@ const LOCALE_TABS: { locale: DescriptionLocale; label: string }[] = [
   { locale: 'ja-JP', label: '日本語' }
 ]
 
-const SOURCE_TYPE_OPTIONS: { value: string; label: string }[] = [
+const SOURCE_TYPE_OPTIONS: { value: DescriptionDraft['source_type']; label: string }[] = [
   { value: 'nextmoe', label: 'NextMoe' },
   { value: 'vndb', label: 'VNDB' },
   { value: 'official', label: '游戏官网' },
@@ -87,7 +83,7 @@ const SOURCE_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: 'unknown', label: '其他' }
 ]
 
-const SOURCE_TYPE_DEFAULT_NAMES: Record<string, string> = {
+const SOURCE_TYPE_DEFAULT_NAMES: Record<DescriptionDraft['source_type'], string> = {
   nextmoe: 'NextMoe 资料库',
   vndb: 'VNDB',
   official: '游戏官网',
@@ -126,11 +122,7 @@ function defaultDraft(locale: DescriptionLocale): DescriptionDraft {
   }
 }
 
-interface DescriptionDrafts {
-  'zh-CN': DescriptionDraft
-  'en-US': DescriptionDraft
-  'ja-JP': DescriptionDraft
-}
+type DescriptionDrafts = Record<DescriptionLocale, DescriptionDraft>
 
 const descriptionDrafts = reactive<DescriptionDrafts>({
   'zh-CN': defaultDraft('zh-CN'),
@@ -141,7 +133,7 @@ const activeDescriptionTab = ref<DescriptionLocale>('zh-CN')
 
 function applyDescriptionSourceType(
   locale: DescriptionLocale,
-  sourceType: string
+  sourceType: DescriptionDraft['source_type']
 ): void {
   const draft = descriptionDrafts[locale]
   draft.source_type = sourceType
@@ -156,9 +148,9 @@ function loadDescriptionDrafts(descriptions?: GameDescriptions): void {
     if (stored) {
       draft.content = stored.content ?? ''
       if (stored.source?.type) {
-        draft.source_type = stored.source.type
+        draft.source_type = normalizeDescriptionSourceType(stored.source.type)
         draft.source_name =
-          stored.source.name ?? SOURCE_TYPE_DEFAULT_NAMES[stored.source.type] ?? ''
+          stored.source.name ?? SOURCE_TYPE_DEFAULT_NAMES[draft.source_type]
         draft.source_url = stored.source.url ?? ''
         draft.is_official = stored.source.official ?? false
       }
@@ -171,6 +163,9 @@ const developers = ref<DtoDeveloperSummary[]>([])
 const tags = ref<DtoTagSummary[]>([])
 const submitting = ref(false)
 const loading = ref(false)
+const companies = ref<Partial<NonNullable<Parameters<typeof replaceGameCompanies>[1]['companies']>[number]>[]>([])
+const createdGalgame = ref<GalgameDetailData>()
+const companySaveError = ref('')
 
 const rules: Record<string, Rule[]> = {
   title: [{ required: true, message: '请输入标题' }],
@@ -246,7 +241,7 @@ async function loadGalgame(): Promise<void> {
     try {
       data = unwrapApiData(await getGalgame(props.galgameId))
     } catch {
-      // 待审核等未发布条目对公开接口返回 404，回退到管理端接口（需 galgame:review）
+      // Unpublished games require the permission-gated admin detail endpoint.
       data = unwrapApiData(await getAdminGalgame(props.galgameId))
     }
     loadDescriptionDrafts(data.descriptions)
@@ -289,9 +284,21 @@ onMounted(async () => {
 })
 
 async function submit(): Promise<void> {
+  if (submitting.value || loading.value) return
+  if (!props.galgameId && has('company:manage')) {
+    if (companies.value.some((company) => !company.company_id || !company.role)) {
+      message.warning('请选择每一项的公司和角色')
+      return
+    }
+    const keys = companies.value.map((company) => `${company.company_id}:${company.role}`)
+    if (new Set(keys).size !== keys.length) {
+      message.warning('同一公司不能重复添加相同角色')
+      return
+    }
+  }
   submitting.value = true
 
-  const descriptions = DESCRIPTION_LOCALES.map((locale) => {
+  const descriptions: GalgameDescriptionPayloadItem[] = DESCRIPTION_LOCALES.map((locale) => {
     const draft = descriptionDrafts[locale]
     return {
       language: locale,
@@ -323,16 +330,28 @@ async function submit(): Promise<void> {
   }
 
   try {
-    const response = props.galgameId
+    const retryingCompanies = Boolean(createdGalgame.value)
+    const data = createdGalgame.value ?? unwrapApiData(props.galgameId
       ? await updateGalgame(props.galgameId, payload)
-      : await createGalgame(payload)
-    const data = unwrapApiData(response, '保存失败')
+      : await createGalgame(payload), '保存失败')
+    if (!props.galgameId) createdGalgame.value = data
+    if (!props.galgameId && has('company:manage') && (companies.value.length || retryingCompanies) && data.id) {
+      try {
+        unwrapApiData(await replaceGameCompanies(data.id, {
+          companies: companies.value.map((item) => ({ company_id: item.company_id!, role: item.role! }))
+        }))
+        companySaveError.value = ''
+      } catch (cause) {
+        companySaveError.value = getApiErrorMessage(cause, '保存公司关联失败')
+        return
+      }
+    }
     message.success(props.galgameId ? 'Galgame 已更新' : 'Galgame 已创建')
     emit('submitted', data)
     if (data.status === 1) {
-      void router.push(`/galgames/${data.id}`)
+      await router.push(`/galgames/${data.id}`)
     } else {
-      void router.push('/')
+      await router.push('/')
     }
   } catch (error) {
     message.error(getApiErrorMessage(error, '保存失败'))
@@ -346,8 +365,19 @@ async function submit(): Promise<void> {
 <template>
   <KunCard padding="lg">
     <a-spin :spinning="loading">
+      <div v-if="!galgameId && has('company:manage')" class="new-company-relations">
+        <KunHeader name="关联公司" description="创建 Galgame 后独立保存公司关联。" scale="h3" />
+        <a-alert v-if="createdGalgame" :type="companySaveError ? 'warning' : 'info'" show-icon message="Galgame 已创建" :description="companySaveError ? `公司关联尚未确认保存：${companySaveError}。可修改后重试，不会重复创建游戏。` : '正在保存公司关联...'" />
+        <CompanyRelationsEditor v-model="companies" :disabled="submitting" />
+        <div v-if="createdGalgame && companySaveError" class="form-actions">
+          <a-button type="primary" :loading="submitting" @click="submit">重试保存公司关联</a-button>
+          <KunButton :href="`/galgames/${createdGalgame.id}/edit`" variant="bordered" :disabled="submitting">前往编辑页</KunButton>
+        </div>
+      </div>
       <a-form
+        v-if="!createdGalgame"
         layout="vertical"
+        :disabled="submitting || loading"
         :model="formState"
         :rules="rules"
         @finish="submit"
@@ -534,7 +564,7 @@ async function submit(): Promise<void> {
                       }))
                     "
                     @change="
-                      (value: string) =>
+                      (value: DescriptionDraft['source_type']) =>
                         applyDescriptionSourceType(tab.locale, value)
                     "
                   />
@@ -589,6 +619,8 @@ async function submit(): Promise<void> {
 </template>
 
 <style scoped>
+.new-company-relations { display: grid; gap: 14px; margin-bottom: 24px; }
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

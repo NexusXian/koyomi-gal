@@ -89,6 +89,12 @@ const items: AdminNavItem[] = [
     permissions: ['galgame:update']
   },
   {
+    key: '/admin/companies',
+    label: '会社管理',
+    icon: 'lucide:building-2',
+    permissions: ['company:manage']
+  },
+  {
     key: '/admin/banners',
     label: '轮播图',
     icon: 'lucide:gallery-horizontal-end',

@@ -26,8 +26,10 @@ const keywordInput = ref(
 )
 const keyword = ref(keywordInput.value)
 let keywordTimer: ReturnType<typeof setTimeout> | undefined
+let applyingRoute = false
 
 watch(keywordInput, (value) => {
+  if (applyingRoute) return
   if (keywordTimer) {
     clearTimeout(keywordTimer)
   }
@@ -35,9 +37,12 @@ watch(keywordInput, (value) => {
   keywordTimer = setTimeout(() => {
     keyword.value = value
   }, 350)
-})
+}, { flush: 'sync' })
 const developerId = ref<number | undefined>(
   route.query.developer ? Number(route.query.developer) : undefined
+)
+const companyId = ref<number | undefined>(
+  positiveID(route.query.company_id)
 )
 const tagIds = ref<number[]>(
   typeof route.query.tags === 'string' && route.query.tags
@@ -50,19 +55,41 @@ const ageRating = ref<number | undefined>(
 const sortIndex = ref(Number(route.query.sort ?? 0) || 0)
 const page = ref(Math.max(1, Number(route.query.page ?? 1) || 1))
 
+function positiveID(value: unknown): number | undefined {
+  const id = typeof value === 'string' ? Number(value) : NaN
+  return Number.isSafeInteger(id) && id > 0 ? id : undefined
+}
+
+watch(() => route.query, (query) => {
+  applyingRoute = true
+  clearTimeout(keywordTimer)
+  keywordInput.value = typeof query.q === 'string' ? query.q : ''
+  keyword.value = keywordInput.value
+  developerId.value = positiveID(query.developer)
+  companyId.value = positiveID(query.company_id)
+  tagIds.value = typeof query.tags === 'string' && query.tags
+    ? query.tags.split(',').map(positiveID).filter((id): id is number => id !== undefined)
+    : []
+  ageRating.value = query.age !== undefined ? Number(query.age) : undefined
+  sortIndex.value = Number(query.sort ?? 0) || 0
+  page.value = Math.max(1, Math.floor(Number(query.page ?? 1)) || 1)
+  applyingRoute = false
+}, { flush: 'sync' })
+
 const limit = 20
 const developers = ref<DtoDeveloperSummary[]>([])
 const tags = ref<DtoTagSummary[]>([])
 
-const { data: listData, pending } = await useAsyncData<
+const { data: listData, pending, error, refresh } = await useAsyncData<
   DtoGalgameListData,
   Error
 >(
-  `galgames-${JSON.stringify(route.query)}`,
+  computed(() => `galgames-${JSON.stringify([keyword.value, developerId.value, companyId.value, tagIds.value, ageRating.value, sortIndex.value, page.value])}`),
   async () => {
     const response = await listGalgames({
       keyword: keyword.value.trim() || undefined,
       developer_id: developerId.value,
+      company_id: companyId.value,
       tag_ids: tagIds.value.length
         ? tagIds.value.join(',')
         : undefined,
@@ -72,8 +99,7 @@ const { data: listData, pending } = await useAsyncData<
       limit
     })
     return unwrapApiData(response, '查询 Galgame 失败')
-  },
-  { watch: [keyword, developerId, tagIds, ageRating, sortIndex, page] }
+  }
 )
 
 const items = computed(() => listData.value?.items ?? [])
@@ -90,6 +116,7 @@ function syncQuery(): void {
       ...route.query,
       q: keyword.value.trim() || undefined,
       developer: developerId.value ?? undefined,
+      company_id: companyId.value,
       tags: tagIds.value.length ? tagIds.value.join(',') : undefined,
       age: ageRating.value ?? undefined,
       sort: sortIndex.value || undefined,
@@ -98,12 +125,15 @@ function syncQuery(): void {
   })
 }
 
-watch([keyword, developerId, tagIds, ageRating, sortIndex], () => {
+watch([keyword, developerId, companyId, tagIds, ageRating, sortIndex], () => {
+  if (applyingRoute) return
   page.value = 1
   syncQuery()
-})
+}, { flush: 'sync' })
 
-watch(page, syncQuery)
+watch(page, () => { if (!applyingRoute) syncQuery() }, { flush: 'sync' })
+
+onBeforeUnmount(() => clearTimeout(keywordTimer))
 
 onMounted(() => {
   try {
@@ -165,6 +195,8 @@ function updatePage(next: number): void {
           option-filter-prop="label"
         />
 
+        <CompanySelector v-model="companyId" placeholder="搜索关联公司" />
+
         <a-select
           v-model:value="tagIds"
           class="filter-item filter-tags"
@@ -204,8 +236,11 @@ function updatePage(next: number): void {
       </div>
     </KunCard>
 
+    <a-alert v-if="error" type="error" show-icon :message="getApiErrorMessage(error, '查询 Galgame 失败')">
+      <template #action><a-button @click="refresh()">重试</a-button></template>
+    </a-alert>
     <a-alert
-      v-if="!pending && items.length === 0"
+      v-else-if="!pending && items.length === 0"
       class="empty-alert"
       type="info"
       show-icon
@@ -293,7 +328,7 @@ function updatePage(next: number): void {
 
 @media (min-width: 1024px) {
   .filter-bar {
-    grid-template-columns: minmax(220px, 1.4fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+    grid-template-columns: minmax(200px, 1.4fr) repeat(3, minmax(0, 1fr)) repeat(2, minmax(0, 0.7fr));
   }
 
   .galgame-grid {

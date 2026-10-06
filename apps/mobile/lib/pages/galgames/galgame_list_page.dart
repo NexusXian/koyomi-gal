@@ -11,10 +11,14 @@ import '../../providers/app_providers.dart';
 import '../../services/galgame_service.dart'
     show DeveloperDataLite, TagDataLite;
 import '../../widgets/common_views.dart';
+import '../companies/widgets.dart';
 import 'widgets.dart';
 
 class GalgameListPage extends ConsumerStatefulWidget {
-  const GalgameListPage({super.key});
+  const GalgameListPage({super.key, this.companyId, this.companyName});
+
+  final int? companyId;
+  final String? companyName;
 
   @override
   ConsumerState<GalgameListPage> createState() => _GalgameListPageState();
@@ -35,6 +39,9 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
   String _keyword = '';
   int _sortIndex = 0;
   int? _developerId;
+  int? _companyId;
+  String? _companyName;
+  int _requestId = 0;
   int? _ageRating;
   final List<int> _tagIds = [];
 
@@ -44,9 +51,22 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
   @override
   void initState() {
     super.initState();
+    _companyId = widget.companyId;
+    _companyName = widget.companyName;
     _scrollController.addListener(_onScroll);
     _loadFilters();
     _reload();
+  }
+
+  @override
+  void didUpdateWidget(covariant GalgameListPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.companyId != widget.companyId ||
+        oldWidget.companyName != widget.companyName) {
+      _companyId = widget.companyId;
+      _companyName = widget.companyName;
+      _reload();
+    }
   }
 
   @override
@@ -61,6 +81,7 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
         !_loading &&
+        _error == null &&
         _hasMore) {
       _loadMore();
     }
@@ -93,13 +114,17 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
   Future<void> _loadMore() => _loadPage();
 
   Future<void> _loadPage({bool reset = false}) async {
-    if (_loading) {
+    if (_loading && !reset) {
       return;
     }
+    final requestId = ++_requestId;
+    final page = reset ? 1 : _page;
     setState(() {
       _loading = true;
       if (reset) {
         _error = null;
+        _items = [];
+        _total = 0;
       }
     });
     try {
@@ -108,13 +133,14 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
           .list(
             keyword: _keyword.isEmpty ? null : _keyword,
             developerId: _developerId,
+            companyId: _companyId,
             tagIds: _tagIds,
             ageRating: _ageRating,
             sort: domainSlug(galgameSortOptions, _sortIndex),
-            page: _page,
+            page: page,
             limit: 20,
           );
-      if (!mounted) {
+      if (!mounted || requestId != _requestId) {
         return;
       }
       setState(() {
@@ -123,9 +149,10 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
         _hasMore = result.hasMore;
         _page = reset ? 2 : _page + 1;
         _loading = false;
+        _error = null;
       });
     } catch (error) {
-      if (!mounted) {
+      if (!mounted || requestId != _requestId) {
         return;
       }
       setState(() {
@@ -143,6 +170,23 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
         _reload();
       }
     });
+  }
+
+  void _setCompanyFilter(int? id, String? name) {
+    final query =
+        Map<String, String>.of(GoRouterState.of(context).uri.queryParameters)
+          ..remove('company_id')
+          ..remove('company_name');
+    if (id != null) {
+      query['company_id'] = '$id';
+      if (name != null) query['company_name'] = name;
+    }
+    context.replace(
+      Uri(
+        path: '/galgames',
+        queryParameters: query.isEmpty ? null : query,
+      ).toString(),
+    );
   }
 
   void _openFilterSheet() {
@@ -187,6 +231,11 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
         title: const Text('Galgame'),
         actions: [
           IconButton(
+            tooltip: '会社',
+            icon: const Icon(Icons.business_outlined),
+            onPressed: () => context.push('/companies'),
+          ),
+          IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _openFilterSheet,
           ),
@@ -210,6 +259,7 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
                           : IconButton(
                               icon: const Icon(Icons.close, size: 18),
                               onPressed: () {
+                                _debounce?.cancel();
                                 _searchController.clear();
                                 _keyword = '';
                                 _reload();
@@ -240,7 +290,38 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
         onPressed: () => context.push('/galgames/new'),
         child: const Icon(Icons.add),
       ),
-      body: _buildList(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.business_outlined),
+                    label: Text(
+                      _companyId == null ? '按公司筛选' : _companyName ?? '已选择公司',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onPressed: () async {
+                      final company = await selectCompany(context);
+                      if (company == null || !mounted) return;
+                      _setCompanyFilter(company.id, company.name);
+                    },
+                  ),
+                ),
+                if (_companyId != null)
+                  IconButton(
+                    tooltip: '清除公司筛选',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => _setCompanyFilter(null, null),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(child: _buildList()),
+        ],
+      ),
     );
   }
 
@@ -273,15 +354,25 @@ class _GalgameListPageState extends ConsumerState<GalgameListPage> {
                         height: 22,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : _hasMore
-                        ? const SizedBox.shrink()
-                        : Text(
-                            '共 $_total 条',
-                            style: TextStyle(
-                              fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                    : _error != null
+                    ? Column(
+                        children: [
+                          Text(_error!),
+                          TextButton(
+                            onPressed: _loadMore,
+                            child: const Text('重试'),
                           ),
+                        ],
+                      )
+                    : _hasMore
+                    ? const SizedBox.shrink()
+                    : Text(
+                        '共 $_total 条',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
               ),
             );
           }
@@ -353,139 +444,139 @@ class _FilterSheetState extends State<_FilterSheet> {
         20,
         24 + MediaQuery.viewInsetsOf(context).bottom,
       ),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '筛选',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '筛选',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text('排序', style: TextStyle(fontSize: 13)),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (var i = 0; i < galgameSortOptions.length; i++)
+              ChoiceChip(
+                label: Text(galgameSortOptions[i].label),
+                selected: _sortIndex == i,
+                onSelected: (_) => setState(() => _sortIndex = i),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('取消'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text('排序', style: TextStyle(fontSize: 13)),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (var i = 0; i < galgameSortOptions.length; i++)
-                ChoiceChip(
-                  label: Text(galgameSortOptions[i].label),
-                  selected: _sortIndex == i,
-                  onSelected: (_) => setState(() => _sortIndex = i),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text('年龄等级', style: TextStyle(fontSize: 13)),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final option in ageRatingOptions)
-                ChoiceChip(
-                  label: Text(option.label),
-                  selected: _ageRating == option.value,
-                  onSelected: (_) => setState(
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Text('年龄等级', style: TextStyle(fontSize: 13)),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final option in ageRatingOptions)
+              ChoiceChip(
+                label: Text(option.label),
+                selected: _ageRating == option.value,
+                onSelected: (_) => setState(
                   () => _ageRating = _ageRating == option.value
                       ? null
                       : option.value,
-                  ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text('开发商', style: TextStyle(fontSize: 13)),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<int?>(
-            value: _developerId,
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Text('开发商', style: TextStyle(fontSize: 13)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<int?>(
+          value: _developerId,
           isExpanded: true,
-            decoration: const InputDecoration(isDense: true),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('全部开发商')),
-              ...widget.developers.map(
-                (developer) => DropdownMenuItem(
-                  value: developer.id,
+          decoration: const InputDecoration(isDense: true),
+          items: [
+            const DropdownMenuItem(value: null, child: Text('全部开发商')),
+            ...widget.developers.map(
+              (developer) => DropdownMenuItem(
+                value: developer.id,
                 child: Text(
                   developer.name ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                ),
               ),
-            ],
-            onChanged: (value) => setState(() => _developerId = value),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Tag（多选，AND）', style: TextStyle(fontSize: 13)),
-              Text(
-                '已选 ${_tagIds.length}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+            ),
+          ],
+          onChanged: (value) => setState(() => _developerId = value),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Tag（多选，AND）', style: TextStyle(fontSize: 13)),
+            Text(
+              '已选 ${_tagIds.length}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.primary,
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _tagSearchController,
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _tagSearchController,
           decoration: const InputDecoration(isDense: true, hintText: '搜索 Tag'),
-            onChanged: (value) {
-              setState(() {
-                _filteredTags = widget.tags
+          onChanged: (value) {
+            setState(() {
+              _filteredTags = widget.tags
                   .where(
                     (tag) => (tag.name ?? '').toLowerCase().contains(
                       value.toLowerCase(),
                     ),
                   )
-                    .toList();
-              });
-            },
-          ),
-          const SizedBox(height: 8),
+                  .toList();
+            });
+          },
+        ),
+        const SizedBox(height: 8),
         Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final tag in _filteredTags)
-                    FilterChip(
-                      label: Text(tag.name ?? ''),
-                      selected: _tagIds.contains(tag.id),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _tagIds.add(tag.id!);
-                          } else {
-                            _tagIds.remove(tag.id);
-                          }
-                        });
-                      },
-                    ),
-                ],
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final tag in _filteredTags)
+              FilterChip(
+                label: Text(tag.name ?? ''),
+                selected: _tagIds.contains(tag.id),
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _tagIds.add(tag.id!);
+                    } else {
+                      _tagIds.remove(tag.id);
+                    }
+                  });
+                },
               ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () {
-                widget.onChanged(_tagIds, _developerId, _ageRating, _sortIndex);
-                Navigator.of(context).pop();
-              },
-              child: const Text('应用筛选'),
-            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              widget.onChanged(_tagIds, _developerId, _ageRating, _sortIndex);
+              Navigator.of(context).pop();
+            },
+            child: const Text('应用筛选'),
           ),
-        ],
+        ),
+      ],
     );
   }
 }

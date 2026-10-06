@@ -2159,6 +2159,383 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/admin/companies": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires company:manage. Counts include games of every status. Sort defaults to created_at descending; name is ascending and game_count descending.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List companies for administration",
+                "operationId": "listAdminCompanies",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name or alias",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size (1-100)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "active",
+                            "inactive",
+                            "closed"
+                        ],
+                        "type": "string",
+                        "description": "Company status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Country",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "created_at",
+                            "name",
+                            "game_count"
+                        ],
+                        "type": "string",
+                        "description": "Sort",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires company:manage. Slugs are trimmed and lowercase; the normalized slug must be nonempty, cannot be '.' or '..', and cannot contain '/' or '\\\\' or Unicode control characters. Spaces and Unicode characters are allowed for compatibility with existing developer slugs. Aliases are trimmed, deduplicated and empty aliases omitted. Dates must be nullable YYYY-MM-DD, closed_date cannot precede founded_date.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create company",
+                "operationId": "createCompany",
+                "parameters": [
+                    {
+                        "description": "Company metadata",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/companies/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires company:manage. Counts include games of every status.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get company by ID for administration",
+                "operationId": "getAdminCompany",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Company ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires company:manage. Full replacement; omitted optional fields reset. Slugs follow the same rules as creation: trim and lowercase, nonempty, not '.' or '..', no '/' or '\\\\' or Unicode control characters; spaces and Unicode characters are allowed. Parent must exist and cannot create a cycle. Dates must be nullable YYYY-MM-DD, closed_date cannot precede founded_date.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Replace company metadata and aliases",
+                "operationId": "updateCompany",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Company ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Replacement company metadata",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires company:manage. Removes aliases and game associations; children become parentless. Games and legacy developers are preserved.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete company",
+                "operationId": "deleteCompany",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Company ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/experience-rules": {
             "get": {
                 "security": [
@@ -2861,7 +3238,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "按 ID 返回任意状态 Galgame 详情；需要 galgame:review 权限",
+                "description": "Returns Galgame details of any status. Requires galgame:review or company:manage.",
                 "produces": [
                     "application/json"
                 ],
@@ -4446,6 +4823,83 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "审核失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/games/{id}/companies": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Requires company:manage. Game and all companies must exist. Rejects duplicate company_id/role tuples and invalid roles. An empty companies array clears all associations; multiple distinct roles for one company are allowed.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Atomically replace all company associations of a game",
+                "operationId": "replaceGameCompanies",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Game ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Complete company associations",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReplaceGameCompaniesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GameCompaniesDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -8275,6 +8729,224 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/companies": {
+            "get": {
+                "description": "Search names and aliases by literal case-insensitive substring. Counts include distinct published games only. Sort defaults to created_at descending; name is ascending and game_count descending.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "companies"
+                ],
+                "summary": "List companies",
+                "operationId": "listCompanies",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name or alias",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size (1-100)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "active",
+                            "inactive",
+                            "closed"
+                        ],
+                        "type": "string",
+                        "description": "Company status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Country",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "created_at",
+                            "name",
+                            "game_count"
+                        ],
+                        "type": "string",
+                        "description": "Sort",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/companies/{slug}": {
+            "get": {
+                "description": "Includes aliases, parent and children summaries. Counts include distinct published games only. Dates are nullable YYYY-MM-DD strings.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "companies"
+                ],
+                "summary": "Get company by slug",
+                "operationId": "getCompany",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompanyDataResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/companies/{slug}/games": {
+            "get": {
+                "description": "A game appears once even when associated with multiple roles. Response pagination uses limit, matching the existing GalgameListData contract.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "companies"
+                ],
+                "summary": "List published games associated with a company",
+                "operationId": "listCompanyGames",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size (1-100)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "developer",
+                            "publisher",
+                            "brand",
+                            "co_developer"
+                        ],
+                        "type": "string",
+                        "description": "Association role",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Game title or alias",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "latest",
+                            "oldest",
+                            "rating",
+                            "favorite",
+                            "popular"
+                        ],
+                        "type": "string",
+                        "description": "Sort",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/developers": {
             "get": {
                 "description": "返回全部开发商",
@@ -8574,6 +9246,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "开发商 ID",
                         "name": "developer_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Company ID (any association role)",
+                        "name": "company_id",
                         "in": "query"
                     },
                     {
@@ -9021,6 +9699,155 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "查询贡献者失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/galgames/{id}/descriptions": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按语言批量新增或更新 Galgame 简介；语言之间相互独立，content 为空时保留记录与来源信息；需要 galgame:update 权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "更新多语言简介",
+                "operationId": "updateGalgameDescriptions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "多语言简介请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateGalgameDescriptionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "按语言索引的简介",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GalgameDescriptionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "保存简介失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/galgames/{id}/descriptions/{language}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "彻底删除某一语言的简介记录；需要 galgame:update 权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "galgames"
+                ],
+                "summary": "删除单语言简介",
+                "operationId": "deleteGalgameDescription",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Galgame ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "语言：zh-CN、en-US、ja-JP",
+                        "name": "language",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "简介已删除",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "语言不受支持",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "用户登录失效",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "没有执行该操作的权限",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Galgame 或简介不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "删除简介失败",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -15316,6 +16143,107 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "backend_internal_galgame_dto.ContributorData": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "contribution_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "first_contributed_at": {
+                    "type": "string"
+                },
+                "last_contributed_at": {
+                    "type": "string"
+                },
+                "level": {
+                    "$ref": "#/definitions/leveldto.UserLevelSummary"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "username": {
+                    "type": "string",
+                    "example": "NexusXian"
+                }
+            }
+        },
+        "backend_internal_galgame_dto.TagSummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "纯爱"
+                }
+            }
+        },
+        "backend_internal_message_dto.UnreadCountData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "backend_internal_notification_dto.UnreadCountData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "backend_internal_novel_dto.ContributorData": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "contribution_count": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "first_contributed_at": {
+                    "type": "string"
+                },
+                "last_contributed_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "username": {
+                    "type": "string",
+                    "example": "NexusXian"
+                }
+            }
+        },
+        "backend_internal_novel_dto.TagSummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "恋爱"
+                }
+            }
+        },
         "dto.ActiveAnnouncementData": {
             "type": "object",
             "properties": {
@@ -17593,6 +18521,245 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CompanyDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CompanyResponse"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CompanyListData": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CompanyResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CompanyListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CompanyListData"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CompanyRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "slug",
+                "status"
+            ],
+            "properties": {
+                "aliases": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "banner_url": {
+                    "type": "string"
+                },
+                "closed_date": {
+                    "type": "string",
+                    "format": "date",
+                    "x-nullable": true,
+                    "example": "2020-01-01"
+                },
+                "country": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "description": {
+                    "type": "string"
+                },
+                "founded_date": {
+                    "type": "string",
+                    "format": "date",
+                    "x-nullable": true,
+                    "example": "1998-01-01"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name_en": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name_ja": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name_zh": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "parent_company_id": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive",
+                        "closed"
+                    ]
+                },
+                "website_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CompanyResponse": {
+            "type": "object",
+            "properties": {
+                "aliases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "banner_url": {
+                    "type": "string"
+                },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CompanySummary"
+                    }
+                },
+                "closed_date": {
+                    "type": "string",
+                    "format": "date",
+                    "x-nullable": true,
+                    "example": "2020-01-01"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "developer_game_count": {
+                    "type": "integer"
+                },
+                "founded_date": {
+                    "type": "string",
+                    "format": "date",
+                    "x-nullable": true,
+                    "example": "1998-01-01"
+                },
+                "game_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "name_en": {
+                    "type": "string"
+                },
+                "name_ja": {
+                    "type": "string"
+                },
+                "name_zh": {
+                    "type": "string"
+                },
+                "parent_company": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.CompanySummary"
+                        }
+                    ],
+                    "x-nullable": true
+                },
+                "parent_company_id": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "publisher_game_count": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive",
+                        "closed"
+                    ]
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "website_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CompanySummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CompleteUploadRequest": {
             "type": "object",
             "properties": {
@@ -17616,7 +18783,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_galgame_dto.ContributorData"
+                        "$ref": "#/definitions/backend_internal_galgame_dto.ContributorData"
                     }
                 },
                 "page": {
@@ -18042,6 +19209,13 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "作品简介"
+                },
+                "descriptions": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "items": {
+                        "$ref": "#/definitions/dto.GalgameDescriptionInput"
+                    }
                 },
                 "developer_id": {
                     "type": "integer",
@@ -18577,6 +19751,27 @@ const docTemplate = `{
                     "maximum": 9999,
                     "minimum": 0,
                     "example": 1
+                }
+            }
+        },
+        "dto.DescriptionSourceResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "VNDB"
+                },
+                "official": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "type": {
+                    "type": "string",
+                    "example": "vndb"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://vndb.org/v20424"
                 }
             }
         },
@@ -19369,6 +20564,96 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.GalgameDescriptionInput": {
+            "type": "object",
+            "required": [
+                "language"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "作品简介"
+                },
+                "is_official": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "language": {
+                    "type": "string",
+                    "enum": [
+                        "zh-CN",
+                        "en-US",
+                        "ja-JP"
+                    ],
+                    "example": "zh-CN"
+                },
+                "source_name": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "NextMoe 资料库"
+                },
+                "source_type": {
+                    "type": "string",
+                    "enum": [
+                        "unknown",
+                        "vndb",
+                        "bangumi",
+                        "nextmoe",
+                        "official",
+                        "steam",
+                        "manual"
+                    ],
+                    "example": "nextmoe"
+                },
+                "source_url": {
+                    "type": "string",
+                    "example": "https://example.com"
+                }
+            }
+        },
+        "dto.GalgameDescriptionResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "作品简介"
+                },
+                "language": {
+                    "type": "string",
+                    "example": "zh-CN"
+                },
+                "source": {
+                    "$ref": "#/definitions/dto.DescriptionSourceResponse"
+                }
+            }
+        },
+        "dto.GalgameDescriptionsData": {
+            "type": "object",
+            "properties": {
+                "descriptions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/dto.GalgameDescriptionResponse"
+                    }
+                }
+            }
+        },
+        "dto.GalgameDescriptionsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GalgameDescriptionsData"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "dto.GalgameListData": {
             "type": "object",
             "properties": {
@@ -19460,7 +20745,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_galgame_dto.TagSummary"
+                        "$ref": "#/definitions/backend_internal_galgame_dto.TagSummary"
                     }
                 },
                 "title": {
@@ -19502,6 +20787,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "https://example.com/banner.jpg"
                 },
+                "companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GameCompanyResponse"
+                    }
+                },
                 "contributor_count": {
                     "type": "integer",
                     "example": 12
@@ -19509,7 +20800,7 @@ const docTemplate = `{
                 "contributors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_galgame_dto.ContributorData"
+                        "$ref": "#/definitions/backend_internal_galgame_dto.ContributorData"
                     }
                 },
                 "cover_sensitive": {
@@ -19530,6 +20821,12 @@ const docTemplate = `{
                 "description_source": {
                     "type": "string",
                     "example": "bangumi"
+                },
+                "descriptions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/dto.GalgameDescriptionResponse"
+                    }
                 },
                 "developer": {
                     "$ref": "#/definitions/dto.DeveloperSummary"
@@ -19573,7 +20870,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_galgame_dto.TagSummary"
+                        "$ref": "#/definitions/backend_internal_galgame_dto.TagSummary"
                     }
                 },
                 "title": {
@@ -19880,6 +21177,70 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.GameCompaniesDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GameCompanyResponse"
+                    }
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GameCompanyInput": {
+            "type": "object",
+            "required": [
+                "company_id",
+                "role"
+            ],
+            "properties": {
+                "company_id": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "developer",
+                        "publisher",
+                        "brand",
+                        "co_developer"
+                    ]
+                }
+            }
+        },
+        "dto.GameCompanyResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "developer",
+                        "publisher",
+                        "brand",
+                        "co_developer"
+                    ]
+                },
+                "slug": {
+                    "type": "string"
                 }
             }
         },
@@ -20938,7 +22299,7 @@ const docTemplate = `{
                     "example": 0
                 },
                 "data": {
-                    "$ref": "#/definitions/internal_message_dto.UnreadCountData"
+                    "$ref": "#/definitions/backend_internal_message_dto.UnreadCountData"
                 },
                 "msg": {
                     "type": "string",
@@ -21149,7 +22510,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_novel_dto.TagSummary"
+                        "$ref": "#/definitions/backend_internal_novel_dto.TagSummary"
                     }
                 },
                 "title": {
@@ -21195,7 +22556,7 @@ const docTemplate = `{
                 "contributors": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_novel_dto.ContributorData"
+                        "$ref": "#/definitions/backend_internal_novel_dto.ContributorData"
                     }
                 },
                 "cover_url": {
@@ -21280,7 +22641,7 @@ const docTemplate = `{
                 "tags": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_novel_dto.TagSummary"
+                        "$ref": "#/definitions/backend_internal_novel_dto.TagSummary"
                     }
                 },
                 "title": {
@@ -22392,6 +23753,21 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ReplaceGameCompaniesRequest": {
+            "type": "object",
+            "required": [
+                "companies"
+            ],
+            "properties": {
+                "companies": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                        "$ref": "#/definitions/dto.GameCompanyInput"
+                    }
+                }
+            }
+        },
         "dto.ReportedResourceData": {
             "type": "object",
             "properties": {
@@ -22867,7 +24243,7 @@ const docTemplate = `{
                     "example": 0
                 },
                 "data": {
-                    "$ref": "#/definitions/internal_notification_dto.UnreadCountData"
+                    "$ref": "#/definitions/backend_internal_notification_dto.UnreadCountData"
                 },
                 "msg": {
                     "type": "string",
@@ -23141,6 +24517,22 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.UpdateGalgameDescriptionsRequest": {
+            "type": "object",
+            "required": [
+                "descriptions"
+            ],
+            "properties": {
+                "descriptions": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.GalgameDescriptionInput"
+                    }
+                }
+            }
+        },
         "dto.UpdateGalgameRequest": {
             "type": "object",
             "required": [
@@ -23189,6 +24581,13 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "作品简介"
+                },
+                "descriptions": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "items": {
+                        "$ref": "#/definitions/dto.GalgameDescriptionInput"
+                    }
                 },
                 "developer_id": {
                     "type": "integer",
@@ -23894,107 +25293,6 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "ok"
-                }
-            }
-        },
-        "internal_galgame_dto.ContributorData": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string",
-                    "example": "https://example.com/avatar.jpg"
-                },
-                "contribution_count": {
-                    "type": "integer",
-                    "example": 12
-                },
-                "first_contributed_at": {
-                    "type": "string"
-                },
-                "last_contributed_at": {
-                    "type": "string"
-                },
-                "level": {
-                    "$ref": "#/definitions/leveldto.UserLevelSummary"
-                },
-                "user_id": {
-                    "type": "integer",
-                    "example": 1001
-                },
-                "username": {
-                    "type": "string",
-                    "example": "NexusXian"
-                }
-            }
-        },
-        "internal_galgame_dto.TagSummary": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "name": {
-                    "type": "string",
-                    "example": "纯爱"
-                }
-            }
-        },
-        "internal_message_dto.UnreadCountData": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 3
-                }
-            }
-        },
-        "internal_notification_dto.UnreadCountData": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 3
-                }
-            }
-        },
-        "internal_novel_dto.ContributorData": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string",
-                    "example": "https://example.com/avatar.jpg"
-                },
-                "contribution_count": {
-                    "type": "integer",
-                    "example": 12
-                },
-                "first_contributed_at": {
-                    "type": "string"
-                },
-                "last_contributed_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer",
-                    "example": 1001
-                },
-                "username": {
-                    "type": "string",
-                    "example": "NexusXian"
-                }
-            }
-        },
-        "internal_novel_dto.TagSummary": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "name": {
-                    "type": "string",
-                    "example": "恋爱"
                 }
             }
         },

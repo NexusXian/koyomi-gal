@@ -74,7 +74,7 @@ const sourceLinkAttrs = {
     <p v-if="fallbackNotice" class="game-description-fallback">
       {{ fallbackNotice }}
     </p>
-    <p v-if="best?.description.content" class="game-description-source">
+    <p v-if="best?.description.content && best.description.source" class="game-description-source">
       <span>{{ sourcePrefix }}：</span>
       <a
         v-if="best.description.source.url"

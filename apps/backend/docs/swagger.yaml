@@ -1,5 +1,75 @@
 basePath: /
 definitions:
+  backend_internal_galgame_dto.ContributorData:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      contribution_count:
+        example: 12
+        type: integer
+      first_contributed_at:
+        type: string
+      last_contributed_at:
+        type: string
+      level:
+        $ref: '#/definitions/leveldto.UserLevelSummary'
+      user_id:
+        example: 1001
+        type: integer
+      username:
+        example: NexusXian
+        type: string
+    type: object
+  backend_internal_galgame_dto.TagSummary:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 纯爱
+        type: string
+    type: object
+  backend_internal_message_dto.UnreadCountData:
+    properties:
+      count:
+        example: 3
+        type: integer
+    type: object
+  backend_internal_notification_dto.UnreadCountData:
+    properties:
+      count:
+        example: 3
+        type: integer
+    type: object
+  backend_internal_novel_dto.ContributorData:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      contribution_count:
+        example: 12
+        type: integer
+      first_contributed_at:
+        type: string
+      last_contributed_at:
+        type: string
+      user_id:
+        example: 1001
+        type: integer
+      username:
+        example: NexusXian
+        type: string
+    type: object
+  backend_internal_novel_dto.TagSummary:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: 恋爱
+        type: string
+    type: object
   dto.ActiveAnnouncementData:
     properties:
       content:
@@ -1596,6 +1666,171 @@ definitions:
       username:
         type: string
     type: object
+  dto.CompanyDataResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CompanyResponse'
+      msg:
+        type: string
+    type: object
+  dto.CompanyListData:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CompanyResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.CompanyListResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CompanyListData'
+      msg:
+        type: string
+    type: object
+  dto.CompanyRequest:
+    properties:
+      aliases:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+      banner_url:
+        type: string
+      closed_date:
+        example: "2020-01-01"
+        format: date
+        type: string
+        x-nullable: true
+      country:
+        maxLength: 100
+        type: string
+      description:
+        type: string
+      founded_date:
+        example: "1998-01-01"
+        format: date
+        type: string
+        x-nullable: true
+      logo_url:
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      name_en:
+        maxLength: 255
+        type: string
+      name_ja:
+        maxLength: 255
+        type: string
+      name_zh:
+        maxLength: 255
+        type: string
+      parent_company_id:
+        type: integer
+        x-nullable: true
+      slug:
+        maxLength: 255
+        type: string
+      status:
+        enum:
+        - active
+        - inactive
+        - closed
+        type: string
+      website_url:
+        type: string
+    required:
+    - name
+    - slug
+    - status
+    type: object
+  dto.CompanyResponse:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      banner_url:
+        type: string
+      children:
+        items:
+          $ref: '#/definitions/dto.CompanySummary'
+        type: array
+      closed_date:
+        example: "2020-01-01"
+        format: date
+        type: string
+        x-nullable: true
+      country:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      developer_game_count:
+        type: integer
+      founded_date:
+        example: "1998-01-01"
+        format: date
+        type: string
+        x-nullable: true
+      game_count:
+        type: integer
+      id:
+        type: integer
+      logo_url:
+        type: string
+      name:
+        type: string
+      name_en:
+        type: string
+      name_ja:
+        type: string
+      name_zh:
+        type: string
+      parent_company:
+        allOf:
+        - $ref: '#/definitions/dto.CompanySummary'
+        x-nullable: true
+      parent_company_id:
+        type: integer
+        x-nullable: true
+      publisher_game_count:
+        type: integer
+      slug:
+        type: string
+      status:
+        enum:
+        - active
+        - inactive
+        - closed
+        type: string
+      updated_at:
+        type: string
+      website_url:
+        type: string
+    type: object
+  dto.CompanySummary:
+    properties:
+      id:
+        type: integer
+      logo_url:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
   dto.CompleteUploadRequest:
     properties:
       height:
@@ -1613,7 +1848,7 @@ definitions:
     properties:
       items:
         items:
-          $ref: '#/definitions/internal_galgame_dto.ContributorData'
+          $ref: '#/definitions/backend_internal_galgame_dto.ContributorData'
         type: array
       page:
         example: 1
@@ -1923,6 +2158,11 @@ definitions:
       description:
         example: 作品简介
         type: string
+      descriptions:
+        items:
+          $ref: '#/definitions/dto.GalgameDescriptionInput'
+        maxItems: 3
+        type: array
       developer_id:
         example: 1
         type: integer
@@ -2337,6 +2577,21 @@ definitions:
         maximum: 9999
         minimum: 0
         type: integer
+    type: object
+  dto.DescriptionSourceResponse:
+    properties:
+      name:
+        example: VNDB
+        type: string
+      official:
+        example: false
+        type: boolean
+      type:
+        example: vndb
+        type: string
+      url:
+        example: https://vndb.org/v20424
+        type: string
     type: object
   dto.Developer:
     properties:
@@ -2896,6 +3151,71 @@ definitions:
         example: success
         type: string
     type: object
+  dto.GalgameDescriptionInput:
+    properties:
+      content:
+        example: 作品简介
+        type: string
+      is_official:
+        example: false
+        type: boolean
+      language:
+        enum:
+        - zh-CN
+        - en-US
+        - ja-JP
+        example: zh-CN
+        type: string
+      source_name:
+        example: NextMoe 资料库
+        maxLength: 128
+        type: string
+      source_type:
+        enum:
+        - unknown
+        - vndb
+        - bangumi
+        - nextmoe
+        - official
+        - steam
+        - manual
+        example: nextmoe
+        type: string
+      source_url:
+        example: https://example.com
+        type: string
+    required:
+    - language
+    type: object
+  dto.GalgameDescriptionResponse:
+    properties:
+      content:
+        example: 作品简介
+        type: string
+      language:
+        example: zh-CN
+        type: string
+      source:
+        $ref: '#/definitions/dto.DescriptionSourceResponse'
+    type: object
+  dto.GalgameDescriptionsData:
+    properties:
+      descriptions:
+        additionalProperties:
+          $ref: '#/definitions/dto.GalgameDescriptionResponse'
+        type: object
+    type: object
+  dto.GalgameDescriptionsResponse:
+    properties:
+      code:
+        example: 0
+        type: integer
+      data:
+        $ref: '#/definitions/dto.GalgameDescriptionsData'
+      msg:
+        example: success
+        type: string
+    type: object
   dto.GalgameListData:
     properties:
       items:
@@ -2964,7 +3284,7 @@ definitions:
         type: integer
       tags:
         items:
-          $ref: '#/definitions/internal_galgame_dto.TagSummary'
+          $ref: '#/definitions/backend_internal_galgame_dto.TagSummary'
         type: array
       title:
         example: 千恋＊万花
@@ -2993,12 +3313,16 @@ definitions:
       banner_url:
         example: https://example.com/banner.jpg
         type: string
+      companies:
+        items:
+          $ref: '#/definitions/dto.GameCompanyResponse'
+        type: array
       contributor_count:
         example: 12
         type: integer
       contributors:
         items:
-          $ref: '#/definitions/internal_galgame_dto.ContributorData'
+          $ref: '#/definitions/backend_internal_galgame_dto.ContributorData'
         type: array
       cover_sensitive:
         example: false
@@ -3014,6 +3338,10 @@ definitions:
       description_source:
         example: bangumi
         type: string
+      descriptions:
+        additionalProperties:
+          $ref: '#/definitions/dto.GalgameDescriptionResponse'
+        type: object
       developer:
         $ref: '#/definitions/dto.DeveloperSummary'
       id:
@@ -3044,7 +3372,7 @@ definitions:
         type: integer
       tags:
         items:
-          $ref: '#/definitions/internal_galgame_dto.TagSummary'
+          $ref: '#/definitions/backend_internal_galgame_dto.TagSummary'
         type: array
       title:
         example: 千恋＊万花
@@ -3261,6 +3589,50 @@ definitions:
         $ref: '#/definitions/dto.GalleryReviewListData'
       msg:
         example: success
+        type: string
+    type: object
+  dto.GameCompaniesDataResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/dto.GameCompanyResponse'
+        type: array
+      msg:
+        type: string
+    type: object
+  dto.GameCompanyInput:
+    properties:
+      company_id:
+        type: integer
+      role:
+        enum:
+        - developer
+        - publisher
+        - brand
+        - co_developer
+        type: string
+    required:
+    - company_id
+    - role
+    type: object
+  dto.GameCompanyResponse:
+    properties:
+      id:
+        type: integer
+      logo_url:
+        type: string
+      name:
+        type: string
+      role:
+        enum:
+        - developer
+        - publisher
+        - brand
+        - co_developer
+        type: string
+      slug:
         type: string
     type: object
   dto.GameSummary:
@@ -3995,7 +4367,7 @@ definitions:
         example: 0
         type: integer
       data:
-        $ref: '#/definitions/internal_message_dto.UnreadCountData'
+        $ref: '#/definitions/backend_internal_message_dto.UnreadCountData'
       msg:
         example: success
         type: string
@@ -4141,7 +4513,7 @@ definitions:
         type: integer
       tags:
         items:
-          $ref: '#/definitions/internal_novel_dto.TagSummary'
+          $ref: '#/definitions/backend_internal_novel_dto.TagSummary'
         type: array
       title:
         example: 青春猪头少年不会梦到兔女郎学姐
@@ -4173,7 +4545,7 @@ definitions:
         type: integer
       contributors:
         items:
-          $ref: '#/definitions/internal_novel_dto.ContributorData'
+          $ref: '#/definitions/backend_internal_novel_dto.ContributorData'
         type: array
       cover_url:
         example: https://example.com/cover.jpg
@@ -4235,7 +4607,7 @@ definitions:
         type: string
       tags:
         items:
-          $ref: '#/definitions/internal_novel_dto.TagSummary'
+          $ref: '#/definitions/backend_internal_novel_dto.TagSummary'
         type: array
       title:
         example: 青春猪头少年不会梦到兔女郎学姐
@@ -5041,6 +5413,16 @@ definitions:
     required:
     - ids
     type: object
+  dto.ReplaceGameCompaniesRequest:
+    properties:
+      companies:
+        items:
+          $ref: '#/definitions/dto.GameCompanyInput'
+        maxItems: 100
+        type: array
+    required:
+    - companies
+    type: object
   dto.ReportedResourceData:
     properties:
       id:
@@ -5373,7 +5755,7 @@ definitions:
         example: 0
         type: integer
       data:
-        $ref: '#/definitions/internal_notification_dto.UnreadCountData'
+        $ref: '#/definitions/backend_internal_notification_dto.UnreadCountData'
       msg:
         example: success
         type: string
@@ -5576,6 +5958,17 @@ definitions:
         - major
         type: string
     type: object
+  dto.UpdateGalgameDescriptionsRequest:
+    properties:
+      descriptions:
+        items:
+          $ref: '#/definitions/dto.GalgameDescriptionInput'
+        maxItems: 3
+        minItems: 1
+        type: array
+    required:
+    - descriptions
+    type: object
   dto.UpdateGalgameRequest:
     properties:
       age_rating:
@@ -5608,6 +6001,11 @@ definitions:
       description:
         example: 作品简介
         type: string
+      descriptions:
+        items:
+          $ref: '#/definitions/dto.GalgameDescriptionInput'
+        maxItems: 3
+        type: array
       developer_id:
         example: 1
         type: integer
@@ -6136,76 +6534,6 @@ definitions:
     properties:
       status:
         example: ok
-        type: string
-    type: object
-  internal_galgame_dto.ContributorData:
-    properties:
-      avatar_url:
-        example: https://example.com/avatar.jpg
-        type: string
-      contribution_count:
-        example: 12
-        type: integer
-      first_contributed_at:
-        type: string
-      last_contributed_at:
-        type: string
-      level:
-        $ref: '#/definitions/leveldto.UserLevelSummary'
-      user_id:
-        example: 1001
-        type: integer
-      username:
-        example: NexusXian
-        type: string
-    type: object
-  internal_galgame_dto.TagSummary:
-    properties:
-      id:
-        example: 1
-        type: integer
-      name:
-        example: 纯爱
-        type: string
-    type: object
-  internal_message_dto.UnreadCountData:
-    properties:
-      count:
-        example: 3
-        type: integer
-    type: object
-  internal_notification_dto.UnreadCountData:
-    properties:
-      count:
-        example: 3
-        type: integer
-    type: object
-  internal_novel_dto.ContributorData:
-    properties:
-      avatar_url:
-        example: https://example.com/avatar.jpg
-        type: string
-      contribution_count:
-        example: 12
-        type: integer
-      first_contributed_at:
-        type: string
-      last_contributed_at:
-        type: string
-      user_id:
-        example: 1001
-        type: integer
-      username:
-        example: NexusXian
-        type: string
-    type: object
-  internal_novel_dto.TagSummary:
-    properties:
-      id:
-        example: 1
-        type: integer
-      name:
-        example: 恋爱
         type: string
     type: object
   ipgeo.UserIPLog:
@@ -8982,6 +9310,264 @@ paths:
       summary: 管理端查询评论列表
       tags:
       - admin
+  /api/v1/admin/companies:
+    get:
+      description: Requires company:manage. Counts include games of every status.
+        Sort defaults to created_at descending; name is ascending and game_count descending.
+      operationId: listAdminCompanies
+      parameters:
+      - description: Name or alias
+        in: query
+        name: keyword
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size (1-100)
+        in: query
+        name: page_size
+        type: integer
+      - description: Company status
+        enum:
+        - active
+        - inactive
+        - closed
+        in: query
+        name: status
+        type: string
+      - description: Country
+        in: query
+        name: country
+        type: string
+      - description: Sort
+        enum:
+        - created_at
+        - name
+        - game_count
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List companies for administration
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Requires company:manage. Slugs are trimmed and lowercase; the normalized
+        slug must be nonempty, cannot be '.' or '..', and cannot contain '/' or '\\'
+        or Unicode control characters. Spaces and Unicode characters are allowed for
+        compatibility with existing developer slugs. Aliases are trimmed, deduplicated
+        and empty aliases omitted. Dates must be nullable YYYY-MM-DD, closed_date
+        cannot precede founded_date.
+      operationId: createCompany
+      parameters:
+      - description: Company metadata
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create company
+      tags:
+      - admin
+  /api/v1/admin/companies/{id}:
+    delete:
+      description: Requires company:manage. Removes aliases and game associations;
+        children become parentless. Games and legacy developers are preserved.
+      operationId: deleteCompany
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete company
+      tags:
+      - admin
+    get:
+      description: Requires company:manage. Counts include games of every status.
+      operationId: getAdminCompany
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get company by ID for administration
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: 'Requires company:manage. Full replacement; omitted optional fields
+        reset. Slugs follow the same rules as creation: trim and lowercase, nonempty,
+        not ''.'' or ''..'', no ''/'' or ''\\'' or Unicode control characters; spaces
+        and Unicode characters are allowed. Parent must exist and cannot create a
+        cycle. Dates must be nullable YYYY-MM-DD, closed_date cannot precede founded_date.'
+      operationId: updateCompany
+      parameters:
+      - description: Company ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Replacement company metadata
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Replace company metadata and aliases
+      tags:
+      - admin
   /api/v1/admin/experience-rules:
     get:
       description: 返回全部经验事件规则；需要 experience_rule:read 权限
@@ -9235,7 +9821,8 @@ paths:
       - admin
   /api/v1/admin/galgames/{id}:
     get:
-      description: 按 ID 返回任意状态 Galgame 详情；需要 galgame:review 权限
+      description: Returns Galgame details of any status. Requires galgame:review
+        or company:manage.
       operationId: getAdminGalgame
       parameters:
       - description: Galgame ID
@@ -10497,6 +11084,58 @@ paths:
       security:
       - BearerAuth: []
       summary: 批量审核游戏画面
+      tags:
+      - admin
+  /api/v1/admin/games/{id}/companies:
+    put:
+      consumes:
+      - application/json
+      description: Requires company:manage. Game and all companies must exist. Rejects
+        duplicate company_id/role tuples and invalid roles. An empty companies array
+        clears all associations; multiple distinct roles for one company are allowed.
+      operationId: replaceGameCompanies
+      parameters:
+      - description: Game ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Complete company associations
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReplaceGameCompaniesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GameCompaniesDataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atomically replace all company associations of a game
       tags:
       - admin
   /api/v1/admin/images:
@@ -13006,6 +13645,160 @@ paths:
       summary: 点赞评论
       tags:
       - comments
+  /api/v1/companies:
+    get:
+      description: Search names and aliases by literal case-insensitive substring.
+        Counts include distinct published games only. Sort defaults to created_at
+        descending; name is ascending and game_count descending.
+      operationId: listCompanies
+      parameters:
+      - description: Name or alias
+        in: query
+        name: keyword
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size (1-100)
+        in: query
+        name: page_size
+        type: integer
+      - description: Company status
+        enum:
+        - active
+        - inactive
+        - closed
+        in: query
+        name: status
+        type: string
+      - description: Country
+        in: query
+        name: country
+        type: string
+      - description: Sort
+        enum:
+        - created_at
+        - name
+        - game_count
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List companies
+      tags:
+      - companies
+  /api/v1/companies/{slug}:
+    get:
+      description: Includes aliases, parent and children summaries. Counts include
+        distinct published games only. Dates are nullable YYYY-MM-DD strings.
+      operationId: getCompany
+      parameters:
+      - description: Company slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompanyDataResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get company by slug
+      tags:
+      - companies
+  /api/v1/companies/{slug}/games:
+    get:
+      description: A game appears once even when associated with multiple roles. Response
+        pagination uses limit, matching the existing GalgameListData contract.
+      operationId: listCompanyGames
+      parameters:
+      - description: Company slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size (1-100)
+        in: query
+        name: page_size
+        type: integer
+      - description: Association role
+        enum:
+        - developer
+        - publisher
+        - brand
+        - co_developer
+        in: query
+        name: role
+        type: string
+      - description: Game title or alias
+        in: query
+        name: keyword
+        type: string
+      - description: Sort
+        enum:
+        - latest
+        - oldest
+        - rating
+        - favorite
+        - popular
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GalgameListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List published games associated with a company
+      tags:
+      - companies
   /api/v1/developers:
     get:
       description: 返回全部开发商
@@ -13200,6 +13993,10 @@ paths:
       - description: 开发商 ID
         in: query
         name: developer_id
+        type: integer
+      - description: Company ID (any association role)
+        in: query
+        name: company_id
         type: integer
       - description: Tag ID，逗号分隔
         example: 1,2
@@ -13507,6 +14304,104 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: 查看 Galgame 贡献者
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/descriptions:
+    put:
+      consumes:
+      - application/json
+      description: 按语言批量新增或更新 Galgame 简介；语言之间相互独立，content 为空时保留记录与来源信息；需要 galgame:update
+        权限
+      operationId: updateGalgameDescriptions
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 多语言简介请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateGalgameDescriptionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 按语言索引的简介
+          schema:
+            $ref: '#/definitions/dto.GalgameDescriptionsResponse'
+        "400":
+          description: 请求参数格式不正确
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 保存简介失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新多语言简介
+      tags:
+      - galgames
+  /api/v1/galgames/{id}/descriptions/{language}:
+    delete:
+      description: 彻底删除某一语言的简介记录；需要 galgame:update 权限
+      operationId: deleteGalgameDescription
+      parameters:
+      - description: Galgame ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 语言：zh-CN、en-US、ja-JP
+        in: path
+        name: language
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 简介已删除
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: 语言不受支持
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户登录失效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 没有执行该操作的权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Galgame 或简介不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: 删除简介失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除单语言简介
       tags:
       - galgames
   /api/v1/galgames/{id}/favorite:

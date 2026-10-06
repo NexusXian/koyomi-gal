@@ -35,6 +35,7 @@ onMounted(async () => {
       'comment:moderate',
       'ip_audit:read',
       'galgame:update',
+      'company:manage',
       'role:list',
       'role:create',
       'role:update',
