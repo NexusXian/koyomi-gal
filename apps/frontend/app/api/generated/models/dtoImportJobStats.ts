@@ -11,4 +11,8 @@ export interface DtoImportJobStats {
   matched?: number;
   not_found?: number;
   review?: number;
+  zh_failed?: number;
+  zh_imported?: number;
+  zh_kept?: number;
+  zh_unavailable?: number;
 }

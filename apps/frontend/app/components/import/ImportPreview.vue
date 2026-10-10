@@ -32,12 +32,46 @@ const linking = ref(false)
 const forceMetadataUpdate = ref(false)
 const existingDetail = ref<DtoGalgameResponse | null>(null)
 const existingLoading = ref(false)
+const forceUpdateZh = ref(false)
+const overwriteManualZh = ref(false)
+
+const ZH_PREVIEW_LABELS: Record<string, string> = {
+  not_found: 'NextMoe 中未找到与该 VNDB ID 精确对应的作品',
+  ambiguous: 'NextMoe 中有多个作品对应该 VNDB ID，已跳过',
+  no_intro: 'NextMoe 作品暂无可用的简体中文简介',
+  disabled: '未配置 NextMoe，导入时不会获取中文简介',
+  failed: 'NextMoe 查询失败，导入时会再次尝试',
+  skipped: '该条目无法查询 NextMoe'
+}
+
+const ZH_RESULT_MESSAGES: Record<string, string> = {
+  imported: '已导入 NextMoe 中文简介',
+  unchanged: '中文简介已是最新',
+  kept_existing: '已保留现有自动导入的中文简介',
+  protected: '已保留人工维护的中文简介',
+  not_found: 'NextMoe 未找到对应作品',
+  ambiguous: 'NextMoe 匹配到多个作品，已跳过中文简介',
+  no_intro: 'NextMoe 暂无可用中文简介',
+  failed: 'NextMoe 中文简介导入失败，VNDB 数据不受影响'
+}
 
 const game = computed<DtoExternalGameDetail | null>(() => preview.value?.game ?? null)
 const duplicateStatus = computed(() => preview.value?.duplicate_status ?? 'none')
 const candidates = computed<DtoImportDuplicateCandidate[]>(
   () => preview.value?.candidates ?? []
 )
+const zhPreview = computed(() => preview.value?.zh_description ?? null)
+const zhOptions = computed(() => ({
+  force_update_zh_description: forceUpdateZh.value,
+  overwrite_manual_zh_description:
+    forceUpdateZh.value && overwriteManualZh.value
+}))
+
+watch(forceUpdateZh, (checked) => {
+  if (!checked) {
+    overwriteManualZh.value = false
+  }
+})
 
 watch(
   () => [props.open, props.provider, props.externalId],
@@ -56,6 +90,23 @@ function reset(): void {
   linking.value = false
   forceMetadataUpdate.value = false
   existingDetail.value = null
+  forceUpdateZh.value = false
+  overwriteManualZh.value = false
+}
+
+function notifyZhResult(result: DtoImportResultData): void {
+  const status = result.zh_description_status
+  const text = status ? ZH_RESULT_MESSAGES[status] : undefined
+  if (!text) {
+    return
+  }
+  if (status === 'imported' || status === 'unchanged') {
+    message.success(text)
+  } else if (status === 'failed') {
+    message.warning(text)
+  } else {
+    message.info(text)
+  }
 }
 
 async function load(): Promise<void> {
@@ -89,7 +140,8 @@ async function runImport(
         existing_galgame_id:
           duplicateAction === 'link_existing'
             ? (selectedCandidateId.value ?? undefined)
-            : undefined
+            : undefined,
+        ...zhOptions.value
       })
     )
     if (duplicateAction === 'error' && result.duplicate_status === 'possible') {
@@ -105,11 +157,13 @@ async function runImport(
     }
     if (result.duplicate_status === 'already_imported') {
       message.info('该外部作品已导入过')
+      notifyZhResult(result)
       emit('imported', result)
       close()
       return
     }
     message.success('导入成功')
+    notifyZhResult(result)
     emit('imported', result)
     close()
   } catch (error) {
@@ -146,10 +200,12 @@ async function confirmLink(): Promise<void> {
         external_id: props.externalId,
         duplicate_action: 'link_existing',
         existing_galgame_id: selectedCandidateId.value ?? undefined,
-        force_metadata_update: forceMetadataUpdate.value
+        force_metadata_update: forceMetadataUpdate.value,
+        ...zhOptions.value
       })
     )
     message.success('已关联站内作品')
+    notifyZhResult(result)
     emit('imported', result)
     close()
   } catch (error) {
@@ -229,6 +285,45 @@ function formatLength(minutes?: number | null): string {
           {{ game.description?.trim() || '暂无简介' }}
         </p>
 
+        <template v-if="zhPreview">
+          <a-divider>中文简介（NextMoe）</a-divider>
+          <p
+            v-if="zhPreview.status === 'available' && zhPreview.content"
+            class="import-preview-description"
+          >
+            {{ zhPreview.content }}
+          </p>
+          <a-alert
+            v-else
+            type="info"
+            show-icon
+            :message="ZH_PREVIEW_LABELS[zhPreview.status ?? ''] ?? '暂无中文简介'"
+          />
+          <div
+            v-if="zhPreview.status === 'available' && duplicateStatus !== 'none'"
+            class="import-preview-zh-options"
+          >
+            <a-checkbox v-model:checked="forceUpdateZh">
+              强制刷新自动导入的中文简介
+            </a-checkbox>
+            <a-popconfirm
+              v-if="!overwriteManualZh"
+              title="将用 NextMoe 简介覆盖人工编辑的中文简介，确认允许吗？"
+              ok-text="允许覆盖"
+              cancel-text="取消"
+              :disabled="!forceUpdateZh"
+              @confirm="overwriteManualZh = true"
+            >
+              <a-checkbox :checked="false" :disabled="!forceUpdateZh">
+                允许覆盖人工编辑的中文简介
+              </a-checkbox>
+            </a-popconfirm>
+            <a-checkbox v-else v-model:checked="overwriteManualZh">
+              允许覆盖人工编辑的中文简介
+            </a-checkbox>
+          </div>
+        </template>
+
         <template v-if="(game.tags ?? []).length > 0">
           <a-divider>标签</a-divider>
           <div class="import-preview-tags">
@@ -249,6 +344,19 @@ function formatLength(minutes?: number | null): string {
               : ''
           "
         />
+        <div
+          v-if="duplicateStatus === 'already_imported' && zhPreview?.status === 'available'"
+          class="import-preview-actions"
+        >
+          <a-button
+            type="primary"
+            :loading="importing"
+            @click="runImport('error')"
+          >
+            同步中文简介
+          </a-button>
+          <a-button @click="close">取消</a-button>
+        </div>
 
         <template v-else-if="duplicateStatus === 'possible'">
           <a-alert
@@ -426,6 +534,13 @@ function formatLength(minutes?: number | null): string {
 
 .import-preview-link {
   margin-top: 14px;
+}
+
+.import-preview-zh-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
 }
 
 .import-preview-force-hint {

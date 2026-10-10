@@ -251,7 +251,7 @@ export const getImportGameUrl = () => {
 }
 
 /**
- * 导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入
+ * 导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入；VNDB 作品会按 VNDB ID 从 NextMoe 导入中文简介，结果见 zh_description_status
  * @summary 导入外部视觉小说
  */
 export const importGame = async (dtoImportGameRequest: DtoImportGameRequest, options?: Parameters<typeof apiMutator>[1]): Promise<DtoImportGameResponse> => {
@@ -313,7 +313,7 @@ export const getPreviewImportGameUrl = (provider: string,
 }
 
 /**
- * 返回外部作品完整元数据以及站内重复检测结果
+ * 返回外部作品完整元数据以及站内重复检测结果；VNDB 作品附带 NextMoe 中文简介预览
  * @summary 预览外部视觉小说详情
  */
 export const previewImportGame = async (provider: string,

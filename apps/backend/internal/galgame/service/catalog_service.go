@@ -993,6 +993,8 @@ func (s *CatalogService) descriptionUpdateRows(
 	}
 	if existing, ok := descriptionRowForLanguage(galgame.Descriptions, model.LanguageZhCN); ok {
 		existing.Content = description
+		existing.SourceExternalID = ""
+		existing.UpstreamSource = ""
 		if description != "" {
 			// A human edit flips the row to manual so enrichment backs off.
 			existing.SourceType = model.DescriptionSourceManual

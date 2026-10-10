@@ -265,6 +265,7 @@ export * from './dtoImportResultData';
 export * from './dtoImportSearchData';
 export * from './dtoImportSearchItem';
 export * from './dtoImportSearchResponse';
+export * from './dtoImportZhDescriptionPreview';
 export * from './dtoLatestReleaseResponse';
 export * from './dtoMarkReadRequest';
 export * from './dtoMatchCandidateBatchData';

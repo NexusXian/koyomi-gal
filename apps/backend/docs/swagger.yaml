@@ -3845,6 +3845,18 @@ definitions:
       force_metadata_update:
         example: false
         type: boolean
+      force_update_zh_description:
+        description: |-
+          ForceUpdateZhDescription refreshes an automatically imported Chinese
+          description from NextMoe.
+        example: false
+        type: boolean
+      overwrite_manual_zh_description:
+        description: |-
+          OverwriteManualZhDescription also allows replacing a manually edited
+          Chinese description; only honoured with force_update_zh_description.
+        example: false
+        type: boolean
       provider:
         example: vndb
         maxLength: 32
@@ -3986,6 +3998,18 @@ definitions:
       review:
         example: 623
         type: integer
+      zh_failed:
+        example: 2
+        type: integer
+      zh_imported:
+        example: 320
+        type: integer
+      zh_kept:
+        example: 40
+        type: integer
+      zh_unavailable:
+        example: 130
+        type: integer
     type: object
   dto.ImportPreviewData:
     properties:
@@ -3998,6 +4022,8 @@ definitions:
         type: string
       game:
         $ref: '#/definitions/dto.ExternalGameDetail'
+      zh_description:
+        $ref: '#/definitions/dto.ImportZhDescriptionPreview'
     type: object
   dto.ImportPreviewResponse:
     properties:
@@ -4043,6 +4069,12 @@ definitions:
       galgame_id:
         example: 456
         type: integer
+      zh_description_status:
+        description: |-
+          ZhDescriptionStatus: imported, unchanged, kept_existing, protected,
+          not_found, ambiguous, no_intro, disabled, failed, skipped.
+        example: imported
+        type: string
     type: object
   dto.ImportSearchData:
     properties:
@@ -4075,6 +4107,18 @@ definitions:
         $ref: '#/definitions/dto.ImportSearchData'
       msg:
         example: success
+        type: string
+    type: object
+  dto.ImportZhDescriptionPreview:
+    properties:
+      content:
+        example: 中文简介
+        type: string
+      source_name:
+        example: NextMoe 资料库
+        type: string
+      status:
+        example: available
         type: string
     type: object
   dto.LatestReleaseResponse:
@@ -11561,7 +11605,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: 导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入
+      description: 导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入；VNDB 作品会按 VNDB
+        ID 从 NextMoe 导入中文简介，结果见 zh_description_status
       operationId: importGame
       parameters:
       - description: 导入请求
@@ -11604,7 +11649,7 @@ paths:
       - adminImport
   /api/v1/admin/import/games/{provider}/{external_id}:
     get:
-      description: 返回外部作品完整元数据以及站内重复检测结果
+      description: 返回外部作品完整元数据以及站内重复检测结果；VNDB 作品附带 NextMoe 中文简介预览
       operationId: previewImportGame
       parameters:
       - description: 数据源，例如 vndb

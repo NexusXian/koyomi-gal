@@ -59,18 +59,57 @@ func (r *GalgameDescriptionRepository) FindByGalgameIDAndLanguage(
 	return &description, nil
 }
 
+var descriptionContentColumns = []string{
+	"content", "source_type", "source_name", "source_url", "is_official", "updated_at",
+}
+
+var descriptionProvenanceColumns = []string{
+	"source_external_id", "upstream_source",
+}
+
 // Upsert inserts or updates the row for (galgame_id, language) in a single
-// statement so concurrent writers cannot create duplicates.
+// statement so concurrent writers cannot create duplicates. Import provenance
+// survives only when content and source type are unchanged, so re-saving a
+// form keeps it while any real edit clears it.
 func (r *GalgameDescriptionRepository) Upsert(
 	ctx context.Context,
 	description *model.GalgameDescription,
 ) error {
+	updates := clause.AssignmentColumns(descriptionContentColumns)
+	for _, column := range descriptionProvenanceColumns {
+		updates = append(updates, clause.Assignment{
+			Column: clause.Column{Name: column},
+			Value: gorm.Expr(fmt.Sprintf(
+				"CASE WHEN galgame_descriptions.content = EXCLUDED.content "+
+					"AND galgame_descriptions.source_type = EXCLUDED.source_type "+
+					"THEN galgame_descriptions.%[1]s ELSE EXCLUDED.%[1]s END",
+				column,
+			)),
+		})
+	}
 	err := r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "galgame_id"}, {Name: "language"}},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"content", "source_type", "source_name", "source_url", "is_official", "updated_at",
-			}),
+			Columns:   []clause.Column{{Name: "galgame_id"}, {Name: "language"}},
+			DoUpdates: updates,
+		}).
+		Create(description).Error
+	if err != nil {
+		return fmt.Errorf("upsert galgame description: %w", err)
+	}
+	return nil
+}
+
+// UpsertWithProvenance writes every column including import provenance;
+// used by automatic importers that own the row's provenance.
+func (r *GalgameDescriptionRepository) UpsertWithProvenance(
+	ctx context.Context,
+	description *model.GalgameDescription,
+) error {
+	columns := append(append([]string{}, descriptionContentColumns...), descriptionProvenanceColumns...)
+	err := r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "galgame_id"}, {Name: "language"}},
+			DoUpdates: clause.AssignmentColumns(columns),
 		}).
 		Create(description).Error
 	if err != nil {

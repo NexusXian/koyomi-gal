@@ -59,6 +59,7 @@ import (
 	"backend/internal/infrastructures/database"
 	githubInfrastructure "backend/internal/infrastructures/github"
 	mailInfrastructure "backend/internal/infrastructures/mail"
+	"backend/internal/infrastructures/nextmoe"
 	"backend/internal/infrastructures/queue"
 	"backend/internal/infrastructures/storage"
 	"backend/internal/ipgeo"
@@ -360,6 +361,11 @@ func New(cfg *config.Config, workerCfg *config.WorkerConfig) (*App, error) {
 	importQueueClient := queue.NewImportClient(cfg.Redis)
 	importerSvc.SetBatchEnqueuer(importQueueClient.EnqueueVNDBBatch)
 	importerSvc.SetEnrichEnqueuer(importQueueClient.EnqueueBangumiEnrich)
+	if cfg.NextMoe != nil {
+		importerSvc.SetNextMoeClient(nextmoe.NewClient(cfg.NextMoe.BaseURL, cfg.NextMoe.APIKey, nextmoe.Options{}))
+	} else {
+		logger.Info("NextMoe Chinese intro import disabled: NEXTMOE_API_KEY is not set")
+	}
 
 	// Age rating classification module: Eino agent + tools stay read-only; the
 	// worker runs inside this process because it needs PostgreSQL and the LLM

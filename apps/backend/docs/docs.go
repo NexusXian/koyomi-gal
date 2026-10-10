@@ -5555,7 +5555,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入",
+                "description": "导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入；VNDB 作品会按 VNDB ID 从 NextMoe 导入中文简介，结果见 zh_description_status",
                 "consumes": [
                     "application/json"
                 ],
@@ -5700,7 +5700,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "返回外部作品完整元数据以及站内重复检测结果",
+                "description": "返回外部作品完整元数据以及站内重复检测结果；VNDB 作品附带 NextMoe 中文简介预览",
                 "produces": [
                     "application/json"
                 ],
@@ -21552,6 +21552,16 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "force_update_zh_description": {
+                    "description": "ForceUpdateZhDescription refreshes an automatically imported Chinese\ndescription from NextMoe.",
+                    "type": "boolean",
+                    "example": false
+                },
+                "overwrite_manual_zh_description": {
+                    "description": "OverwriteManualZhDescription also allows replacing a manually edited\nChinese description; only honoured with force_update_zh_description.",
+                    "type": "boolean",
+                    "example": false
+                },
                 "provider": {
                     "type": "string",
                     "maxLength": 32,
@@ -21745,6 +21755,22 @@ const docTemplate = `{
                 "review": {
                     "type": "integer",
                     "example": 623
+                },
+                "zh_failed": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "zh_imported": {
+                    "type": "integer",
+                    "example": 320
+                },
+                "zh_kept": {
+                    "type": "integer",
+                    "example": 40
+                },
+                "zh_unavailable": {
+                    "type": "integer",
+                    "example": 130
                 }
             }
         },
@@ -21763,6 +21789,9 @@ const docTemplate = `{
                 },
                 "game": {
                     "$ref": "#/definitions/dto.ExternalGameDetail"
+                },
+                "zh_description": {
+                    "$ref": "#/definitions/dto.ImportZhDescriptionPreview"
                 }
             }
         },
@@ -21829,6 +21858,11 @@ const docTemplate = `{
                 "galgame_id": {
                     "type": "integer",
                     "example": 456
+                },
+                "zh_description_status": {
+                    "description": "ZhDescriptionStatus: imported, unchanged, kept_existing, protected,\nnot_found, ambiguous, no_intro, disabled, failed, skipped.",
+                    "type": "string",
+                    "example": "imported"
                 }
             }
         },
@@ -21878,6 +21912,23 @@ const docTemplate = `{
                 "msg": {
                     "type": "string",
                     "example": "success"
+                }
+            }
+        },
+        "dto.ImportZhDescriptionPreview": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "中文简介"
+                },
+                "source_name": {
+                    "type": "string",
+                    "example": "NextMoe 资料库"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "available"
                 }
             }
         },

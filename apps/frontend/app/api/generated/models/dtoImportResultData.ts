@@ -12,4 +12,9 @@ export interface DtoImportResultData {
   duplicate_status?: string;
   existing_galgame_id?: number;
   galgame_id?: number;
+  /**
+     * ZhDescriptionStatus: imported, unchanged, kept_existing, protected,
+     * not_found, ambiguous, no_intro, disabled, failed, skipped.
+     */
+  zh_description_status?: string;
 }

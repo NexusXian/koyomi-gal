@@ -43,7 +43,7 @@ func (c *ImportClient) EnqueueVNDBBatch(ctx context.Context, jobID int64) error 
 		asynq.Queue(importQueueName),
 		asynq.TaskID(fmt.Sprintf("import:batch:job:%d", jobID)),
 		asynq.MaxRetry(1),
-		asynq.Timeout(2*time.Hour),
+		asynq.Timeout(4*time.Hour),
 	)
 	if err != nil {
 		return fmt.Errorf("enqueue import batch task: %w", err)

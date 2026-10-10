@@ -64,10 +64,19 @@ type ImportSearchResponse struct {
 	Msg  string           `json:"msg" example:"success"`
 }
 
+// ImportZhDescriptionPreview is the NextMoe Chinese intro found for a VNDB
+// game. Status: available, not_found, ambiguous, no_intro, disabled, failed.
+type ImportZhDescriptionPreview struct {
+	Status     string `json:"status" example:"available"`
+	Content    string `json:"content,omitempty" example:"中文简介"`
+	SourceName string `json:"source_name,omitempty" example:"NextMoe 资料库"`
+}
+
 type ImportPreviewData struct {
-	Game            ExternalGameDetail         `json:"game"`
-	DuplicateStatus string                     `json:"duplicate_status" example:"none"`
-	Candidates      []ImportDuplicateCandidate `json:"candidates"`
+	Game            ExternalGameDetail          `json:"game"`
+	DuplicateStatus string                      `json:"duplicate_status" example:"none"`
+	Candidates      []ImportDuplicateCandidate  `json:"candidates"`
+	ZhDescription   *ImportZhDescriptionPreview `json:"zh_description,omitempty"`
 }
 
 type ImportPreviewResponse struct {
@@ -92,6 +101,12 @@ type ImportGameRequest struct {
 	DuplicateAction     string `json:"duplicate_action" binding:"omitempty,oneof=error create_new link_existing" example:"error"`
 	ExistingGalgameID   *uint  `json:"existing_galgame_id" binding:"omitempty,gt=0" example:"123"`
 	ForceMetadataUpdate bool   `json:"force_metadata_update" example:"false"`
+	// ForceUpdateZhDescription refreshes an automatically imported Chinese
+	// description from NextMoe.
+	ForceUpdateZhDescription bool `json:"force_update_zh_description" example:"false"`
+	// OverwriteManualZhDescription also allows replacing a manually edited
+	// Chinese description; only honoured with force_update_zh_description.
+	OverwriteManualZhDescription bool `json:"overwrite_manual_zh_description" example:"false"`
 }
 
 type ImportResultData struct {
@@ -99,6 +114,9 @@ type ImportResultData struct {
 	GalgameID         *uint                      `json:"galgame_id,omitempty" example:"456"`
 	ExistingGalgameID *uint                      `json:"existing_galgame_id,omitempty" example:"123"`
 	Candidates        []ImportDuplicateCandidate `json:"candidates"`
+	// ZhDescriptionStatus: imported, unchanged, kept_existing, protected,
+	// not_found, ambiguous, no_intro, disabled, failed, skipped.
+	ZhDescriptionStatus string `json:"zh_description_status,omitempty" example:"imported"`
 }
 
 type ImportGameResponse struct {
@@ -127,10 +145,14 @@ type ImportJobParams struct {
 }
 
 type ImportJobStats struct {
-	Matched  int `json:"matched" example:"2834"`
-	Review   int `json:"review" example:"623"`
-	NotFound int `json:"not_found" example:"917"`
-	Failed   int `json:"failed" example:"12"`
+	Matched       int `json:"matched" example:"2834"`
+	Review        int `json:"review" example:"623"`
+	NotFound      int `json:"not_found" example:"917"`
+	Failed        int `json:"failed" example:"12"`
+	ZhImported    int `json:"zh_imported" example:"320"`
+	ZhKept        int `json:"zh_kept" example:"40"`
+	ZhUnavailable int `json:"zh_unavailable" example:"130"`
+	ZhFailed      int `json:"zh_failed" example:"2"`
 }
 
 type ImportJobData struct {
@@ -506,15 +528,28 @@ func NewImportPreviewData(preview *service.PreviewResult) ImportPreviewData {
 		},
 		DuplicateStatus: preview.DuplicateStatus,
 		Candidates:      newImportDuplicateCandidates(preview.Candidates),
+		ZhDescription:   newImportZhDescriptionPreview(preview.ZhDescription),
+	}
+}
+
+func newImportZhDescriptionPreview(preview *service.ZhDescriptionPreview) *ImportZhDescriptionPreview {
+	if preview == nil {
+		return nil
+	}
+	return &ImportZhDescriptionPreview{
+		Status:     preview.Status,
+		Content:    preview.Content,
+		SourceName: preview.SourceName,
 	}
 }
 
 func NewImportResultData(result *service.ImportResult) ImportResultData {
 	return ImportResultData{
-		DuplicateStatus:   result.DuplicateStatus,
-		GalgameID:         result.GalgameID,
-		ExistingGalgameID: result.ExistingGalgameID,
-		Candidates:        newImportDuplicateCandidates(result.Candidates),
+		DuplicateStatus:     result.DuplicateStatus,
+		GalgameID:           result.GalgameID,
+		ExistingGalgameID:   result.ExistingGalgameID,
+		Candidates:          newImportDuplicateCandidates(result.Candidates),
+		ZhDescriptionStatus: result.ZhDescriptionStatus,
 	}
 }
 

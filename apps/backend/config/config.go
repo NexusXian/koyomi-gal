@@ -26,6 +26,7 @@ type Config struct {
 	Classification *Classification
 	GitHub         *GitHub
 	GeoIP          *GeoIP
+	NextMoe        *NextMoe
 }
 
 type GeoIP struct {
@@ -44,6 +45,15 @@ type GitHub struct {
 	Repo       string
 	APIToken   string
 	APIBaseURL string
+}
+
+const defaultNextMoeBaseURL = "https://api.nextmoe.dev/v2"
+
+// NextMoe configures the optional NextMoe catalog lookup that imports Chinese
+// intros for VNDB games. It stays disabled while NEXTMOE_API_KEY is empty.
+type NextMoe struct {
+	APIKey  string
+	BaseURL string
 }
 
 // Classification configures the Eino-based game age rating agent. The agent is
@@ -235,6 +245,10 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	nextMoeConfig, err := loadNextMoe()
+	if err != nil {
+		return nil, err
+	}
 
 	return &Config{
 		Postgres: &Postgres{
@@ -271,6 +285,7 @@ func Load() (*Config, error) {
 		Classification: classificationConfig,
 		GitHub:         githubConfig,
 		GeoIP:          geoIPConfig,
+		NextMoe:        nextMoeConfig,
 	}, nil
 }
 
@@ -340,6 +355,23 @@ func loadGitHub() (*GitHub, error) {
 		APIToken:   strings.TrimSpace(os.Getenv("GITHUB_API_TOKEN")),
 		APIBaseURL: baseURL,
 	}, nil
+}
+
+func loadNextMoe() (*NextMoe, error) {
+	apiKey := strings.TrimSpace(os.Getenv("NEXTMOE_API_KEY"))
+	if apiKey == "" {
+		return nil, nil
+	}
+	baseURL := strings.TrimRight(strings.TrimSpace(os.Getenv("NEXTMOE_API_BASE_URL")), "/")
+	if baseURL == "" {
+		baseURL = defaultNextMoeBaseURL
+	}
+	parsed, err := url.Parse(baseURL)
+	if err != nil || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" ||
+		(parsed.Scheme != "https" && (parsed.Scheme != "http" || !isLoopbackHost(parsed.Hostname()))) {
+		return nil, errors.New("NEXTMOE_API_BASE_URL must be an HTTPS URL (HTTP is allowed only for loopback hosts)")
+	}
+	return &NextMoe{APIKey: apiKey, BaseURL: baseURL}, nil
 }
 
 func loadR2() (*R2, error) {

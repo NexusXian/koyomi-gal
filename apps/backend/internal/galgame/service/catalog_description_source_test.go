@@ -127,3 +127,48 @@ func TestUpdateGalgameMarksDescriptionSource(t *testing.T) {
 			afterClear.Description, afterClear.DescriptionSource)
 	}
 }
+
+func TestLegacyDescriptionEditClearsImportProvenance(t *testing.T) {
+	svc, db, userID := newCatalogTestService(t)
+	ctx := context.Background()
+	galgame, err := svc.CreateGalgame(ctx, userID, &dto.CreateGalgameRequest{
+		Title:     "provenance-clear",
+		Slug:      "provenance-clear",
+		Status:    model.GalgameStatusPublished,
+		AgeRating: model.AgeRatingAll,
+	})
+	if err != nil {
+		t.Fatalf("create galgame: %v", err)
+	}
+	if err := db.Create(&model.GalgameDescription{
+		GalgameID:        galgame.ID,
+		Language:         model.LanguageZhCN,
+		Content:          "NextMoe 导入简介",
+		SourceType:       model.DescriptionSourceNextMoe,
+		SourceName:       "NextMoe 资料库",
+		SourceExternalID: "42",
+		UpstreamSource:   "bangumi",
+	}).Error; err != nil {
+		t.Fatalf("seed imported row: %v", err)
+	}
+	if err := db.Model(&model.Galgame{}).Where("id = ?", galgame.ID).
+		Updates(map[string]any{"description": "NextMoe 导入简介", "description_source": model.DescriptionSourceNextMoe}).Error; err != nil {
+		t.Fatalf("seed legacy column: %v", err)
+	}
+
+	var current model.Galgame
+	if err := db.First(&current, galgame.ID).Error; err != nil {
+		t.Fatalf("reload: %v", err)
+	}
+	if _, err := svc.UpdateGalgame(ctx, galgame.ID, updateRequestFor(&current, "管理员修改"), userID); err != nil {
+		t.Fatalf("update description: %v", err)
+	}
+	var row model.GalgameDescription
+	if err := db.Where("galgame_id = ? AND language = ?", galgame.ID, model.LanguageZhCN).First(&row).Error; err != nil {
+		t.Fatalf("load row: %v", err)
+	}
+	if row.Content != "管理员修改" || row.SourceType != model.DescriptionSourceManual ||
+		row.SourceExternalID != "" || row.UpstreamSource != "" {
+		t.Fatalf("edited row = %+v, want manual without import provenance", row)
+	}
+}

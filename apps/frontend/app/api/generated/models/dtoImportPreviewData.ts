@@ -7,9 +7,11 @@
  */
 import type { DtoExternalGameDetail } from './dtoExternalGameDetail';
 import type { DtoImportDuplicateCandidate } from './dtoImportDuplicateCandidate';
+import type { DtoImportZhDescriptionPreview } from './dtoImportZhDescriptionPreview';
 
 export interface DtoImportPreviewData {
   candidates?: DtoImportDuplicateCandidate[];
   duplicate_status?: string;
   game?: DtoExternalGameDetail;
+  zh_description?: DtoImportZhDescriptionPreview;
 }

@@ -78,7 +78,7 @@ func (h *ImporterHandler) SearchImportGames(c *gin.Context) {
 
 // PreviewImportGame godoc
 // @Summary      预览外部视觉小说详情
-// @Description  返回外部作品完整元数据以及站内重复检测结果
+// @Description  返回外部作品完整元数据以及站内重复检测结果；VNDB 作品附带 NextMoe 中文简介预览
 // @ID           previewImportGame
 // @Tags         adminImport
 // @Produce      json
@@ -109,7 +109,7 @@ func (h *ImporterHandler) PreviewImportGame(c *gin.Context) {
 
 // ImportGame godoc
 // @Summary      导入外部视觉小说
-// @Description  导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入
+// @Description  导入单条外部作品；duplicate_action=error 时疑似重复会返回候选列表而不导入；VNDB 作品会按 VNDB ID 从 NextMoe 导入中文简介，结果见 zh_description_status
 // @ID           importGame
 // @Tags         adminImport
 // @Accept       json
@@ -142,6 +142,10 @@ func (h *ImporterHandler) ImportGame(c *gin.Context) {
 		ForceMetadataUpdate: request.ForceMetadataUpdate,
 		CreatedBy:           &userID,
 		RecordContribution:  true,
+		ZhDescription: service.ZhDescriptionOptions{
+			Force:           request.ForceUpdateZhDescription,
+			OverwriteManual: request.OverwriteManualZhDescription,
+		},
 	})
 	if err != nil {
 		h.respondImportError(c, "import game", err)

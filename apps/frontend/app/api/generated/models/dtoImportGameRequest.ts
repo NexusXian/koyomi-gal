@@ -13,6 +13,16 @@ export interface DtoImportGameRequest {
   /** @maxLength 128 */
   external_id: string;
   force_metadata_update?: boolean;
+  /**
+     * ForceUpdateZhDescription refreshes an automatically imported Chinese
+     * description from NextMoe.
+     */
+  force_update_zh_description?: boolean;
+  /**
+     * OverwriteManualZhDescription also allows replacing a manually edited
+     * Chinese description; only honoured with force_update_zh_description.
+     */
+  overwrite_manual_zh_description?: boolean;
   /** @maxLength 32 */
   provider: string;
 }

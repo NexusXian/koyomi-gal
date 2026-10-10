@@ -22,16 +22,20 @@ const (
 // together with structured provenance so the UI can attribute the source
 // without parsing it out of the content.
 type GalgameDescription struct {
-	ID         uint64    `gorm:"primaryKey" json:"id"`
-	GalgameID  uint      `gorm:"not null;uniqueIndex:idx_galgame_descriptions_galgame_id_language" json:"galgame_id"`
-	Language   string    `gorm:"size:16;not null;uniqueIndex:idx_galgame_descriptions_galgame_id_language" json:"language"`
-	Content    string    `gorm:"type:text;not null" json:"content"`
-	SourceType string    `gorm:"size:32;not null;default:'unknown'" json:"source_type"`
-	SourceName string    `gorm:"size:128;not null" json:"source_name"`
-	SourceURL  string    `gorm:"type:text;not null" json:"source_url"`
-	IsOfficial bool      `gorm:"not null;default:false" json:"is_official"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID         uint64 `gorm:"primaryKey" json:"id"`
+	GalgameID  uint   `gorm:"not null;uniqueIndex:idx_galgame_descriptions_galgame_id_language" json:"galgame_id"`
+	Language   string `gorm:"size:16;not null;uniqueIndex:idx_galgame_descriptions_galgame_id_language" json:"language"`
+	Content    string `gorm:"type:text;not null" json:"content"`
+	SourceType string `gorm:"size:32;not null;default:'unknown'" json:"source_type"`
+	SourceName string `gorm:"size:128;not null" json:"source_name"`
+	SourceURL  string `gorm:"type:text;not null" json:"source_url"`
+	IsOfficial bool   `gorm:"not null;default:false" json:"is_official"`
+	// SourceExternalID is the upstream record ID for automatically imported
+	// rows; manual edits clear it so imports can tell them apart.
+	SourceExternalID string    `gorm:"size:64;not null;default:''" json:"-"`
+	UpstreamSource   string    `gorm:"size:64;not null;default:''" json:"-"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 func (GalgameDescription) TableName() string { return "galgame_descriptions" }

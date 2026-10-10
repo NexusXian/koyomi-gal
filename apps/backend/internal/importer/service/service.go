@@ -51,6 +51,7 @@ type PreviewResult struct {
 	Game            *provider.ExternalGame `json:"game"`
 	DuplicateStatus string                 `json:"duplicate_status"`
 	Candidates      []DuplicateCandidate   `json:"candidates"`
+	ZhDescription   *ZhDescriptionPreview  `json:"zh_description,omitempty"`
 }
 
 type ImportInput struct {
@@ -61,6 +62,7 @@ type ImportInput struct {
 	ForceMetadataUpdate bool
 	CreatedBy           *uint
 	RecordContribution  bool
+	ZhDescription       ZhDescriptionOptions
 }
 
 type ImportResult struct {
@@ -68,6 +70,9 @@ type ImportResult struct {
 	GalgameID         *uint                `json:"galgame_id,omitempty"`
 	ExistingGalgameID *uint                `json:"existing_galgame_id,omitempty"`
 	Candidates        []DuplicateCandidate `json:"candidates"`
+	// ZhDescriptionStatus reports the NextMoe Chinese intro outcome for VNDB
+	// imports; empty when no lookup was attempted.
+	ZhDescriptionStatus string `json:"zh_description_status,omitempty"`
 }
 
 type Service struct {
@@ -76,6 +81,7 @@ type Service struct {
 	contributions  *contributionService.ContributionService
 	batchEnqueuer  func(ctx context.Context, jobID int64) error
 	enrichEnqueuer func(ctx context.Context, jobID int64) error
+	nextMoe        NextMoeClient
 }
 
 func NewService(
@@ -137,7 +143,14 @@ func (s *Service) Get(
 	if game == nil {
 		return nil, ErrExternalGameNotFound
 	}
-	return s.preview(ctx, game)
+	preview, err := s.preview(ctx, game)
+	if err != nil {
+		return nil, err
+	}
+	if game.Source == galgameModel.DescriptionSourceVNDB {
+		preview.ZhDescription = s.previewNextMoeZh(ctx, game.ExternalID)
+	}
+	return preview, nil
 }
 
 func (s *Service) Import(ctx context.Context, input ImportInput) (*ImportResult, error) {
@@ -165,7 +178,12 @@ func (s *Service) Import(ctx context.Context, input ImportInput) (*ImportResult,
 		return nil, err
 	}
 	if existingSource != nil {
-		return alreadyImportedResult(existingSource.GalgameID), nil
+		result := alreadyImportedResult(existingSource.GalgameID)
+		if input.Provider == galgameModel.DescriptionSourceVNDB {
+			lookup := s.lookupNextMoeZh(ctx, input.ExternalID)
+			result.ZhDescriptionStatus = s.syncNextMoeZh(ctx, existingSource.GalgameID, lookup, input.ZhDescription)
+		}
+		return result, nil
 	}
 	game, err := selected.Get(ctx, input.ExternalID)
 	if err != nil {
@@ -174,15 +192,17 @@ func (s *Service) Import(ctx context.Context, input ImportInput) (*ImportResult,
 	if game == nil {
 		return nil, ErrExternalGameNotFound
 	}
-	return s.importFetched(ctx, game, input)
+	return s.importFetched(ctx, game, input, nil)
 }
 
 // importFetched imports an already-fetched external game. Batch imports call
-// it directly with page data to avoid one provider request per item.
+// it directly with page data to avoid one provider request per item, and pass
+// a pre-fetched NextMoe lookup; nil means look it up here when applicable.
 func (s *Service) importFetched(
 	ctx context.Context,
 	game *provider.ExternalGame,
 	input ImportInput,
+	zhLookup *nextMoeLookup,
 ) (*ImportResult, error) {
 	if input.DuplicateAction == "" {
 		input.DuplicateAction = DuplicateActionError
@@ -191,8 +211,19 @@ func (s *Service) importFetched(
 	if err != nil {
 		return nil, err
 	}
+	usesNextMoe := game.Source == galgameModel.DescriptionSourceVNDB
+	resolveZh := func() nextMoeLookup {
+		if zhLookup != nil {
+			return *zhLookup
+		}
+		return s.lookupNextMoeZh(ctx, game.ExternalID)
+	}
 	if preview.DuplicateStatus == DuplicateStatusAlreadyImported && len(preview.Candidates) > 0 {
-		return alreadyImportedResult(preview.Candidates[0].ID), nil
+		result := alreadyImportedResult(preview.Candidates[0].ID)
+		if usesNextMoe {
+			result.ZhDescriptionStatus = s.syncNextMoeZh(ctx, preview.Candidates[0].ID, resolveZh(), input.ZhDescription)
+		}
+		return result, nil
 	}
 	if input.DuplicateAction == DuplicateActionError && preview.DuplicateStatus == DuplicateStatusPossible {
 		return &ImportResult{
@@ -202,12 +233,18 @@ func (s *Service) importFetched(
 	}
 
 	// Description plan: the provider's own language row plus, for VNDB
-	// imports, a confidently matched Bangumi Chinese summary. The legacy
-	// single-description column only ever mirrors the Chinese content so
-	// VNDB English text no longer lands in it.
+	// imports, the NextMoe Chinese intro or else a confidently matched
+	// Bangumi summary. External lookups finish before the transaction; the
+	// NextMoe intro is written after commit so its failure cannot roll back
+	// VNDB data. The legacy single-description column only ever mirrors the
+	// Chinese content so VNDB English text no longer lands in it.
 	ownDescription := newProviderDescription(game)
+	var zh nextMoeLookup
+	if usesNextMoe {
+		zh = resolveZh()
+	}
 	var bangumiSummary *providerDescription
-	if input.DuplicateAction != DuplicateActionLinkExisting {
+	if input.DuplicateAction != DuplicateActionLinkExisting && zh.Intro == nil {
 		bangumiSummary = s.tryBangumiSummary(ctx, game)
 	}
 
@@ -267,13 +304,21 @@ func (s *Service) importFetched(
 			return nil, lookupErr
 		}
 		if existing != nil {
-			return alreadyImportedResult(existing.GalgameID), nil
+			result := alreadyImportedResult(existing.GalgameID)
+			if usesNextMoe {
+				result.ZhDescriptionStatus = s.syncNextMoeZh(ctx, existing.GalgameID, zh, input.ZhDescription)
+			}
+			return result, nil
 		}
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &ImportResult{DuplicateStatus: DuplicateStatusNone, GalgameID: &galgameID, Candidates: []DuplicateCandidate{}}, nil
+	result := &ImportResult{DuplicateStatus: DuplicateStatusNone, GalgameID: &galgameID, Candidates: []DuplicateCandidate{}}
+	if usesNextMoe {
+		result.ZhDescriptionStatus = s.syncNextMoeZh(ctx, galgameID, zh, input.ZhDescription)
+	}
+	return result, nil
 }
 
 func (s *Service) preview(ctx context.Context, game *provider.ExternalGame) (*PreviewResult, error) {

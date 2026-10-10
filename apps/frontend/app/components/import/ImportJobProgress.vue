@@ -32,6 +32,20 @@ const skippedLabel = computed(() => (isEnrich.value ? '未找到' : '跳过'))
 const reviewCount = computed(() =>
   isEnrich.value ? (props.job.stats?.review ?? 0) : null
 )
+const zhStats = computed(() => {
+  if (isEnrich.value || props.job.provider !== 'vndb') {
+    return null
+  }
+  const stats = props.job.stats
+  const imported = stats?.zh_imported ?? 0
+  const kept = stats?.zh_kept ?? 0
+  const unavailable = stats?.zh_unavailable ?? 0
+  const failed = stats?.zh_failed ?? 0
+  if (imported + kept + unavailable + failed === 0) {
+    return null
+  }
+  return { imported, kept, unavailable, failed }
+})
 const percent = computed(() => {
   const total = props.job.total_count ?? 0
   const processed = props.job.processed_count ?? 0
@@ -74,6 +88,21 @@ const percentStatus = computed(() =>
       </span>
       <span class="import-job-stat import-job-stat-failed">
         失败 {{ job.failed_count ?? 0 }}
+      </span>
+    </div>
+    <div v-if="zhStats && !compact" class="import-job-progress-stats">
+      <span class="import-job-stat">中文简介</span>
+      <span class="import-job-stat import-job-stat-created">
+        导入 {{ zhStats.imported }}
+      </span>
+      <span class="import-job-stat import-job-stat-review">
+        保留 {{ zhStats.kept }}
+      </span>
+      <span class="import-job-stat import-job-stat-skipped">
+        无数据 {{ zhStats.unavailable }}
+      </span>
+      <span class="import-job-stat import-job-stat-failed">
+        失败 {{ zhStats.failed }}
       </span>
     </div>
   </div>

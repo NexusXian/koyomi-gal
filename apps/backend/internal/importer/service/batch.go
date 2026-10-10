@@ -34,6 +34,28 @@ type BatchParams struct {
 	Limit            int      `json:"limit"`
 }
 
+// BatchStats is the JSONB stats payload persisted on batch import jobs; it
+// tracks the NextMoe Chinese intro outcome per processed item.
+type BatchStats struct {
+	ZhImported    int `json:"zh_imported"`
+	ZhKept        int `json:"zh_kept"`
+	ZhUnavailable int `json:"zh_unavailable"`
+	ZhFailed      int `json:"zh_failed"`
+}
+
+func (b *BatchStats) record(status string) {
+	switch status {
+	case ZhDescriptionImported:
+		b.ZhImported++
+	case ZhDescriptionUnchanged, ZhDescriptionKeptExisting, ZhDescriptionProtected:
+		b.ZhKept++
+	case ZhDescriptionNotFound, ZhDescriptionAmbiguous, ZhDescriptionNoIntro:
+		b.ZhUnavailable++
+	case ZhDescriptionFailed:
+		b.ZhFailed++
+	}
+}
+
 // SetBatchEnqueuer wires the Asynq enqueue callback used to dispatch batch
 // jobs. The queue layer owns the callback to avoid an import cycle.
 func (s *Service) SetBatchEnqueuer(fn func(ctx context.Context, jobID int64) error) {
@@ -186,6 +208,9 @@ func (s *Service) executeBatchJob(ctx context.Context, job *importerModel.Import
 	}
 
 	processed, created, skipped, failed := 0, 0, 0, 0
+	stats := BatchStats{}
+	// A bad key or exhausted quota fails every later call; stop asking.
+	nextMoeTripped := false
 	page := 1
 	for processed < limit {
 		if err := ctx.Err(); err != nil {
@@ -205,6 +230,20 @@ func (s *Service) executeBatchJob(ctx context.Context, job *importerModel.Import
 		if len(result.Games) == 0 {
 			break
 		}
+		var zhLookups map[string]nextMoeLookup
+		if s.nextMoe != nil && !nextMoeTripped && job.Provider == "vndb" {
+			ids := make([]string, 0, len(result.Games))
+			for i := range result.Games {
+				ids = append(ids, result.Games[i].ExternalID)
+			}
+			var fatal error
+			zhLookups, fatal = s.prefetchNextMoeZh(ctx, ids)
+			if fatal != nil {
+				nextMoeTripped = true
+				logger.Warn("NextMoe disabled for the rest of the batch",
+					zap.Int64("job_id", int64(job.ID)), zap.Error(fatal))
+			}
+		}
 		for i := range result.Games {
 			if processed >= limit {
 				break
@@ -213,8 +252,18 @@ func (s *Service) executeBatchJob(ctx context.Context, job *importerModel.Import
 				return fmt.Errorf("batch cancelled: %w", err)
 			}
 			game := &result.Games[i]
-			outcome := s.importBatchItem(ctx, game)
+			var zhLookup *nextMoeLookup
+			if lookup, ok := zhLookups[game.ExternalID]; ok {
+				zhLookup = &lookup
+			} else if job.Provider == "vndb" {
+				zhLookup = &nextMoeLookup{Status: ZhDescriptionSkipped}
+				if s.nextMoe == nil {
+					zhLookup.Status = ZhDescriptionDisabled
+				}
+			}
+			outcome, zhStatus := s.importBatchItem(ctx, game, zhLookup)
 			processed++
+			stats.record(zhStatus)
 			switch outcome {
 			case batchOutcomeCreated:
 				created++
@@ -230,6 +279,10 @@ func (s *Service) executeBatchJob(ctx context.Context, job *importerModel.Import
 					zap.Int64("job_id", int64(job.ID)), zap.Error(err))
 			}
 		}
+		if err := s.repository.UpdateJobStats(ctx, int64(job.ID), stats); err != nil {
+			logger.Error("update import job stats",
+				zap.Int64("job_id", int64(job.ID)), zap.Error(err))
+		}
 		if processed >= limit || !result.More {
 			break
 		}
@@ -239,7 +292,8 @@ func (s *Service) executeBatchJob(ctx context.Context, job *importerModel.Import
 		zap.Int64("job_id", int64(job.ID)),
 		zap.Int("created", created),
 		zap.Int("skipped", skipped),
-		zap.Int("failed", failed))
+		zap.Int("failed", failed),
+		zap.Int("zh_imported", stats.ZhImported))
 	return nil
 }
 
@@ -249,21 +303,27 @@ const (
 	batchOutcomeFailed
 )
 
-func (s *Service) importBatchItem(ctx context.Context, game *provider.ExternalGame) int {
+// importBatchItem imports one page item. Already-imported games only get an
+// empty Chinese description filled; batches never force-refresh.
+func (s *Service) importBatchItem(
+	ctx context.Context,
+	game *provider.ExternalGame,
+	zhLookup *nextMoeLookup,
+) (int, string) {
 	result, err := s.importFetched(ctx, game, ImportInput{
 		DuplicateAction: DuplicateActionError,
-	})
+	}, zhLookup)
 	if err != nil {
 		logger.Warn("batch import item failed",
 			zap.String("source", game.Source),
 			zap.String("external_id", game.ExternalID),
 			zap.Error(err))
-		return batchOutcomeFailed
+		return batchOutcomeFailed, ""
 	}
 	switch result.DuplicateStatus {
 	case DuplicateStatusAlreadyImported, DuplicateStatusPossible:
-		return batchOutcomeSkipped
+		return batchOutcomeSkipped, result.ZhDescriptionStatus
 	default:
-		return batchOutcomeCreated
+		return batchOutcomeCreated, result.ZhDescriptionStatus
 	}
 }
